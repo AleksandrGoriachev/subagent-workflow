@@ -1,0 +1,20 @@
+{
+  "decision": "accepted",
+  "remarks": [
+    {
+      "id": "R1",
+      "class": "blocking",
+      "resolution": "исправлено в кандидатном коммите"
+    },
+    {
+      "id": "R2",
+      "class": "non-blocking",
+      "reason": "вне объёма задачи, риск принят"
+    },
+    {
+      "id": "R3",
+      "class": "follow-up",
+      "followUpId": "0070"
+    }
+  ]
+}

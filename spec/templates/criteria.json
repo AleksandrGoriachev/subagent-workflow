@@ -1,0 +1,37 @@
+{
+  "task": "NNNN",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1"],
+    "mustPass": ["C2"],
+    "reasons": {
+      "C1": "<почему C1 обязан падать на базе>"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Поведение: <что должно произойти>",
+      "command": "node --test tests/example.test.mjs",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutRegex": "pass [1-9]"
+      },
+      "tags": ["fast"]
+    },
+    {
+      "id": "C2",
+      "title": "Негативный случай: <что должно быть отвергнуто>",
+      "command": "node checks/negative-case.mjs",
+      "timeoutMs": 60000,
+      "expect": {
+        "exitCode": 1,
+        "stderrContains": "invalid"
+      },
+      "tags": ["fast", "negative"]
+    }
+  ]
+}

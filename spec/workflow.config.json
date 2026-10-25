@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "tasksDir": "docs/tasks",
+  "keysFile": "docs/subagent-workflow/acceptors.json",
+  "logs": "local",
+  "actor": {
+    "primaryEnv": "DSH_SESSION_ID",
+    "fallbackEnv": "TASK_ACTOR_SESSION",
+    "modelEnv": "DSH_MODEL"
+  },
+  "verifyTimeoutMs": 1800000
+}

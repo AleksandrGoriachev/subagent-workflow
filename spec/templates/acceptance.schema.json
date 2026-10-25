@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.invalid/subagent-workflow/acceptance.schema.json",
+  "title": "Acceptance record v4",
+  "type": "object",
+  "required": [
+    "version", "status", "task", "risk",
+    "taskFileSha256", "criteriaSha256", "criteriaJsonSha256",
+    "contractCommit", "baseCommit", "candidateCommit", "tree", "worktreeDigest",
+    "issuedBy", "actor", "independence",
+    "acceptorRun", "bypasses", "checks",
+    "acceptor", "acceptedAt", "humanSignoff",
+    "signatureAlgorithm", "keyId", "publicKeyFingerprint", "signature"
+  ],
+  "properties": {
+    "version": { "const": 4 },
+    "status": { "const": "accepted" },
+    "task": { "type": "string", "minLength": 1 },
+    "title": { "type": "string" },
+    "risk": { "enum": ["low", "medium", "high"] },
+    "taskFileSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "criteriaSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "criteriaJsonSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "contractCommit": { "type": "string", "minLength": 7 },
+    "baseCommit": { "type": "string", "minLength": 7 },
+    "candidateCommit": { "type": "string", "minLength": 7 },
+    "tree": { "type": "string", "minLength": 7 },
+    "worktreeDigest": { "type": "string", "minLength": 16 },
+    "issuedBy": {
+      "type": "object",
+      "required": ["kind", "session"],
+      "properties": {
+        "kind": { "enum": ["agent", "human"] },
+        "session": { "type": ["string", "null"] },
+        "model": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "actor": {
+      "type": "object",
+      "required": ["kind", "session", "keyId", "attestedBy"],
+      "properties": {
+        "kind": { "enum": ["agent", "human"] },
+        "session": { "type": ["string", "null"] },
+        "model": { "type": "string" },
+        "host": { "type": "string" },
+        "keyId": { "type": "string", "minLength": 1 },
+        "attestedBy": { "enum": ["env", "key", "declared", "none"] }
+      },
+      "additionalProperties": false
+    },
+    "independence": {
+      "type": "object",
+      "required": ["level", "separateSession", "reportWithheld", "keyCustody"],
+      "properties": {
+        "level": { "enum": ["same-session", "declared", "separate-session", "human"] },
+        "separateSession": { "type": "boolean" },
+        "reportWithheld": { "type": "boolean" },
+        "keyCustody": { "enum": ["agent-key", "human-key", "none"] }
+      },
+      "additionalProperties": false
+    },
+    "acceptorRun": {
+      "type": "object",
+      "required": ["fresh", "runKind", "nonce", "verifySha256"],
+      "properties": {
+        "fresh": { "type": "boolean" },
+        "reused": { "type": "boolean" },
+        "runKind": { "type": "string" },
+        "nonce": { "type": ["string", "null"] },
+        "startedAt": { "type": ["string", "null"] },
+        "finishedAt": { "type": ["string", "null"] },
+        "durationMs": { "type": ["integer", "null"], "minimum": 0 },
+        "host": { "type": ["string", "null"] },
+        "node": { "type": ["string", "null"] },
+        "verifySha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "verifyLogSha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "bypasses": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "red": {
+      "type": ["object", "null"],
+      "required": ["baseSha", "contractCommit", "criteriaJsonSha256", "failed", "failedIds", "redExpectation"],
+      "properties": {
+        "baseSha": { "type": "string", "minLength": 7 },
+        "contractCommit": { "type": "string", "minLength": 7 },
+        "criteriaJsonSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "failed": { "type": "integer", "minimum": 1 },
+        "failedIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "redExpectation": {
+          "type": "object",
+          "required": ["configured", "ok"],
+          "properties": {
+            "configured": { "type": "boolean" },
+            "ok": { "type": "boolean" },
+            "errors": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "command", "exitCode", "passed"],
+        "properties": {
+          "id": { "type": "string" },
+          "command": { "type": "string" },
+          "exitCode": { "type": "integer" },
+          "durationMs": { "type": "integer", "minimum": 0 },
+          "passed": { "const": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "acceptor": { "type": "string", "minLength": 1 },
+    "acceptedAt": { "type": "string", "format": "date-time" },
+    "humanSignoff": { "type": "boolean" },
+    "signedBy": { "type": ["string", "null"] },
+    "securityReview": { "type": "boolean" },
+    "notes": { "type": "string" },
+    "review": {
+      "type": ["object", "null"],
+      "required": ["decision"],
+      "properties": {
+        "decision": { "enum": ["accepted", "rework"] },
+        "remarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "class"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "class": { "enum": ["blocking", "non-blocking", "follow-up"] },
+              "resolution": { "type": "string" },
+              "reason": { "type": "string" },
+              "followUpId": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "releaseReady": { "type": "boolean" },
+    "signatureAlgorithm": { "const": "ed25519" },
+    "keyId": { "type": "string", "minLength": 1 },
+    "publicKeyFingerprint": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "signature": { "type": "string", "minLength": 16 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "risk": { "enum": ["medium", "high"] } }, "required": ["risk"] },
+      "then": {
+        "properties": {
+          "independence": {
+            "properties": { "level": { "enum": ["separate-session", "human"] } },
+            "required": ["level"]
+          },
+          "acceptorRun": { "properties": { "fresh": { "const": true } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "risk": { "const": "high" } }, "required": ["risk"] },
+      "then": {
+        "properties": {
+          "humanSignoff": { "const": true },
+          "securityReview": { "const": true },
+          "actor": {
+            "properties": {
+              "kind": { "const": "human" },
+              "keyId": { "type": "string", "pattern": "^human-" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,8 @@
+# сборка и локальные артефакты
+dist/
+node_modules/
+.tmp/
+keys/
+reports/
+*.log
+.DS_Store

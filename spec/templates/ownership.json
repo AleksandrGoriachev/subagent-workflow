@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "task": "0042",
+      "owns": ["src/orders/**", "docs/tasks/0042/**"],
+      "reads": ["src/shared/**"],
+      "contracts": ["api/orders"],
+      "migration": null
+    },
+    {
+      "task": "0043",
+      "owns": ["src/billing/**", "docs/tasks/0043/**"],
+      "reads": ["src/shared/**"],
+      "contracts": [],
+      "migration": "0051"
+    }
+  ]
+}

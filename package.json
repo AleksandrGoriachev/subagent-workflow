@@ -1,0 +1,24 @@
+{
+  "name": "subagent-workflow",
+  "version": "2.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Portable delegation workflow with attested independent acceptance (Ed25519)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "selftest": "node spec/selftest.mjs",
+    "e2e": "node spec/e2e.mjs",
+    "init": "node spec/scripts/init.mjs",
+    "new-task": "node spec/scripts/new-task.mjs",
+    "doctor": "node spec/scripts/doctor.mjs",
+    "hash": "node spec/scripts/task-hash.mjs",
+    "lint": "node spec/scripts/task-lint.mjs",
+    "red": "node spec/scripts/task-red.mjs",
+    "verify": "node spec/scripts/task-verify.mjs",
+    "accept": "node spec/scripts/task-accept.mjs",
+    "check": "node spec/scripts/task-check-acceptance.mjs",
+    "pack": "node tools/pack.mjs"
+  }
+}

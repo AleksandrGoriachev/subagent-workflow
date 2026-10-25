@@ -1,0 +1,164 @@
+# Инструкция агенту: развернуть subagent-workflow 2.0 с нуля
+
+Кому: агенту-оркестратору, который впервые внедряет процесс делегирования.
+Что на выходе: рабочее пространство с воротами, закреплённым ключом, CI-проверкой
+записей и одной принятой пилотной задачей.
+
+Пакет самодостаточен: все ворота, шаблоны и конфигурация уже внутри.
+
+## 0. Четыре решения до команд
+
+1. **Кто приёмщик для medium?** Отдельная сессия агента с ключом `agent-*` (по
+   умолчанию `agent-judge`) или человек. Ключ живёт на машине приёмщика.
+2. **Кто подписывает high-risk?** Человек с ключом `human-*`. Приватный ключ — в
+   менеджере паролей, отдельной учётной записи или токене; не рядом с агентом.
+3. **Логи — доказательство?** `logs: local` (не коммитятся, хешей в записи нет) или
+   `commit`. Коммитить логи можно только с редакцией секретов.
+4. **Где живёт пакет?** `docs/subagent-workflow/` в целевом репозитории (так делает `init`).
+
+Зафиксируйте ответы в `docs/subagent-workflow/README.md` проекта.
+
+## 1. Развернуть пакет
+
+Из каталога пакета:
+
+~~~bash
+node spec/scripts/init.mjs --repo <путь к проекту> --key-id agent-judge
+# опционально: --tasks docs/tasks --logs commit --key-out <каталог ключей>
+~~~
+
+Что делает `init`:
+
+- копирует в `<проект>/docs/subagent-workflow/` спецификацию, шаблоны, конфигурацию и все ворота;
+- создаёт `docs/tasks/` и правило в `.gitignore` для журналов;
+- генерирует ключ `agent-judge` (Ed25519) в `~/.wf-keys` и закрепляет публичную часть
+  в `acceptors.json`;
+- пишет `workflow.config.json`.
+
+Проверка: `node docs/subagent-workflow/selftest.mjs` и `node docs/subagent-workflow/e2e.mjs`
+(оба должны закончиться `OK`; e2e работает во временном каталоге).
+
+## 2. Ключи
+
+~~~bash
+# приёмщик-агент (уже создан init; можно сменить id)
+node docs/subagent-workflow/scripts/sign.mjs keygen --id agent-judge --out-dir ~/.wf-keys
+
+# человек для high-risk — на его машине
+node docs/subagent-workflow/scripts/sign.mjs keygen --id human-owner --out-dir ~/.wf-keys
+~~~
+
+Публичный ключ — в `docs/subagent-workflow/acceptors.json`:
+
+~~~json
+{
+  "acceptors": [
+    { "keyId": "agent-judge", "kind": "agent", "owner": "judge",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n" },
+    { "keyId": "human-owner", "kind": "human", "owner": "Имя",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n" }
+  ]
+}
+~~~
+
+Правила: приватный ключ не коммитится и не передаётся исполнителю; `kind` совпадает
+с префиксом; отзыв — `revokedAt`, а не удаление.
+
+## 3. Создать задание
+
+~~~bash
+node docs/subagent-workflow/scripts/new-task.mjs --repo . --id 0001 \
+  --title "Краткий результат" --risk medium
+~~~
+
+`new-task` подставит `issuedBy` из `DSH_SESSION_ID` и `DSH_MODEL`. Дальше:
+
+1. Заполнить цель, границы, инварианты.
+2. Заполнить `criteria.json`: `redExpect`, причины падения, негативный критерий.
+3. `git add docs/tasks/0001 checks && git commit -m "task 0001: контракт"`.
+4. `task-hash --write`, `task-lint --strict`, `task-red --base HEAD`.
+
+Красный обязан упасть **по объявленной причине**: `mustFail` не пуст, `reasons`
+содержит подстроку из вывода, `mustPass` зелёный на базе.
+
+## 4. Работа и приёмка
+
+1. Исполнитель — отдельная сессия (`subagent`, не `fork`), только задание и репозиторий.
+2. После работы: `task-verify` (самопроверка).
+3. Приёмщик — **другая сессия**, без отчёта исполнителя до прогона:
+
+~~~bash
+node docs/subagent-workflow/scripts/task-accept.mjs --task docs/tasks/0001 \
+  --acceptor judge --key ~/.wf-keys/agent-judge.key.pem --key-id agent-judge \
+  --expect-contract <contractCommit>
+~~~
+
+4. Проверка записи:
+
+~~~bash
+node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
+  --file docs/tasks/0001/acceptance.json --repo . --metadata <metadataCommit>
+~~~
+
+5. Фиксация: `git reset --hard <candidateCommit>`, затем коммит `acceptance.json`
+   отдельным metadata-коммитом.
+
+**Обязательная негативная проверка:** запустите `task-accept` из сессии постановщика.
+Должен быть отказ «сессия приёмщика совпадает с issuedBy». Если принято — адаптер
+актора не работает, дальше идти нельзя.
+
+## 5. CI
+
+~~~yaml
+- name: workflow records
+  run: |
+    for f in $(git diff --name-only origin/main...HEAD | grep 'acceptance.json$'); do
+      node docs/subagent-workflow/scripts/task-check-acceptance.mjs --file "$f" --repo .
+    done
+
+- name: workflow selftest
+  run: |
+    node docs/subagent-workflow/selftest.mjs
+    node docs/subagent-workflow/e2e.mjs
+~~~
+
+Публичные ключи берутся из репозитория; приватных в CI нет. Нарушение — блокирующая
+ошибка. Branch protection: `check`, `lint`, `selftest`; force-push запрещён.
+
+## 6. Документация в проекте
+
+- `AGENTS.md`: читать SPEC целиком; цикл команд; запрет самоприёмки; где ключи.
+- `docs/tasks/README.md`: новые задачи по 2.0, таблица задач.
+- `docs/subagent-workflow/README.md`: решения из шага 0.
+
+## 7. Definition of Done
+
+- [ ] `selftest.mjs` и `e2e.mjs` зелёные.
+- [ ] `acceptors.json` закоммичен, приватных ключей в репозитории нет.
+- [ ] `issuedBy` пишется в контракт, `lint` без него падает.
+- [ ] Самоприёмка отклоняется (проверено руками).
+- [ ] Приёмка из отдельной сессии создаёт запись v4 с `actor.session`.
+- [ ] `task-check-acceptance` проходит по принятой записи и падает на подмене.
+- [ ] CI проверяет изменённые записи и гоняет selftest/e2e.
+- [ ] Пилотная задача принята: кандидатный коммит + metadata-коммит.
+- [ ] High-risk с ключом агента отклоняется, с ключом `human-*` — принимается.
+
+## 8. Ротация и откат
+
+- Ротация: новый `keyId`, старый публичный ключ остаётся; новые записи — новым ключом.
+- Компрометация: `revokedAt` + запись об инциденте + повторная приёмка затронутых задач.
+- Откат внедрения: CI не блокирует merge, пока джоба не включена; записи не удаляются.
+
+## 9. Частые сбои
+
+| Симптом | Причина | Что делать |
+| --- | --- | --- |
+| «сессия приёмщика совпадает с issuedBy» | accept запущен из сессии постановщика | запустить из отдельной сессии |
+| «нет сессии приёмщика» | не задан `DSH_SESSION_ID`/`TASK_ACTOR_SESSION` | настроить адаптер в config |
+| «ключ не закреплён» | `keyId` нет в `acceptors.json` | добавить публичный ключ |
+| «приватный ключ не соответствует» | перепутаны ключи | проверить fingerprint |
+| «подпись не совпадает» | запись отредактирована | не править запись, пересоздать приёмку |
+| «красный не по ожидаемой причине» | `reasons` не совпал | уточнить причину или формулировку теста |
+| «metadata-коммит меняет не только acceptance.json» | в metadata попал код | разделить коммиты |
+| «verify.json нет в кандидате» | хеш записан, файл не закоммичен | `logs: local` или коммитить артефакты |
+| `git reset --hard` отклонён | незакоммиченные чужие правки | сначала убрать их: кандидат их не содержит |

@@ -1,0 +1,46 @@
+{
+  "task": "0001",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2"
+    ],
+    "reasons": {
+      "C1": "sum is wrong"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Сложение",
+      "command": "node checks/add.mjs",
+      "timeoutMs": 60000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok 3"
+      },
+      "tags": [
+        "fast",
+        "behavior"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: отказ",
+      "command": "node checks/negative.mjs",
+      "timeoutMs": 60000,
+      "expect": {
+        "exitCode": 1,
+        "stderrContains": "invalid input"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    }
+  ]
+}
