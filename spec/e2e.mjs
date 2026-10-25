@@ -54,6 +54,16 @@ try {
   report('init разворачивает рабочее пространство', init.code === 0, init.out);
   report('init создаёт закреплённый ключ', fs.existsSync(path.join(repo, 'docs/subagent-workflow/acceptors.json')) && fs.existsSync(path.join(keys, 'agent-judge.key.pem')));
 
+  const secondRepo = path.join(tmp, 'second');
+  const secondKeys = path.join(tmp, 'keys-second');
+  const deployedInit = path.join(repo, 'docs/subagent-workflow/scripts/init.mjs');
+  const secondInit = spawnSync(process.execPath, [deployedInit, '--repo', secondRepo, '--key-out', secondKeys], { encoding: 'utf8' });
+  report(
+    'init из развёрнутого каталога создаёт свой ключ, а не копирует acceptors.json',
+    secondInit.status === 0 && fs.existsSync(path.join(secondKeys, 'agent-judge.key.pem')),
+    (secondInit.stdout || '') + (secondInit.stderr || ''),
+  );
+
   const task = run('new-task.mjs', ['--repo', repo, '--id', '0001', '--title', 'Сложение', '--risk', 'medium'], { env: { DSH_SESSION_ID: 'issuer-session', DSH_MODEL: 'e2e-model' } });
   report('new-task создаёт задание с issuedBy', task.code === 0 && fs.readFileSync(path.join(repo, 'docs/tasks/0001/task.md'), 'utf8').includes('issuer-session'), task.out);
 

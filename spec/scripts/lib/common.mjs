@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.0.1';
+export const TOOL = 'subagent-workflow/2.0.2';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -413,7 +413,19 @@ export function readDiffText(repo, base) {
   if (a.exitCode === 0) parts.push(a.stdout);
   const b = git(repo, ['diff', '--no-color', '--cached', '--']);
   if (b.exitCode === 0) parts.push(b.stdout);
+  /*
+   * Полный текст добавляем только неотслеживаемым файлам: у изменённых он уже есть
+   * в диффе выше. Иначе скан секретов читает предсуществующие строки изменённого
+   * файла и валит задачу за то, чего работа не касалась (1.4.2).
+   */
+  const untracked = new Set(
+    (git(repo, ['ls-files', '--others', '--exclude-standard', '-z']).stdout || '')
+      .split('\0')
+      .filter(Boolean)
+      .map(toPosix),
+  );
   for (const rel of dirtyPaths(repo)) {
+    if (!untracked.has(rel)) continue;
     if (rel.startsWith('docs/tasks/')) continue;
     const abs = path.join(repo, fromPosix(rel));
     if (exists(abs) && fs.statSync(abs).isFile()) {

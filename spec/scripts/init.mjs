@@ -28,6 +28,13 @@ function args(argv) {
 function copyTree(src, dst, force) {
   fs.mkdirSync(dst, { recursive: true });
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    /*
+     * acceptors.json — состояние конкретного рабочего пространства, а не шаблон.
+     * Если скопировать его из развёрнутого каталога, init увидит «ключ уже закреплён»
+     * и не сгенерирует приватный ключ: в новом репозитории останется публичный ключ
+     * без пары. Поэтому файл всегда создаётся заново.
+     */
+    if (entry.isFile() && entry.name === 'acceptors.json') continue;
     const from = path.join(src, entry.name);
     const to = path.join(dst, entry.name);
     if (entry.isDirectory()) copyTree(from, to, force);
