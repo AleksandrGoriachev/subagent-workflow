@@ -11,6 +11,13 @@ sha256sum -c subagent-workflow-2.0.0.zip.sha256
 Get-FileHash .\subagent-workflow-2.0.0.zip -Algorithm SHA256
 ~~~
 
+## 1a. Или клонировать
+
+~~~bash
+git clone https://github.com/AleksandrGoriachev/subagent-workflow.git
+cd subagent-workflow
+~~~
+
 ## 2. Распаковать
 
 ~~~bash

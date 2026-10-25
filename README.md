@@ -1,5 +1,7 @@
 # subagent-workflow 2.0.1 — полный пакет делегирования и приёмки
 
+[![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
+
 Спецификация, шаблоны, конфигурация, все ворота и загрузчик рабочего пространства.
 Не привязан к предметной области, языку, git-хостингу и харнессу агентов.
 
