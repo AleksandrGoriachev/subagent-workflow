@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
+import { summarizeDecisions } from './scripts/lib/common.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHECKER = path.join(HERE, 'scripts', 'task-check-acceptance.mjs');
@@ -77,7 +78,7 @@ try {
   ] }, null, 2) + '\n');
 
   const base = {
-    version: 4,
+    version: 5,
     status: 'accepted',
     task: '0001',
     risk: 'medium',
@@ -101,6 +102,8 @@ try {
     humanSignoff: false,
     signedBy: null,
     securityReview: false,
+    decisions: { count: 0, digest: summarizeDecisions([]).digest, assumed: [], confirmed: 0 },
+    releaseReady: true,
   };
 
   const acceptancePath = path.join(taskDir, 'acceptance.json');
@@ -165,6 +168,54 @@ try {
   fs.writeFileSync(lowPath, JSON.stringify(low, null, 2));
   const lowRun = runChecker(lowPath, repo, keysFile);
   report('low с declared-актором принимается', lowRun.status === 0, lowRun.stdout + lowRun.stderr);
+
+  /*
+   * 2.1.0: решения. Запись v5 с assumed-решением принимается (работа шла), но
+   * releaseReady=false; запись, которая прячет assumed, отклоняется.
+   */
+  const task2 = path.join(repo, 'docs', 'tasks', '0002');
+  const decisions2 = [
+    { id: 'D1', class: 'semantic', question: 'что считается доставкой', chosen: 'квитанция о получении', options: ['отправка', 'квитанция'], impact: 'user-visible', reversible: false, confirmation: { kind: 'customer', who: 'заказчик', at: '2026-10-26' } },
+    { id: 'D2', class: 'semantic', question: 'сколько ретраев', chosen: 'два', options: ['один', 'два'], impact: 'internal', reversible: true },
+  ];
+  write(path.join(task2, 'task.md'), '# Задание 0002\n\n<!-- TASK-META\n' + JSON.stringify({ id: '0002', risk: 'medium', issuedBy: { kind: 'agent', session: 'issuer-session' }, decisions: decisions2 }, null, 2) + '\n-->\n\n## Цель\n\nПроверка решений.\n');
+  write(path.join(task2, 'criteria.json'), JSON.stringify({ task: '0002', redExpect: { mustFail: ['C1'], mustPass: [], reasons: { C1: 'x' } }, criteria: [{ id: 'C1', command: 'node checks/add.mjs', covers: ['src/**'], expect: { exitCode: 0 }, tags: ['behavior'] }] }, null, 2) + '\n');
+  git(repo, ['add', '-A']);
+  git(repo, ['commit', '-q', '-m', 'task 0002 contract']);
+  const candidate2 = git(repo, ['rev-parse', 'HEAD']);
+  const summary2 = summarizeDecisions(decisions2, [{ id: 'C1' }]);
+  const record2 = signRecord({
+    ...base,
+    task: '0002',
+    taskFileSha256: sha(path.join(task2, 'task.md')),
+    criteriaSha256: sha(path.join(task2, 'criteria.json')),
+    criteriaJsonSha256: sha(path.join(task2, 'criteria.json')),
+    contractCommit: candidate2,
+    baseCommit: candidate2,
+    candidateCommit: candidate2,
+    tree: git(repo, ['rev-parse', 'HEAD^{tree}']),
+    red: { ...base.red, contractCommit: candidate2, criteriaJsonSha256: sha(path.join(task2, 'criteria.json')) },
+    acceptorRun: { ...base.acceptorRun, verifySha256: null, verifyLogSha256: null },
+    decisions: { count: summary2.count, digest: summary2.digest, assumed: summary2.assumed, confirmed: summary2.confirmed },
+    releaseReady: false,
+    review: null,
+  }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const record2Path = path.join(tmp, 'record2.json');
+  fs.writeFileSync(record2Path, JSON.stringify(record2, null, 2) + '\n');
+  const record2Run = runChecker(record2Path, repo, keysFile, ['--task', 'docs/tasks/0002']);
+  report('запись v5 с assumed-решением принимается, но releaseReady=false', record2Run.status === 0, record2Run.stdout + record2Run.stderr);
+
+  const record2Ready = signRecord({ ...record2, releaseReady: true }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const record2ReadyPath = path.join(tmp, 'record2-ready.json');
+  fs.writeFileSync(record2ReadyPath, JSON.stringify(record2Ready, null, 2) + '\n');
+  const record2ReadyRun = runChecker(record2ReadyPath, repo, keysFile, ['--task', 'docs/tasks/0002']);
+  report('releaseReady=true при assumed-решениях отклоняется', record2ReadyRun.status !== 0 && /releaseReady/.test(record2ReadyRun.stdout + record2ReadyRun.stderr));
+
+  const record2Hidden = signRecord({ ...record2, decisions: { ...record2.decisions, assumed: [] } }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const record2HiddenPath = path.join(tmp, 'record2-hidden.json');
+  fs.writeFileSync(record2HiddenPath, JSON.stringify(record2Hidden, null, 2) + '\n');
+  const record2HiddenRun = runChecker(record2HiddenPath, repo, keysFile, ['--task', 'docs/tasks/0002']);
+  report('спрятанный assumed ловится по контракту', record2HiddenRun.status !== 0 && /assumed/.test(record2HiddenRun.stdout + record2HiddenRun.stderr));
 
   write(path.join(repo, 'src', 'app.js'), 'export const add = (a, b) => a + b + 0;\n');
   git(repo, ['add', '-A']);

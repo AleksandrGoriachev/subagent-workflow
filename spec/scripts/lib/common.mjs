@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.0.3';
+export const TOOL = 'subagent-workflow/2.1.0';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -576,6 +576,93 @@ export function formatMs(ms) {
 
 export function isManual(criterion) {
   return criterion.manual === true || (Array.isArray(criterion.tags) && criterion.tags.includes('manual'));
+}
+
+/*
+ * Решения задания (2.1.0). Семантическое решение — это выбор, который нельзя
+ * проверить командой: «что считается доставкой», «что видит пользователь».
+ * Такое решение обязано либо опираться на исполняемый критерий, либо быть
+ * подтверждено человеком; иначе оно записывается как assumed и закрывает выпуск.
+ */
+export const DECISION_CLASSES = ['mechanical', 'semantic', 'contract'];
+export const DECISION_IMPACTS = ['internal', 'user-visible', 'public-contract'];
+export const DECISION_EVIDENCE_KINDS = ['criterion', 'spec', 'customer', 'human'];
+
+export function decisionsDigest(decisions) {
+  const list = Array.isArray(decisions) ? decisions : [];
+  return sha256(canonicalize(JSON.stringify(list)));
+}
+
+export function decisionEvidenceKind(decision, criteriaList) {
+  const evidence = decision && decision.evidence;
+  if (evidence && typeof evidence === 'object' && DECISION_EVIDENCE_KINDS.includes(evidence.kind)) {
+    if (evidence.kind === 'criterion') {
+      const criterion = (criteriaList || []).find((item) => String(item.id) === String(evidence.ref));
+      if (criterion) return isManual(criterion) ? 'human' : 'executable';
+    } else {
+      return 'human';
+    }
+  }
+  const confirmation = decision && decision.confirmation;
+  if (confirmation && typeof confirmation === 'object' && (confirmation.kind === 'customer' || confirmation.kind === 'human')) {
+    const who = typeof confirmation.who === 'string' ? confirmation.who.trim() : '';
+    if (who !== '') return 'human';
+  }
+  return 'none';
+}
+
+export function summarizeDecisions(decisions, criteriaList) {
+  const list = Array.isArray(decisions) ? decisions : [];
+  const assumed = [];
+  const unproven = [];
+  for (const decision of list) {
+    if (!decision || typeof decision !== 'object') continue;
+    const kind = decisionEvidenceKind(decision, criteriaList);
+    const meaningful = decision.class === 'semantic' || decision.class === 'contract';
+    if (!meaningful) continue;
+    const status = decision.status === 'confirmed' || decision.status === 'assumed'
+      ? decision.status
+      : (kind === 'none' ? 'assumed' : 'confirmed');
+    if (status === 'assumed') assumed.push(String(decision.id));
+    const touchesUser = decision.impact === 'user-visible' || decision.impact === 'public-contract';
+    if (kind === 'none' && touchesUser) unproven.push(String(decision.id));
+  }
+  return {
+    count: list.length,
+    digest: decisionsDigest(list),
+    assumed,
+    confirmed: list.length - assumed.length,
+    unproven,
+  };
+}
+
+/*
+ * Покрытие: каждый изменённый файл кода обязан попасть под covers хотя бы одного
+ * критерия. Документация и артефакты задания исключены: у них нет поведения.
+ */
+export function computeCoverage(meta, criteria, changed, taskRel) {
+  const covers = [];
+  for (const criterion of criteria.criteria) {
+    for (const pattern of (Array.isArray(criterion.covers) ? criterion.covers : [])) {
+      covers.push({ id: String(criterion.id), pattern: String(pattern) });
+    }
+  }
+  const exempt = [
+    taskRel + '/**',
+    '.git/**',
+    ...(Array.isArray(meta.hashExclude) ? meta.hashExclude : []),
+    '**/*.md',
+  ];
+  const covered = [];
+  const uncovered = [];
+  for (const file of changed || []) {
+    const rel = toPosix(file);
+    if (matchesAny(rel, exempt)) continue;
+    const hit = covers.find((cover) => globToRegExp(cover.pattern).test(rel));
+    if (hit) covered.push({ path: rel, criterion: hit.id });
+    else uncovered.push(rel);
+  }
+  return { declared: covers.length, covered, uncovered };
 }
 
 /**

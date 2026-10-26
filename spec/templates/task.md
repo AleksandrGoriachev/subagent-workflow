@@ -29,6 +29,7 @@
   "hashExclude": [
     "artifacts/**"
   ],
+  "decisions": [],
   "securityReview": false,
   "humanSignoff": false,
   "followUps": []
@@ -37,7 +38,12 @@
 
 <!-- Контракт: task.md, criteria.json и защищённые файлы коммитятся ДО task-hash --write.
      Иначе исполнитель сможет переписать проверки и перезамкнуть criteria.lock.
-     Для risk=high обязательны securityReview: true и humanSignoff: true; приёмка — с --human <кто>. -->
+     Для risk=high обязательны securityReview: true и humanSignoff: true; приёмка — с --human <кто>.
+
+     decisions — реестр выборов сверх механической работы. Семантическое решение
+     («что считается доставкой») без исполняемого критерия требует confirmation
+     человека или заказчика; иначе оно записывается как assumed и приёмка закрывает
+     выпуск (releaseReady=false). Подробности — SPEC §5.4. -->
 
 ## Цель
 

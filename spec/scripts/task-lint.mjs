@@ -2,7 +2,8 @@
 import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
-  scanSecrets, isManual,
+  scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
+  DECISION_EVIDENCE_KINDS,
 } from './lib/common.mjs';
 
 const NL = String.fromCharCode(10);
@@ -125,6 +126,25 @@ try {
     if (typeof c.command === 'string' && /(?:^| )(?:rm -rf|git push|git commit|npm publish|DROP TABLE)/i.test(c.command)) {
       warn('criterion ' + cid + ': потенциально необратимая команда: ' + c.command.slice(0, 120));
     }
+    /*
+     * covers (2.1.0): критерий объявляет, какие файлы он покрывает. Без этого
+     * приёмка проверяет только объявленные команды и не видит изменённый код,
+     * на который критерия нет.
+     */
+    if (c.covers !== undefined) {
+      if (!Array.isArray(c.covers) || c.covers.length === 0) {
+        error('criterion ' + cid + ': covers должен быть непустым массивом шаблонов путей');
+      } else {
+        for (const pattern of c.covers) {
+          if (typeof pattern !== 'string' || pattern.trim() === '') error('criterion ' + cid + ': covers содержит пустой шаблон');
+          else if (path.isAbsolute(pattern) || pattern.split('/').includes('..')) error('criterion ' + cid + ': covers: недопустимый путь: ' + pattern);
+        }
+      }
+    }
+  }
+  const coversDeclared = criteria.criteria.some((c) => Array.isArray(c.covers) && c.covers.length > 0);
+  if (meta.risk !== 'low' && !coversDeclared) {
+    error('criteria.json: для risk=' + meta.risk + ' нужен хотя бы один критерий с covers: без него изменённый код может остаться без проверки');
   }
   for (const key of ['setup', 'teardown']) {
     if (criteria.parsed[key] !== undefined && !Array.isArray(criteria.parsed[key])) error('criteria.json: ' + key + ' должен быть массивом');
@@ -171,6 +191,75 @@ try {
   }
   if (meta.risk !== 'low' && !criteria.criteria.some((c) => Array.isArray(c.tags) && c.tags.includes('negative'))) {
     error('criteria.json: для risk=' + meta.risk + ' нужен хотя бы один критерий с tags: ["negative"]');
+  }
+
+  /*
+   * Решения (2.1.0): реестр того, что выбрано сверх механической работы. Смысл —
+   * сделать предположение видимым: у семантического решения либо есть исполняемый
+   * критерий, либо подтверждение человека; иначе выпуск закрыт (assumed).
+   */
+  const decisions = meta.decisions;
+  if (meta.risk !== 'low' && decisions === undefined) {
+    error('TASK-META.decisions: для risk=' + meta.risk + ' нужен массив решений (пустой — если решений сверх механических нет)');
+  }
+  if (decisions !== undefined && !Array.isArray(decisions)) {
+    error('TASK-META.decisions должен быть массивом');
+  }
+  if (Array.isArray(decisions)) {
+    const seen = new Set();
+    for (const [index, decision] of decisions.entries()) {
+      const label = 'решение ' + ((decision && decision.id) ? decision.id : '#' + (index + 1));
+      if (!decision || typeof decision !== 'object' || Array.isArray(decision)) { error(label + ': должен быть объектом'); continue; }
+      if (typeof decision.id !== 'string' || decision.id.trim() === '') error(label + ': нет id');
+      else if (seen.has(decision.id)) error(label + ': повторяется id');
+      else seen.add(decision.id);
+      if (typeof decision.question !== 'string' || decision.question.trim() === '') error(label + ': нет question');
+      if (typeof decision.chosen !== 'string' || decision.chosen.trim() === '') error(label + ': нет chosen');
+      if (!DECISION_CLASSES.includes(decision.class)) {
+        error(label + ': class должен быть ' + DECISION_CLASSES.join(' | '));
+        continue;
+      }
+      if (decision.class === 'mechanical') continue;
+      if (!Array.isArray(decision.options) || decision.options.length < 2) error(label + ': options — минимум два варианта');
+      if (!DECISION_IMPACTS.includes(decision.impact)) error(label + ': impact должен быть ' + DECISION_IMPACTS.join(' | '));
+      if (typeof decision.reversible !== 'boolean') error(label + ': reversible должен быть boolean');
+      if (decision.status !== undefined && !['confirmed', 'assumed'].includes(decision.status)) error(label + ': status должен быть confirmed | assumed');
+      if (decision.evidence !== undefined) {
+        const evidence = decision.evidence;
+        if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) error(label + ': evidence должен быть объектом');
+        else {
+          if (!DECISION_EVIDENCE_KINDS.includes(evidence.kind)) error(label + ': evidence.kind должен быть ' + DECISION_EVIDENCE_KINDS.join(' | '));
+          if (evidence.kind === 'criterion') {
+            if (typeof evidence.ref !== 'string' || !jsonIds.includes(evidence.ref)) error(label + ': evidence.ref должен называть критерий задания (' + (evidence.ref || '—') + ')');
+          } else if (typeof evidence.ref !== 'string' || evidence.ref.trim() === '') {
+            error(label + ': evidence.ref обязателен (раздел спецификации, ссылка на ответ заказчика)');
+          }
+        }
+      }
+      if (decision.confirmation !== undefined) {
+        const confirmation = decision.confirmation;
+        if (!confirmation || typeof confirmation !== 'object' || Array.isArray(confirmation)) error(label + ': confirmation должен быть объектом');
+        else {
+          if (!['customer', 'human'].includes(confirmation.kind)) error(label + ': confirmation.kind должен быть customer | human');
+          if (typeof confirmation.who !== 'string' || confirmation.who.trim() === '') error(label + ': confirmation.who обязателен');
+          if (typeof confirmation.at !== 'string' || confirmation.at.trim() === '') error(label + ': confirmation.at обязателен');
+        }
+      }
+      const evidenceKind = decisionEvidenceKind(decision, criteria.criteria);
+      const touchesUser = decision.impact === 'user-visible' || decision.impact === 'public-contract';
+      if (evidenceKind === 'none' && touchesUser) {
+        error(label + ': impact=' + decision.impact + ' требует исполняемого критерия (evidence.kind=criterion) или подтверждения человека (confirmation)');
+      }
+      if (evidenceKind === 'none' && decision.status === 'confirmed') {
+        error(label + ': status=confirmed без доказательства — так нельзя');
+      }
+      if (evidenceKind !== 'none' && decision.status === 'assumed') {
+        warn(label + ': status=assumed, хотя доказательство есть — уберите assumed');
+      }
+      if (evidenceKind === 'none' && !touchesUser) {
+        warn(label + ': решение assumed — приёмка возможна, но releaseReady будет false до подтверждения');
+      }
+    }
   }
 
   const secrets = scanSecrets(taskMd + NL + criteria.raw);

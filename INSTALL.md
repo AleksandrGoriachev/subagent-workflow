@@ -1,14 +1,14 @@
 # Установка пакета
 
-Пакет — это каталог `subagent-workflow-2.0.3/` (или zip с ним). Зависимостей нет:
+Пакет — это каталог `subagent-workflow-2.1.0/` (или zip с ним). Зависимостей нет:
 нужны Node.js 20+ и git. Сеть не требуется.
 
 ## 1. Проверить архив
 
 ~~~bash
-sha256sum -c subagent-workflow-2.0.3.zip.sha256
+sha256sum -c subagent-workflow-2.1.0.zip.sha256
 # Windows PowerShell 7:
-Get-FileHash .\subagent-workflow-2.0.3.zip -Algorithm SHA256
+Get-FileHash .\subagent-workflow-2.1.0.zip -Algorithm SHA256
 ~~~
 
 ## 1a. Или клонировать
@@ -21,8 +21,8 @@ cd subagent-workflow
 ## 2. Распаковать
 
 ~~~bash
-unzip subagent-workflow-2.0.3.zip
-cd subagent-workflow-2.0.3
+unzip subagent-workflow-2.1.0.zip
+cd subagent-workflow-2.1.0
 node tools/verify.mjs
 ~~~
 
@@ -69,6 +69,10 @@ node spec/scripts/init.mjs --repo ../my-project --force
 
 `--force` перезаписывает скрипты и шаблоны, но не удаляет задания и записи.
 `acceptors.json` можно сохранить: ключи не зависят от версии пакета.
+
+С 2.1.0 `task-lint` требует у заданий medium/high поле `decisions` (пустой массив
+допустим) и хотя бы один `covers` у критериев: допишите их в контракт задания до
+следующего прогона. Записи о приёмке версии 4 продолжают проверяться.
 
 ## Удаление
 

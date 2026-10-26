@@ -1,4 +1,4 @@
-# subagent-workflow 2.0.3 — полный пакет делегирования и приёмки
+# subagent-workflow 2.1.0 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -69,6 +69,24 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `actor.primaryEnv` | Переменная с сессией агента (DSH: `DSH_SESSION_ID`) |
 | `actor.fallbackEnv` | Запасная переменная (уровень `declared`) |
 | `verifyTimeoutMs` | Бюджет свежего прогона при приёмке |
+
+## Решения и покрытие (2.1.0)
+
+Семантический выбор («что считается доставкой») нельзя проверить командой — значит,
+он должен быть виден и либо подтверждён, либо закрывать выпуск:
+
+~~~json
+{ "id": "D1", "class": "semantic", "question": "что считается доставкой",
+  "chosen": "квитанция о получении", "options": ["отправка", "квитанция"],
+  "impact": "user-visible", "reversible": false,
+  "evidence": { "kind": "criterion", "ref": "C3" }, "status": "confirmed" }
+~~~
+
+- `semantic`/`contract` без критерия и без `confirmation` человека — ошибка lint;
+  с `status: "assumed"` — приёмка есть, `releaseReady=false`;
+- `covers` у критерия говорит, какие файлы он покрывает; `verify` валит изменённый
+  файл, на который критерия нет;
+- запись версии 5 хранит digest решений, и `check` пересчитывает его по контракту.
 
 ## Замечания приёмщика (1.4.1)
 

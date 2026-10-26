@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, repoRoot, runSync, quoteArg, exists,
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
+  summarizeDecisions,
 } from './lib/common.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
 import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
@@ -146,6 +147,21 @@ try {
     if (typeof argv.human !== 'string' || argv.human.trim() === '') fail('high-risk требует --human <кто> (имя человека)');
   }
   const humanSigner = typeof argv.human === 'string' && argv.human.trim() !== '' ? argv.human.trim() : null;
+
+  /*
+   * Решения (2.1.0). Приёмка не спорит с семантикой, но фиксирует её состояние:
+   * unproven — решение о пользовательском контракте без критерия и без человека,
+   * это отказ; assumed — решение без доказательства, принять можно (работа шла),
+   * но releaseReady=false; high — только подтверждённые.
+   */
+  const decisionSummary = summarizeDecisions(meta.decisions, criteria.criteria);
+  if (decisionSummary.unproven.length) {
+    fail('решения о пользовательском контракте без доказательства: ' + decisionSummary.unproven.join(', ')
+      + ' — нужен исполняемый критерий (evidence.kind=criterion) или confirmation человека');
+  }
+  if (meta.risk === 'high' && decisionSummary.assumed.length) {
+    fail('high-risk: решения без доказательства нельзя принять (' + decisionSummary.assumed.join(', ') + ')');
+  }
   if (exists(files.acceptance) && !argv.force) fail('acceptance.json уже существует; используйте --force');
 
   if (argv['dry-run']) {
@@ -159,7 +175,12 @@ try {
       note: 'проверки не перезапускались',
       actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, keyId },
       independence: { level: independence.level, separateSession: independence.level !== 'same-session', reportWithheld: !argv['report-read'], keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key' },
-      acceptance: { version: 4, status: 'accepted', task: String(meta.id), candidateCommit: null, tree: null, worktreeDigest: digest, acceptor, humanSignoff: Boolean(requiresHuman && humanSigner), signedBy: humanSigner },
+      acceptance: {
+        version: 5, status: 'accepted', task: String(meta.id), candidateCommit: null, tree: null, worktreeDigest: digest,
+        decisions: { count: decisionSummary.count, digest: decisionSummary.digest, assumed: decisionSummary.assumed, confirmed: decisionSummary.confirmed },
+        releaseReady: decisionSummary.assumed.length === 0,
+        acceptor, humanSignoff: Boolean(requiresHuman && humanSigner), signedBy: humanSigner,
+      },
     }, null, 2));
     process.exit(0);
   }
@@ -252,9 +273,10 @@ try {
     }
     releaseReady = reviewCheck.releaseReady;
   }
+  if (decisionSummary.assumed.length) releaseReady = false;
 
   const body = {
-    version: 4,
+    version: 5,
     status: 'accepted',
     task: String(meta.id),
     title: meta.title || '',
@@ -295,6 +317,12 @@ try {
     signedBy: humanSigner,
     securityReview: meta.securityReview === true,
     review,
+    decisions: {
+      count: decisionSummary.count,
+      digest: decisionSummary.digest,
+      assumed: decisionSummary.assumed,
+      confirmed: decisionSummary.confirmed,
+    },
     releaseReady,
     notes: argv.note ? String(argv.note) : '',
   };
@@ -330,6 +358,8 @@ try {
     console.log('  independence  ' + independence.level + ' (нужно ' + independence.required + ')');
     console.log('  key           ' + keyId);
     console.log('  fresh run     ' + (acceptorRun.fresh ? 'да (' + acceptorRun.nonce + ')' : 'нет (reused)'));
+    console.log('  decisions     ' + decisionSummary.count + ' (assumed: ' + (decisionSummary.assumed.join(', ') || 'нет') + ')');
+    console.log('  releaseReady  ' + releaseReady + (decisionSummary.assumed.length ? ' — есть решения без подтверждения' : ''));
     console.log('  contract      ' + contractCommit);
     console.log('  candidate     ' + candidate.commit);
     console.log('  tree          ' + candidate.tree);

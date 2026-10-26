@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { loadAcceptors, verifyRecord, publicKeyFingerprint, readJsonFile } from './sign.mjs';
-import { canonicalize, sha256 as sha256Text, loadConfig } from './lib/common.mjs';
+import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions } from './lib/common.mjs';
 import { assessIndependence, LEVEL_RANK, requiredLevel } from './actor.mjs';
 import { validateReview } from './lib/review.mjs';
 
@@ -81,7 +81,8 @@ function run() {
   const record = readJsonFile(file);
   const acceptors = loadAcceptors(keysFile);
 
-  if (record.version !== 4) note('версия записи ' + record.version + ', нужна 4');
+  if (![4, 5].includes(record.version)) note('версия записи ' + record.version + ', нужна 4 или 5');
+  if (record.version === 5 && !record.decisions) note('запись версии 5 без блока decisions');
   if (record.status !== 'accepted') note('статус записи: ' + record.status);
 
   const entry = acceptors.find((item) => item.keyId === record.keyId);
@@ -157,8 +158,8 @@ function run() {
     const reviewCheck = validateReview(record.review);
     for (const error of reviewCheck.errors) note('review: ' + error);
     if (record.releaseReady !== reviewCheck.releaseReady) note('releaseReady не совпадает с разбором замечаний');
-  } else if (record.releaseReady === false) {
-    note('releaseReady=false без review');
+  } else if (record.releaseReady === false && !(record.decisions && Array.isArray(record.decisions.assumed) && record.decisions.assumed.length > 0)) {
+    note('releaseReady=false без review и без assumed-решений');
   }
 
   const candidate = record.candidateCommit;
@@ -189,6 +190,41 @@ function run() {
   const criteriaFile = fileAt(repo, candidate, taskRel + '/criteria.json');
   if (!criteriaFile) note('в кандидате нет ' + taskRel + '/criteria.json');
   else if (sha256Text(canonicalize(criteriaFile.toString('utf8'))) !== record.criteriaJsonSha256) note('criteriaJsonSha256 не совпадает с кандидатом');
+
+  /*
+   * Решения (2.1.0): запись обязана совпадать с контрактом. Digest и список
+   * assumed пересчитываются из task.md/criteria.json кандидата, а не берутся
+   * на веру: иначе assumed можно «потерять» и выпустить непроверенную семантику.
+   */
+  if (record.decisions) {
+    const metaMatch = taskFile ? taskFile.toString('utf8').match(/<!--\s*TASK-META\s*([\s\S]*?)-->/) : null;
+    let meta = null;
+    if (metaMatch) {
+      try { meta = JSON.parse(metaMatch[1].trim()); } catch { meta = null; }
+    }
+    if (!meta) {
+      note('не удалось прочитать TASK-META из кандидата: decisions не сверить');
+    } else {
+      let criteriaList = [];
+      if (criteriaFile) {
+        try {
+          const parsed = JSON.parse(criteriaFile.toString('utf8'));
+          criteriaList = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.criteria) ? parsed.criteria : []);
+        } catch { criteriaList = []; }
+      }
+      const expected = summarizeDecisions(meta.decisions, criteriaList);
+      if (record.decisions.count !== expected.count) note('decisions.count=' + record.decisions.count + ', в контракте ' + expected.count);
+      if (record.decisions.digest !== expected.digest) note('decisions.digest не совпадает с контрактом');
+      const recorded = Array.isArray(record.decisions.assumed) ? [...record.decisions.assumed].map(String).sort() : [];
+      const derived = [...expected.assumed].map(String).sort();
+      if (JSON.stringify(recorded) !== JSON.stringify(derived)) {
+        note('decisions.assumed не совпадает с контрактом: запись [' + recorded.join(', ') + '], контракт [' + derived.join(', ') + ']');
+      }
+      if (expected.unproven.length) note('решение о пользовательском контракте без доказательства: ' + expected.unproven.join(', '));
+      if (expected.assumed.length > 0 && record.releaseReady !== false) note('есть assumed-решения, а releaseReady не false');
+      if (record.risk === 'high' && expected.assumed.length > 0) note('high-risk с assumed-решениями');
+    }
+  }
 
   if (runInfo.verifySha256) {
     const verifyFile = fileAt(repo, candidate, taskRel + '/verify.json');

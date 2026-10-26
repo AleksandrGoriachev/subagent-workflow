@@ -67,16 +67,61 @@ try {
   const task = run('new-task.mjs', ['--repo', repo, '--id', '0001', '--title', 'Сложение', '--risk', 'medium'], { env: { DSH_SESSION_ID: 'issuer-session', DSH_MODEL: 'e2e-model' } });
   report('new-task создаёт задание с issuedBy', task.code === 0 && fs.readFileSync(path.join(repo, 'docs/tasks/0001/task.md'), 'utf8').includes('issuer-session'), task.out);
 
-  write(path.join(repo, 'docs/tasks/0001/criteria.json'), JSON.stringify({
+  /*
+   * Решение (2.1.0): семантический выбор «что считается сложением» подтверждён
+   * исполняемым критерием C1. В контракт решение попадает до коммита — значит,
+   * заморожено вместе с критериями.
+   */
+  const taskMdPath = path.join(repo, 'docs/tasks/0001/task.md');
+  const taskMdRaw = fs.readFileSync(taskMdPath, 'utf8');
+  const metaMatch = taskMdRaw.match(/<!--\s*TASK-META\s*([\s\S]*?)-->/);
+  const taskMeta = JSON.parse(metaMatch[1]);
+  taskMeta.decisions = [{
+    id: 'D1',
+    class: 'semantic',
+    question: 'что считается результатом сложения',
+    chosen: 'арифметическая сумма',
+    options: ['сумма', 'конкатенация'],
+    impact: 'user-visible',
+    reversible: false,
+    evidence: { kind: 'criterion', ref: 'C1' },
+    status: 'confirmed',
+  }];
+  fs.writeFileSync(taskMdPath, taskMdRaw.replace(metaMatch[0], '<!-- TASK-META\n' + JSON.stringify(taskMeta, null, 2) + '\n-->'));
+
+  const criteriaBody = {
     task: '0001',
     setup: [],
     teardown: [],
     redExpect: { mustFail: ['C1'], mustPass: ['C2'], reasons: { C1: 'sum is wrong' } },
     criteria: [
-      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
+      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, covers: ['src/app.js'], expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
       { id: 'C2', title: 'негатив', command: 'node checks/negative.mjs', timeoutMs: 60000, expect: { exitCode: 1, stderrContains: 'invalid input' }, tags: ['fast', 'negative'] },
     ],
-  }, null, 2) + '\n');
+  };
+  const criteriaPath = path.join(repo, 'docs/tasks/0001/criteria.json');
+  write(criteriaPath, JSON.stringify(criteriaBody, null, 2) + '\n');
+
+  /* Без covers описывать нечего — для medium это ошибка lint, а не пожелание. */
+  const coversOff = { ...criteriaBody, criteria: criteriaBody.criteria.map((c) => { const copy = { ...c }; delete copy.covers; return copy; }) };
+  write(criteriaPath, JSON.stringify(coversOff, null, 2) + '\n');
+  const noCovers = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('lint требует covers для medium', noCovers.code !== 0 && /covers/.test(noCovers.out), noCovers.out);
+  write(criteriaPath, JSON.stringify(criteriaBody, null, 2) + '\n');
+
+  /* Семантическое решение о пользовательском контракте без доказательства — ошибка. */
+  const goodTaskMd = fs.readFileSync(taskMdPath, 'utf8');
+  const badMeta = {
+    ...taskMeta,
+    decisions: [{
+      id: 'D1', class: 'semantic', question: 'что считается доставкой', chosen: 'по ощущению',
+      options: ['доставлено', 'отправлено'], impact: 'user-visible', reversible: false,
+    }],
+  };
+  fs.writeFileSync(taskMdPath, goodTaskMd.replace(/<!--\s*TASK-META\s*[\s\S]*?-->/, '<!-- TASK-META\n' + JSON.stringify(badMeta, null, 2) + '\n-->'));
+  const noProof = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('lint отклоняет семантическое решение без доказательства', noProof.code !== 0 && /доказательств|подтвержден/.test(noProof.out), noProof.out);
+  fs.writeFileSync(taskMdPath, goodTaskMd);
   write(path.join(repo, 'checks/add.mjs'), 'const { add } = await import("../src/app.js");\nif (add(1, 2) !== 3) { console.error("sum is wrong: " + add(1, 2)); process.exit(1); }\nconsole.log("ok " + add(1, 2));\n');
   write(path.join(repo, 'checks/negative.mjs'), 'console.error("invalid input: rejected as expected"); process.exit(1);\n');
   write(path.join(repo, 'src/app.js'), 'export const add = (a, b) => a - b;\n');
@@ -94,6 +139,13 @@ try {
   write(path.join(repo, 'src/app.js'), 'export const add = (a, b) => a + b;\n');
   const verify = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
   report('verify зелёный после фикса', verify.code === 0, verify.out);
+
+  fs.writeFileSync(path.join(repo, 'src/extra.js'), 'export const extra = 1;\n');
+  const uncovered = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
+  report('verify валит изменённый файл без покрытия критерием', uncovered.code !== 0 && /не покрыт/.test(uncovered.out), uncovered.out);
+  fs.rmSync(path.join(repo, 'src/extra.js'));
+  const verifyAgain = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
+  report('после удаления непокрытого файла verify снова зелёный', verifyAgain.code === 0, verifyAgain.out);
 
   const selfAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge'], { env: { DSH_SESSION_ID: 'issuer-session' } });
   report('самоприёмка из сессии постановщика отклоняется', selfAccept.code !== 0 && /issuedBy/.test(selfAccept.out), selfAccept.out);
@@ -118,9 +170,12 @@ try {
   const acceptancePath = path.join(repo, 'docs/tasks/0001/acceptance.json');
   const record = JSON.parse(fs.readFileSync(acceptancePath, 'utf8'));
   report('разбор замечаний и releaseReady в записи', record.releaseReady === true && record.review && record.review.remarks.length === 3, JSON.stringify({ releaseReady: record.releaseReady, review: record.review }));
-  report('запись v4 с актором и уровнем независимости',
-    record.version === 4 && record.actor.session === 'judge-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
+  report('запись v5 с актором и уровнем независимости',
+    record.version === 5 && record.actor.session === 'judge-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
     JSON.stringify({ version: record.version, actor: record.actor, level: record.independence.level }));
+  report('решения записаны с digest и без assumed',
+    record.decisions && record.decisions.count === 1 && record.decisions.assumed.length === 0 && /^[0-9a-f]{64}$/.test(record.decisions.digest),
+    JSON.stringify(record.decisions));
 
   const check = run('task-check-acceptance.mjs', ['--file', acceptancePath, '--repo', repo]);
   report('check-acceptance принимает запись', check.code === 0, check.out);

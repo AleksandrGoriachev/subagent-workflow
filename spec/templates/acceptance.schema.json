@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.invalid/subagent-workflow/acceptance.schema.json",
-  "title": "Acceptance record v4",
+  "title": "Acceptance record v5 (v4 поддерживается: без блока decisions)",
   "type": "object",
   "required": [
     "version", "status", "task", "risk",
@@ -13,7 +13,7 @@
     "signatureAlgorithm", "keyId", "publicKeyFingerprint", "signature"
   ],
   "properties": {
-    "version": { "const": 4 },
+    "version": { "enum": [4, 5] },
     "status": { "const": "accepted" },
     "task": { "type": "string", "minLength": 1 },
     "title": { "type": "string" },
@@ -147,6 +147,17 @@
       },
       "additionalProperties": false
     },
+    "decisions": {
+      "type": "object",
+      "required": ["count", "digest", "assumed"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "assumed": { "type": "array", "items": { "type": "string" } },
+        "confirmed": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
     "releaseReady": { "type": "boolean" },
     "signatureAlgorithm": { "const": "ed25519" },
     "keyId": { "type": "string", "minLength": 1 },
@@ -163,6 +174,25 @@
             "required": ["level"]
           },
           "acceptorRun": { "properties": { "fresh": { "const": true } } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "version": { "const": 5 } },
+        "required": ["version"]
+      },
+      "then": { "required": ["decisions"] }
+    },
+    {
+      "if": {
+        "properties": { "decisions": { "properties": { "assumed": { "minItems": 1 } }, "required": ["assumed"] } },
+        "required": ["decisions"]
+      },
+      "then": {
+        "properties": {
+          "releaseReady": { "const": false },
+          "risk": { "enum": ["low", "medium"] }
         }
       }
     },

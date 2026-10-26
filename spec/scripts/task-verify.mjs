@@ -4,7 +4,7 @@ import {
   parseArgv, readTask, verifyLock, repoRoot, diffPaths, matchesAny, relPosix,
   runCommand, evaluateExpectation, isManual, stableResults, writeJson, writeText,
   formatMs, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
-  checkContractCommitted,
+  checkContractCommitted, computeCoverage,
 } from './lib/common.mjs';
 
 const NL = String.fromCharCode(10);
@@ -138,6 +138,17 @@ try {
   for (const e of contractAfter.errors) violations.push('контракт: ' + e);
   for (const s of secrets) violations.push('похоже на секрет (' + s.name + ') строка ' + s.line);
 
+  /*
+   * Покрытие (2.1.0): зелёный критерий ничего не говорит о файлах, для которых
+   * критерия нет. Каждый изменённый файл кода обязан попасть под covers одного
+   * из критериев; документация и артефакты задания исключены.
+   */
+  const coverage = computeCoverage(meta, criteria, changed, taskRel);
+  if (coverage.declared === 0 && meta.risk !== 'low') {
+    violations.push('ни один критерий не объявляет covers: изменённый код не сопоставлен с проверками');
+  }
+  for (const p of coverage.uncovered) violations.push('изменённый файл не покрыт ни одним критерием: ' + p);
+
   const failed = results.filter((r) => !r.passed);
   if (manualSkipped > 0 && argv['allow-manual']) bypasses.allowManual = true;
   const executedOrManual = results.length > 0 || (manualSkipped > 0 && Boolean(argv['allow-manual']));
@@ -161,6 +172,7 @@ try {
     criteriaJsonSha256: lockCheck.expected.criteriaJsonSha256,
     taskFileSha256: lockCheck.expected.taskFileSha256,
     changedPaths: changed,
+    coverage,
     results: stableResults(results),
     executed: results.length,
     failed: failed.length,

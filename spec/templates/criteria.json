@@ -15,6 +15,7 @@
       "title": "Поведение: <что должно произойти>",
       "command": "node --test tests/example.test.mjs",
       "cwd": ".",
+      "covers": ["src/**"],
       "timeoutMs": 120000,
       "expect": {
         "exitCode": 0,
