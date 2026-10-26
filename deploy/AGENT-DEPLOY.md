@@ -1,4 +1,4 @@
-# Инструкция агенту: развернуть subagent-workflow 2.0 с нуля
+# Инструкция агенту: развернуть subagent-workflow 2.2 с нуля
 
 Кому: агенту-оркестратору, который впервые внедряет процесс делегирования.
 Что на выходе: рабочее пространство с воротами, закреплённым ключом, CI-проверкой
@@ -17,6 +17,25 @@
 4. **Где живёт пакет?** `docs/subagent-workflow/` в целевом репозитории (так делает `init`).
 
 Зафиксируйте ответы в `docs/subagent-workflow/README.md` проекта.
+
+## 0.1. Что нового в 2.2 и что придётся сделать
+
+- **Атака спецификации** (`task-attack`) — шаг до замка контракта. По умолчанию
+  выключена: `"policy": { "attack": "off" }`. Включается, когда готовы платить
+  временем за разбор находок.
+- **Реестр решений** — `TASK-META.decisions`; у заданий medium/high обязателен
+  (пустой массив допустим).
+- **Покрытие** — `criteria[].covers`; для medium/high нужен хотя бы один критерий
+  с `covers`.
+- **Политика** — `policy` в `workflow.config.json`: `fail` / `warn` / `off` для
+  `decisions`, `coverage`, `attack`, `roles.modelFamily`. Целостность записи
+  (самоприёмка, подпись, хеши) политикой не отключается.
+- **Миграция**: замок контракта — версия 3, у заданий в работе выполните
+  `task-hash --write` заново. Записи о приёмке версий 4 и 5 остаются валидными;
+  новые — версия 6.
+
+Проверка версии после развёртывания — третья строка `docs/subagent-workflow/SPEC.md`
+(отдельного `VERSION` в развёрнутом каталоге пока нет).
 
 ## 1. Развернуть пакет
 
@@ -37,6 +56,10 @@ node spec/scripts/init.mjs --repo <путь к проекту> --key-id agent-ju
 
 Проверка: `node docs/subagent-workflow/selftest.mjs` и `node docs/subagent-workflow/e2e.mjs`
 (оба должны закончиться `OK`; e2e работает во временном каталоге).
+
+Затем `node docs/subagent-workflow/scripts/doctor.mjs --repo .`: в выводе должны быть
+строка политики (`decisions=…, coverage=…, attack=…, modelFamily=…`) и, если роли
+настроены, строки ролей с моделями.
 
 ## 2. Ключи
 
@@ -74,9 +97,21 @@ node docs/subagent-workflow/scripts/new-task.mjs --repo . --id 0001 \
 `new-task` подставит `issuedBy` из `DSH_SESSION_ID` и `DSH_MODEL`. Дальше:
 
 1. Заполнить цель, границы, инварианты.
-2. Заполнить `criteria.json`: `redExpect`, причины падения, негативный критерий.
-3. `git add docs/tasks/0001 checks && git commit -m "task 0001: контракт"`.
-4. `task-hash --write`, `task-lint --strict`, `task-red --base HEAD`.
+2. Заполнить `decisions` в TASK-META: что выбрано сверх механической работы и чем
+   подтверждено (критерием или человеком). Пустой массив — законный ответ.
+3. Заполнить `criteria.json`: `redExpect`, причины падения, негативный критерий
+   и `covers` — какие файлы покрывает критерий.
+4. `git add docs/tasks/0001 checks && git commit -m "task 0001: контракт"`.
+5. Если `policy.attack = fail` (или хотите проверить себя): атака до замка —
+
+~~~bash
+node docs/subagent-workflow/scripts/task-attack.mjs --task docs/tasks/0001 --prompt
+node docs/subagent-workflow/scripts/task-attack.mjs --task docs/tasks/0001 --init
+# критик в отдельной сессии заполняет attack.json
+node docs/subagent-workflow/scripts/task-attack.mjs --task docs/tasks/0001 --check
+~~~
+
+6. `task-hash --write`, `task-lint --strict`, `task-red --base HEAD`.
 
 Красный обязан упасть **по объявленной причине**: `mustFail` не пуст, `reasons`
 содержит подстроку из вывода, `mustPass` зелёный на базе.
@@ -137,7 +172,8 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 - [ ] `acceptors.json` закоммичен, приватных ключей в репозитории нет.
 - [ ] `issuedBy` пишется в контракт, `lint` без него падает.
 - [ ] Самоприёмка отклоняется (проверено руками).
-- [ ] Приёмка из отдельной сессии создаёт запись v4 с `actor.session`.
+- [ ] Приёмка из отдельной сессии создаёт запись v6 с `actor.session`, `decisions`
+      и (если атака включена) `attack`.
 - [ ] `task-check-acceptance` проходит по принятой записи и падает на подмене.
 - [ ] CI проверяет изменённые записи и гоняет selftest/e2e.
 - [ ] Пилотная задача принята: кандидатный коммит + metadata-коммит.
@@ -161,4 +197,7 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | «красный не по ожидаемой причине» | `reasons` не совпал | уточнить причину или формулировку теста |
 | «metadata-коммит меняет не только acceptance.json» | в metadata попал код | разделить коммиты |
 | «verify.json нет в кандидате» | хеш записан, файл не закоммичен | `logs: local` или коммитить артефакты |
+| «нет attack.json» при `policy.attack=fail` | атака не проводилась | `task-attack --prompt/--init`, затем `--check` |
+| «blocking-находки без resolution» | находки не закрыты | закрыть `resolution` или понизить severity с `reason` |
+| «версия замка 2, нужна 3» | старый замок после обновления | `task-hash --write` заново |
 | `git reset --hard` отклонён | незакоммиченные чужие правки | сначала убрать их: кандидат их не содержит |
