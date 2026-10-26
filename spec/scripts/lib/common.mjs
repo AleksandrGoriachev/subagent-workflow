@@ -342,6 +342,8 @@ export function hashProtectedFiles(repo, patterns, exclude = []) {
 export function computeLock(repo, taskDir, meta, taskMd, criteria, contractCommit = null) {
   const block = extractCriteriaBlock(taskMd);
   const taskRel = relPosix(repo, taskDir);
+  const attackFile = path.join(taskDir, 'attack.json');
+  const attackSha256 = exists(attackFile) ? sha256File(attackFile) : null;
   const exclude = [
     '.git/**', 'node_modules/**',
     taskRel + '/**',
@@ -349,11 +351,12 @@ export function computeLock(repo, taskDir, meta, taskMd, criteria, contractCommi
   ];
   const protectedFiles = hashProtectedFiles(repo, meta.protectedPaths || [], exclude);
   return {
-    version: 2,
+    version: 3,
     task: String(meta.id),
     taskFileSha256: sha256(canonicalize(taskMd)),
     criteriaSha256: sha256(canonicalize(block)),
     criteriaJsonSha256: sha256(canonicalize(criteria.raw)),
+    attackSha256,
     contractCommit: contractCommit || null,
     protected: protectedFiles,
     createdAt: new Date().toISOString(),
@@ -369,8 +372,8 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria) {
   const contract = checkContractCommitted(repo, taskDir, meta);
   const actual = computeLock(repo, taskDir, meta, taskMd, criteria, contract.contractCommit);
   const errors = [];
-  if (lock.version !== 2) errors.push('criteria.lock: версия ' + lock.version + ' устарела, нужна 2 — выполните task-hash --write');
-  for (const key of ['task', 'taskFileSha256', 'criteriaSha256', 'criteriaJsonSha256', 'contractCommit']) {
+  if (lock.version !== 3) errors.push('criteria.lock: версия ' + lock.version + ' устарела, нужна 3 — выполните task-hash --write');
+  for (const key of ['task', 'taskFileSha256', 'criteriaSha256', 'criteriaJsonSha256', 'attackSha256', 'contractCommit']) {
     if (lock[key] !== actual[key]) errors.push(key + ': ожидалось ' + lock[key] + ', сейчас ' + actual[key]);
   }
   const lockMap = new Map((lock.protected || []).map((x) => [x.path, x.sha256]));
@@ -752,6 +755,9 @@ export function loadConfig(repo, fileName = 'docs/subagent-workflow/workflow.con
     keysFile: 'docs/subagent-workflow/acceptors.json',
     logs: 'local',
     actor: { primaryEnv: 'DSH_SESSION_ID', fallbackEnv: 'TASK_ACTOR_SESSION', modelEnv: 'DSH_MODEL' },
+    policy: { decisions: 'fail', coverage: 'fail', attack: 'off', roles: { modelFamily: 'warn' } },
+    models: {},
+    roles: {},
     verifyTimeoutMs: 1800000,
   };
   if (!exists(file)) return { ...defaults, loaded: false, file };
@@ -760,6 +766,9 @@ export function loadConfig(repo, fileName = 'docs/subagent-workflow/workflow.con
     ...defaults,
     ...raw,
     actor: { ...defaults.actor, ...(raw.actor || {}) },
+    policy: { ...defaults.policy, ...(raw.policy || {}), roles: { ...defaults.policy.roles, ...((raw.policy || {}).roles || {}) } },
+    models: { ...defaults.models, ...(raw.models || {}) },
+    roles: { ...defaults.roles, ...(raw.roles || {}) },
     loaded: true,
     file,
   };

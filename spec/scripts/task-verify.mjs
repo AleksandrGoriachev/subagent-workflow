@@ -4,8 +4,9 @@ import {
   parseArgv, readTask, verifyLock, repoRoot, diffPaths, matchesAny, relPosix,
   runCommand, evaluateExpectation, isManual, stableResults, writeJson, writeText,
   formatMs, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
-  checkContractCommitted, computeCoverage,
+  checkContractCommitted, computeCoverage, loadConfig,
 } from './lib/common.mjs';
+import { policyOf, applyLevel } from './lib/policy.mjs';
 
 const NL = String.fromCharCode(10);
 const argv = parseArgv(process.argv.slice(2));
@@ -144,10 +145,16 @@ try {
    * из критериев; документация и артефакты задания исключены.
    */
   const coverage = computeCoverage(meta, criteria, changed, taskRel);
+  const config = loadConfig(repo);
+  const policy = policyOf(config);
+  const coverageIssues = [];
   if (coverage.declared === 0 && meta.risk !== 'low') {
-    violations.push('ни один критерий не объявляет covers: изменённый код не сопоставлен с проверками');
+    coverageIssues.push('ни один критерий не объявляет covers: изменённый код не сопоставлен с проверками');
   }
-  for (const p of coverage.uncovered) violations.push('изменённый файл не покрыт ни одним критерием: ' + p);
+  for (const p of coverage.uncovered) coverageIssues.push('изменённый файл не покрыт ни одним критерием: ' + p);
+  const coverageApplied = applyLevel(policy.coverage, coverageIssues);
+  violations.push(...coverageApplied.errors);
+  const coverageWarnings = coverageApplied.warnings;
 
   const failed = results.filter((r) => !r.passed);
   if (manualSkipped > 0 && argv['allow-manual']) bypasses.allowManual = true;
@@ -158,6 +165,7 @@ try {
   const worktreeDigest = computeWorktreeDigest(repo, taskDir, meta);
 
   for (const violation of violations) logLine('VIOLATION ' + violation);
+  for (const warning of coverageWarnings) logLine('WARN ' + warning);
 
   const output = {
     version: 4,
@@ -172,7 +180,7 @@ try {
     criteriaJsonSha256: lockCheck.expected.criteriaJsonSha256,
     taskFileSha256: lockCheck.expected.taskFileSha256,
     changedPaths: changed,
-    coverage,
+    coverage: { ...coverage, mode: policy.coverage, warnings: coverageWarnings },
     results: stableResults(results),
     executed: results.length,
     failed: failed.length,

@@ -47,6 +47,7 @@ const manifest = {
     selftest: 'spec/selftest.mjs',
     e2e: 'spec/e2e.mjs',
     e2eDeploy: 'spec/e2e-deploy.mjs',
+    attack: 'spec/scripts/task-attack.mjs',
   },
   harnesses: ['dsh', 'generic', 'ci'],
   files: contents.map((file) => ({ path: file.path, bytes: file.data.length, sha256: sha256(file.data) })),

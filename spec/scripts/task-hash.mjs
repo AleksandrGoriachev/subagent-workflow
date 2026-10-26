@@ -2,8 +2,10 @@
 import path from 'node:path';
 import {
   parseArgv, readTask, computeLock, verifyLock, writeJson, exists, repoRoot, taskFiles,
-  checkContractCommitted, sameLockContract, readJson,
+  checkContractCommitted, sameLockContract, readJson, loadConfig,
 } from './lib/common.mjs';
+import { policyOf, applyLevel } from './lib/policy.mjs';
+import { evaluateAttack } from './lib/attack.mjs';
 
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
@@ -59,6 +61,34 @@ try {
         process.exit(1);
       }
     }
+    /*
+     * Атака спецификации (2.2.0): блокирующие находки закрываются до замка, иначе
+     * контракт замерзает с известной дырой. Уровень строгости — policy.attack.
+     */
+    const config = loadConfig(repo);
+    const policy = policyOf(config);
+    const attackFile = path.join(taskDir, 'attack.json');
+    const attackErrors = [];
+    const attackWarnings = [];
+    if (exists(attackFile)) {
+      const check = evaluateAttack(readJson(attackFile), { meta, config });
+      const applied = applyLevel(policy.attack, check.issues);
+      const family = applyLevel(policy.roles.modelFamily, check.familyIssues);
+      attackErrors.push(...applied.errors, ...family.errors);
+      attackWarnings.push(...applied.warnings, ...family.warnings);
+    } else if (policy.attack === 'fail' && meta.risk !== 'low') {
+      attackErrors.push('нет attack.json: атака спецификации не проводилась (policy.attack=fail)');
+    }
+    if (attackErrors.length) {
+      if (argv.json) console.log(JSON.stringify({ ok: false, errors: attackErrors, warnings: attackWarnings }, null, 2));
+      else {
+        console.error('task-hash: атака спецификации не пропускает замок:');
+        for (const error of attackErrors) console.error('  ERROR ' + error);
+        console.error('Проведите атаку (task-attack --prompt), устраните blocking-находки и повторите --write.');
+      }
+      process.exit(1);
+    }
+    for (const warning of attackWarnings) console.error('task-hash: WARN ' + warning);
     writeJson(files.lock, current);
     if (argv.json) console.log(JSON.stringify({ ok: true, written: files.lock, lock: current }, null, 2));
     else {

@@ -1,4 +1,4 @@
-# subagent-workflow 2.1.0 — полный пакет делегирования и приёмки
+# subagent-workflow 2.2.0 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -39,10 +39,10 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | --- | --- |
 | `spec/SPEC.md` | Нормативная спецификация 2.0 |
 | `spec/workflow.config.json` | Конфигурация по умолчанию (пути, логи, адаптер актора) |
-| `spec/templates/` | Задание, критерии, схема записи, разбор замечаний, отчёт, владение |
+| `spec/templates/` | Задание, критерии, схема записи, разбор замечаний, атака, отчёт, владение |
 | `spec/scripts/init.mjs` | Развернуть пространство в проекте |
 | `spec/scripts/new-task.mjs` | Создать задание |
-| `spec/scripts/task-*.mjs` | Ворота: hash, lint, red, verify, accept, check |
+| `spec/scripts/task-*.mjs` | Ворота: attack, hash, lint, red, verify, accept, check |
 | `spec/scripts/actor.mjs` | Аттестация актора, уровень независимости |
 | `spec/scripts/sign.mjs` | Ed25519, канонизация, подпись |
 | `spec/scripts/lib/common.mjs` | Общая библиотека |
@@ -68,7 +68,37 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `logs` | `local` (логи не коммитятся, хешей нет) или `commit` |
 | `actor.primaryEnv` | Переменная с сессией агента (DSH: `DSH_SESSION_ID`) |
 | `actor.fallbackEnv` | Запасная переменная (уровень `declared`) |
+| `policy` | `fail` / `warn` / `off` для `decisions`, `coverage`, `attack`, `roles.modelFamily` |
+| `models` | Реестр «модель → семейство» для проверки «другой агент» |
+| `roles` | Ожидаемые модели ролей: acceptor, critic, observer |
 | `verifyTimeoutMs` | Бюджет свежего прогона при приёмке |
+
+## Атака спецификации и политика (2.2.0)
+
+До замка контракта критик в отдельной сессии ищет в задании дыры: чего нет,
+где критерий неоднозначен, какой режим отказа не объявлен. Находки — в
+`attack.json`; `blocking` без `resolution` не даёт запереть контракт.
+
+~~~json
+"policy": { "decisions": "fail", "coverage": "fail", "attack": "off",
+            "roles": { "modelFamily": "warn" } },
+"models": { "deepseek-v4.1-flash": "deepseek", "glm-5.3-flash": "zhipu" },
+"roles": { "acceptor": { "model": "glm-5.3-flash", "mustDifferFromIssuer": "family" } }
+~~~
+
+Строгость выбирает репозиторий: `off` — не проверять, `warn` — писать факт и
+предупреждать, `fail` — отказывать. Факты о моделях (`actor.family`,
+`independence.modelLevel`, `attack.*`) попадают в запись независимо от режима.
+Целостность записи (самоприёмка, подпись, хеши) политикой не отключается.
+
+Пример цикла с атакой:
+
+~~~bash
+node scripts/task-attack.mjs --task docs/tasks/0001 --prompt   # задание критику
+node scripts/task-attack.mjs --task docs/tasks/0001 --init     # скелет
+node scripts/task-attack.mjs --task docs/tasks/0001 --check    # проверка находок
+node scripts/task-hash.mjs    --task docs/tasks/0001 --write
+~~~
 
 ## Решения и покрытие (2.1.0)
 
@@ -103,8 +133,8 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 ## Проверено
 
 ~~~bash
-node spec/selftest.mjs     # SELFTEST OK
-node spec/e2e.mjs          # E2E OK: init → задача → красный → фикс → приёмка → check
+node spec/selftest.mjs     # SELFTEST OK (14 сценариев)
+node spec/e2e.mjs          # E2E OK: атака → init → задача → красный → фикс → приёмка → check
 node spec/e2e-deploy.mjs   # DEPLOY E2E OK: init из развёрнутого каталога
 ~~~
 

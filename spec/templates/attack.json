@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "task": "NNNN",
+  "createdAt": "YYYY-MM-DDTHH:MM:SSZ",
+  "critic": {
+    "session": "<DSH_SESSION_ID критика>",
+    "model": "<модель критика>",
+    "attestedBy": "env"
+  },
+  "findings": [
+    {
+      "id": "A1",
+      "class": "missing-case",
+      "severity": "blocking",
+      "claim": "<чего в задании нет>",
+      "case": "<конкретный случай или точный вопрос>",
+      "resolution": null
+    }
+  ]
+}

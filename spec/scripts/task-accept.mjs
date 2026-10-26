@@ -17,6 +17,8 @@ import {
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
   summarizeDecisions,
 } from './lib/common.mjs';
+import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
+import { evaluateAttack } from './lib/attack.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
 import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
 import { validateReview } from './lib/review.mjs';
@@ -154,14 +156,44 @@ try {
    * это отказ; assumed — решение без доказательства, принять можно (работа шла),
    * но releaseReady=false; high — только подтверждённые.
    */
+  const gatePolicy = policyOf(config);
   const decisionSummary = summarizeDecisions(meta.decisions, criteria.criteria);
-  if (decisionSummary.unproven.length) {
-    fail('решения о пользовательском контракте без доказательства: ' + decisionSummary.unproven.join(', ')
-      + ' — нужен исполняемый критерий (evidence.kind=criterion) или confirmation человека');
-  }
+  const decisionApplied = applyLevel(
+    gatePolicy.decisions,
+    decisionSummary.unproven.map((id) => 'решение ' + id + ': влияние на пользовательский контракт без критерия и без подтверждения'),
+  );
+  if (decisionApplied.errors.length) fail('решения без доказательства: ' + decisionApplied.errors.join('; '));
+  for (const warning of decisionApplied.warnings) console.warn('task-accept: WARN ' + warning);
   if (meta.risk === 'high' && decisionSummary.assumed.length) {
     fail('high-risk: решения без доказательства нельзя принять (' + decisionSummary.assumed.join(', ') + ')');
   }
+
+  /*
+   * Атака спецификации (2.2.0). attaсk.json — заявление критика, не подпись:
+   * запись помечает его как declared и хранит digest. Строгость — policy.attack.
+   */
+  const attackFile = path.join(taskDir, 'attack.json');
+  const attack = exists(attackFile) ? readJson(attackFile) : null;
+  const attackCheck = attack ? evaluateAttack(attack, { meta, config }) : null;
+  const attackIssues = [];
+  if (attackCheck) attackIssues.push(...attackCheck.issues);
+  else if (gatePolicy.attack === 'fail' && meta.risk !== 'low') attackIssues.push('нет attack.json: атака спецификации не проводилась (policy.attack=fail)');
+  const attackApplied = applyLevel(gatePolicy.attack, attackIssues);
+  const attackFamilyApplied = attackCheck
+    ? applyLevel(gatePolicy.roles.modelFamily, attackCheck.familyIssues)
+    : { errors: [], warnings: [] };
+  if (attackApplied.errors.length || attackFamilyApplied.errors.length) {
+    fail('атака спецификации: ' + [...attackApplied.errors, ...attackFamilyApplied.errors].join('; '));
+  }
+  for (const warning of [...attackApplied.warnings, ...attackFamilyApplied.warnings]) console.warn('task-accept: WARN ' + warning);
+
+  const actorModelLevel = issuedBy && issuedBy.model ? modelLevel(config, issuedBy.model, actor.model) : 'unknown';
+  const rolesApplied = applyLevel(
+    gatePolicy.roles.modelFamily,
+    actorModelLevel === 'same-family' ? ['приёмщик той же модели/семейства, что постановщик (' + actor.model + ')'] : [],
+  );
+  if (rolesApplied.errors.length) fail('роли: ' + rolesApplied.errors.join('; '));
+  for (const warning of rolesApplied.warnings) console.warn('task-accept: WARN ' + warning);
   if (exists(files.acceptance) && !argv.force) fail('acceptance.json уже существует; используйте --force');
 
   if (argv['dry-run']) {
@@ -176,9 +208,14 @@ try {
       actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, keyId },
       independence: { level: independence.level, separateSession: independence.level !== 'same-session', reportWithheld: !argv['report-read'], keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key' },
       acceptance: {
-        version: 5, status: 'accepted', task: String(meta.id), candidateCommit: null, tree: null, worktreeDigest: digest,
+        version: 6, status: 'accepted', task: String(meta.id), candidateCommit: null, tree: null, worktreeDigest: digest,
         decisions: { count: decisionSummary.count, digest: decisionSummary.digest, assumed: decisionSummary.assumed, confirmed: decisionSummary.confirmed },
-        releaseReady: decisionSummary.assumed.length === 0,
+        attack: attackCheck
+          ? { present: true, sha256: sha256File(attackFile), session: attackCheck.critic.session || null, model: attackCheck.critic.model || null, family: attackCheck.family, level: attackCheck.level, findings: attackCheck.summary, attestation: 'declared' }
+          : null,
+        actor: { model: actor.model, family: familyOf(config, actor.model) },
+        independence: { level: independence.level, modelLevel: actorModelLevel },
+        releaseReady: decisionSummary.assumed.length === 0 && (!attackCheck || attackCheck.summary.unresolved === 0),
         acceptor, humanSignoff: Boolean(requiresHuman && humanSigner), signedBy: humanSigner,
       },
     }, null, 2));
@@ -274,9 +311,10 @@ try {
     releaseReady = reviewCheck.releaseReady;
   }
   if (decisionSummary.assumed.length) releaseReady = false;
+  if (attackCheck && attackCheck.summary.unresolved > 0) releaseReady = false;
 
   const body = {
-    version: 5,
+    version: 6,
     status: 'accepted',
     task: String(meta.id),
     title: meta.title || '',
@@ -290,12 +328,13 @@ try {
     tree: null,
     worktreeDigest: digest,
     issuedBy: issuedBy || { kind: 'agent', session: null },
-    actor: { kind: actor.kind, session: actor.session, model: actor.model, host: actor.host, keyId, attestedBy: actor.attestedBy },
+    actor: { kind: actor.kind, session: actor.session, model: actor.model, family: familyOf(config, actor.model), host: actor.host, keyId, attestedBy: actor.attestedBy },
     independence: {
       level: independence.level,
       separateSession: independence.level === 'separate-session' || independence.level === 'human',
       reportWithheld: !argv['report-read'],
       keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key',
+      modelLevel: actorModelLevel,
     },
     acceptorRun,
     bypasses,
@@ -323,6 +362,18 @@ try {
       assumed: decisionSummary.assumed,
       confirmed: decisionSummary.confirmed,
     },
+    attack: attackCheck
+      ? {
+          present: true,
+          sha256: sha256File(attackFile),
+          session: attackCheck.critic.session || null,
+          model: attackCheck.critic.model || null,
+          family: attackCheck.family,
+          level: attackCheck.level,
+          findings: attackCheck.summary,
+          attestation: 'declared',
+        }
+      : null,
     releaseReady,
     notes: argv.note ? String(argv.note) : '',
   };
@@ -359,6 +410,8 @@ try {
     console.log('  key           ' + keyId);
     console.log('  fresh run     ' + (acceptorRun.fresh ? 'да (' + acceptorRun.nonce + ')' : 'нет (reused)'));
     console.log('  decisions     ' + decisionSummary.count + ' (assumed: ' + (decisionSummary.assumed.join(', ') || 'нет') + ')');
+    console.log('  attack        ' + (attackCheck ? attackCheck.summary.total + ' находок, blocking ' + attackCheck.summary.blocking + ', без решения ' + attackCheck.summary.unresolved : 'нет'));
+    console.log('  model level   ' + actorModelLevel);
     console.log('  releaseReady  ' + releaseReady + (decisionSummary.assumed.length ? ' — есть решения без подтверждения' : ''));
     console.log('  contract      ' + contractCommit);
     console.log('  candidate     ' + candidate.commit);

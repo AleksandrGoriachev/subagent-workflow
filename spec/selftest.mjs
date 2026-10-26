@@ -78,7 +78,7 @@ try {
   ] }, null, 2) + '\n');
 
   const base = {
-    version: 5,
+    version: 6,
     status: 'accepted',
     task: '0001',
     risk: 'medium',
@@ -103,6 +103,7 @@ try {
     signedBy: null,
     securityReview: false,
     decisions: { count: 0, digest: summarizeDecisions([]).digest, assumed: [], confirmed: 0 },
+    attack: null,
     releaseReady: true,
   };
 
@@ -216,6 +217,15 @@ try {
   fs.writeFileSync(record2HiddenPath, JSON.stringify(record2Hidden, null, 2) + '\n');
   const record2HiddenRun = runChecker(record2HiddenPath, repo, keysFile, ['--task', 'docs/tasks/0002']);
   report('спрятанный assumed ловится по контракту', record2HiddenRun.status !== 0 && /assumed/.test(record2HiddenRun.stdout + record2HiddenRun.stderr));
+
+  const record2Attack = signRecord({
+    ...record2,
+    attack: { present: true, sha256: 'c'.repeat(64), session: 'critic-session', model: 'critic-model', family: null, level: 'unknown', findings: { total: 1, blocking: 0, unresolved: 0 }, attestation: 'declared' },
+  }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const record2AttackPath = path.join(tmp, 'record2-attack.json');
+  fs.writeFileSync(record2AttackPath, JSON.stringify(record2Attack, null, 2) + '\n');
+  const record2AttackRun = runChecker(record2AttackPath, repo, keysFile, ['--task', 'docs/tasks/0002']);
+  report('запись со ссылкой на отсутствующий attack.json отклоняется', record2AttackRun.status !== 0 && /attack\.json/.test(record2AttackRun.stdout + record2AttackRun.stderr));
 
   write(path.join(repo, 'src', 'app.js'), 'export const add = (a, b) => a + b + 0;\n');
   git(repo, ['add', '-A']);

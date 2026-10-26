@@ -3,8 +3,10 @@ import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
-  DECISION_EVIDENCE_KINDS,
+  DECISION_EVIDENCE_KINDS, loadConfig, readJson,
 } from './lib/common.mjs';
+import { policyOf, applyLevel } from './lib/policy.mjs';
+import { evaluateAttack } from './lib/attack.mjs';
 
 const NL = String.fromCharCode(10);
 const argv = parseArgv(process.argv.slice(2));
@@ -30,6 +32,8 @@ function headingTitle(line) {
 
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
+  const config = loadConfig(repo);
+  const policy = policyOf(config);
 
   const requiredMeta = ['id', 'version', 'risk', 'created', 'owner', 'executor', 'acceptor', 'base', 'criteria', 'allowedPaths'];
   for (const key of requiredMeta) {
@@ -144,7 +148,9 @@ try {
   }
   const coversDeclared = criteria.criteria.some((c) => Array.isArray(c.covers) && c.covers.length > 0);
   if (meta.risk !== 'low' && !coversDeclared) {
-    error('criteria.json: для risk=' + meta.risk + ' нужен хотя бы один критерий с covers: без него изменённый код может остаться без проверки');
+    const appliedCovers = applyLevel(policy.coverage, ['criteria.json: для risk=' + meta.risk + ' нужен хотя бы один критерий с covers: без него изменённый код может остаться без проверки']);
+    errors.push(...appliedCovers.errors);
+    warnings.push(...appliedCovers.warnings);
   }
   for (const key of ['setup', 'teardown']) {
     if (criteria.parsed[key] !== undefined && !Array.isArray(criteria.parsed[key])) error('criteria.json: ' + key + ' должен быть массивом');
@@ -198,60 +204,62 @@ try {
    * сделать предположение видимым: у семантического решения либо есть исполняемый
    * критерий, либо подтверждение человека; иначе выпуск закрыт (assumed).
    */
+  const decisionIssues = [];
+  const decisionNote = (message) => decisionIssues.push(message);
   const decisions = meta.decisions;
   if (meta.risk !== 'low' && decisions === undefined) {
-    error('TASK-META.decisions: для risk=' + meta.risk + ' нужен массив решений (пустой — если решений сверх механических нет)');
+    decisionNote('TASK-META.decisions: для risk=' + meta.risk + ' нужен массив решений (пустой — если решений сверх механических нет)');
   }
   if (decisions !== undefined && !Array.isArray(decisions)) {
-    error('TASK-META.decisions должен быть массивом');
+    decisionNote('TASK-META.decisions должен быть массивом');
   }
   if (Array.isArray(decisions)) {
     const seen = new Set();
     for (const [index, decision] of decisions.entries()) {
       const label = 'решение ' + ((decision && decision.id) ? decision.id : '#' + (index + 1));
-      if (!decision || typeof decision !== 'object' || Array.isArray(decision)) { error(label + ': должен быть объектом'); continue; }
-      if (typeof decision.id !== 'string' || decision.id.trim() === '') error(label + ': нет id');
-      else if (seen.has(decision.id)) error(label + ': повторяется id');
+      if (!decision || typeof decision !== 'object' || Array.isArray(decision)) { decisionNote(label + ': должен быть объектом'); continue; }
+      if (typeof decision.id !== 'string' || decision.id.trim() === '') decisionNote(label + ': нет id');
+      else if (seen.has(decision.id)) decisionNote(label + ': повторяется id');
       else seen.add(decision.id);
-      if (typeof decision.question !== 'string' || decision.question.trim() === '') error(label + ': нет question');
-      if (typeof decision.chosen !== 'string' || decision.chosen.trim() === '') error(label + ': нет chosen');
+      if (typeof decision.question !== 'string' || decision.question.trim() === '') decisionNote(label + ': нет question');
+      if (typeof decision.chosen !== 'string' || decision.chosen.trim() === '') decisionNote(label + ': нет chosen');
       if (!DECISION_CLASSES.includes(decision.class)) {
-        error(label + ': class должен быть ' + DECISION_CLASSES.join(' | '));
+        decisionNote(label + ': class должен быть ' + DECISION_CLASSES.join(' | '));
         continue;
       }
       if (decision.class === 'mechanical') continue;
-      if (!Array.isArray(decision.options) || decision.options.length < 2) error(label + ': options — минимум два варианта');
-      if (!DECISION_IMPACTS.includes(decision.impact)) error(label + ': impact должен быть ' + DECISION_IMPACTS.join(' | '));
-      if (typeof decision.reversible !== 'boolean') error(label + ': reversible должен быть boolean');
-      if (decision.status !== undefined && !['confirmed', 'assumed'].includes(decision.status)) error(label + ': status должен быть confirmed | assumed');
+      if (!Array.isArray(decision.options) || decision.options.length < 2) decisionNote(label + ': options — минимум два варианта');
+      if (!DECISION_IMPACTS.includes(decision.impact)) decisionNote(label + ': impact должен быть ' + DECISION_IMPACTS.join(' | '));
+      if (typeof decision.reversible !== 'boolean') decisionNote(label + ': reversible должен быть boolean');
+      if (decision.status !== undefined && !['confirmed', 'assumed'].includes(decision.status)) decisionNote(label + ': status должен быть confirmed | assumed');
       if (decision.evidence !== undefined) {
         const evidence = decision.evidence;
-        if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) error(label + ': evidence должен быть объектом');
+        if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) decisionNote(label + ': evidence должен быть объектом');
         else {
-          if (!DECISION_EVIDENCE_KINDS.includes(evidence.kind)) error(label + ': evidence.kind должен быть ' + DECISION_EVIDENCE_KINDS.join(' | '));
+          if (!DECISION_EVIDENCE_KINDS.includes(evidence.kind)) decisionNote(label + ': evidence.kind должен быть ' + DECISION_EVIDENCE_KINDS.join(' | '));
           if (evidence.kind === 'criterion') {
-            if (typeof evidence.ref !== 'string' || !jsonIds.includes(evidence.ref)) error(label + ': evidence.ref должен называть критерий задания (' + (evidence.ref || '—') + ')');
+            if (typeof evidence.ref !== 'string' || !jsonIds.includes(evidence.ref)) decisionNote(label + ': evidence.ref должен называть критерий задания (' + (evidence.ref || '—') + ')');
           } else if (typeof evidence.ref !== 'string' || evidence.ref.trim() === '') {
-            error(label + ': evidence.ref обязателен (раздел спецификации, ссылка на ответ заказчика)');
+            decisionNote(label + ': evidence.ref обязателен (раздел спецификации, ссылка на ответ заказчика)');
           }
         }
       }
       if (decision.confirmation !== undefined) {
         const confirmation = decision.confirmation;
-        if (!confirmation || typeof confirmation !== 'object' || Array.isArray(confirmation)) error(label + ': confirmation должен быть объектом');
+        if (!confirmation || typeof confirmation !== 'object' || Array.isArray(confirmation)) decisionNote(label + ': confirmation должен быть объектом');
         else {
-          if (!['customer', 'human'].includes(confirmation.kind)) error(label + ': confirmation.kind должен быть customer | human');
-          if (typeof confirmation.who !== 'string' || confirmation.who.trim() === '') error(label + ': confirmation.who обязателен');
-          if (typeof confirmation.at !== 'string' || confirmation.at.trim() === '') error(label + ': confirmation.at обязателен');
+          if (!['customer', 'human'].includes(confirmation.kind)) decisionNote(label + ': confirmation.kind должен быть customer | human');
+          if (typeof confirmation.who !== 'string' || confirmation.who.trim() === '') decisionNote(label + ': confirmation.who обязателен');
+          if (typeof confirmation.at !== 'string' || confirmation.at.trim() === '') decisionNote(label + ': confirmation.at обязателен');
         }
       }
       const evidenceKind = decisionEvidenceKind(decision, criteria.criteria);
       const touchesUser = decision.impact === 'user-visible' || decision.impact === 'public-contract';
       if (evidenceKind === 'none' && touchesUser) {
-        error(label + ': impact=' + decision.impact + ' требует исполняемого критерия (evidence.kind=criterion) или подтверждения человека (confirmation)');
+        decisionNote(label + ': impact=' + decision.impact + ' требует исполняемого критерия (evidence.kind=criterion) или подтверждения человека (confirmation)');
       }
       if (evidenceKind === 'none' && decision.status === 'confirmed') {
-        error(label + ': status=confirmed без доказательства — так нельзя');
+        decisionNote(label + ': status=confirmed без доказательства — так нельзя');
       }
       if (evidenceKind !== 'none' && decision.status === 'assumed') {
         warn(label + ': status=assumed, хотя доказательство есть — уберите assumed');
@@ -261,6 +269,9 @@ try {
       }
     }
   }
+  const decisionsApplied = applyLevel(policy.decisions, decisionIssues);
+  errors.push(...decisionsApplied.errors);
+  warnings.push(...decisionsApplied.warnings);
 
   const secrets = scanSecrets(taskMd + NL + criteria.raw);
   for (const s of secrets) error('Похоже на секрет (' + s.name + ') в строке ' + s.line + ': ' + s.excerpt);
@@ -274,6 +285,21 @@ try {
     for (const e of check.errors) error('criteria.lock: ' + e);
   } else if (strict) error('criteria.lock отсутствует (--strict): выполните task-hash --write');
   else warn('criteria.lock отсутствует: выполните task-hash --write до красного прогона');
+
+  /*
+   * Атака спецификации (2.2.0): если файл есть — проверяем; если policy.attack=fail
+   * и файла нет, для medium/high это ошибка. Уровень строгости — в конфиге.
+   */
+  const attackFile = path.join(taskDir, 'attack.json');
+  if (exists(attackFile)) {
+    const attackCheck = evaluateAttack(readJson(attackFile), { meta, config });
+    const appliedAttack = applyLevel(policy.attack, attackCheck.issues);
+    const appliedFamily = applyLevel(policy.roles.modelFamily, attackCheck.familyIssues);
+    for (const e of [...appliedAttack.errors, ...appliedFamily.errors]) error('attack.json: ' + e);
+    for (const w of [...appliedAttack.warnings, ...appliedFamily.warnings]) warn('attack.json: ' + w);
+  } else if (policy.attack === 'fail' && meta.risk !== 'low') {
+    error('attack.json: атака спецификации не проводилась (policy.attack=fail)');
+  }
 
   if (meta.base) {
     const ref = git(repo, ['rev-parse', '--verify', String(meta.base) + '^{commit}']);

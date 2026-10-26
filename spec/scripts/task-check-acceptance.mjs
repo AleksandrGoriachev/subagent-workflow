@@ -15,6 +15,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { loadAcceptors, verifyRecord, publicKeyFingerprint, readJsonFile } from './sign.mjs';
 import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions } from './lib/common.mjs';
+import { policyOf, modelLevel, familyOf } from './lib/policy.mjs';
 import { assessIndependence, LEVEL_RANK, requiredLevel } from './actor.mjs';
 import { validateReview } from './lib/review.mjs';
 
@@ -81,8 +82,8 @@ function run() {
   const record = readJsonFile(file);
   const acceptors = loadAcceptors(keysFile);
 
-  if (![4, 5].includes(record.version)) note('версия записи ' + record.version + ', нужна 4 или 5');
-  if (record.version === 5 && !record.decisions) note('запись версии 5 без блока decisions');
+  if (![4, 5, 6].includes(record.version)) note('версия записи ' + record.version + ', нужна 4, 5 или 6');
+  if (record.version >= 5 && !record.decisions) note('запись версии ' + record.version + ' без блока decisions');
   if (record.status !== 'accepted') note('статус записи: ' + record.status);
 
   const entry = acceptors.find((item) => item.keyId === record.keyId);
@@ -224,6 +225,36 @@ function run() {
       if (expected.assumed.length > 0 && record.releaseReady !== false) note('есть assumed-решения, а releaseReady не false');
       if (record.risk === 'high' && expected.assumed.length > 0) note('high-risk с assumed-решениями');
     }
+  }
+
+  /*
+   * Атака спецификации (2.2.0): digest по файлу кандидата, неразрешённых blocking
+   * быть не должно, критик — не постановщик. Строгость семейства — по политике.
+   */
+  if (record.attack) {
+    if (record.attack.attestation !== 'declared') note('attack.attestation: ожидается declared');
+    const attackInCandidate = fileAt(repo, candidate, taskRel + '/attack.json');
+    if (!attackInCandidate) note('запись ссылается на attack.json, но его нет в кандидате');
+    else if (sha256Buffer(attackInCandidate) !== record.attack.sha256) note('attack.sha256 не совпадает с файлом в кандидате');
+    const findings = record.attack.findings || {};
+    if (findings.unresolved !== 0) note('attack: есть blocking-находки без решения (' + findings.unresolved + ')');
+    if (record.attack.session && issuedBy.session && record.attack.session === issuedBy.session) note('критик из сессии постановщика');
+    if (record.attack.level === 'same-family' && policyOf(config).roles.modelFamily === 'fail') {
+      note('критик того же семейства, что постановщик (policy.roles.modelFamily=fail)');
+    }
+  } else if (record.version >= 6 && policyOf(config).attack === 'fail' && risk !== 'low') {
+    note('policy.attack=fail, а запись без блока attack');
+  }
+
+  const expectedModelLevel = issuedBy.model && actor.model ? modelLevel(config, issuedBy.model, actor.model) : 'unknown';
+  if (record.independence && record.independence.modelLevel !== undefined && record.independence.modelLevel !== expectedModelLevel) {
+    note('independence.modelLevel=' + record.independence.modelLevel + ', по моделям ' + expectedModelLevel);
+  }
+  if (record.actor && record.actor.family !== undefined && record.actor.family !== familyOf(config, record.actor.model)) {
+    note('actor.family не совпадает с реестром моделей');
+  }
+  if (expectedModelLevel === 'same-family' && policyOf(config).roles.modelFamily === 'fail') {
+    note('приёмщик того же семейства, что постановщик (policy.roles.modelFamily=fail)');
   }
 
   if (runInfo.verifySha256) {

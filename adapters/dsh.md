@@ -19,6 +19,35 @@ node docs/subagent-workflow/scripts/actor.mjs --json
 - Приёмка запускается внутри сессии приёмщика: `task-accept` увидит её
   `DSH_SESSION_ID` и откажется, если он совпал с `issuedBy`.
 
+## Модели ролей (2.2.0)
+
+Модель задаётся не воротами, а профилем DSH: `agent-default-model`
+(`provider`, `model`) и список моделей провайдера. Чтобы приёмщик или критик
+работал другой моделью:
+
+1. **Отдельная сессия с выбранной моделью** — если GUI позволяет выбрать модель
+   при создании сессии. У `subagent` параметра модели нет: субагент наследует
+   модель родителя, поэтому «другой агент» — это отдельная сессия.
+2. **Отдельный профиль** — `~/.dsh/profiles/<role>` с собственным
+   `agent-default-model`; DSH запускается этим профилем, у роли своя модель и
+   своя сессия.
+
+В `workflow.config.json` роль описывается так:
+
+~~~json
+"models": { "deepseek-v4.1-flash": "deepseek", "glm-5.3-flash": "zhipu" },
+"roles": {
+  "acceptor": { "model": "glm-5.3-flash", "mustDifferFromIssuer": "family" },
+  "critic":   { "model": "glm-5.3-flash", "mustDifferFromIssuer": "family" }
+},
+"policy": { "roles": { "modelFamily": "warn" } }
+~~~
+
+Ворота читают `DSH_MODEL` и сверяют семейство по реестру `models`. Это
+декларация харнесса, а не доказательство: `DSH_MODEL` можно подделать так же,
+как `DSH_SESSION_ID`. Поэтому факт записывается в запись (`actor.family`,
+`independence.modelLevel`, `attack.*`), а строгость — `policy.roles.modelFamily`.
+
 ## Ключи
 
 - `agent-*` — на машине приёмщика, в `~/.wf-keys` (вне репозитория).

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.invalid/subagent-workflow/acceptance.schema.json",
-  "title": "Acceptance record v5 (v4 поддерживается: без блока decisions)",
+  "title": "Acceptance record v6 (v4/v5 поддерживаются)",
   "type": "object",
   "required": [
     "version", "status", "task", "risk",
@@ -13,7 +13,7 @@
     "signatureAlgorithm", "keyId", "publicKeyFingerprint", "signature"
   ],
   "properties": {
-    "version": { "enum": [4, 5] },
+    "version": { "enum": [4, 5, 6] },
     "status": { "const": "accepted" },
     "task": { "type": "string", "minLength": 1 },
     "title": { "type": "string" },
@@ -43,6 +43,7 @@
         "kind": { "enum": ["agent", "human"] },
         "session": { "type": ["string", "null"] },
         "model": { "type": "string" },
+        "family": { "type": ["string", "null"] },
         "host": { "type": "string" },
         "keyId": { "type": "string", "minLength": 1 },
         "attestedBy": { "enum": ["env", "key", "declared", "none"] }
@@ -56,7 +57,8 @@
         "level": { "enum": ["same-session", "declared", "separate-session", "human"] },
         "separateSession": { "type": "boolean" },
         "reportWithheld": { "type": "boolean" },
-        "keyCustody": { "enum": ["agent-key", "human-key", "none"] }
+        "keyCustody": { "enum": ["agent-key", "human-key", "none"] },
+        "modelLevel": { "enum": ["different-family", "same-family", "unknown"] }
       },
       "additionalProperties": false
     },
@@ -158,6 +160,30 @@
       },
       "additionalProperties": false
     },
+    "attack": {
+      "type": ["object", "null"],
+      "required": ["present", "sha256", "session", "model", "level", "findings", "attestation"],
+      "properties": {
+        "present": { "const": true },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "session": { "type": ["string", "null"] },
+        "model": { "type": ["string", "null"] },
+        "family": { "type": ["string", "null"] },
+        "level": { "enum": ["different-family", "same-family", "unknown"] },
+        "findings": {
+          "type": "object",
+          "required": ["total", "blocking", "unresolved"],
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "blocking": { "type": "integer", "minimum": 0 },
+            "unresolved": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "attestation": { "const": "declared" }
+      },
+      "additionalProperties": false
+    },
     "releaseReady": { "type": "boolean" },
     "signatureAlgorithm": { "const": "ed25519" },
     "keyId": { "type": "string", "minLength": 1 },
@@ -179,10 +205,19 @@
     },
     {
       "if": {
-        "properties": { "version": { "const": 5 } },
+        "properties": { "version": { "enum": [5, 6] } },
         "required": ["version"]
       },
       "then": { "required": ["decisions"] }
+    },
+    {
+      "if": {
+        "properties": { "attack": { "type": "object" } },
+        "required": ["attack"]
+      },
+      "then": {
+        "properties": { "attack": { "properties": { "findings": { "properties": { "unresolved": { "const": 0 } } } } } }
+      }
     },
     {
       "if": {

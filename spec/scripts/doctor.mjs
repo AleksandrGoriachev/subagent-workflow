@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { findRepoRoot, loadConfig, exists, readJson } from './lib/common.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
 import { loadAcceptors } from './sign.mjs';
+import { policyOf, familyOf } from './lib/policy.mjs';
 
 function args(argv) {
   const out = { _: [] };
@@ -51,8 +52,22 @@ if (root) {
       check('acceptors.json читается', false, err.message);
     }
   }
-  for (const file of ['templates/task.md', 'templates/criteria.json', 'scripts/task-accept.mjs']) {
+  for (const file of ['templates/task.md', 'templates/criteria.json', 'scripts/task-accept.mjs', 'scripts/task-attack.mjs']) {
     check('есть ' + file, exists(path.join(root, 'docs/subagent-workflow', file)));
+  }
+
+  /*
+   * Политика и роли — часть конфигурации, поэтому доктор их печатает: иначе
+   * непонятно, что именно включено в этом репозитории.
+   */
+  const policy = policyOf(config);
+  check('политика ворот', true, 'decisions=' + policy.decisions + ', coverage=' + policy.coverage + ', attack=' + policy.attack + ', modelFamily=' + policy.roles.modelFamily);
+  for (const [role, spec] of Object.entries(config.roles || {})) {
+    if (!spec || typeof spec !== 'object') continue;
+    const model = String(spec.model || '');
+    if (!model) { check('роль ' + role, false, 'нет model', 'warn'); continue; }
+    const family = familyOf(config, model);
+    check('роль ' + role, true, model + ' / ' + (family || 'семейство не объявлено') + (spec.mustDifferFromIssuer ? ', должна отличаться: ' + spec.mustDifferFromIssuer : ''));
   }
 }
 

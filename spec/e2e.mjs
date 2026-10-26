@@ -54,6 +54,16 @@ try {
   report('init разворачивает рабочее пространство', init.code === 0, init.out);
   report('init создаёт закреплённый ключ', fs.existsSync(path.join(repo, 'docs/subagent-workflow/acceptors.json')) && fs.existsSync(path.join(keys, 'agent-judge.key.pem')));
 
+  /*
+   * Политика ворот для сценария: атака обязательна (fail), семейства моделей
+   * только предупреждают. Проверяем и настройку, и сами ворота.
+   */
+  const configPath = path.join(repo, 'docs/subagent-workflow/workflow.config.json');
+  const workflowConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  workflowConfig.policy = { decisions: 'fail', coverage: 'fail', attack: 'fail', roles: { modelFamily: 'warn' } };
+  workflowConfig.models = { 'e2e-model': 'family-a', 'critic-model': 'family-b', 'judge-model': 'family-b' };
+  fs.writeFileSync(configPath, JSON.stringify(workflowConfig, null, 2) + '\n');
+
   const secondRepo = path.join(tmp, 'second');
   const secondKeys = path.join(tmp, 'keys-second');
   const deployedInit = path.join(repo, 'docs/subagent-workflow/scripts/init.mjs');
@@ -129,6 +139,31 @@ try {
   git(['commit', '-q', '-m', 'task 0001: контракт']);
   const contractCommit = git(['rev-parse', 'HEAD']);
 
+  const noAttack = run('task-hash.mjs', ['--task', 'docs/tasks/0001', '--write']);
+  report('hash без атаки отказывает при policy.attack=fail', noAttack.code !== 0 && /атак/i.test(noAttack.out), noAttack.out);
+
+  const attackPath = path.join(repo, 'docs/tasks/0001/attack.json');
+  const attack = {
+    version: 1,
+    task: '0001',
+    createdAt: new Date().toISOString(),
+    critic: { session: 'critic-session', model: 'critic-model', attestedBy: 'env' },
+    findings: [
+      { id: 'A1', class: 'missing-case', severity: 'blocking', claim: 'нет случая с отрицательными числами', case: 'add(-1, 2)', resolution: null },
+      { id: 'A2', class: 'ambiguous-criterion', severity: 'non-blocking', claim: 'C1 не говорит про тип аргументов', case: 'add("1", 2)', reason: 'вне объёма задачи' },
+      { id: 'A3', class: 'undefined-failure-mode', severity: 'follow-up', claim: 'нет поведения при переполнении', case: 'Number.MAX_SAFE_INTEGER + 1', followUpId: '0002' },
+    ],
+  };
+  fs.writeFileSync(attackPath, JSON.stringify(attack, null, 2) + '\n');
+  const blockedHash = run('task-hash.mjs', ['--task', 'docs/tasks/0001', '--write']);
+  report('hash не запирает контракт с нерешённой blocking-находкой', blockedHash.code !== 0 && /resolution/.test(blockedHash.out), blockedHash.out);
+  const blockedAttack = run('task-attack.mjs', ['--task', 'docs/tasks/0001', '--check']);
+  report('task-attack отклоняет нерешённый blocking', blockedAttack.code !== 0, blockedAttack.out);
+  attack.findings[0].resolution = 'добавлен граничный случай в C1';
+  fs.writeFileSync(attackPath, JSON.stringify(attack, null, 2) + '\n');
+  const attackCheck = run('task-attack.mjs', ['--task', 'docs/tasks/0001', '--check']);
+  report('task-attack принимает закрытую находку', attackCheck.code === 0, attackCheck.out);
+
   const hash = run('task-hash.mjs', ['--task', 'docs/tasks/0001', '--write']);
   report('hash создаёт замок для закоммиченного контракта', hash.code === 0, hash.out);
   const lint = run('task-lint.mjs', ['--task', 'docs/tasks/0001', '--strict']);
@@ -165,17 +200,23 @@ try {
     ],
   }, null, 2));
 
-  const accept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { env: { DSH_SESSION_ID: 'judge-session' } });
+  const accept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { env: { DSH_SESSION_ID: 'judge-session', DSH_MODEL: 'judge-model' } });
   report('accept из другой сессии принимает задачу', accept.code === 0, accept.out);
   const acceptancePath = path.join(repo, 'docs/tasks/0001/acceptance.json');
   const record = JSON.parse(fs.readFileSync(acceptancePath, 'utf8'));
   report('разбор замечаний и releaseReady в записи', record.releaseReady === true && record.review && record.review.remarks.length === 3, JSON.stringify({ releaseReady: record.releaseReady, review: record.review }));
-  report('запись v5 с актором и уровнем независимости',
-    record.version === 5 && record.actor.session === 'judge-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
+  report('запись v6 с актором и уровнем независимости',
+    record.version === 6 && record.actor.session === 'judge-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
     JSON.stringify({ version: record.version, actor: record.actor, level: record.independence.level }));
   report('решения записаны с digest и без assumed',
     record.decisions && record.decisions.count === 1 && record.decisions.assumed.length === 0 && /^[0-9a-f]{64}$/.test(record.decisions.digest),
     JSON.stringify(record.decisions));
+  report('атака попала в запись с digest и без нерешённых находок',
+    record.attack && /^[0-9a-f]{64}$/.test(record.attack.sha256) && record.attack.findings.unresolved === 0 && record.attack.session === 'critic-session',
+    JSON.stringify(record.attack));
+  report('проверка ролей: приёмщик другого семейства, чем постановщик',
+    record.independence.modelLevel === 'different-family' && record.actor.family === 'family-b',
+    JSON.stringify({ modelLevel: record.independence.modelLevel, family: record.actor.family }));
 
   const check = run('task-check-acceptance.mjs', ['--file', acceptancePath, '--repo', repo]);
   report('check-acceptance принимает запись', check.code === 0, check.out);

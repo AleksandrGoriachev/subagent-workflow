@@ -8,5 +8,15 @@
     "fallbackEnv": "TASK_ACTOR_SESSION",
     "modelEnv": "DSH_MODEL"
   },
+  "policy": {
+    "decisions": "fail",
+    "coverage": "fail",
+    "attack": "off",
+    "roles": {
+      "modelFamily": "warn"
+    }
+  },
+  "models": {},
+  "roles": {},
   "verifyTimeoutMs": 1800000
 }
