@@ -85,11 +85,34 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.1.1, supports workflow
+The **Совместимость** tab compares the plugin (0.2.0, supports workflow
 2.0.0 – 2.2.x) with the deployed copy: VERSION/SPEC, required scripts, lock and
 record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
 banner above every page.
+
+## Diagnostics
+
+The panel can run three gates and show their log:
+
+| Check | Scope | Script |
+| --- | --- | --- |
+| `doctor` | repository | `scripts/doctor.mjs` |
+| `lint` | task | `scripts/task-lint.mjs` |
+| `check-acceptance` | task | `scripts/task-check-acceptance.mjs` |
+
+Buttons sit in the header (`doctor`) and in the task card (`lint`,
+`check-acceptance`). `POST /workflow/api/run` with `{check, root, task}` does
+the work and returns `{exitCode, ok, log, command, durationMs, logPath}`;
+`GET /workflow/api/checks` lists what is available.
+
+All three only read the repository: none writes a lock, a record or the config,
+and the panel never signs and never accepts. A non-zero exit code is a result,
+not an HTTP error. Output goes to a log file under the system temp directory
+instead of a pipe — inside the DSH sandbox a child with piped stdio fails with
+`EPERM`, while file descriptors work — and the response carries the last 24 000
+characters of that log. The command is spawned without a shell, so nothing from
+the URL or the body reaches a command line unquoted.
 
 ## Development
 
@@ -113,6 +136,8 @@ Product ideas and deferred UX work live in [BACKLOG.md](BACKLOG.md).
 ## Read-only guarantee
 
 The plugin opens files for reading and runs only `git rev-parse`, `git log` and
-`git ls-files`. It has no POST/PUT/DELETE route, no write API and no gate
-runner. `test/api.test.mjs` snapshots the fixture's `git status --porcelain` and
-tracked-file hashes before and after a full request sweep and requires equality.
+`git ls-files`; the three diagnostics above are the only other commands it
+starts, and they read too. There is exactly one POST route (`/api/run`), no
+write API, no signing and no acceptance path. `test/api.test.mjs` snapshots the
+fixture's `git status --porcelain` and tracked-file hashes before and after a
+full request sweep and after a diagnostics run, and requires equality.

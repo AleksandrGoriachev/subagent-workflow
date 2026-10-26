@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   createWorkflowRuntime,
   createWebHandler,
@@ -7,11 +9,24 @@ import {
 import { makeRepo, snapshotFiles, git } from './fixture.mjs';
 
 function makeRequest(url, options = {}) {
-  return {
+  const request = {
     method: options.method || 'GET',
     url,
     socket: { remoteAddress: options.remote === undefined ? '127.0.0.1' : options.remote },
   };
+  if (options.body !== undefined) {
+    const text = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+    const listeners = { data: [], end: [], error: [] };
+    request.on = (event, fn) => {
+      (listeners[event] || listeners.data).push(fn);
+      return request;
+    };
+    queueMicrotask(() => {
+      for (const fn of listeners.data) fn(Buffer.from(text, 'utf8'));
+      for (const fn of listeners.end) fn();
+    });
+  }
+  return request;
 }
 
 function makeResponse() {
@@ -64,7 +79,7 @@ test('GET /workflow/api/status reports the repository and policy', async () => {
     assert.equal(response.json.repo.packageVersion, '2.2.1');
     assert.equal(response.json.repo.policy.line, 'decisions=fail, coverage=fail, attack=fail, modelFamily=warn');
     assert.equal(response.json.rootConfigured, true);
-    assert.equal(response.json.repo.compat.pluginVersion, '0.1.1');
+    assert.equal(response.json.repo.compat.pluginVersion, '0.2.0');
     assert.equal(response.json.repo.compat.summary.limited, false);
   } finally {
     fixture.cleanup();
@@ -137,7 +152,7 @@ test('GET /workflow/api/compat reports versions and recommendations', async () =
   try {
     const response = await call(handler, '/workflow/api/compat');
     assert.equal(response.status, 200);
-    assert.equal(response.json.pluginVersion, '0.1.1');
+    assert.equal(response.json.pluginVersion, '0.2.0');
     assert.equal(response.json.supported, '2.0.0 – 2.2.x');
     assert.equal(response.json.workflowVersion, '2.2.1');
     assert.equal(response.json.summary.limited, false);
@@ -212,6 +227,126 @@ test('a traversal-shaped task id is rejected', async () => {
   try {
     const response = await call(handler, '/workflow/api/task/..%2F..%2Fetc');
     assert.equal(response.status, 400);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+function writeFakeLint(repo, source) {
+  const dir = path.join(repo, 'docs', 'subagent-workflow', 'scripts');
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, 'task-lint.mjs');
+  fs.writeFileSync(file, source, 'utf8');
+  return file;
+}
+
+test('GET /workflow/api/checks lists the read-only checks', async () => {
+  const { fixture, handler } = setup();
+  try {
+    const response = await call(handler, '/workflow/api/checks');
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.json.checks.map((item) => item.id), ['doctor', 'lint', 'check-acceptance']);
+    assert.equal(response.json.checks[0].scope, 'repo');
+    assert.equal(response.json.checks[1].scope, 'task');
+    assert.ok(response.json.checks.every((item) => item.writeFree === true));
+    assert.match(response.json.checks[1].title, /задание и критерии/u);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('POST /workflow/api/run returns the log of a passing check and writes nothing', async () => {
+  const { fixture, handler } = setup();
+  try {
+    writeFakeLint(fixture.repo, "console.log('fake lint: 0001 — ок');\n");
+    const before = snapshotFiles(fixture.repo);
+    const response = await call(handler, '/workflow/api/run', {
+      method: 'POST',
+      body: { check: 'lint', root: fixture.repo, task: '0001' },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.check, 'lint');
+    assert.equal(response.json.exitCode, 0);
+    assert.equal(response.json.ok, true);
+    assert.equal(response.json.writeFree, true);
+    assert.equal(response.json.task, '0001');
+    assert.match(response.json.log, /fake lint: 0001 — ок/u);
+    assert.match(response.json.command, /task-lint\.mjs --task docs\/tasks\/0001/u);
+    assert.ok(fs.existsSync(response.json.logPath), 'лог сохраняется в файл, а не в pipe');
+    assert.deepEqual(snapshotFiles(fixture.repo), before, 'проверка не пишет в репозиторий');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('a failing check is a result, not an error', async () => {
+  const { fixture, handler } = setup();
+  try {
+    writeFakeLint(fixture.repo, "console.error('ERROR: критерий без команды');\nprocess.exit(2);\n");
+    const response = await call(handler, '/workflow/api/run', {
+      method: 'POST',
+      body: { check: 'lint', root: fixture.repo, task: '0001' },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.ok, false);
+    assert.equal(response.json.exitCode, 2);
+    assert.match(response.json.log, /ERROR: критерий без команды/u);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('run rejects unknown checks, missing tasks and absent scripts', async () => {
+  const { fixture, handler } = setup();
+  try {
+    const unknown = await call(handler, '/workflow/api/run', {
+      method: 'POST',
+      body: { check: 'accept', root: fixture.repo, task: '0001' },
+    });
+    assert.equal(unknown.status, 400);
+    assert.match(unknown.json.error, /неизвестная проверка/u);
+
+    const noTask = await call(handler, '/workflow/api/run', {
+      method: 'POST',
+      body: { check: 'lint', root: fixture.repo },
+    });
+    assert.equal(noTask.status, 400);
+    assert.match(noTask.json.error, /не передан id/u);
+
+    const noScript = await call(handler, '/workflow/api/run', {
+      method: 'POST',
+      body: { check: 'doctor', root: fixture.repo },
+    });
+    assert.equal(noScript.status, 400);
+    assert.match(noScript.json.error, /скрипт не найден/u);
+
+    const outside = await call(handler, '/workflow/api/run', {
+      method: 'POST',
+      body: { check: 'lint', root: 'C:\\definitely\\not\\allowed', task: '0001' },
+    });
+    assert.equal(outside.status, 400);
+
+    const foreign = await call(handler, '/workflow/api/run', {
+      method: 'POST',
+      remote: '10.1.2.3',
+      body: { check: 'lint', root: fixture.repo, task: '0001' },
+    });
+    assert.equal(foreign.status, 403);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('run is POST-only and other routes stay GET-only', async () => {
+  const { fixture, handler } = setup();
+  try {
+    const get = await call(handler, '/workflow/api/run');
+    assert.equal(get.status, 405);
+    assert.equal(get.headers.allow, 'POST');
+
+    const post = await call(handler, '/workflow/api/status', { method: 'POST' });
+    assert.equal(post.status, 405);
+    assert.equal(post.headers.allow, 'GET');
   } finally {
     fixture.cleanup();
   }

@@ -1,10 +1,11 @@
 /**
- * HTTP half: loopback-only GET routes for the panel.
+ * HTTP half: loopback-only routes for the panel.
  *
  * The handler is a pure wiring function (mock request/response objects work in
  * tests) so the routes can be exercised without a DSH host. Every route reads
- * the repository through \`state.js\` and never writes: no body parser, no POST
- * branch, no gate runner.
+ * Read routes are GET and go through state.js. The single POST route
+ * (/api/run) runs one of the package's read-only gates and returns its log:
+ * it never writes to the repository, never signs and never accepts.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,6 +17,7 @@ import {
   TOOL,
 } from './state.js';
 import { compatView, PLUGIN_VERSION } from './compat.js';
+import { buildCheck, runCheck, CHECK_IDS, CHECK_TITLES } from './checks.js';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
@@ -92,6 +94,40 @@ function isLoopback(req) {
   return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
 }
 
+/** Read a small JSON body; the only POST route takes one. */
+function readJsonBody(req, limit = 8192) {
+  return new Promise((resolve, reject) => {
+    if (!req || typeof req.on !== 'function') {
+      resolve({});
+      return;
+    }
+    let size = 0;
+    const chunks = [];
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(new Error('тело запроса слишком большое'));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      const text = Buffer.concat(chunks).toString('utf8');
+      if (text.trim().length === 0) {
+        resolve({});
+        return;
+      }
+      try {
+        const parsed = JSON.parse(text);
+        resolve(parsed && typeof parsed === 'object' ? parsed : {});
+      } catch {
+        reject(new Error('тело запроса не JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 function sendJson(res, status, value) {
   const body = JSON.stringify(value, null, 2);
   res.statusCode = status;
@@ -155,13 +191,14 @@ export function createWebHandler(runtime) {
         sendJson(res, 403, { error: 'This endpoint is available on loopback only.' });
         return;
       }
-      if (method !== 'GET') {
-        res.setHeader('Allow', 'GET');
+      const rel = pathname.slice(API_PREFIX.length) || '/';
+      const runRoute = rel === '/api/run';
+      if (runRoute ? method !== 'POST' : method !== 'GET') {
+        res.setHeader('Allow', runRoute ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
         return;
       }
 
-      const rel = pathname.slice(API_PREFIX.length) || '/';
       const selection = selectRoot(runtime, url.searchParams.get('root'));
       if (rel === '/api/status') {
         const roots = runtime.roots.map((root) => ({ path: root, exists: fs.existsSync(root) }));
@@ -197,6 +234,59 @@ export function createWebHandler(runtime) {
           rootConfigured,
           repo: repoInfoPayload(info),
           error: null,
+        });
+        return;
+      }
+
+      if (rel === '/api/checks') {
+        sendJson(res, 200, {
+          plugin: runtime.plugin,
+          checks: CHECK_IDS.map((id) => ({
+            id,
+            title: CHECK_TITLES[id],
+            scope: id === 'doctor' ? 'repo' : 'task',
+            writeFree: true,
+          })),
+        });
+        return;
+      }
+
+      if (rel === '/api/run') {
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        const target = selectRoot(runtime, body.root);
+        if (!target.root) {
+          sendJson(res, 400, { error: target.error });
+          return;
+        }
+        if (!fs.existsSync(target.root)) {
+          sendJson(res, 404, { error: 'корень не найден: ' + target.root });
+          return;
+        }
+        const info = readRepoInfo(target.root);
+        let spec;
+        try {
+          spec = buildCheck(body.check, {
+            root: info.root,
+            tasksDir: info.tasksDir,
+            task: body.task,
+            keysFile: info.config && info.config.keysFile,
+          });
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : String(error) });
+          return;
+        }
+        const result = await runCheck(spec, { timeoutMs: body.timeoutMs });
+        sendJson(res, 200, {
+          plugin: runtime.plugin,
+          root: info.root,
+          task: body.task ? String(body.task) : null,
+          ...result,
         });
         return;
       }

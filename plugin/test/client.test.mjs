@@ -151,8 +151,9 @@ function fakeWorkspace(path, title = 'fixture-workspace') {
 }
 
 function apiFetch(handler) {
-  return async (url) => {
+  return async (url, init = {}) => {
     const parsed = new URL(url, 'http://localhost');
+    const method = String(init.method || 'GET').toUpperCase();
     const res = {
       statusCode: 200,
       headers: {},
@@ -166,10 +167,23 @@ function apiFetch(handler) {
         this.writableEnded = true;
       },
     };
-    await handler(
-      { method: 'GET', url: parsed.pathname + parsed.search, socket: { remoteAddress: '127.0.0.1' } },
-      res,
-    );
+    const request = {
+      method,
+      url: parsed.pathname + parsed.search,
+      socket: { remoteAddress: '127.0.0.1' },
+    };
+    if (typeof init.body === 'string' && init.body.length > 0) {
+      const listeners = { data: [], end: [], error: [] };
+      request.on = (event, fn) => {
+        (listeners[event] = listeners[event] || []).push(fn);
+        return request;
+      };
+      queueMicrotask(() => {
+        for (const fn of listeners.data) fn(Buffer.from(init.body, 'utf8'));
+        for (const fn of listeners.end) fn();
+      });
+    }
+    await handler(request, res);
     return {
       ok: res.statusCode >= 200 && res.statusCode < 300,
       status: res.statusCode,
@@ -349,6 +363,49 @@ test('badges explain themselves: hints on hover and focus (WC-1)', async () => {
     );
     assert.ok(flagCode, 'код флага в карточке');
     assert.match(flagCode.props.title, /защищённые файлы/i);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('diagnostics buttons run a read-only check and show the log (v2, step 1)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    const scripts = path.join(fixture.repo, 'docs', 'subagent-workflow', 'scripts');
+    fs.mkdirSync(scripts, { recursive: true });
+    fs.writeFileSync(path.join(scripts, 'task-lint.mjs'), "console.log('fake lint: 0001 — ок');\n", 'utf8');
+
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+
+    const doctor = findButton(tree, 'doctor');
+    assert.ok(doctor, 'кнопка doctor в шапке');
+    assert.match(doctor.props.title, /Только чтение/u);
+
+    findButton(tree, '0001').props.onClick();
+    await delay(120);
+    tree = hooks.render(slot.component);
+    const lint = findButton(tree, 'lint');
+    const accept = findButton(tree, 'check-acceptance');
+    assert.ok(lint, 'кнопка lint в карточке');
+    assert.ok(accept, 'кнопка check-acceptance в карточке');
+    assert.match(lint.props.title, /Только чтение/u);
+
+    lint.props.onClick();
+    await delay(600);
+    tree = hooks.render(slot.component);
+    const rendered = textOf(tree);
+    assert.match(rendered, /fake lint: 0001 — ок/u);
+    assert.match(rendered, /Только чтение: проверка не пишет в репозиторий/u);
+    assert.match(rendered, /task-lint\.mjs --task docs\/tasks\/0001/u);
   } finally {
     fixture.cleanup();
   }

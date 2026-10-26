@@ -147,6 +147,16 @@ window.__ModuleLoader__.load({
     const FOLLOW_UP_HINT = "Follow-up: не блокирует, но требует отдельного решения.";
     const NO_MODEL_HINT = "У роли не задана модель: проверить семейство и запустить роль нечем.";
 
+    /**
+     * Диагностика (v2, шаг 1): панель запускает скрипт ворот и показывает лог.
+     * Только чтение — команда ничего не пишет, не подписывает и не принимает.
+     */
+    const CHECK_HINT = {
+      doctor: "Запустить doctor: окружение, ключи, шаблоны, политика. Только чтение — файлы репозитория не меняются.",
+      lint: "Запустить task-lint для этой задачи: контракт и критерии против правил. Только чтение.",
+      "check-acceptance": "Запустить task-check-acceptance: подпись и полнота записи о приёмке. Только чтение.",
+    };
+
     function coverageHint(count) {
       return "Изменённых файлов без покрытия: " + fmt(count) + ". Список — в карточке, coverage.uncovered.";
     }
@@ -435,6 +445,43 @@ window.__ModuleLoader__.load({
       },
       compatBannerText: { fontSize: "12px", color: T.text, lineHeight: "17px", flex: "1 1 420px" },
       actions: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" },
+      runBox: {
+        border: "1px solid " + T.border1,
+        borderRadius: "8px",
+        background: T.bg1,
+        padding: "8px 10px",
+        marginBottom: "10px",
+      },
+      runHead: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginBottom: "6px" },
+      runStatus: {
+        border: "1px solid",
+        borderRadius: "999px",
+        padding: "1px 8px",
+        fontSize: "11px",
+        fontWeight: "600",
+        whiteSpace: "nowrap",
+      },
+      runTitle: { fontSize: "12px", fontWeight: "600" },
+      runMeta: { fontSize: "11px", color: T.tertiary },
+      runCommand: {
+        fontFamily: T.mono,
+        fontSize: "11px",
+        color: T.secondary,
+        wordBreak: "break-all",
+        marginBottom: "6px",
+      },
+      runLog: {
+        margin: 0,
+        maxHeight: "260px",
+        overflow: "auto",
+        background: T.code,
+        borderRadius: "6px",
+        padding: "8px",
+        fontFamily: T.mono,
+        fontSize: "11px",
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+      },
     };
 
     /* ------------------------------------------------------------------ *
@@ -678,6 +725,8 @@ window.__ModuleLoader__.load({
         const [showEmpty, setShowEmpty] = React.useState(false);
         const [busy, setBusy] = React.useState(false);
         const [error, setError] = React.useState(null);
+        const [running, setRunning] = React.useState(null);
+        const [runResult, setRunResult] = React.useState(null);
 
         async function load(selectedRoot, explicit = false) {
           setBusy(true);
@@ -774,6 +823,41 @@ window.__ModuleLoader__.load({
           }
         }
 
+        async function runCheckApi(id, taskId) {
+          if (!root || running) return;
+          setRunning(id);
+          setRunResult(null);
+          try {
+            const response = await fetch(BASE + "/api/run", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ check: id, root: root, task: taskId || null }),
+            });
+            const data = await readJson(response);
+            setRunResult(Object.assign({ check: id, task: taskId || null }, data));
+          } catch (failure) {
+            setRunResult({ check: id, task: taskId || null, ok: false, error: errorText(failure) });
+          } finally {
+            setRunning(null);
+          }
+        }
+
+        function runButton(id, taskId) {
+          const active = running === id;
+          return h(
+            "button",
+            {
+              type: "button",
+              style: running ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+              disabled: Boolean(running) || busy || !root,
+              onClick: () => void runCheckApi(id, taskId),
+              title: CHECK_HINT[id] || "Запустить проверку",
+              "aria-label": CHECK_HINT[id] || id,
+            },
+            active ? id + "…" : id,
+          );
+        }
+
         const roots = status && Array.isArray(status.roots) ? status.roots : [];
         const rootOptions = (() => {
           const list = roots.slice();
@@ -841,6 +925,7 @@ window.__ModuleLoader__.load({
                   )),
                 )
               : null,
+            runButton("doctor", null),
             h(
               "button",
               {
@@ -1251,6 +1336,12 @@ window.__ModuleLoader__.load({
             h("button", { type: "button", style: Object.assign({}, S.button, S.back), onClick: () => setCard(null) }, "← Доска"),
             h(
               "div",
+              { style: S.actions },
+              runButton("lint", card.id),
+              runButton("check-acceptance", card.id),
+            ),
+            h(
+              "div",
               { style: S.cardHead },
               h("h2", { style: S.cardHeadTitle }, card.id + " · " + (card.title || "без названия")),
               badge(stageLabel(card.stage), STAGE_COLOR[card.stage], stageHint(card.stage)),
@@ -1387,6 +1478,53 @@ window.__ModuleLoader__.load({
           );
         }
 
+        function renderRun() {
+          if (!runResult) return null;
+          const color = runResult.error
+            ? T.danger
+            : runResult.timedOut
+              ? T.warn
+              : runResult.ok
+                ? T.success
+                : T.warn;
+          const status = runResult.error
+            ? "не запустилось"
+            : runResult.timedOut
+              ? "таймаут"
+              : runResult.ok
+                ? "ок"
+                : "код " + fmt(runResult.exitCode);
+          const seconds = runResult.durationMs ? String(Math.round(runResult.durationMs / 100) / 10) + " с" : "—";
+          return h(
+            "div",
+            { style: S.runBox },
+            h(
+              "div",
+              { style: S.runHead },
+              h("span", { style: Object.assign({}, S.runStatus, { color, borderColor: color }) }, status),
+              h("span", { style: S.runTitle }, (runResult.title || runResult.check) + (runResult.task ? " · " + runResult.task : "")),
+              h("span", { style: S.spacer }),
+              h("span", { style: S.runMeta }, seconds),
+              h(
+                "button",
+                { type: "button", style: S.button, onClick: () => setRunResult(null), title: "Скрыть результат" },
+                "×",
+              ),
+            ),
+            runResult.error
+              ? h("div", { style: S.error }, runResult.error)
+              : null,
+            runResult.command ? h("div", { style: S.runCommand }, runResult.command) : null,
+            h("pre", { style: S.runLog }, runResult.log && runResult.log.length > 0 ? runResult.log : "(вывода нет)"),
+            h(
+              "div",
+              { style: S.hint },
+              "Только чтение: проверка не пишет в репозиторий, не подписывает и не принимает."
+                + (runResult.logPath ? " Лог: " + runResult.logPath : ""),
+            ),
+          );
+        }
+
         let body;
         if (card) body = renderCard();
         else if (tab === "policy") body = renderPolicy();
@@ -1404,6 +1542,7 @@ window.__ModuleLoader__.load({
             "div",
             { style: S.content },
             renderLocation(),
+            renderRun(),
             error ? h("p", { style: S.error }, error) : null,
             status && status.error && !status.repo
               ? h(
