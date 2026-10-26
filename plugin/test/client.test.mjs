@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createWorkflowRuntime, createWebHandler } from '../lib/api.js';
 import { makeRepo } from './fixture.mjs';
@@ -289,6 +290,65 @@ test('panel follows the current workspace and opens compatibility', async () => 
     assert.match(text, /2\.2\.1/);
     assert.match(text, /Проверки/);
     assert.match(text, /Совместимо с workflow/);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('badges explain themselves: hints on hover and focus (WC-1)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    // Правка защищённого файла после замка даёт блокирующий флаг.
+    fs.appendFileSync(path.join(fixture.repo, 'checks', 'add.mjs'), '\n// правка после замка\n');
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+
+    const exact = (text) => elements(tree).find(
+      (element) => element.type === 'span' && textOf(element).replace(/\s+/g, ' ').trim() === text,
+    );
+
+    const risk = exact('medium');
+    assert.ok(risk, 'риск-бейдж на доске');
+    assert.match(risk.props.title, /^Риск задания: средний/);
+    assert.match(risk.props['aria-label'], /Риск задания/);
+    assert.equal(risk.props.tabIndex, undefined, 'внутри кнопки-карточки бейдж не фокусируется');
+
+    const errors = elements(tree).find(
+      (element) => element.type === 'span' && /^ошибок \d+$/.test(textOf(element).trim()),
+    );
+    assert.ok(errors, 'бейдж «ошибок N»');
+    assert.match(errors.props.title, /Блокирующие замечания/);
+
+    const warnings = elements(tree).find(
+      (element) => element.type === 'span' && /^предупр\. \d+$/.test(textOf(element).trim()),
+    );
+    assert.ok(warnings, 'бейдж «предупр. N»');
+    assert.match(warnings.props.title, /Некритичные предупреждения/);
+
+    const cardButton = findButton(tree, '0001');
+    cardButton.props.onClick();
+    await delay(120);
+    tree = hooks.render(slot.component);
+
+    const stage = elements(tree).find(
+      (element) => element.type === 'span' && textOf(element).trim() === 'Замечания' && element.props.title,
+    );
+    assert.ok(stage, 'бейдж стадии в карточке');
+    assert.match(stage.props.title, /^Замечания — /);
+    assert.equal(stage.props.tabIndex, 0, 'бейдж стадии доступен с клавиатуры');
+
+    const flagCode = elements(tree).find(
+      (element) => element.type === 'span' && textOf(element).trim() === 'lock-mismatch-protected',
+    );
+    assert.ok(flagCode, 'код флага в карточке');
+    assert.match(flagCode.props.title, /защищённые файлы/i);
   } finally {
     fixture.cleanup();
   }

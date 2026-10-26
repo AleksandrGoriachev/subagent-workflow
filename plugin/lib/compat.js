@@ -6,7 +6,7 @@
  * testable. The plugin only reports; recommendations are commands for a human,
  * never actions the panel performs.
  */
-export const PLUGIN_VERSION = '0.1.0';
+export const PLUGIN_VERSION = '0.1.1';
 export const SUPPORTED_LABEL = '2.0.0 – 2.2.x';
 
 export function parseVersion(value) {

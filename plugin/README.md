@@ -79,9 +79,13 @@ distinction visible:
 - if the current workspace has no workflow, the panel falls back to the first
   configured root and says so in the location line;
 - the header always shows **Текущий workspace** and **показан** (the displayed
-  repository); a different root is labelled.
+  repository); a different root is labelled;
+- every compact badge carries a human-readable hint (`title` + `aria-label`):
+  risk, error and warning counts, `assumed`, attack and coverage flags, stage,
+  policy values and flag codes. Hints use the native tooltip; badges inside a
+  card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.1.0, supports workflow
+The **Совместимость** tab compares the plugin (0.1.1, supports workflow
 2.0.0 – 2.2.x) with the deployed copy: VERSION/SPEC, required scripts, lock and
 record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
@@ -94,6 +98,11 @@ node --test test/
 node tools/dev-server.mjs --root <repository> --port 17872
 curl -s http://127.0.0.1:17872/workflow/api/status
 ```
+
+Inside the DSH sandbox `node --test test/` fails with `EPERM`: the runner spawns
+children with piped stdio, which the sandbox forbids. Run the files directly —
+`node test/state.test.mjs`, `node test/api.test.mjs` and so on; each file runs
+its own suite in-process.
 
 The dev server mounts the same handler as the host plugin; it is not a second
 DSH. The client is plain classic JavaScript (no JSX, no bundler), served by the

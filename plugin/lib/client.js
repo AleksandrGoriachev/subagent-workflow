@@ -117,6 +117,63 @@ window.__ModuleLoader__.load({
 
     const RISK_COLOR = { low: T.success, medium: T.warn, high: T.danger };
 
+    /* ------------------------------------------------------------------ *
+     * подсказки к бейджам (WC-1): нативный title + aria-label, без своих
+     * тултипов и зависимостей. Текст — человеческая фраза, не код поля.
+     * ------------------------------------------------------------------ */
+
+    const RISK_HINT = {
+      low: "Риск задания: низкий. securityReview и humanSignoff не требуются, атака задания — по политике репозитория.",
+      medium: "Риск задания: средний. securityReview и humanSignoff не требуются, атака задания — по политике репозитория.",
+      high: "Риск задания: высокий. Обязательны securityReview=true, humanSignoff=true и приёмщик-человек (ключ human-*).",
+    };
+
+    function riskHint(risk) {
+      return RISK_HINT[risk] || "Риск задания: " + fmt(risk) + ".";
+    }
+
+    function stageHint(code) {
+      const stage = STAGE_BY_CODE[code];
+      return stage ? stage.title + " — " + stage.description : "Стадия: " + fmt(code) + ".";
+    }
+
+    const ERROR_HINT = "Блокирующие замечания. Список — в карточке задачи, раздел «Флаги»; приёмка или выпуск могут быть закрыты.";
+    const WARNING_HINT = "Некритичные предупреждения: assumed-решения, старые версии замка или записи, непокрытые файлы. Не блокируют, но видны в карточке.";
+    const ASSUMED_HINT = "Решения без доказательства: нет ни исполнимого критерия, ни подтверждения человека. Пока такие есть, releaseReady=false.";
+    const ATTACK_HINT = "Атака задания: есть blocking-находки без решения. Контракт не запирается, пока они не закрыты.";
+    const MANUAL_HINT = "Ручная проверка: критерий подтверждает человек, команды у него нет.";
+    const NO_RESOLUTION_HINT = "Находка без решения: пока она не закрыта, контракт не запирается.";
+    const BLOCKING_HINT = "Blocking: находка закрывает замок контракта, пока у неё нет resolution.";
+    const FOLLOW_UP_HINT = "Follow-up: не блокирует, но требует отдельного решения.";
+    const NO_MODEL_HINT = "У роли не задана модель: проверить семейство и запустить роль нечем.";
+
+    function coverageHint(count) {
+      return "Изменённых файлов без покрытия: " + fmt(count) + ". Список — в карточке, coverage.uncovered.";
+    }
+
+    function decisionStatusHint(item) {
+      if (item.assumed) return ASSUMED_HINT;
+      if (item.status === "confirmed") return "Решение подтверждено: есть исполнимый критерий или подтверждение человека.";
+      return "Статус решения в реестре: " + fmt(item.status) + ".";
+    }
+
+    function policyHint(value) {
+      if (value === "fail") return "fail — запрещать: нарушение правила останавливает ворота.";
+      if (value === "warn") return "warn — предупреждать: видно в отчёте, но ворота не останавливает.";
+      if (value === "off") return "off — не проверять: правило выключено в workflow.config.json.";
+      return "Значение политики: " + fmt(value) + ".";
+    }
+
+    function cardAriaLabel(task) {
+      const parts = ["Задача " + task.id];
+      if (task.title) parts.push(task.title);
+      parts.push("стадия: " + stageLabel(task.stage));
+      if (task.risk) parts.push("риск " + task.risk);
+      if (task.errors > 0) parts.push("блокирующих " + task.errors);
+      if (task.warnings > 0) parts.push("предупреждений " + task.warnings);
+      return parts.join(", ") + ". Открыть карточку.";
+    }
+
     const S = {
       root: {
         display: "flex",
@@ -497,10 +554,26 @@ window.__ModuleLoader__.load({
       }
     }
 
-    function badge(text, color, title) {
+    /**
+     * Компактная плашка. Подсказка — нативный title плюс aria-label (WC-1).
+     * focusable=false — для плашек внутри кнопки-карточки: фокусируемое внутри
+     * кнопки ломает клавиатуру, поэтому сводка уходит в aria-label самой кнопки.
+     */
+    function badge(text, color, title, focusable = true) {
+      const hint = title || null;
       return h(
         "span",
-        { style: Object.assign({}, S.badge, color ? { color, borderColor: color } : null), title },
+        {
+          style: Object.assign(
+            {},
+            S.badge,
+            color ? { color, borderColor: color } : null,
+            hint ? { cursor: "help" } : null,
+          ),
+          title: hint,
+          "aria-label": hint || String(text),
+          tabIndex: focusable && hint ? 0 : undefined,
+        },
         text,
       );
     }
@@ -573,7 +646,16 @@ window.__ModuleLoader__.load({
         "div",
         { key: flag.code + index, style: S.flagRow },
         h("span", { style: Object.assign({}, S.dot, { background: color, marginTop: "6px" }) }),
-        h("span", { style: S.flagCode }, flag.code),
+        h(
+          "span",
+          {
+            style: S.flagCode,
+            title: flag.message || flag.code,
+            "aria-label": "Флаг " + flag.code + ": " + (flag.message || ""),
+            tabIndex: 0,
+          },
+          flag.code,
+        ),
         h("span", { style: S.flagText }, flag.message),
       );
     }
@@ -828,18 +910,23 @@ window.__ModuleLoader__.load({
                     style: S.card,
                     onClick: () => void openTask(task.id),
                     title: task.dir || task.id,
+                    "aria-label": cardAriaLabel(task),
                   },
                   h("span", { style: S.cardId }, task.id),
                   h("span", { style: S.cardTitle }, task.title || "—"),
                   h(
                     "span",
                     { style: S.cardMeta },
-                    task.risk ? badge(task.risk, RISK_COLOR[task.risk]) : null,
-                    task.errors > 0 ? badge("ошибок " + task.errors, T.danger) : null,
-                    task.warnings > 0 ? badge("предупр. " + task.warnings, T.warn) : null,
-                    task.assumed && task.assumed.length ? badge("assumed " + task.assumed.length, T.warn) : null,
-                    task.attackUnresolved > 0 ? badge("атака", T.danger) : null,
-                    task.coverageUncovered > 0 ? badge("покрытие", T.warn) : null,
+                    task.risk ? badge(task.risk, RISK_COLOR[task.risk], riskHint(task.risk), false) : null,
+                    task.errors > 0 ? badge("ошибок " + task.errors, T.danger, ERROR_HINT, false) : null,
+                    task.warnings > 0 ? badge("предупр. " + task.warnings, T.warn, WARNING_HINT, false) : null,
+                    task.assumed && task.assumed.length
+                      ? badge("assumed " + task.assumed.length, T.warn, ASSUMED_HINT, false)
+                      : null,
+                    task.attackUnresolved > 0 ? badge("атака", T.danger, ATTACK_HINT, false) : null,
+                    task.coverageUncovered > 0
+                      ? badge("покрытие", T.warn, coverageHint(task.coverageUncovered), false)
+                      : null,
                   ),
                 )),
           );
@@ -1008,8 +1095,8 @@ window.__ModuleLoader__.load({
                 item.class,
                 item.impact,
                 item.assumed
-                  ? badge("assumed", T.warn)
-                  : badge(item.status || "—", item.status === "confirmed" ? T.success : T.tertiary),
+                  ? badge("assumed", T.warn, ASSUMED_HINT)
+                  : badge(item.status || "—", item.status === "confirmed" ? T.success : T.tertiary, decisionStatusHint(item)),
                 item.evidenceKind === "executable"
                   ? "критерий " + (item.evidence && item.evidence.ref)
                   : item.evidenceKind === "human"
@@ -1029,7 +1116,7 @@ window.__ModuleLoader__.load({
             ["id", "критерий", "команда", "covers", "теги"],
             criteria.map((item) => [
               item.id,
-              h("span", null, item.title || "—", item.manual ? badge(" manual", T.warn) : null),
+              h("span", null, item.title || "—", item.manual ? badge(" manual", T.warn, MANUAL_HINT) : null),
               h("span", { style: S.mono }, item.command || "—"),
               Array.isArray(item.covers) && item.covers.length ? chips(item.covers) : "—",
               Array.isArray(item.tags) && item.tags.length ? item.tags.join(", ") : "—",
@@ -1076,10 +1163,15 @@ window.__ModuleLoader__.load({
                 finding.id,
                 finding.class,
                 finding.severity === "blocking"
-                  ? badge("blocking", T.danger)
-                  : badge(finding.severity || "—", finding.severity === "follow-up" ? T.link : T.tertiary),
+                  ? badge("blocking", T.danger, BLOCKING_HINT)
+                  : badge(
+                      finding.severity || "—",
+                      finding.severity === "follow-up" ? T.link : T.tertiary,
+                      finding.severity === "follow-up" ? FOLLOW_UP_HINT : "Класс находки атаки: " + fmt(finding.severity) + ".",
+                    ),
                 finding.claim || "—",
-                finding.resolution || (finding.severity === "blocking" ? badge("нет решения", T.danger) : "—"),
+                finding.resolution
+                  || (finding.severity === "blocking" ? badge("нет решения", T.danger, NO_RESOLUTION_HINT) : "—"),
               ]),
             ),
           );
@@ -1125,7 +1217,9 @@ window.__ModuleLoader__.load({
                         record.review.remarks.map((remark) => [
                           remark.id,
                           remark.class,
-                          remark.resolution || remark.reason || (remark.unresolved ? badge("нет решения", T.danger) : "—"),
+                          remark.resolution
+                          || remark.reason
+                          || (remark.unresolved ? badge("нет решения", T.danger, "Замечание без решения: выпуск закрыт (releaseReady=false).") : "—"),
                         ]),
                       )
                     : null,
@@ -1159,8 +1253,8 @@ window.__ModuleLoader__.load({
               "div",
               { style: S.cardHead },
               h("h2", { style: S.cardHeadTitle }, card.id + " · " + (card.title || "без названия")),
-              badge(stageLabel(card.stage), STAGE_COLOR[card.stage]),
-              card.risk ? badge(card.risk, RISK_COLOR[card.risk]) : null,
+              badge(stageLabel(card.stage), STAGE_COLOR[card.stage], stageHint(card.stage)),
+              card.risk ? badge(card.risk, RISK_COLOR[card.risk], riskHint(card.risk)) : null,
               h("span", { style: S.kvLabel }, card.dir),
             ),
             h(
@@ -1201,7 +1295,11 @@ window.__ModuleLoader__.load({
               "Политика",
               table(["правило", "значение", "что означает"], rows.map((row) => [
                 h("span", { style: S.mono }, row[0]),
-                row[1] === "fail" ? badge(row[1], T.danger) : row[1] === "warn" ? badge(row[1], T.warn) : badge(row[1] || "—", T.tertiary),
+                row[1] === "fail"
+                  ? badge(row[1], T.danger, policyHint(row[1]))
+                  : row[1] === "warn"
+                    ? badge(row[1], T.warn, policyHint(row[1]))
+                    : badge(row[1] || "—", T.tertiary, policyHint(row[1])),
                 row[2],
               ])),
             ),
@@ -1217,7 +1315,7 @@ window.__ModuleLoader__.load({
                 ? h("div", { style: S.empty }, "Роли не настроены: проверять семейство приёмщика и критика не с чем.")
                 : table(["роль", "модель", "семейство", "должна отличаться"], policy.roles.map((role) => [
                     role.name,
-                    role.model ? h("span", { style: S.mono }, role.model) : badge("нет model", T.warn),
+                    role.model ? h("span", { style: S.mono }, role.model) : badge("нет model", T.warn, NO_MODEL_HINT),
                     role.family || "—",
                     role.mustDifferFromIssuer || "—",
                   ])),
@@ -1271,7 +1369,15 @@ window.__ModuleLoader__.load({
                 : table(
                     ["статус", "проверка", "что не так", "рекомендация"],
                     compat.checks.map((item) => [
-                      badge(severityText(item.severity), severityColor(item.severity)),
+                      badge(
+                        severityText(item.severity),
+                        severityColor(item.severity),
+                        item.severity === "error"
+                          ? "Ошибка стыковки: часть проверок недоступна, состояние задачи может быть неполным."
+                          : item.severity === "warn"
+                            ? "Замечание: работать можно, но часть проверок не выполняется."
+                            : "Сообщение о стыковке версий.",
+                      ),
                       item.title,
                       item.message,
                       item.recommendation || "—",
