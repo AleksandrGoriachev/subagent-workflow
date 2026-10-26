@@ -1,14 +1,14 @@
 # Установка пакета
 
-Пакет — это каталог `subagent-workflow-2.2.1/` (или zip с ним). Зависимостей нет:
+Пакет — это каталог `subagent-workflow-2.2.2/` (или zip с ним). Зависимостей нет:
 нужны Node.js 20+ и git. Сеть не требуется.
 
 ## 1. Проверить архив
 
 ~~~bash
-sha256sum -c subagent-workflow-2.2.1.zip.sha256
+sha256sum -c subagent-workflow-2.2.2.zip.sha256
 # Windows PowerShell 7:
-Get-FileHash .\subagent-workflow-2.2.1.zip -Algorithm SHA256
+Get-FileHash .\subagent-workflow-2.2.2.zip -Algorithm SHA256
 ~~~
 
 ## 1a. Или клонировать
@@ -21,8 +21,8 @@ cd subagent-workflow
 ## 2. Распаковать
 
 ~~~bash
-unzip subagent-workflow-2.2.1.zip
-cd subagent-workflow-2.2.1
+unzip subagent-workflow-2.2.2.zip
+cd subagent-workflow-2.2.2
 node tools/verify.mjs
 ~~~
 

@@ -1,0 +1,11 @@
+# Bundle patch for dsh-workflow-console.
+#
+# The reconciler appends this package to `dsh.profile.bundles` and applies this
+# patch layer. `roots` lists the repositories whose workflow artifacts the
+# read-only console may read; the first entry is selected by default. Paths must
+# be absolute. The panel never writes to them.
+- insert:
+    - id: dsh-workflow-console
+      name: dsh-workflow-console
+      config:
+        roots: []

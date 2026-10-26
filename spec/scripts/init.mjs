@@ -63,6 +63,19 @@ const dest = path.join(repo, workflowDir);
 copyTree(packageRoot, dest, Boolean(argv.force));
 fs.mkdirSync(path.join(repo, tasksDir), { recursive: true });
 
+/*
+ * VERSION — единственный источник версии: он лежит в корне репозитория и в корне
+ * распакованного пакета (packageRoot — это spec/, отсюда ".."). Копируем его в
+ * развёрнутую копию, чтобы номер читался там же, где лежат ворота, и панель DSH
+ * не сообщала «Нет файла VERSION».
+ */
+const versionSource = path.join(packageRoot, '..', 'VERSION');
+let deployedVersion = null;
+if (fs.existsSync(versionSource)) {
+  deployedVersion = fs.readFileSync(versionSource, 'utf8').trim();
+  if (deployedVersion) fs.writeFileSync(path.join(dest, 'VERSION'), deployedVersion + '\n');
+}
+
 const configFile = path.join(dest, 'workflow.config.json');
 const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
 config.tasksDir = tasksDir;
@@ -107,9 +120,10 @@ console.log('  workflow    ' + workflowDir);
 console.log('  tasks       ' + tasksDir);
 console.log('  logs        ' + logs);
 console.log('  config      ' + path.join(workflowDir, 'workflow.config.json'));
+if (deployedVersion) console.log('  version     ' + deployedVersion);
 if (createdKey) {
   console.log('  key         ' + createdKey.keyId);
-  console.log('  private     ' + createdKey.private + '  (вне репозитория!)');
+  console.log('  private     ' + createdKey.privateKey + '  (вне репозитория!)');
   console.log('  public      ' + path.join(workflowDir, 'acceptors.json'));
 }
 console.log('');

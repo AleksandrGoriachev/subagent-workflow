@@ -1,0 +1,34 @@
+{
+  "name": "dsh-workflow-console",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only workflow console for subagent-workflow repositories in DeepSeek Harness",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "check:client": "node --check lib/client.js",
+    "dev": "node tools/dev-server.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  }
+}

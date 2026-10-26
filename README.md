@@ -1,4 +1,4 @@
-# subagent-workflow 2.2.1 — полный пакет делегирования и приёмки
+# subagent-workflow 2.2.2 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -56,6 +56,13 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `tools/pack.mjs`, `tools/verify.mjs` | Сборка архива и проверка контрольных сумм |
 | `deploy/AGENT-DEPLOY.md` | Инструкция агенту по разворачиванию |
 | `reports/` | Локальные отчёты по проектам (в пакет и репозиторий не входят) |
+
+## Плагин DSH (отдельный пакет)
+
+`plugin/` — read-only панель для DSH (`dsh-workflow-console`): доска задач,
+карточка, политика. В релизный архив не входит, а `init` копирует только
+`spec/`, поэтому в развёрнутое пространство плагин не попадает: это хост-пакет,
+а не часть переносимой спецификации. Установка и границы — `plugin/README.md`.
 
 ## Конфигурация
 
