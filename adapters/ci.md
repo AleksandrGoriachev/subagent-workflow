@@ -15,6 +15,7 @@ CI проверяет записи, но не создаёт их для medium/
   run: |
     node docs/subagent-workflow/selftest.mjs
     node docs/subagent-workflow/e2e.mjs
+    node docs/subagent-workflow/e2e-deploy.mjs
 ~~~
 
 Приватных ключей в CI нет: проверка идёт по публичным ключам из `acceptors.json`.

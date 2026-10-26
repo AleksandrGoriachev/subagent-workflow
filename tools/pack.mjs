@@ -46,6 +46,7 @@ const manifest = {
     doctor: 'spec/scripts/doctor.mjs',
     selftest: 'spec/selftest.mjs',
     e2e: 'spec/e2e.mjs',
+    e2eDeploy: 'spec/e2e-deploy.mjs',
   },
   harnesses: ['dsh', 'generic', 'ci'],
   files: contents.map((file) => ({ path: file.path, bytes: file.data.length, sha256: sha256(file.data) })),

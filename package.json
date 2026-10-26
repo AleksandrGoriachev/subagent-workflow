@@ -1,7 +1,8 @@
 {
   "name": "subagent-workflow",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Portable delegation workflow with attested independent acceptance (Ed25519)",
   "engines": {
@@ -10,6 +11,7 @@
   "scripts": {
     "selftest": "node spec/selftest.mjs",
     "e2e": "node spec/e2e.mjs",
+    "e2e-deploy": "node spec/e2e-deploy.mjs",
     "init": "node spec/scripts/init.mjs",
     "new-task": "node spec/scripts/new-task.mjs",
     "doctor": "node spec/scripts/doctor.mjs",

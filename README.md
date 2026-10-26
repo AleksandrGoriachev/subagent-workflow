@@ -1,4 +1,4 @@
-# subagent-workflow 2.0.2 — полный пакет делегирования и приёмки
+# subagent-workflow 2.0.3 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -48,6 +48,7 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `spec/scripts/lib/common.mjs` | Общая библиотека |
 | `spec/selftest.mjs` | Проверка правил записи (10 сценариев) |
 | `spec/e2e.mjs` | Полный цикл на временном репозитории |
+| `spec/e2e-deploy.mjs` | Развёртывание из развёрнутого каталога (отдельная джоба CI) |
 | `INSTALL.md` | Установка из архива, проверка целостности, обновление |
 | `CHANGELOG.md`, `VERSION` | История и версия пакета |
 | `adapters/` | Подключение харнессов: DSH, произвольный раннер, CI |
@@ -84,8 +85,9 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 ## Проверено
 
 ~~~bash
-node spec/selftest.mjs   # SELFTEST OK
-node spec/e2e.mjs        # E2E OK: init → задача → красный → фикс → приёмка → check
+node spec/selftest.mjs     # SELFTEST OK
+node spec/e2e.mjs          # E2E OK: init → задача → красный → фикс → приёмка → check
+node spec/e2e-deploy.mjs   # DEPLOY E2E OK: init из развёрнутого каталога
 ~~~
 
 E2E включает отказ самоприёмке из сессии постановщика и проверку metadata-коммита.
@@ -96,3 +98,8 @@ E2E включает отказ самоприёмке из сессии пос�
 если приватный ключ доступен процессу агента, подпись — tamper-evidence. Реальный
 уровень независимости честно записывается в `independence.level` и проверяется
 правилами риска.
+
+## Лицензия
+
+MIT — см. [LICENSE](LICENSE). Пакет можно брать, менять и разворачивать в своих
+репозиториях; ссылка на исходный репозиторий приветствуется, но не требуется.
