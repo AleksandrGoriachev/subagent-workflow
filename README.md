@@ -1,4 +1,4 @@
-# subagent-workflow 2.3.0 — полный пакет делегирования и приёмки
+# subagent-workflow 2.3.1 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -46,7 +46,7 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `spec/scripts/actor.mjs` | Аттестация актора, уровень независимости |
 | `spec/scripts/sign.mjs` | Ed25519, канонизация, подпись |
 | `spec/scripts/lib/common.mjs` | Общая библиотека |
-| `spec/selftest.mjs` | Проверка правил записи (10 сценариев) |
+| `spec/selftest.mjs` | Проверка правил записи (25 проверок, включая regress-классификацию) |
 | `spec/e2e.mjs` | Полный цикл на временном репозитории |
 | `spec/e2e-deploy.mjs` | Развёртывание из развёрнутого каталога (отдельная джоба CI) |
 | `INSTALL.md` | Установка из архива, проверка целостности, обновление |
@@ -140,7 +140,7 @@ node scripts/task-hash.mjs    --task docs/tasks/0001 --write
 ## Проверено
 
 ~~~bash
-node spec/selftest.mjs     # SELFTEST OK (14 сценариев)
+node spec/selftest.mjs     # SELFTEST OK (25 проверок)
 node spec/e2e.mjs          # E2E OK: атака → init → задача → красный → фикс → приёмка → check
 node spec/e2e-deploy.mjs   # DEPLOY E2E OK: init из развёрнутого каталога
 ~~~

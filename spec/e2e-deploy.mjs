@@ -138,6 +138,36 @@ try {
     JSON.stringify({ a: idsA[0].fingerprint, b: idsB[0] && idsB[0].fingerprint }),
   );
 
+  /*
+   * 2.3.1: обновление не меняет ключ и не врёт версией. Раньше --force
+   * перегенерировал ключ (все записи становились untrusted), а init без --force
+   * обновлял VERSION, не трогая файлы.
+   */
+  const acceptorsA = path.join(repoA, WORKFLOW, 'acceptors.json');
+  const acceptorsBefore = sha256(acceptorsA);
+  const keyBefore = sha256(keyFileA);
+  const forceA = runNode(deployedInit, ['--repo', repoA, '--force']);
+  report('init --force обновляет копию', forceA.code === 0, forceA.out);
+  report('init --force не меняет acceptors.json', sha256(acceptorsA) === acceptorsBefore);
+  report('init --force не меняет приватный ключ', sha256(keyFileA) === keyBefore);
+
+  const versionFileA = path.join(repoA, WORKFLOW, 'VERSION');
+  fs.writeFileSync(versionFileA, '0.0.0-test\n');
+  const softInit = runNode(deployedInit, ['--repo', repoA]);
+  report('init без --force не обновляет VERSION', fs.readFileSync(versionFileA, 'utf8').trim() === '0.0.0-test', softInit.out);
+  /* Версию может вернуть только init из пакета: у развёрнутой копии нет источника. */
+  runNode(path.join(HERE, 'scripts', 'init.mjs'), ['--repo', repoA, '--force', '--key-out', keysA]);
+  report('init из пакета с --force возвращает VERSION пакета', fs.readFileSync(versionFileA, 'utf8').trim() === packageVersion);
+  report('init из пакета с --force не меняет ключ', sha256(keyFileA) === keyBefore);
+
+  const rotate = runNode(deployedInit, ['--repo', repoA, '--rotate-key']);
+  const rotatedIds = keyIds(repoA);
+  report(
+    'init --rotate-key перевыпускает ключ и предупреждает',
+    rotate.code === 0 && rotatedIds[0].publicKeyPem !== idsA[0].publicKeyPem && /перевыпущен/i.test(rotate.out),
+    rotate.out,
+  );
+
   const leaked = listFiles(repoB).filter((rel) => /\.key\.pem$/i.test(rel));
   report('в дереве B нет приватных ключей', leaked.length === 0, leaked.join(', '));
 

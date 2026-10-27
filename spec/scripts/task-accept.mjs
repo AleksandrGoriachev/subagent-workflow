@@ -346,6 +346,7 @@ try {
       modelLevel: actorModelLevel,
     },
     acceptorRun,
+    effects: effectCheck.effects,
     bypasses,
     red: red
       ? {

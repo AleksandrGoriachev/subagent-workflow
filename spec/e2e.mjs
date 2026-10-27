@@ -97,16 +97,30 @@ try {
     evidence: { kind: 'criterion', ref: 'C1' },
     status: 'confirmed',
   }];
-  fs.writeFileSync(taskMdPath, taskMdRaw.replace(metaMatch[0], '<!-- TASK-META\n' + JSON.stringify(taskMeta, null, 2) + '\n-->'));
+  const taskMdWithC3 = taskMdRaw.replace(
+    '| C2 | <негативный случай> | <наблюдаемое поведение> |',
+    '| C2 | <негативный случай> | <наблюдаемое поведение> |\n| C3 | node checks/add.mjs | эффект: пользователь получает сумму, порог ok 3 (измеряет C1) |',
+  );
+  fs.writeFileSync(taskMdPath, taskMdWithC3.replace(metaMatch[0], '<!-- TASK-META\n' + JSON.stringify(taskMeta, null, 2) + '\n-->'));
 
   const criteriaBody = {
     task: '0001',
     setup: [],
     teardown: [],
-    redExpect: { mustFail: ['C1'], mustPass: ['C2'], reasons: { C1: 'sum is wrong' } },
+    redExpect: { mustFail: ['C1', 'C3'], mustPass: ['C2'], reasons: { C1: 'sum is wrong', C3: 'sum is wrong' } },
     criteria: [
-      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, covers: ['src/app.js'], effect: { observable: 'пользователь получает сумму', threshold: 'ok 3' }, expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
+      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, covers: ['src/app.js'], expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
       { id: 'C2', title: 'негатив', command: 'node checks/negative.mjs', timeoutMs: 60000, expect: { exitCode: 1, stderrContains: 'invalid input' }, tags: ['fast', 'negative'] },
+      {
+        id: 'C3',
+        title: 'эффект для пользователя',
+        command: 'node checks/add.mjs',
+        timeoutMs: 60000,
+        covers: ['src/app.js'],
+        effect: { observable: 'пользователь получает сумму', threshold: 'ok 3', measuredBy: 'C1' },
+        expect: { exitCode: 0, stdoutContains: 'ok 3' },
+        tags: ['fast', 'behavior'],
+      },
     ],
   };
   const criteriaPath = path.join(repo, 'docs/tasks/0001/criteria.json');
@@ -127,6 +141,18 @@ try {
   write(criteriaPath, JSON.stringify(effectOff, null, 2) + '\n');
   const noEffect = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
   report('lint требует критерий эффекта для решения с влиянием на пользователя', noEffect.code !== 0 && /effect/.test(noEffect.out), noEffect.out);
+  write(criteriaPath, JSON.stringify(criteriaBody, null, 2) + '\n');
+
+  /* 2.3.1: измеритель эффекта обязан быть другим критерием. */
+  const selfMeasured = {
+    ...criteriaBody,
+    criteria: criteriaBody.criteria.map((c) => (c.id === 'C3'
+      ? { ...c, effect: { ...c.effect, measuredBy: 'C3' } }
+      : c)),
+  };
+  write(criteriaPath, JSON.stringify(selfMeasured, null, 2) + '\n');
+  const selfEffect = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('lint отклоняет effect.measuredBy на сам критерий', selfEffect.code !== 0 && /сам критерий/.test(selfEffect.out), selfEffect.out);
   write(criteriaPath, JSON.stringify(criteriaBody, null, 2) + '\n');
 
   /* Семантическое решение о пользовательском контракте без доказательства — ошибка. */
@@ -184,6 +210,9 @@ try {
   write(path.join(repo, 'src/app.js'), 'export const add = (a, b) => a + b;\n');
   const verify = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
   report('verify зелёный после фикса', verify.code === 0, verify.out);
+  const verifyJson = JSON.parse(fs.readFileSync(path.join(repo, 'docs/tasks/0001/verify.json'), 'utf8'));
+  report('verify записывает объявленный эффект', Array.isArray(verifyJson.effects && verifyJson.effects.declared)
+    && verifyJson.effects.declared.length === 1 && verifyJson.effects.declared[0].measuredBy === 'C1', JSON.stringify(verifyJson.effects));
 
   fs.writeFileSync(path.join(repo, 'src/extra.js'), 'export const extra = 1;\n');
   const uncovered = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
@@ -218,6 +247,9 @@ try {
   report('запись v6 с актором и уровнем независимости',
     record.version === 6 && record.actor.session === 'judge-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
     JSON.stringify({ version: record.version, actor: record.actor, level: record.independence.level }));
+  report('эффект записан в приёмку с измерителем',
+    Array.isArray(record.effects) && record.effects.length === 1 && record.effects[0].measuredBy === 'C1',
+    JSON.stringify(record.effects));
   report('решения записаны с digest и без assumed',
     record.decisions && record.decisions.count === 1 && record.decisions.assumed.length === 0 && /^[0-9a-f]{64}$/.test(record.decisions.digest),
     JSON.stringify(record.decisions));
@@ -257,7 +289,12 @@ try {
   failed += 1;
   console.error('E2E ERROR: ' + err.stack);
 } finally {
-  fs.rmSync(tmp, { recursive: true, force: true });
+  /*
+   * На Windows каталог может быть ещё занят только что завершившимся дочерним
+   * процессом: ретраи и best-effort, чтобы уборка не превращала зелёный прогон
+   * в случайный EPERM.
+   */
+  try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 }); } catch { /* оставить ОС */ }
 }
 
 if (failed) {

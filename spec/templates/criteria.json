@@ -3,10 +3,11 @@
   "setup": [],
   "teardown": [],
   "redExpect": {
-    "mustFail": ["C1"],
+    "mustFail": ["C1", "C3"],
     "mustPass": ["C2"],
     "reasons": {
-      "C1": "<почему C1 обязан падать на базе>"
+      "C1": "<почему C1 обязан падать на базе>",
+      "C3": "<почему C3 обязан падать на базе>"
     }
   },
   "criteria": [
@@ -16,7 +17,6 @@
       "command": "node --test tests/example.test.mjs",
       "cwd": ".",
       "covers": ["src/**"],
-      "effect": { "observable": "<что видит пользователь>", "threshold": "<порог: ≤ 5 s>" },
       "timeoutMs": 120000,
       "expect": {
         "exitCode": 0,
@@ -34,6 +34,20 @@
         "stderrContains": "invalid"
       },
       "tags": ["fast", "negative"]
+    },
+    {
+      "id": "C3",
+      "title": "Эффект: <что видит пользователь>",
+      "command": "node checks/effect.mjs",
+      "covers": ["src/**"],
+      "effect": {
+        "observable": "<наблюдаемое состояние: квитанция, сумма, отсутствие ошибки>",
+        "threshold": "<порог: ≤ 5 s, 0 потерь, 100%>",
+        "measuredBy": "C1"
+      },
+      "timeoutMs": 120000,
+      "expect": { "exitCode": 0 },
+      "tags": ["fast"]
     }
   ]
 }

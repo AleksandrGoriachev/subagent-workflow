@@ -82,6 +82,15 @@ function run() {
   const record = readJsonFile(file);
   const acceptors = loadAcceptors(keysFile);
 
+  /*
+   * 2.3.1: записи 1–3 — история. Их подпись современным ключом не проверяется
+   * (HMAC-эпоха), поэтому «недоверенная» и «легаси» — разные вещи. Ворота
+   * закрывают глаза на легаси и говорят об этом вслух, а не валят CI.
+   */
+  if (Number(record.version) < 4) {
+    console.log('check-acceptance: запись legacy (v' + record.version + ') — машинно не проверяется, это история');
+    process.exit(0);
+  }
   if (![4, 5, 6].includes(record.version)) note('версия записи ' + record.version + ', нужна 4, 5 или 6');
   if (record.version >= 5 && !record.decisions) note('запись версии ' + record.version + ' без блока decisions');
   if (record.status !== 'accepted') note('статус записи: ' + record.status);

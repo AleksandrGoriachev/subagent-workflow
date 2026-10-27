@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
 import { summarizeDecisions } from './scripts/lib/common.mjs';
+import { classifyAcceptance, loadBaseline, baselineEntry, isExpired } from './scripts/lib/regress.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHECKER = path.join(HERE, 'scripts', 'task-check-acceptance.mjs');
@@ -56,6 +57,22 @@ try {
   git(repo, ['commit', '-q', '-m', 'contract']);
   const contractCommit = git(repo, ['rev-parse', 'HEAD']);
   const mainBranch = git(repo, ['rev-parse', '--abbrev-ref', 'HEAD']);
+
+  /*
+   * 2.3.1: регресс и долг провенанса — разные вещи. Классификация проверяется
+   * отдельно от прогона: это чистая функция, ей не нужен git и ворота.
+   */
+  const classify = (record, extra) => classifyAcceptance(record, extra).status;
+  report('regress: medium без красного — нарушение', classify({ version: 6, status: 'accepted', risk: 'medium', contractCommit: 'a' }) === 'unproven-violation');
+  report('regress: low без красного и без обхода — нарушение', classify({ version: 6, status: 'accepted', risk: 'low', contractCommit: 'a' }) === 'unproven-violation');
+  report('regress: low + allowMissingRed — законный долг', classify({ version: 6, status: 'accepted', risk: 'low', contractCommit: 'a', bypasses: { allowMissingRed: true } }) === 'unproven-lawful');
+  report('regress: запись v3 — legacy', classify({ version: 3, status: 'accepted', risk: 'low' }) === 'legacy');
+  report('regress: подпись не сходится — untrusted', classify({ version: 6, status: 'accepted', risk: 'medium', contractCommit: 'a', red: { baseSha: 'a', contractCommit: 'a' } }, { signatureOk: false }) === 'untrusted');
+  report('regress: свежий красный — ok', classify({ version: 6, status: 'accepted', risk: 'medium', contractCommit: 'a', red: { baseSha: 'a', contractCommit: 'a' } }) === 'ok');
+  report('regress: красный от другого контракта — нарушение', classify({ version: 6, status: 'accepted', risk: 'medium', contractCommit: 'b', red: { baseSha: 'a', contractCommit: 'b' } }) === 'unproven-violation');
+  report('regress: baseline просрочен', isExpired({ reviewBy: '2020-01-01' }) === true && isExpired({ reviewBy: '2999-01-01' }) === false);
+  const baselineProbe = loadBaseline(JSON.stringify({ version: 1, entries: [{ task: '0001', status: 'unproven-lawful', reviewBy: '2026-11-26' }] }));
+  report('regress: baseline находит запись по задаче и статусу', baselineEntry(baselineProbe, '0001', 'unproven-lawful') !== null && baselineEntry(baselineProbe, '0001', 'unproven-violation') === null);
 
   write(path.join(repo, 'src', 'app.js'), 'export const add = (a, b) => a + b;\n');
   write(path.join(taskDir, 'verify.json'), JSON.stringify({ version: 4, kind: 'verify', allPassed: true }) + '\n');
@@ -121,6 +138,12 @@ try {
   const tamperedPath = path.join(tmp, 'tampered.json');
   fs.writeFileSync(tamperedPath, JSON.stringify(tampered, null, 2));
   report('подмена поля ломает подпись', runChecker(tamperedPath, repo, keysFile).status !== 0);
+
+  /* 2.3.1: запись v3 — история, а не подделка: ворота говорят «legacy» и не валят CI. */
+  const legacyPath = path.join(tmp, 'legacy-v3.json');
+  fs.writeFileSync(legacyPath, JSON.stringify({ version: 3, status: 'accepted', task: '0001' }, null, 2) + '\n');
+  const legacyRun = spawnSync(process.execPath, [CHECKER, '--file', legacyPath, '--repo', repo, '--keys', keysFile], { encoding: 'utf8' });
+  report('запись v3 принимается как legacy', legacyRun.status === 0 && /legacy/.test(legacyRun.stdout + legacyRun.stderr), legacyRun.stdout + legacyRun.stderr);
 
   const selfAccept = signRecord({ ...base, actor: { ...base.actor, session: 'issuer-session' }, independence: { ...base.independence, level: 'same-session' } }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
   const selfPath = path.join(tmp, 'self.json');

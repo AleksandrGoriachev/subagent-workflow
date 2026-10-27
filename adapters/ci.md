@@ -37,14 +37,27 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - name: regress accepted tasks
-        run: node docs/subagent-workflow/scripts/task-regress.mjs --repo . --strict --out regress.json
+        run: node docs/subagent-workflow/scripts/task-regress.mjs --repo . --strict --baseline regress.baseline.json --out regress.json
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: regress, path: regress.json }
 ~~~
 
-`--strict` делает ошибкой и `unproven` (нет свежего красного), и `untrusted`
-(подпись записи не сходится). Без него это предупреждения.
+Что валит прогон: `regressed` (критерий закрытой задачи падает), `untrusted`
+(подпись записи не сходится), `error`, `unproven-violation` (medium/high без
+красного или low без записанного обхода). `unproven-lawful` (low + записанный
+`allowMissingRed`) — предупреждение и кандидат в baseline; `legacy` (записи v1–v3)
+— строка отчёта, не ошибка. `--strict` дополнительно валит `unproven-lawful` и
+просроченный `reviewBy` в baseline.
+
+Baseline — осознанный долг, который коммитится и ревьюится:
+
+~~~bash
+node docs/subagent-workflow/scripts/task-regress.mjs --repo . --write-baseline regress.baseline.json
+~~~
+
+`reviewBy` по умолчанию — через 30 дней: долг либо закрывается, либо продлевается
+отдельным диффом.
 
 Приватных ключей в CI нет: проверка идёт по публичным ключам из `acceptors.json`.
 

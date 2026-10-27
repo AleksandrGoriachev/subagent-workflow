@@ -4,7 +4,7 @@ import {
   parseArgv, readTask, verifyLock, repoRoot, diffPaths, matchesAny, relPosix,
   runCommand, evaluateExpectation, isManual, stableResults, writeJson, writeText,
   formatMs, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
-  checkContractCommitted, computeCoverage, loadConfig,
+  checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 
@@ -156,6 +156,17 @@ try {
   violations.push(...coverageApplied.errors);
   const coverageWarnings = coverageApplied.warnings;
 
+  /*
+   * Эффект (I-31, 2.3.1): прогон сам проверяет, что у критерия с влиянием на
+   * пользователя есть измеряемый эффект, и записывает его в verify.json — иначе
+   * доказательство эффекта видно только в момент lint.
+   */
+  const effectCheck = evaluateEffects(meta, criteria);
+  const effectApplied = applyLevel(policy.decisions, effectCheck.issues);
+  violations.push(...effectApplied.errors);
+  const effectWarnings = effectApplied.warnings;
+  for (const warning of effectWarnings) coverageWarnings.push('effect: ' + warning);
+
   const failed = results.filter((r) => !r.passed);
   if (manualSkipped > 0 && argv['allow-manual']) bypasses.allowManual = true;
   const executedOrManual = results.length > 0 || (manualSkipped > 0 && Boolean(argv['allow-manual']));
@@ -181,6 +192,7 @@ try {
     taskFileSha256: lockCheck.expected.taskFileSha256,
     changedPaths: changed,
     coverage: { ...coverage, mode: policy.coverage, warnings: coverageWarnings },
+    effects: { required: effectCheck.required, mode: policy.decisions, declared: effectCheck.effects },
     results: stableResults(results),
     executed: results.length,
     failed: failed.length,

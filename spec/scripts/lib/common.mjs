@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.3.0';
+export const TOOL = 'subagent-workflow/2.3.1';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -693,13 +693,20 @@ export function evaluateEffects(meta, criteria) {
     }
     if (typeof effect.observable !== 'string' || effect.observable.trim() === '') issues.push(label + ': observable обязателен');
     if (typeof effect.threshold !== 'string' || effect.threshold.trim() === '') issues.push(label + ': threshold обязателен');
-    if (effect.measuredBy !== undefined && (typeof effect.measuredBy !== 'string' || effect.measuredBy.trim() === '')) {
-      issues.push(label + ': measuredBy должен быть непустой строкой');
+    const measuredBy = typeof effect.measuredBy === 'string' ? effect.measuredBy.trim() : '';
+    if (measuredBy === '') {
+      issues.push(label + ': measuredBy обязателен — назовите критерий, который измеряет эффект');
+    } else if (measuredBy === String(criterion.id)) {
+      /*
+       * 2.3.1: измеритель не может быть тем же критерием. Иначе «эффект» и
+       * проверка — один и тот же оператор, и подмена остаётся возможной.
+       */
+      issues.push(label + ': measuredBy не может указывать на сам критерий ' + measuredBy + ' — нужен другой критерий');
+    } else {
+      const target = criteria.criteria.find((item) => String(item.id) === measuredBy);
+      if (!target) issues.push(label + ': measuredBy ссылается на неизвестный критерий ' + measuredBy);
+      else if (isManual(target)) issues.push(label + ': measuredBy указывает на manual-критерий ' + measuredBy + ' — измеритель должен быть исполняемым');
     }
-    const measuredBy = effect.measuredBy === undefined ? String(criterion.id) : String(effect.measuredBy);
-    const target = criteria.criteria.find((item) => String(item.id) === measuredBy);
-    if (!target) issues.push(label + ': measuredBy ссылается на неизвестный критерий ' + measuredBy);
-    else if (isManual(target)) issues.push(label + ': measuredBy указывает на manual-критерий ' + measuredBy);
     effects.push({ criterion: String(criterion.id), observable: effect.observable, threshold: effect.threshold, measuredBy });
   }
   if (required && effects.length === 0) {
