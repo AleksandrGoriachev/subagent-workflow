@@ -143,7 +143,7 @@ node scripts/task-hash.mjs    --task docs/tasks/0001 --write
 
 ~~~bash
 node spec/selftest.mjs     # SELFTEST OK (50 проверок)
-node spec/e2e.mjs          # E2E OK (39): атака → init → задача → красный → фикс → приёмка → check
+node spec/e2e.mjs          # E2E OK (41): атака → init → задача → красный → фикс → приёмка → check
 node spec/e2e-deploy.mjs   # DEPLOY E2E OK (23): init из развёрнутого каталога
 ~~~
 

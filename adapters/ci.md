@@ -52,6 +52,11 @@ jobs:
         with: { name: regress, path: regress.json }
 ~~~
 
+Таймаут критерия (`timedOut`, exit 124) — тоже `regressed`, но в выводе он
+помечается `(таймаут)` и считается в `summary.timeout`: это сигнал о перегрузке
+раннера. Regress гоняйте отдельным раннером, без параллельных сборок и с запасом по
+таймаутам.
+
 Что валит прогон: `regressed` (критерий закрытой задачи падает), `untrusted`
 (подпись записи не сходится), `error`, `unproven-violation` (medium/high без
 красного или low без записанного обхода). `unproven-lawful` (low + записанный

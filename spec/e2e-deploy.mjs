@@ -21,7 +21,27 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const PKG = path.resolve(HERE, '..');
+
+/*
+ * 2.4.1: скрипт живёт и в пакете (spec/), и в развёрнутой копии
+ * (docs/subagent-workflow/). Корень пакета ищем по VERSION + SPEC.md, а не по
+ * «HERE/..»: иначе из развёрнутой копии читался docs/VERSION.
+ */
+function findPackageRoot(start) {
+  const candidates = [path.resolve(start, '..'), start, path.resolve(start, '..', '..')];
+  for (const dir of candidates) {
+    const hasVersion = fs.existsSync(path.join(dir, 'VERSION'));
+    const hasSpec = fs.existsSync(path.join(dir, 'SPEC.md')) || fs.existsSync(path.join(dir, 'spec', 'SPEC.md'));
+    if (hasVersion && hasSpec) return dir;
+  }
+  return null;
+}
+
+const packageRoot = findPackageRoot(HERE);
+if (!packageRoot) {
+  console.error('e2e-deploy: не найден корень пакета (VERSION + SPEC.md) рядом с ' + HERE);
+  process.exit(2);
+}
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'wf2-deploy-'));
 const repoA = path.join(tmp, 'a');
 const repoB = path.join(tmp, 'b');
@@ -109,7 +129,6 @@ try {
     deployDiff.missing.length === 0 && deployDiff.extra.length === 0 && deployDiff.changed.length === 0,
     JSON.stringify(deployDiff),
   );
-  const packageRoot = path.resolve(HERE, '..');
   const deployedVersion = fs.readFileSync(path.join(repoA, WORKFLOW, 'VERSION'), 'utf8').trim();
   const packageVersion = fs.readFileSync(path.join(packageRoot, 'VERSION'), 'utf8').trim();
   report('развёрнутая копия знает версию пакета', deployedVersion === packageVersion, deployedVersion + ' != ' + packageVersion);

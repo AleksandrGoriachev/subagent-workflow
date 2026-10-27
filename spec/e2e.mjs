@@ -64,6 +64,17 @@ try {
   workflowConfig.models = { 'e2e-model': 'family-a', 'critic-model': 'family-b', 'judge-model': 'family-b' };
   fs.writeFileSync(configPath, JSON.stringify(workflowConfig, null, 2) + '\n');
 
+  /*
+   * 2.4.1: e2e-deploy обязан работать и из развёрнутой копии — раньше он искал
+   * корень как HERE/.. и падал на docs/VERSION.
+   */
+  const deployedDeploy = spawnSync(process.execPath, [path.join(repo, 'docs/subagent-workflow/e2e-deploy.mjs')], {
+    cwd: repo, encoding: 'utf8', timeout: 300000,
+  });
+  report('e2e-deploy запускается из развёрнутой копии',
+    deployedDeploy.status === 0 && /DEPLOY E2E OK/.test((deployedDeploy.stdout || '') + (deployedDeploy.stderr || '')),
+    (deployedDeploy.stdout || '') + (deployedDeploy.stderr || ''));
+
   const secondRepo = path.join(tmp, 'second');
   const secondKeys = path.join(tmp, 'keys-second');
   const deployedInit = path.join(repo, 'docs/subagent-workflow/scripts/init.mjs');
@@ -391,6 +402,18 @@ try {
   const regressed = run('task-regress.mjs', ['--repo', repo, '--task', 'docs/tasks/0001']);
   report('regress ловит сломанную проверку закрытой задачи', regressed.code !== 0 && /regressed/.test(regressed.out), regressed.out);
   git(['checkout', '--', 'src/app.js']);
+
+  /* 2.4.1: таймаут критерия — провал, но в выводе он помечен отдельно. */
+  const timeoutCriteria = JSON.parse(fs.readFileSync(criteriaPath, 'utf8'));
+  const timeoutC1 = timeoutCriteria.criteria.find((criterion) => criterion.id === 'C1');
+  timeoutC1.command = 'node -e "setTimeout(() => {}, 5000)"';
+  timeoutC1.timeoutMs = 100;
+  fs.writeFileSync(criteriaPath, JSON.stringify(timeoutCriteria, null, 2) + '\n');
+  const timedOut = run('task-regress.mjs', ['--repo', '.', '--task', 'docs/tasks/0001']);
+  report('regress помечает таймаут отдельно',
+    timedOut.code !== 0 && /\(таймаут\)/.test(timedOut.out) && /timeout 1/.test(timedOut.out),
+    timedOut.out);
+  git(['checkout', '--', 'docs/tasks/0001/criteria.json']);
 
   const tampered = { ...record, notes: 'подмена' };
   fs.writeFileSync(acceptancePath, JSON.stringify(tampered, null, 2) + '\n');

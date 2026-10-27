@@ -92,6 +92,7 @@ async function regressTask(taskDir) {
     executed: 0,
     failed: 0,
     failedIds: [],
+    timedOutIds: [],
     results: [],
     baseline: null,
     expiredBaseline: false,
@@ -120,7 +121,9 @@ async function regressTask(taskDir) {
         id,
         passed: expectation.passed,
         durationMs: run.durationMs,
-        reasons: expectation.reasons,
+        reasons: run.timedOut
+          ? [...expectation.reasons, 'таймаут после ' + Number(criterion.timeoutMs || timeoutMs) + ' ms']
+          : expectation.reasons,
         exitCode: run.exitCode,
         timedOut: run.timedOut,
       });
@@ -136,11 +139,15 @@ async function regressTask(taskDir) {
   result.executed = executed.length;
   result.failed = failed.length;
   result.failedIds = failed.map((item) => item.id);
+  result.timedOutIds = failed.filter((item) => item.timedOut).map((item) => item.id);
   result.results = results;
   if (failed.length > 0) {
-    /* Падение важнее статуса провенанса: это и есть регресс. */
+    /* Падение важнее статуса провенанса: это и есть регресс. Таймаут — тоже
+     * провал, но в выводе он помечается отдельно: это сигнал о перегрузке
+     * раннера, а не о сломанном коде. */
     result.status = 'regressed';
-    result.reason = 'провалены: ' + result.failedIds.join(', ');
+    result.reason = 'провалены: ' + result.failedIds.join(', ')
+      + (result.timedOutIds.length > 0 ? ' (таймаут: ' + result.timedOutIds.join(', ') + ')' : '');
   }
   return result;
 }
@@ -201,7 +208,8 @@ if (baseline) {
 
 const counts = {};
 for (const item of report.tasks) counts[item.status] = (counts[item.status] || 0) + 1;
-report.summary = { total: report.tasks.length, ...counts };
+const timeouts = report.tasks.filter((item) => (item.timedOutIds || []).length > 0).length;
+report.summary = { total: report.tasks.length, ...counts, ...(timeouts > 0 ? { timeout: timeouts } : {}) };
 
 const writeBaselinePath = argv['write-baseline'] ? path.resolve(repo, String(argv['write-baseline'])) : null;
 if (writeBaselinePath) {
@@ -227,7 +235,8 @@ if (argv.json) {
     console.log('  ' + mark.padEnd(20) + ' ' + item.task + '  ' + (item.reason || '') + extra);
     for (const result of item.results || []) {
       if (result.passed === false) {
-        console.log('      ' + result.id + '  ' + formatMs(result.durationMs) + '  ' + (result.reasons || []).join('; '));
+        console.log('      ' + result.id + (result.timedOut ? ' (таймаут)' : '') + '  '
+          + formatMs(result.durationMs) + '  ' + (result.reasons || []).join('; '));
       }
     }
   }
