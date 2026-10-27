@@ -348,6 +348,12 @@ try {
     acceptorRun,
     effects: effectCheck.effects,
     effectsRequired: effectCheck.required,
+    effectConsistency: {
+      checked: effectCheck.checked,
+      ok: effectCheck.consistencyIssues.length === 0,
+      mode: gatePolicy.decisions,
+      links: effectCheck.links,
+    },
     bypasses,
     red: red
       ? {

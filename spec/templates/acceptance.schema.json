@@ -175,6 +175,30 @@
       }
     },
     "effectsRequired": { "type": "boolean" },
+    "effectConsistency": {
+      "type": "object",
+      "required": ["checked", "ok", "links"],
+      "properties": {
+        "checked": { "type": "boolean" },
+        "ok": { "type": "boolean" },
+        "mode": { "enum": ["off", "warn", "fail"] },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["decision", "criterion", "carrier", "measuredBy"],
+            "properties": {
+              "decision": { "type": "string" },
+              "criterion": { "type": "string" },
+              "carrier": { "type": "string" },
+              "measuredBy": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "attack": {
       "type": ["object", "null"],
       "required": ["present", "sha256", "session", "model", "level", "findings", "attestation"],

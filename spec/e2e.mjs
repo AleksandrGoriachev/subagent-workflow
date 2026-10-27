@@ -99,7 +99,7 @@ try {
   }];
   const taskMdWithC3 = taskMdRaw.replace(
     '| C2 | <негативный случай> | <наблюдаемое поведение> |',
-    '| C2 | <негативный случай> | <наблюдаемое поведение> |\n| C3 | node checks/add.mjs | эффект: пользователь получает сумму, порог ok 3 (измеряет C1) |',
+    '| C2 | <негативный случай> | <наблюдаемое поведение> |\n| C3 | node src/cli.mjs 1 2 | эффект: пользователь получает сумму, порог sum 3 (измеряет C1) |',
   );
   fs.writeFileSync(taskMdPath, taskMdWithC3.replace(metaMatch[0], '<!-- TASK-META\n' + JSON.stringify(taskMeta, null, 2) + '\n-->'));
 
@@ -107,24 +107,28 @@ try {
     task: '0001',
     setup: [],
     teardown: [],
-    redExpect: { mustFail: ['C1', 'C3'], mustPass: ['C2'], reasons: { C1: 'sum is wrong', C3: 'effect: сумма неверна' } },
+    redExpect: { mustFail: ['C1', 'C3'], mustPass: ['C2'], reasons: { C1: 'sum is wrong', C3: 'sum -1' } },
     criteria: [
       { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, covers: ['src/app.js'], expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
       { id: 'C2', title: 'негатив', command: 'node checks/negative.mjs', timeoutMs: 60000, expect: { exitCode: 1, stderrContains: 'invalid input' }, tags: ['fast', 'negative'] },
       {
         id: 'C3',
         title: 'эффект для пользователя',
-        command: 'node checks/effect.mjs',
+        command: 'node src/cli.mjs 1 2',
         timeoutMs: 60000,
-        covers: ['src/app.js'],
-        effect: { observable: 'пользователь получает сумму', threshold: 'ok 3', measuredBy: 'C1' },
-        expect: { exitCode: 0, stdoutContains: 'effect ok 3' },
+        covers: ['src/app.js', 'src/cli.mjs'],
+        effect: { observable: 'пользователь получает сумму', threshold: 'sum 3', measuredBy: 'C1' },
+        expect: { exitCode: 0, stdoutContains: 'sum 3' },
         tags: ['fast', 'behavior'],
       },
     ],
   };
   const criteriaPath = path.join(repo, 'docs/tasks/0001/criteria.json');
   write(criteriaPath, JSON.stringify(criteriaBody, null, 2) + '\n');
+  report('G6: C3 — самостоятельный сценарий, а не копия C1',
+    criteriaBody.criteria[0].command !== criteriaBody.criteria[2].command
+      && /cli\.mjs/.test(criteriaBody.criteria[2].command),
+    JSON.stringify({ c1: criteriaBody.criteria[0].command, c3: criteriaBody.criteria[2].command }));
 
   /* Без covers описывать нечего — для medium это ошибка lint, а не пожелание. */
   const coversOff = { ...criteriaBody, criteria: criteriaBody.criteria.map((c) => { const copy = { ...c }; delete copy.covers; return copy; }) };
@@ -168,9 +172,20 @@ try {
   const noProof = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
   report('lint отклоняет семантическое решение без доказательства', noProof.code !== 0 && /доказательств|подтвержден/.test(noProof.out), noProof.out);
   fs.writeFileSync(taskMdPath, goodTaskMd);
+
+  /* 2.4.0 (I-34): решение доказывается критерием вне цепи эффекта — ошибка. */
+  const offChainMeta = {
+    ...taskMeta,
+    decisions: [{ ...taskMeta.decisions[0], evidence: { kind: 'criterion', ref: 'C2' } }],
+  };
+  fs.writeFileSync(taskMdPath, goodTaskMd.replace(/<!--\s*TASK-META\s*[\s\S]*?-->/, '<!-- TASK-META\n' + JSON.stringify(offChainMeta, null, 2) + '\n-->'));
+  const offChain = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('G2: lint отклоняет решение вне цепи эффекта', offChain.code !== 0 && /не входит в цепь/.test(offChain.out), offChain.out);
+  fs.writeFileSync(taskMdPath, goodTaskMd);
+
   write(path.join(repo, 'checks/add.mjs'), 'const { add } = await import("../src/app.js");\nif (add(1, 2) !== 3) { console.error("sum is wrong: " + add(1, 2)); process.exit(1); }\nconsole.log("ok " + add(1, 2));\n');
   write(path.join(repo, 'checks/negative.mjs'), 'console.error("invalid input: rejected as expected"); process.exit(1);\n');
-  write(path.join(repo, 'checks/effect.mjs'), 'const { add } = await import("../src/app.js");\nif (add(1, 2) !== 3) { console.error("effect: сумма неверна: " + add(1, 2)); process.exit(1); }\nconsole.log("effect ok " + add(1, 2));\n');
+  write(path.join(repo, 'src/cli.mjs'), 'import { add } from "./app.js";\nconst [a, b] = process.argv.slice(2).map(Number);\nconsole.log("sum " + add(a, b));\n');
   write(path.join(repo, 'src/app.js'), 'export const add = (a, b) => a - b;\n');
   git(['add', '-A']);
   git(['commit', '-q', '-m', 'task 0001: контракт']);
@@ -212,8 +227,12 @@ try {
   const verify = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
   report('verify зелёный после фикса', verify.code === 0, verify.out);
   const verifyJson = JSON.parse(fs.readFileSync(path.join(repo, 'docs/tasks/0001/verify.json'), 'utf8'));
-  report('verify записывает объявленный эффект', Array.isArray(verifyJson.effects && verifyJson.effects.declared)
-    && verifyJson.effects.declared.length === 1 && verifyJson.effects.declared[0].measuredBy === 'C1', JSON.stringify(verifyJson.effects));
+  report('verify записывает эффект и цепь решения', Array.isArray(verifyJson.effects && verifyJson.effects.declared)
+    && verifyJson.effects.declared.length === 1 && verifyJson.effects.declared[0].measuredBy === 'C1'
+    && verifyJson.effects.checked === true && verifyJson.effects.ok === true
+    && Array.isArray(verifyJson.effects.links) && verifyJson.effects.links.length === 1
+    && verifyJson.effects.links[0].decision === 'D1' && verifyJson.effects.links[0].carrier === 'C3',
+    JSON.stringify(verifyJson.effects));
 
   fs.writeFileSync(path.join(repo, 'src/extra.js'), 'export const extra = 1;\n');
   const uncovered = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
@@ -251,6 +270,12 @@ try {
   report('эффект записан в приёмку с измерителем',
     Array.isArray(record.effects) && record.effects.length === 1 && record.effects[0].measuredBy === 'C1',
     JSON.stringify(record.effects));
+  report('G3: запись хранит согласованность решения и эффекта',
+    record.effectConsistency && record.effectConsistency.checked === true && record.effectConsistency.ok === true
+      && record.effectConsistency.mode === 'fail' && Array.isArray(record.effectConsistency.links)
+      && record.effectConsistency.links.length === 1 && record.effectConsistency.links[0].decision === 'D1'
+      && record.effectConsistency.links[0].carrier === 'C3',
+    JSON.stringify(record.effectConsistency));
   report('решения записаны с digest и без assumed',
     record.decisions && record.decisions.count === 1 && record.decisions.assumed.length === 0 && /^[0-9a-f]{64}$/.test(record.decisions.digest),
     JSON.stringify(record.decisions));
@@ -270,6 +295,91 @@ try {
   const metadataCommit = git(['rev-parse', 'HEAD']);
   const checkMeta = run('task-check-acceptance.mjs', ['--file', acceptancePath, '--repo', repo, '--metadata', metadataCommit]);
   report('check-acceptance проверяет metadata-коммит', checkMeta.code === 0, checkMeta.out);
+
+  /*
+   * G4/G5 (2.4.0): строгость согласованности — policy.decisions. Отдельная
+   * low-задача без замка: lint не требует ни covers, ни redExpect, поэтому
+   * единственная ошибка — решение вне цепи эффекта.
+   */
+  const policyTask = path.join(repo, 'docs/tasks', '0002');
+  const miniMeta = {
+    id: '0002', version: 1, risk: 'low', created: '2026-10-27',
+    owner: 'architect', executor: 'subagent:executor', acceptor: 'subagent:judge',
+    base: 'HEAD', criteria: 'criteria.json', allowedPaths: ['src/**'], hashExclude: [],
+    decisions: [{
+      id: 'D1', class: 'semantic', question: 'что считается результатом', chosen: 'сумма',
+      options: ['сумма', 'конкатенация'], impact: 'user-visible', reversible: false,
+      evidence: { kind: 'criterion', ref: 'C2' },
+    }],
+  };
+  const miniTaskMd = [
+    '# Задание 0002',
+    '',
+    '<!-- TASK-META\n' + JSON.stringify(miniMeta, null, 2) + '\n-->',
+    '',
+    '## Цель',
+    '',
+    'Проверка политики согласованности.',
+    '',
+    '## Что не входит',
+    '',
+    '1. Реальная работа: задание создано только для проверки lint.',
+    '',
+    '## Инварианты',
+    '',
+    '1. Ничего не исполняется.',
+    '',
+    '## Границы знания',
+    '',
+    '1. Только этот каталог.',
+    '',
+    '## Среда',
+    '',
+    '- Node.js.',
+    '',
+    '## Критерии приёмки',
+    '',
+    '<!-- CRITERIA:BEGIN -->',
+    '| ID | Проверка | Ожидание |',
+    '| --- | --- | --- |',
+    '| C1 | node checks/add.mjs | ok 3 |',
+    '| C2 | node checks/negative.mjs | exit 1 |',
+    '| C3 | node src/cli.mjs 1 2 | sum 3 |',
+    '<!-- CRITERIA:END -->',
+    '',
+    '## Отчёт',
+    '',
+    '1. Не требуется.',
+    '',
+    '## Коммит',
+    '',
+    '1. Не требуется.',
+    '',
+  ].join('\n');
+  write(path.join(policyTask, 'task.md'), miniTaskMd);
+  write(path.join(policyTask, 'criteria.json'), JSON.stringify({
+    task: '0002',
+    criteria: [
+      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', covers: ['src/**'], expect: { exitCode: 0, stdoutContains: 'ok 3' } },
+      { id: 'C2', title: 'негатив', command: 'node checks/negative.mjs', tags: ['negative'], expect: { exitCode: 1, stderrContains: 'invalid input' } },
+      { id: 'C3', title: 'эффект', command: 'node src/cli.mjs 1 2', covers: ['src/**'], effect: { observable: 'сумма', threshold: 'sum 3', measuredBy: 'C1' }, expect: { exitCode: 0, stdoutContains: 'sum 3' } },
+    ],
+  }, null, 2) + '\n');
+  const baseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const setDecisions = (level) => {
+    const cfg = JSON.parse(JSON.stringify(baseConfig));
+    cfg.policy = { ...cfg.policy, decisions: level };
+    fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2) + '\n');
+  };
+  const miniFail = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
+  report('G4: policy.decisions=fail отклоняет решение вне цепи', miniFail.code !== 0 && /не входит в цепь/.test(miniFail.out), miniFail.out);
+  setDecisions('warn');
+  const miniWarn = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
+  report('G4: policy.decisions=warn — предупреждение, exit 0', miniWarn.code === 0 && /не входит в цепь/.test(miniWarn.out), miniWarn.out);
+  setDecisions('off');
+  const miniOff = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
+  report('G5: policy.decisions=off — ни ошибки, ни предупреждения', miniOff.code === 0 && !/не входит в цепь/.test(miniOff.out), miniOff.out);
+  fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2) + '\n');
 
   /*
    * Regress (2.3.0, R-5): закрытая задача перезапускается. Сломанная проверка

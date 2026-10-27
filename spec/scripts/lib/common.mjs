@@ -679,10 +679,57 @@ export function userFacingDecisions(decisions) {
   );
 }
 
+/*
+ * I-34 (2.4.0): доказательство решения и эффект — одна цепь. Решение с влиянием
+ * на пользователя, опирающееся на исполняемый критерий, обязано ссылаться на
+ * носитель эффекта или на его измеритель. Иначе решение «доказано» одним
+ * критерием, а эффект объявлен на другом, и связи между ними нет.
+ */
+export function effectLinks(decisions, criteriaList, effects) {
+  const byId = new Map((criteriaList || []).map((criterion) => [String(criterion.id), criterion]));
+  const chains = (effects || []).map((effect) => ({
+    carrier: String(effect.criterion),
+    measuredBy: String(effect.measuredBy),
+  }));
+  const applicable = (Array.isArray(decisions) ? decisions : [])
+    .filter((decision) => isEffectLinkApplicable(decision, byId));
+  const checked = applicable.length > 0;
+  if (chains.length === 0) return { checked, issues: [], links: [] };
+  const issues = [];
+  const links = [];
+  for (const decision of applicable) {
+    const ref = String(decision.evidence.ref).trim();
+    const matched = chains.filter((chain) => chain.carrier === ref || chain.measuredBy === ref);
+    if (matched.length === 0) {
+      issues.push('решение ' + decision.id + ': evidence.ref=' + ref + ' не входит в цепь эффекта ('
+        + chains.map((chain) => chain.carrier + '→' + chain.measuredBy).join(', ')
+        + ') — укажите в решении критерий из цепи');
+      continue;
+    }
+    for (const chain of matched) {
+      links.push({ decision: String(decision.id), criterion: ref, carrier: chain.carrier, measuredBy: chain.measuredBy });
+    }
+  }
+  return { checked, issues, links };
+}
+
+function isEffectLinkApplicable(decision, byId) {
+  if (!decision || typeof decision !== 'object' || Array.isArray(decision)) return false;
+  if (typeof decision.id !== 'string' || decision.id.trim() === '') return false;
+  if (decision.class !== 'semantic' && decision.class !== 'contract') return false;
+  if (decision.impact !== 'user-visible' && decision.impact !== 'public-contract') return false;
+  const evidence = decision.evidence;
+  if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) return false;
+  if (evidence.kind !== 'criterion' || typeof evidence.ref !== 'string') return false;
+  const criterion = byId.get(evidence.ref.trim());
+  return Boolean(criterion) && !isManual(criterion);
+}
+
 export function evaluateEffects(meta, criteria) {
   const required = userFacingDecisions(meta && meta.decisions).length > 0;
   const issues = [];
   const effects = [];
+  const validEffects = [];
   for (const criterion of criteria.criteria) {
     if (criterion.effect === undefined) continue;
     const effect = criterion.effect;
@@ -691,28 +738,52 @@ export function evaluateEffects(meta, criteria) {
       issues.push(label + ' должен быть объектом { observable, threshold }');
       continue;
     }
-    if (typeof effect.observable !== 'string' || effect.observable.trim() === '') issues.push(label + ': observable обязателен');
-    if (typeof effect.threshold !== 'string' || effect.threshold.trim() === '') issues.push(label + ': threshold обязателен');
+    let valid = true;
+    if (typeof effect.observable !== 'string' || effect.observable.trim() === '') {
+      issues.push(label + ': observable обязателен');
+      valid = false;
+    }
+    if (typeof effect.threshold !== 'string' || effect.threshold.trim() === '') {
+      issues.push(label + ': threshold обязателен');
+      valid = false;
+    }
     const measuredBy = typeof effect.measuredBy === 'string' ? effect.measuredBy.trim() : '';
     if (measuredBy === '') {
       issues.push(label + ': measuredBy обязателен — назовите критерий, который измеряет эффект');
+      valid = false;
     } else if (measuredBy === String(criterion.id)) {
       /*
        * 2.3.1: измеритель не может быть тем же критерием. Иначе «эффект» и
        * проверка — один и тот же оператор, и подмена остаётся возможной.
        */
       issues.push(label + ': measuredBy не может указывать на сам критерий ' + measuredBy + ' — нужен другой критерий');
+      valid = false;
     } else {
       const target = criteria.criteria.find((item) => String(item.id) === measuredBy);
-      if (!target) issues.push(label + ': measuredBy ссылается на неизвестный критерий ' + measuredBy);
-      else if (isManual(target)) issues.push(label + ': measuredBy указывает на manual-критерий ' + measuredBy + ' — измеритель должен быть исполняемым');
+      if (!target) {
+        issues.push(label + ': measuredBy ссылается на неизвестный критерий ' + measuredBy);
+        valid = false;
+      } else if (isManual(target)) {
+        issues.push(label + ': measuredBy указывает на manual-критерий ' + measuredBy + ' — измеритель должен быть исполняемым');
+        valid = false;
+      }
     }
     effects.push({ criterion: String(criterion.id), observable: effect.observable, threshold: effect.threshold, measuredBy });
+    if (valid) validEffects.push({ criterion: String(criterion.id), measuredBy });
   }
   if (required && effects.length === 0) {
     issues.push('есть решение с impact user-visible/public-contract, но ни один критерий не объявляет effect { observable, threshold }');
   }
-  return { required, effects, issues };
+  const consistency = effectLinks(meta && meta.decisions, criteria.criteria, validEffects);
+  issues.push(...consistency.issues);
+  return {
+    required,
+    effects,
+    checked: consistency.checked,
+    links: consistency.links,
+    consistencyIssues: consistency.issues,
+    issues,
+  };
 }
 
 /**

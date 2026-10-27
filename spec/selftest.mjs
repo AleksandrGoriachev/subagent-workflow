@@ -10,7 +10,7 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
-import { summarizeDecisions } from './scripts/lib/common.mjs';
+import { summarizeDecisions, evaluateEffects } from './scripts/lib/common.mjs';
 import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './scripts/lib/regress.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -301,6 +301,218 @@ try {
   fs.writeFileSync(badCandidatePath, JSON.stringify(badCandidateRecord, null, 2));
   report('acceptance внутри кандидата отклоняется', runChecker(badCandidatePath, repo, keysFile).status !== 0);
   git(repo, ['checkout', '-q', mainBranch]);
+
+  /*
+   * 2.4.0 (I-34): доказательство решения и эффект — одна цепь. Чистые кейсы:
+   * evaluateEffects проверяется как функция, без git и без запуска критериев.
+   */
+  const criteriaBase = () => ([
+    { id: 'C1', command: 'node checks/add.mjs' },
+    { id: 'C2', command: 'node checks/negative.mjs', tags: ['negative'] },
+    { id: 'C3', command: 'node checks/effect.mjs', effect: { observable: 'пользователь получает сумму', threshold: 'ok 3', measuredBy: 'C1' } },
+    { id: 'C4', command: 'node checks/other.mjs' },
+  ]);
+  const decision = (id, impact, ref, extra = {}) => ({
+    id, class: 'semantic', question: 'q', chosen: 'c', options: ['a', 'b'], impact, reversible: false,
+    ...(ref ? { evidence: { kind: 'criterion', ref } } : {}),
+    ...extra,
+  });
+  const checkEffects = (decisions, criteria) => evaluateEffects({ decisions }, { criteria });
+
+  const u1 = checkEffects([decision('D1', 'user-visible', 'C1')], criteriaBase());
+  report('U1: решение ссылается на измеритель — связь есть',
+    u1.issues.length === 0 && u1.links.length === 1 && u1.links[0].carrier === 'C3' && u1.links[0].measuredBy === 'C1',
+    JSON.stringify(u1));
+
+  const u2 = checkEffects([decision('D1', 'user-visible', 'C3')], criteriaBase());
+  report('U2: решение ссылается на носитель — связь есть',
+    u2.issues.length === 0 && u2.links.length === 1 && u2.links[0].criterion === 'C3' && u2.links[0].carrier === 'C3',
+    JSON.stringify(u2));
+
+  const u3 = checkEffects([decision('D1', 'user-visible', 'C4')], criteriaBase());
+  report('U3: решение вне цепи эффекта — ошибка с именем решения и цепи',
+    u3.issues.length === 1 && /D1/.test(u3.issues[0]) && /C4/.test(u3.issues[0]) && /C3→C1/.test(u3.issues[0]) && u3.consistencyIssues.length === 1,
+    JSON.stringify(u3));
+
+  const u4 = checkEffects([decision('D1', 'user-visible', 'C1'), decision('D2', 'user-visible', 'C4')], criteriaBase());
+  report('U4: наружу выходит только несвязанное решение',
+    u4.issues.length === 1 && /D2/.test(u4.issues[0]) && !/D1/.test(u4.issues[0]),
+    JSON.stringify(u4));
+
+  const u5 = checkEffects([decision('D1', 'user-visible', 'C1'), decision('D2', 'internal', 'C4')], criteriaBase());
+  report('U5: внутреннее решение вне цепи — не нарушение',
+    u5.issues.length === 0 && u5.links.length === 1,
+    JSON.stringify(u5));
+
+  const u6 = checkEffects([decision('D1', 'user-visible', null, { evidence: { kind: 'spec', ref: 'SPEC §5' } })], criteriaBase());
+  report('U6: доказательство спецификацией — не применимо',
+    u6.issues.length === 0 && u6.links.length === 0,
+    JSON.stringify(u6));
+
+  const u7 = checkEffects(
+    [decision('D1', 'user-visible', 'Cm')],
+    [...criteriaBase(), { id: 'Cm', command: 'node checks/manual.mjs', manual: true }],
+  );
+  report('U7: manual-критерий — человеческое доказательство, не применимо',
+    u7.issues.length === 0 && u7.links.length === 0,
+    JSON.stringify(u7));
+
+  const u8a = checkEffects(
+    [{ id: 'D1', class: 'mechanical', question: 'q', chosen: 'c', impact: 'user-visible' }],
+    [{ id: 'C1', command: 'node checks/add.mjs' }],
+  );
+  report('U8a: mechanical user-visible без эффекта — required ловит, consistency молчит',
+    u8a.required === true && u8a.issues.some((issue) => /ни один критерий не объявляет effect/.test(issue))
+      && u8a.consistencyIssues.length === 0,
+    JSON.stringify(u8a));
+
+  const u8b = checkEffects(
+    [{ id: 'D1', class: 'mechanical', question: 'q', chosen: 'c', impact: 'user-visible', evidence: { kind: 'criterion', ref: 'C4' } }],
+    criteriaBase(),
+  );
+  report('U8b: mechanical user-visible вне цепи — consistency не применяется',
+    u8b.required === true && u8b.issues.length === 0 && u8b.consistencyIssues.length === 0,
+    JSON.stringify(u8b));
+
+  const u9 = checkEffects([], criteriaBase());
+  report('U9: решений нет — правило молчит, checked=false',
+    u9.issues.length === 0 && u9.checked === false && u9.links.length === 0,
+    JSON.stringify(u9));
+
+  const u10 = checkEffects(
+    [decision('D1', 'user-visible', 'C2')],
+    [...criteriaBase(), { id: 'C5', command: 'node checks/two.mjs', effect: { observable: 'второй эффект', threshold: 'ok', measuredBy: 'C2' } }],
+  );
+  report('U10: решение входит во вторую цепь — pass',
+    u10.issues.length === 0 && u10.links.length === 1 && u10.links[0].carrier === 'C5' && u10.links[0].measuredBy === 'C2',
+    JSON.stringify(u10));
+
+  let u11;
+  try {
+    u11 = checkEffects([null, 42], criteriaBase());
+  } catch (err) {
+    u11 = { error: String(err) };
+  }
+  report('U11: мусор в decisions не роняет проверку',
+    !u11.error && u11.issues.length === 0 && u11.checked === false,
+    JSON.stringify(u11));
+
+  const u12 = checkEffects(
+    [decision('D1', 'user-visible', 'C1')],
+    [...criteriaBase(), { id: 'C5', command: 'node checks/bad.mjs', effect: { observable: 'x', threshold: 'y', measuredBy: 'C5' } }],
+  );
+  report('U12: невалидный эффект не даёт каскада consistency',
+    u12.issues.some((issue) => /сам критерий/.test(issue)) && u12.consistencyIssues.length === 0 && u12.links.length === 1,
+    JSON.stringify(u12));
+
+  /*
+   * R1–R6 (2.4.0): запись и CI. Согласованность пересчитывается по контракту,
+   * links сверяются, legacy-записи без блока не ломаются, policy.decisions
+   * управляет строгостью (Q9).
+   */
+  const makeTask = (id, decisionRef) => {
+    const dir = path.join(repo, 'docs', 'tasks', id);
+    const decisions = [{
+      id: 'D1', class: 'semantic', question: 'q', chosen: 'c', options: ['a', 'b'],
+      impact: 'user-visible', reversible: false, evidence: { kind: 'criterion', ref: decisionRef },
+      status: 'confirmed',
+    }];
+    write(path.join(dir, 'task.md'), '# Задание ' + id + '\n\n<!-- TASK-META\n' + JSON.stringify({
+      id, version: 1, risk: 'medium', created: '2026-10-27', owner: 'architect',
+      executor: 'subagent:executor', acceptor: 'subagent:judge', base: 'HEAD',
+      criteria: 'criteria.json', allowedPaths: ['src/**'],
+      issuedBy: { kind: 'agent', session: 'issuer-session' }, decisions,
+    }, null, 2) + '\n-->\n');
+    const criteria = [
+      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', covers: ['src/**'], expect: { exitCode: 0 } },
+      { id: 'C2', title: 'негатив', command: 'node checks/negative.mjs', tags: ['negative'], expect: { exitCode: 1 } },
+      { id: 'C3', title: 'эффект', command: 'node checks/effect.mjs', effect: { observable: 'сумма', threshold: 'sum 3', measuredBy: 'C1' }, expect: { exitCode: 0 } },
+    ];
+    write(path.join(dir, 'criteria.json'), JSON.stringify({ task: id, criteria }, null, 2) + '\n');
+    git(repo, ['add', '-A']);
+    git(repo, ['commit', '-q', '-m', 'task ' + id + ' contract']);
+    return {
+      id, decisions, criteria,
+      commit: git(repo, ['rev-parse', 'HEAD']),
+      tree: git(repo, ['rev-parse', 'HEAD^{tree}']),
+    };
+  };
+  const makeRecord = (task, extra = {}) => {
+    const summary = summarizeDecisions(task.decisions, task.criteria);
+    const digest = sha(path.join(repo, 'docs/tasks', task.id, 'task.md'));
+    const criteriaDigest = sha(path.join(repo, 'docs/tasks', task.id, 'criteria.json'));
+    return signRecord({
+      ...base,
+      task: task.id,
+      taskFileSha256: digest,
+      criteriaSha256: criteriaDigest,
+      criteriaJsonSha256: criteriaDigest,
+      contractCommit: task.commit,
+      baseCommit: task.commit,
+      candidateCommit: task.commit,
+      tree: task.tree,
+      red: { ...base.red, baseSha: task.commit, contractCommit: task.commit, criteriaJsonSha256: criteriaDigest },
+      acceptorRun: { ...base.acceptorRun, verifySha256: null },
+      decisions: { count: summary.count, digest: summary.digest, assumed: summary.assumed, confirmed: summary.confirmed },
+      effects: [{ criterion: 'C3', observable: 'сумма', threshold: 'sum 3', measuredBy: 'C1' }],
+      effectsRequired: true,
+      effectConsistency: {
+        checked: true, ok: true, mode: 'fail',
+        links: [{ decision: 'D1', criterion: 'C1', carrier: 'C3', measuredBy: 'C1' }],
+      },
+      releaseReady: true,
+      review: null,
+      ...extra,
+    }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  };
+  const writeRecord = (name, record) => {
+    const file = path.join(tmp, name);
+    fs.writeFileSync(file, JSON.stringify(record, null, 2) + '\n');
+    return file;
+  };
+
+  const task3 = makeTask('0003', 'C1');
+  const record3 = makeRecord(task3);
+  const record3Run = runChecker(writeRecord('record3.json', record3), repo, keysFile, ['--task', 'docs/tasks/0003']);
+  report('R1: согласованная запись принимается', record3Run.status === 0, record3Run.stdout + record3Run.stderr);
+
+  const record3BadOk = signRecord({ ...record3, effectConsistency: { ...record3.effectConsistency, ok: false } }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const badOkRun = runChecker(writeRecord('record3-bad-ok.json', record3BadOk), repo, keysFile, ['--task', 'docs/tasks/0003']);
+  report('R2: ok=false при согласованном контракте — расхождение записи', badOkRun.status !== 0 && /effectConsistency/.test(badOkRun.stdout + badOkRun.stderr), badOkRun.stdout + badOkRun.stderr);
+
+  const record3BadLinks = signRecord({ ...record3, effectConsistency: { ...record3.effectConsistency, links: [] } }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const badLinksRun = runChecker(writeRecord('record3-bad-links.json', record3BadLinks), repo, keysFile, ['--task', 'docs/tasks/0003']);
+  report('R4: links не совпадают с контрактом', badLinksRun.status !== 0 && /links/.test(badLinksRun.stdout + badLinksRun.stderr), badLinksRun.stdout + badLinksRun.stderr);
+
+  const legacyRecord = { ...record3 };
+  delete legacyRecord.effectConsistency;
+  const legacyRecordRun = runChecker(writeRecord('record3-legacy.json', signRecord(legacyRecord, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' })), repo, keysFile, ['--task', 'docs/tasks/0003']);
+  report('R5: запись без блока (до 2.4.0) не ломается', legacyRecordRun.status === 0, legacyRecordRun.stdout + legacyRecordRun.stderr);
+
+  const legacyNoFlag = { ...legacyRecord };
+  delete legacyNoFlag.effectsRequired;
+  const legacyNoFlagRun = runChecker(writeRecord('record3-legacy-noflag.json', signRecord(legacyNoFlag, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' })), repo, keysFile, ['--task', 'docs/tasks/0003']);
+  report('R6: запись без блока и без флага не ломается', legacyNoFlagRun.status === 0, legacyNoFlagRun.stdout + legacyNoFlagRun.stderr);
+
+  /* R3: политика проверки — на контракте, где решение реально вне цепи. */
+  const task4 = makeTask('0004', 'C2');
+  const record4 = makeRecord(task4, {
+    effectConsistency: { checked: true, ok: false, mode: 'fail', links: [] },
+  });
+  const record4Path = writeRecord('record4.json', record4);
+  const failRun = runChecker(record4Path, repo, keysFile, ['--task', 'docs/tasks/0004']);
+  report('R3a: policy.decisions=fail валит несогласованную запись', failRun.status !== 0 && /не входит в цепь/.test(failRun.stdout + failRun.stderr), failRun.stdout + failRun.stderr);
+
+  const selftestConfigPath = path.join(repo, 'docs/subagent-workflow/workflow.config.json');
+  const hadConfig = fs.existsSync(selftestConfigPath);
+  const savedConfig = hadConfig ? fs.readFileSync(selftestConfigPath, 'utf8') : null;
+  const warnConfig = savedConfig ? JSON.parse(savedConfig) : { policy: { decisions: 'fail' } };
+  warnConfig.policy = { ...(warnConfig.policy || {}), decisions: 'warn' };
+  write(selftestConfigPath, JSON.stringify(warnConfig, null, 2) + '\n');
+  const warnRun = runChecker(record4Path, repo, keysFile, ['--task', 'docs/tasks/0004']);
+  if (hadConfig) fs.writeFileSync(selftestConfigPath, savedConfig);
+  else fs.rmSync(selftestConfigPath, { force: true });
+  report('R3b: policy.decisions=warn — предупреждение, запись принимается', warnRun.status === 0 && /не входит в цепь/.test(warnRun.stdout + warnRun.stderr), warnRun.stdout + warnRun.stderr);
 } catch (err) {
   failed += 1;
   console.error('SELFTEST ERROR: ' + err.stack);

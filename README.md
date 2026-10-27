@@ -123,6 +123,8 @@ node scripts/task-hash.mjs    --task docs/tasks/0001 --write
   с `status: "assumed"` — приёмка есть, `releaseReady=false`;
 - `covers` у критерия говорит, какие файлы он покрывает; `verify` валит изменённый
   файл, на который критерия нет;
+- user-visible решение с `evidence.kind=criterion` обязано ссылаться на носитель или
+  измеритель эффекта (I-34); `spec`/`customer`/`human`/manual — исключения;
 - запись версии 5 хранит digest решений, и `check` пересчитывает его по контракту.
 
 ## Замечания приёмщика (1.4.1)
@@ -140,9 +142,9 @@ node scripts/task-hash.mjs    --task docs/tasks/0001 --write
 ## Проверено
 
 ~~~bash
-node spec/selftest.mjs     # SELFTEST OK (25 проверок)
-node spec/e2e.mjs          # E2E OK: атака → init → задача → красный → фикс → приёмка → check
-node spec/e2e-deploy.mjs   # DEPLOY E2E OK: init из развёрнутого каталога
+node spec/selftest.mjs     # SELFTEST OK (50 проверок)
+node spec/e2e.mjs          # E2E OK (39): атака → init → задача → красный → фикс → приёмка → check
+node spec/e2e-deploy.mjs   # DEPLOY E2E OK (23): init из развёрнутого каталога
 ~~~
 
 E2E включает отказ самоприёмке из сессии постановщика и проверку metadata-коммита.

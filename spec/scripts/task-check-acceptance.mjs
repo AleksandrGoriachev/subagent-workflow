@@ -14,8 +14,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { loadAcceptors, verifyRecord, publicKeyFingerprint, readJsonFile } from './sign.mjs';
-import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions } from './lib/common.mjs';
-import { policyOf, modelLevel, familyOf } from './lib/policy.mjs';
+import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions, evaluateEffects } from './lib/common.mjs';
+import { policyOf, modelLevel, familyOf, applyLevel } from './lib/policy.mjs';
 import { assessIndependence, LEVEL_RANK, requiredLevel } from './actor.mjs';
 import { validateReview } from './lib/review.mjs';
 
@@ -98,19 +98,28 @@ function run() {
    * у записей, принятых до 2.3.1, его нет — они не ломаются.
    */
   if (record.effectsRequired === true) {
+    const effectIssues = [];
     if (!Array.isArray(record.effects) || record.effects.length === 0) {
-      note('эффект: решение влияет на пользователя, но effects в записи пуст');
+      effectIssues.push('эффект: решение влияет на пользователя, но effects в записи пуст');
     } else {
       for (const effect of record.effects) {
         if (!effect || typeof effect !== 'object'
           || typeof effect.observable !== 'string' || effect.observable.trim() === ''
           || typeof effect.threshold !== 'string' || effect.threshold.trim() === ''
           || typeof effect.measuredBy !== 'string' || effect.measuredBy.trim() === '') {
-          note('эффект: неполный элемент effects (нужны observable, threshold, measuredBy)');
+          effectIssues.push('эффект: неполный элемент effects (нужны observable, threshold, measuredBy)');
           break;
         }
       }
     }
+    /*
+     * 2.4.0 (Q9): строгость — политика репозитория, а не безусловный отказ.
+     * Иначе запись, подписанная при policy.decisions=warn, валила CI этим же
+     * пакетом — ровно тот класс расхождения канона и кода, что чинили в 2.3.2.
+     */
+    const effectApplied = applyLevel(policyOf(config).decisions, effectIssues);
+    errors.push(...effectApplied.errors);
+    warnings.push(...effectApplied.warnings);
   }
   if (record.status !== 'accepted') note('статус записи: ' + record.status);
 
@@ -260,6 +269,35 @@ function run() {
       if (expected.unproven.length) note('решение о пользовательском контракте без доказательства: ' + expected.unproven.join(', '));
       if (expected.assumed.length > 0 && record.releaseReady !== false) note('есть assumed-решения, а releaseReady не false');
       if (record.risk === 'high' && expected.assumed.length > 0) note('high-risk с assumed-решениями');
+
+      /*
+       * 2.4.0 (I-34, Q6): согласованность решения и эффекта пересчитывается по
+       * контракту кандидата, а не берётся из записи на веру. Запись без блока —
+       * legacy до 2.4.0: не валим, только отмечаем в предупреждениях.
+       */
+      const effectCheck = evaluateEffects(meta, { criteria: criteriaList });
+      if (record.effectConsistency) {
+        const consistency = record.effectConsistency;
+        const expectedOk = effectCheck.consistencyIssues.length === 0;
+        if (consistency.ok === true !== expectedOk) {
+          note('effectConsistency.ok=' + consistency.ok + ', в контракте ' + expectedOk);
+        }
+        const normalizeLinks = (list) => (Array.isArray(list) ? list : [])
+          .map((link) => [
+            link && link.decision, link && link.criterion, link && link.carrier, link && link.measuredBy,
+          ].map(String).join('|'))
+          .sort();
+        const recordedLinks = normalizeLinks(consistency.links);
+        const expectedLinks = normalizeLinks(effectCheck.links);
+        if (JSON.stringify(recordedLinks) !== JSON.stringify(expectedLinks)) {
+          note('effectConsistency.links не совпадают с контрактом: запись [' + recordedLinks.join(', ') + '], контракт [' + expectedLinks.join(', ') + ']');
+        }
+        const consistencyApplied = applyLevel(policyOf(config).decisions, effectCheck.consistencyIssues);
+        errors.push(...consistencyApplied.errors);
+        warnings.push(...consistencyApplied.warnings);
+      } else if (record.effectsRequired === true) {
+        warnings.push('effectConsistency: запись до 2.4.0 — согласованность не проверялась');
+      }
     }
   }
 
