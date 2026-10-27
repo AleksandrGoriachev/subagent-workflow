@@ -141,3 +141,10 @@ test('unknown version is a warning, not a hard failure', () => {
   assert.equal(view.summary.warnings, 1);
   assert.ok(view.checks.some((item) => item.id === 'version-unknown'));
 });
+
+test('PLUGIN_VERSION совпадает с package.json', async () => {
+  const fs = await import('node:fs');
+  const manifest = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const { PLUGIN_VERSION } = await import('../lib/compat.js');
+  assert.equal(PLUGIN_VERSION, manifest.version, 'версия для панели не должна отставать от package.json');
+});

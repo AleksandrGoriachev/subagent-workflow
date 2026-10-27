@@ -79,11 +79,50 @@ export function createWorkflowRuntime(config = {}, options = {}) {
   };
 }
 
+/** Маркер развёрнутого workflow внутри проекта. */
+const PROJECT_MARKER = path.join('docs', 'subagent-workflow', 'workflow.config.json');
+
+/**
+ * Проекты прямо внутри корня, где workflow развёрнут.
+ *
+ * Панель должна показать проект своего пространства, даже если он не прописан в
+ * roots профиля.
+ */
+export function discoverNestedProjects(roots) {
+  const found = [];
+  for (const root of roots) {
+    let entries;
+    try {
+      entries = fs.readdirSync(root, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+      const candidate = path.join(root, entry.name);
+      let deployed = false;
+      try {
+        deployed = fs.existsSync(path.join(candidate, PROJECT_MARKER));
+      } catch {
+        deployed = false;
+      }
+      if (!deployed) continue;
+      if (found.some((item) => samePath(item.path, candidate))) continue;
+      found.push({ path: candidate, name: entry.name });
+    }
+  }
+  return found;
+}
+
 /** Configured roots plus every registered workspace (read-only, validated). */
 function allowedRoots(runtime) {
   const list = [...runtime.roots];
   for (const candidate of rootsFromRegistry(runtime.getWorkspaceRegistry)) {
     if (!list.some((root) => samePath(root, candidate))) list.push(candidate);
+  }
+  /* Проекты своего пространства разрешаем читать наравне с настроенными корнями. */
+  for (const project of discoverNestedProjects(list)) {
+    if (!list.some((root) => samePath(root, project.path))) list.push(project.path);
   }
   return list;
 }
@@ -232,6 +271,8 @@ export function createWebHandler(runtime) {
           roots,
           root: selection.root,
           rootConfigured,
+          /* Проекты внутри пространства, где workflow развёрнут. */
+          projects: discoverNestedProjects(allowedRoots(runtime)),
           repo: repoInfoPayload(info),
           error: null,
         });

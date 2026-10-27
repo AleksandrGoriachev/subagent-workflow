@@ -79,7 +79,7 @@ test('GET /workflow/api/status reports the repository and policy', async () => {
     assert.equal(response.json.repo.packageVersion, '2.2.1');
     assert.equal(response.json.repo.policy.line, 'decisions=fail, coverage=fail, attack=fail, modelFamily=warn');
     assert.equal(response.json.rootConfigured, true);
-    assert.equal(response.json.repo.compat.pluginVersion, '0.2.1');
+    assert.match(response.json.repo.compat.pluginVersion, /^\d+\.\d+\.\d+$/);
     assert.equal(response.json.repo.compat.summary.limited, false);
   } finally {
     fixture.cleanup();
@@ -152,7 +152,7 @@ test('GET /workflow/api/compat reports versions and recommendations', async () =
   try {
     const response = await call(handler, '/workflow/api/compat');
     assert.equal(response.status, 200);
-    assert.equal(response.json.pluginVersion, '0.2.1');
+    assert.match(response.json.pluginVersion, /^\d+\.\d+\.\d+$/);
     assert.equal(response.json.supported, '2.0.0 – 2.2.x');
     assert.equal(response.json.workflowVersion, '2.2.1');
     assert.equal(response.json.summary.limited, false);

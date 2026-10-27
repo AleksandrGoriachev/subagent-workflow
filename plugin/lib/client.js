@@ -754,7 +754,8 @@ window.__ModuleLoader__.load({
              * вместо чужого проекта — честное пустое состояние и выбор вручную.
              */
             const repo = nextStatus.repo;
-            const workflowReady = Boolean(repo && repo.configLoaded !== false);
+            /* Готово к показу только когда конфиг реально прочитан. */
+            const workflowReady = Boolean(repo && repo.configLoaded === true);
             /*
              * Без определённого workspace (не-web хост) показываем настроенный корень.
              * С workspace — только его самого: чужой проект не подставляем.
@@ -908,6 +909,21 @@ window.__ModuleLoader__.load({
         const foreignRoots = roots.filter((item) => currentWorkspace && !insidePath(currentWorkspace.path, item.path));
         /* Проекты внутри своего пространства — законный выбор, а не «чужой» корень. */
         const localRoots = roots.filter((item) => currentWorkspace && insidePath(currentWorkspace.path, item.path));
+        /* Проекты, найденные хостом прямо внутри пространства (например wf-project). */
+        const discovered = (status && Array.isArray(status.projects) ? status.projects : [])
+          .filter((item) => item && item.path)
+          .filter((item) => !currentWorkspace || insidePath(currentWorkspace.path, item.path));
+        const localProjects = (() => {
+          const list = [];
+          const push = (item) => {
+            if (!item || !item.path) return;
+            if (list.some((existing) => sameFsPath(existing.path, item.path))) return;
+            list.push(item);
+          };
+          for (const item of localRoots) push(item);
+          for (const item of discovered) push(item);
+          return list;
+        })();
         const title = status && status.plugin
           ? "Workflow · v" + status.plugin.version
           : "Workflow";
@@ -1056,6 +1072,35 @@ window.__ModuleLoader__.load({
           );
         }
 
+        /*
+         * Пропущенные записи объясняем по-человечески: сначала — самый частый случай
+         * (каталога заданий нет, значит workflow в этом проекте не развёрнут), потом —
+         * старое содержимое каталога. Технические пути остаются в деталях.
+         */
+        function renderSkipped(skipped) {
+          const tasksDirRel = (board && board.tasksDir) || "docs/tasks";
+          const noDir = skipped.find((item) => item.path === tasksDirRel);
+          const rest = skipped.filter((item) => item !== noDir);
+          return h(
+            "div",
+            { style: Object.assign({}, S.hint, { marginTop: "10px" }) },
+            noDir
+              ? h("div", null,
+                  "Каталога заданий " + tasksDirRel + " нет: похоже, workflow в этом проекте не развёрнут. "
+                  + "Разверните пакет командой node docs/subagent-workflow/scripts/init.mjs --repo . --force.")
+              : null,
+            rest.length > 0
+              ? h("div", { style: noDir ? { marginTop: "6px" } : null },
+                  "Пропущено записей: " + rest.length + " — старый формат или каталог без task.md. "
+                  + rest.slice(0, 5).map((item) => item.path).join("; "),
+                  rest.length > 5 ? " …" : "")
+              : null,
+            noDir ? h("details", { style: { marginTop: "4px" } },
+              h("summary", { style: { cursor: "pointer", fontSize: "11px" } }, "подробности"),
+              h("div", { style: { fontSize: "11px" } }, noDir.reason)) : null,
+          );
+        }
+
         function renderBoard() {
           if (!board) {
             if (status && status.error) return h("div", { style: S.empty }, status.error);
@@ -1067,11 +1112,11 @@ window.__ModuleLoader__.load({
                 "Панель показывает только то пространство, из которого её открыли. Чтобы включить его: разверните пакет "
                 + "в корне проекта (node docs/subagent-workflow/scripts/init.mjs --repo . --force) или откройте проект "
                 + "как отдельное рабочее пространство."),
-              localRoots.length > 0
+              localProjects.length > 0
                 ? h(
                     "div",
                     { style: { display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "10px" } },
-                    localRoots.map((item) => h(
+                    localProjects.map((item) => h(
                       "button",
                       {
                         key: item.path,
@@ -1220,13 +1265,7 @@ window.__ModuleLoader__.load({
               ? h("div", { style: S.board }, visible.map(stageColumn))
               : h("div", { style: S.empty }, "В этом репозитории нет задач workflow."),
             skipped.length > 0
-              ? h(
-                  "div",
-                  { style: Object.assign({}, S.hint, { marginTop: "10px" }) },
-                  "Пропущено файлов: " + skipped.length + " (старый формат или каталог без task.md). ",
-                  skipped.slice(0, 5).map((item) => item.path + " — " + item.reason).join("; "),
-                  skipped.length > 5 ? " …" : "",
-                )
+              ? renderSkipped(skipped)
               : null,
           );
         }
