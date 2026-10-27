@@ -103,7 +103,7 @@ test('missing config is an error but missing VERSION is a warning', () => {
   assert.equal(view.summary.errors, 1);
 });
 
-test('2.3–2.4 называется по имени, без совета обновить плагин', () => {
+test('2.4.5 — рабочее состояние: инфо про effect, без баннера «ограничен»', () => {
   const view = compatView({
     packageVersion: '2.4.5',
     versionSource: 'VERSION',
@@ -111,17 +111,21 @@ test('2.3–2.4 называется по имени, без совета обн
     config: config(),
     tasks,
   });
-  assert.equal(view.summary.limited, true);
+  /* Пакет новее панели — это не ограничение: ворота работают, панель читает те же файлы. */
+  assert.equal(view.summary.limited, false, 'баннер «функционал ограничен» на 2.4.5 не показывается');
+  assert.equal(view.summary.warnings, 0);
+  assert.equal(view.summary.headline, 'Совместимо с workflow 2.4.5');
   assert.equal(view.checks.some((item) => item.id === 'workflow-newer'), false);
   const check = view.checks.find((item) => item.id === 'workflow-2.3-plus');
   assert.ok(check, 'для 2.4.5 нужна проверка workflow-2.3-plus');
+  assert.equal(check.severity, 'info');
   /* Владельцу 2.4.5 совет «обновите плагин» нечего делать: новее этого нет. */
   assert.doesNotMatch(check.recommendation, /Обновите плагин/);
   assert.match(check.message, /effect/);
   assert.match(check.title, /2\.3–2\.4/);
 });
 
-test('a workflow newer than 2.4 is reported with an update-plugin recommendation', () => {
+test('устаревший плагин: совет обновиться есть, баннера «ограничен» нет', () => {
   const view = compatView({
     packageVersion: '2.5.0',
     versionSource: 'VERSION',
@@ -129,10 +133,25 @@ test('a workflow newer than 2.4 is reported with an update-plugin recommendation
     config: config(),
     tasks,
   });
-  assert.equal(view.summary.limited, true);
+  assert.equal(view.summary.limited, false);
   const check = view.checks.find((item) => item.id === 'workflow-newer');
   assert.ok(check);
-  assert.match(check.recommendation, /плагин/);
+  assert.equal(check.severity, 'warn');
+  assert.match(check.recommendation, /Обновите плагин/);
+});
+
+test('устаревшая развёрнутая копия — по-прежнему ограничение с советом обновиться', () => {
+  const view = compatView({
+    packageVersion: '2.1.0',
+    versionSource: 'VERSION',
+    workflow: workflow(),
+    config: config(),
+    tasks,
+  });
+  assert.equal(view.summary.limited, true, '2.1.x — настоящая нехватка функций, баннер уместен');
+  const check = view.checks.find((item) => item.id === 'workflow-2.1');
+  assert.ok(check);
+  assert.match(check.recommendation, /Обновите/);
 });
 
 test('a 2.2 deployment without the attack gate is limited', () => {
