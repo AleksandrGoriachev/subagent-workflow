@@ -906,6 +906,8 @@ window.__ModuleLoader__.load({
           return list;
         })();
         const foreignRoots = roots.filter((item) => currentWorkspace && !insidePath(currentWorkspace.path, item.path));
+        /* Проекты внутри своего пространства — законный выбор, а не «чужой» корень. */
+        const localRoots = roots.filter((item) => currentWorkspace && insidePath(currentWorkspace.path, item.path));
         const title = status && status.plugin
           ? "Workflow · v" + status.plugin.version
           : "Workflow";
@@ -1065,6 +1067,23 @@ window.__ModuleLoader__.load({
                 "Панель показывает только то пространство, из которого её открыли. Чтобы включить его: разверните пакет "
                 + "в корне проекта (node docs/subagent-workflow/scripts/init.mjs --repo . --force) или откройте проект "
                 + "как отдельное рабочее пространство."),
+              localRoots.length > 0
+                ? h(
+                    "div",
+                    { style: { display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "10px" } },
+                    localRoots.map((item) => h(
+                      "button",
+                      {
+                        key: item.path,
+                        type: "button",
+                        style: S.button,
+                        title: item.path,
+                        onClick: () => void load(item.path, true),
+                      },
+                      "Открыть " + rootLabel(item.path),
+                    )),
+                  )
+                : null,
               foreignRoots.length > 0
                 ? h(
                     "div",
