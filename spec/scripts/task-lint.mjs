@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
@@ -78,6 +80,43 @@ try {
   for (const p of protectedPaths) {
     if (typeof p !== 'string' || !p.trim()) error('protectedPaths: пустой или нестроковый элемент');
     else if (path.isAbsolute(p) || p.split('/').includes('..')) error('protectedPaths: недопустимый путь: ' + p);
+  }
+  /*
+   * 2.4.6: движок не защищаем. Если protectedPaths накрывает сам пакет
+   * (docs/subagent-workflow/), то обновление пакета через init --force меняет эти
+   * файлы, замок задания краснеет, а перезамок после красного запрещён (I-3):
+   * задание навсегда остаётся в ошибке. Ровно это случилось с заданием 0001 в
+   * default-workspace при переходе 2.4.3 → 2.4.5 — панель и task-lint показали
+   * «защищённый файл изменён» на пяти файлах пакета.
+   */
+  const engineDir = (() => {
+    /*
+     * Конвенция пакета: ворота живут в docs/subagent-workflow — этот путь зашит
+     * и в loadConfig, и в keysFile, поэтому он и есть база. Если скрипт запущен
+     * из развёрнутой копии, тот же ответ даёт путь к себе, но только когда он
+     * внутри репозитория: e2e гоняет ворота из пакета, и там path.relative уводит
+     * наружу. Нужен realpath.native — на Windows os.tmpdir() отдаёт короткую
+     * форму (GORYAC~1), а import.meta.url длинную.
+     */
+    try {
+      const rel = path.relative(fs.realpathSync.native(repo), fs.realpathSync.native(fileURLToPath(import.meta.url)));
+      const dir = rel.split(path.sep).slice(0, -2).join('/');
+      if (dir && !dir.split('/').includes('..')) return dir + '/';
+    } catch {
+      /* путь к себе не разрешился — остаётся конвенция */
+    }
+    return 'docs/subagent-workflow/';
+  })();
+  if (engineDir) {
+    const engineRoot = engineDir.replace(/\/+$/, '');
+    const covering = protectedPaths.find((p) => {
+      if (typeof p !== 'string') return false;
+      const norm = p.split(path.sep).join('/').replace(/\/+$/, '');
+      return norm === engineRoot || norm.startsWith(engineDir);
+    });
+    if (covering) {
+      warn('protectedPaths включает сам пакет: ' + covering + ' — обновление пакета (init --force) изменит эти файлы, замок станет красным, а перезамок после красного запрещён (I-3). Защищайте свои проверки (checks/**, tests/**) и артефакты задания: движок защищён версией пакета (поле tool в criteria.lock).');
+    }
   }
   const redAllow = Array.isArray(meta.redAllowDirty) ? meta.redAllowDirty : [];
   for (const p of redAllow) {

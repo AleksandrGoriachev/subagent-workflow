@@ -393,6 +393,25 @@ try {
   fs.writeFileSync(configPath, JSON.stringify(baseConfig, null, 2) + '\n');
 
   /*
+   * 2.4.6: движок не защищаем. Задание, чей protectedPaths накрывает сам пакет,
+   * обречено: обновление пакета меняет эти файлы, замок краснеет, перезамок после
+   * красного запрещён. Lint обязан сказать это словами, а не молчать.
+   */
+  const engineMeta = { ...miniMeta, protectedPaths: ['checks/**', 'docs/subagent-workflow/**'] };
+  write(path.join(policyTask, 'task.md'), miniTaskMd.replace(
+    JSON.stringify(miniMeta, null, 2),
+    JSON.stringify(engineMeta, null, 2),
+  ));
+  const engineProtect = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
+  report('G6: защита самого пакета в protectedPaths называется предупреждением',
+    /protectedPaths включает сам пакет/.test(engineProtect.out) && /docs\/subagent-workflow\/\*\*/.test(engineProtect.out),
+    engineProtect.out);
+  write(path.join(policyTask, 'task.md'), miniTaskMd);
+  const engineRestored = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
+  report('G6: без пакета в protectedPaths предупреждения нет',
+    !/protectedPaths включает сам пакет/.test(engineRestored.out), engineRestored.out);
+
+  /*
    * Regress (2.3.0, R-5): закрытая задача перезапускается. Сломанная проверка
    * закрытого задания — регресс, а не тишина.
    */
