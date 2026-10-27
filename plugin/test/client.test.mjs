@@ -219,7 +219,7 @@ test('client bundle registers the Workflow conversation view', async () => {
   assert.match(rendered, /Доска/);
   assert.match(rendered, /Политика/);
   assert.match(rendered, /Обновить/);
-  assert.match(rendered, /Нет данных/);
+  assert.match(rendered, /workflow не развёрнут/);
 });
 
 test('panel renders a real board, task card and policy page', async () => {
@@ -386,17 +386,18 @@ test('diagnostics buttons run a read-only check and show the log (v2, step 1)', 
     await delay(120);
     tree = hooks.render(slot.component);
 
-    const doctor = findButton(tree, 'doctor');
-    assert.ok(doctor, 'кнопка doctor в шапке');
-    assert.match(doctor.props.title, /Только чтение/u);
+    const doctor = findButton(tree, 'Проверить настройку');
+    assert.ok(doctor, 'кнопка «Проверить настройку» в шапке');
+    assert.match(doctor.props.title, /всё ли готово/u);
+    assert.match(doctor.props.title, /Ничего не меняет/u);
 
     findButton(tree, '0001').props.onClick();
     await delay(120);
     tree = hooks.render(slot.component);
-    const lint = findButton(tree, 'lint');
-    const accept = findButton(tree, 'check-acceptance');
-    assert.ok(lint, 'кнопка lint в карточке');
-    assert.ok(accept, 'кнопка check-acceptance в карточке');
+    const lint = findButton(tree, 'Проверить задание');
+    const accept = findButton(tree, 'Проверить запись');
+    assert.ok(lint, 'кнопка «Проверить задание» в карточке');
+    assert.ok(accept, 'кнопка «Проверить запись» в карточке');
     assert.match(lint.props.title, /Только чтение/u);
 
     lint.props.onClick();
@@ -420,7 +421,7 @@ test('diagnostics buttons run a read-only check and show the log (v2, step 1)', 
   }
 });
 
-test('panel falls back to a configured root and explains the location', async () => {
+test('panel does not substitute a foreign project: empty state first, configured roots on request', async () => {
   const fixture = makeRepo({ stage: 'remarks' });
   try {
     const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
@@ -432,9 +433,21 @@ test('panel falls back to a configured root and explains the location', async ()
     hooks.drain();
     await delay(80);
     tree = hooks.render(slot.component);
-    const text = textOf(tree);
+    let text = textOf(tree);
     assert.match(text, /Текущий workspace: other-workspace/);
     assert.match(text, /workflow не развёрнут/);
+    assert.ok(!text.includes('Сложение возвращает сумму'), 'чужой проект не показывается сам');
+    const reveal = findButton(tree, 'Показать репозитории из настроек');
+    assert.ok(reveal, 'кнопка явного выбора настроенных репозиториев');
+    reveal.props.onClick();
+    await delay(20);
+    tree = hooks.render(slot.component);
+    const pick = findButton(tree, path.basename(fixture.repo));
+    assert.ok(pick, 'настроенный корень появляется только по запросу');
+    pick.props.onClick();
+    await delay(80);
+    tree = hooks.render(slot.component);
+    text = textOf(tree);
     assert.match(text, /Сложение возвращает сумму/);
   } finally {
     fixture.cleanup();

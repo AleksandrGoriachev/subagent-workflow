@@ -152,9 +152,16 @@ window.__ModuleLoader__.load({
      * Только чтение — команда ничего не пишет, не подписывает и не принимает.
      */
     const CHECK_HINT = {
-      doctor: "Запустить doctor: окружение, ключи, шаблоны, политика. Только чтение — файлы репозитория не меняются.",
-      lint: "Запустить task-lint для этой задачи: контракт и критерии против правил. Только чтение.",
-      "check-acceptance": "Запустить task-check-acceptance: подпись и полнота записи о приёмке. Только чтение.",
+      doctor: "Проверим, всё ли готово к работе: ворота на месте, ключ приёмки заведён, политика не ослаблена. Ничего не меняет и никаких задач не запускает — только читает.",
+      lint: "Проверить задание: контракт и критерии против правил ворот. Только чтение.",
+      "check-acceptance": "Проверить запись о приёмке: подпись и полнота. Только чтение.",
+    };
+
+    /* Как действия называются для человека; id проверки остаётся внутренним. */
+    const RUN_LABELS = {
+      doctor: "Проверить настройку",
+      lint: "Проверить задание",
+      "check-acceptance": "Проверить запись",
     };
 
     function coverageHint(count) {
@@ -727,6 +734,7 @@ window.__ModuleLoader__.load({
         const [error, setError] = React.useState(null);
         const [running, setRunning] = React.useState(null);
         const [runResult, setRunResult] = React.useState(null);
+        const [showAllRoots, setShowAllRoots] = React.useState(false);
 
         async function load(selectedRoot, explicit = false) {
           setBusy(true);
@@ -736,24 +744,36 @@ window.__ModuleLoader__.load({
             setCurrentWorkspace(current);
             const preferred = selectedRoot || (current ? current.path : null);
             let nextStatus = await apiGet("/api/status", preferred);
-            let usedFallback = false;
-            if (!explicit && (!nextStatus.repo || nextStatus.repo.configLoaded === false)) {
-              const fallback = (nextStatus.roots || []).find(
-                (item) => item && item.path && (!nextStatus.root || !sameFsPath(item.path, nextStatus.root)),
-              );
-              if (fallback) {
-                nextStatus = await apiGet("/api/status", fallback.path);
-                usedFallback = true;
-              }
-            }
+            /* Пространство может быть вне разрешённых корней — тогда нужен просто список. */
+            if (!explicit && nextStatus.error) nextStatus = await apiGet("/api/status");
             setStatus(nextStatus);
-            if (usedFallback) {
-              setLocationNote("В текущем workspace workflow не развёрнут — показан настроенный репозиторий.");
-            } else if (nextStatus.repo && nextStatus.repo.configLoaded === false && current && sameFsPath(current.path, nextStatus.root)) {
-              setLocationNote("В текущем workspace нет workflow.config.json.");
-            } else {
-              setLocationNote(null);
+            /*
+             * Панель показывает только то пространство, из которого её открыли.
+             * Раньше здесь был молчаливый провал на первый настроенный корень: в
+             * пространстве без workflow открывалась доска чужого проекта. Теперь
+             * вместо чужого проекта — честное пустое состояние и выбор вручную.
+             */
+            const repo = nextStatus.repo;
+            const workflowReady = Boolean(repo && repo.configLoaded !== false);
+            /*
+             * Без определённого workspace (не-web хост) показываем настроенный корень.
+             * С workspace — только его самого: чужой проект не подставляем.
+             */
+            const showsCurrent = explicit
+              ? Boolean(nextStatus.root)
+              : current
+                ? Boolean(nextStatus.root && sameFsPath(nextStatus.root, current.path))
+                : Boolean(nextStatus.root);
+            if (!workflowReady || !showsCurrent) {
+              setRoot(null);
+              setBoard(null);
+              setTab("board");
+              setLocationNote(current
+                ? "В этом пространстве workflow не развёрнут: " + current.path
+                : "Пространство не определено, а настроенные корни относятся к другим пространствам.");
+              return;
             }
+            setLocationNote(null);
             const nextRoot = nextStatus.root
               || preferred
               || (nextStatus.roots && nextStatus.roots.length > 0 ? nextStatus.roots[0].path : null);
@@ -854,21 +874,38 @@ window.__ModuleLoader__.load({
               title: CHECK_HINT[id] || "Запустить проверку",
               "aria-label": CHECK_HINT[id] || id,
             },
-            active ? id + "…" : id,
+            active ? (RUN_LABELS[id] || id) + "…" : (RUN_LABELS[id] || id),
           );
         }
 
         const roots = status && Array.isArray(status.roots) ? status.roots : [];
+        /* Путь родитель→ребёнок без учёта регистра и разделителей. */
+        const insidePath = (parent, child) => {
+          if (!parent || !child) return false;
+          const a = String(parent).replace(/[\\/]+$/u, "").toLowerCase();
+          const b = String(child).replace(/[\\/]+$/u, "").toLowerCase();
+          return b === a || b.startsWith(a + "\\") || b.startsWith(a + "/");
+        };
+        /*
+         * В списке — только проекты своего пространства. Корни из настроек,
+         * лежащие в других пространствах, по умолчанию скрыты: панель отвечает
+         * за то пространство, из которого её открыли, а не за соседние проекты.
+         */
         const rootOptions = (() => {
-          const list = roots.slice();
-          const add = (value) => {
-            if (!value || list.some((item) => sameFsPath(item.path, value))) return;
-            list.unshift({ path: value, exists: true });
+          const list = [];
+          const push = (item) => {
+            if (!item || !item.path) return;
+            if (list.some((existing) => sameFsPath(existing.path, item.path))) return;
+            list.push(item);
           };
-          add(root);
-          if (currentWorkspace) add(currentWorkspace.path);
+          if (currentWorkspace) push({ path: currentWorkspace.path, exists: true });
+          if (root) push({ path: root, exists: true });
+          for (const item of roots) {
+            if (!currentWorkspace || insidePath(currentWorkspace.path, item.path)) push(item);
+          }
           return list;
         })();
+        const foreignRoots = roots.filter((item) => currentWorkspace && !insidePath(currentWorkspace.path, item.path));
         const title = status && status.plugin
           ? "Workflow · v" + status.plugin.version
           : "Workflow";
@@ -1019,9 +1056,46 @@ window.__ModuleLoader__.load({
 
         function renderBoard() {
           if (!board) {
-            return h("div", { style: S.empty }, status && status.error
-              ? status.error
-              : "Нет данных: укажите roots в cordis.patch.yml или выберите репозиторий.");
+            if (status && status.error) return h("div", { style: S.empty }, status.error);
+            return h(
+              "div",
+              { style: S.empty },
+              h("div", { style: { fontWeight: 600, marginBottom: "6px" } }, "В этом пространстве workflow не развёрнут"),
+              h("div", { style: S.hint },
+                "Панель показывает только то пространство, из которого её открыли. Чтобы включить его: разверните пакет "
+                + "в корне проекта (node docs/subagent-workflow/scripts/init.mjs --repo . --force) или откройте проект "
+                + "как отдельное рабочее пространство."),
+              foreignRoots.length > 0
+                ? h(
+                    "div",
+                    { style: { marginTop: "10px" } },
+                    h(
+                      "button",
+                      { type: "button", style: S.button, onClick: () => setShowAllRoots(!showAllRoots) },
+                      showAllRoots
+                        ? "Скрыть репозитории из настроек"
+                        : "Показать репозитории из настроек (" + foreignRoots.length + ") — они из других пространств",
+                    ),
+                    showAllRoots
+                      ? h(
+                          "div",
+                          { style: { display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "8px" } },
+                          foreignRoots.map((item) => h(
+                            "button",
+                            {
+                              key: item.path,
+                              type: "button",
+                              style: S.button,
+                              title: item.path,
+                              onClick: () => void load(item.path, true),
+                            },
+                            rootLabel(item.path),
+                          )),
+                        )
+                      : null,
+                  )
+                : null,
+            );
           }
           const tasks = board.tasks || [];
           const skipped = board.skipped || [];
@@ -1495,9 +1569,25 @@ window.__ModuleLoader__.load({
                 ? "ок"
                 : "код " + fmt(runResult.exitCode);
           const seconds = runResult.durationMs ? String(Math.round(runResult.durationMs / 100) / 10) + " с" : "—";
+          /*
+           * Человеческий итог вместо PASS/FAIL: панель отвечает на вопрос «всё ли
+           * готово», а технический лог остаётся ниже, для тех, кому нужны детали.
+           */
+          const logText = String(runResult.log || "");
+          const countMarks = (mark) => (logText.match(new RegExp("^" + mark + "\\b", "gm")) || []).length;
+          const passed = countMarks("PASS");
+          const failed = countMarks("FAIL");
+          const warned = countMarks("WARN");
+          const headline = runResult.error
+            ? "Проверка не запустилась — причина ниже."
+            : runResult.ok
+              ? "Всё готово." + (passed > 0 ? " Проверок пройдено: " + passed + "." : "")
+              : "Чего-то не хватает: " + (failed > 0 ? failed + " строгих замечаний" : "проверка вернула код " + fmt(runResult.exitCode))
+                + (warned > 0 ? ", предупреждений " + warned : "") + ". Ниже — что именно.";
           return h(
             "div",
             { style: S.runBox },
+            h("div", { style: { padding: "6px 10px 0", fontSize: "12px", color } }, headline),
             h(
               "div",
               { style: S.runHead },
