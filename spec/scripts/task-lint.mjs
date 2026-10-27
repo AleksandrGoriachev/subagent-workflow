@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
@@ -89,25 +87,16 @@ try {
    * default-workspace при переходе 2.4.3 → 2.4.5 — панель и task-lint показали
    * «защищённый файл изменён» на пяти файлах пакета.
    */
-  const engineDir = (() => {
-    /*
-     * Конвенция пакета: ворота живут в docs/subagent-workflow — этот путь зашит
-     * и в loadConfig, и в keysFile, поэтому он и есть база. Если скрипт запущен
-     * из развёрнутой копии, тот же ответ даёт путь к себе, но только когда он
-     * внутри репозитория: e2e гоняет ворота из пакета, и там path.relative уводит
-     * наружу. Нужен realpath.native — на Windows os.tmpdir() отдаёт короткую
-     * форму (GORYAC~1), а import.meta.url длинную.
-     */
-    try {
-      const rel = path.relative(fs.realpathSync.native(repo), fs.realpathSync.native(fileURLToPath(import.meta.url)));
-      const dir = rel.split(path.sep).slice(0, -2).join('/');
-      if (dir && !dir.split('/').includes('..')) return dir + '/';
-    } catch {
-      /* путь к себе не разрешился — остаётся конвенция */
-    }
-    return 'docs/subagent-workflow/';
-  })();
-  if (engineDir) {
+  /*
+   * Каталог движка — конвенция пакета, а не путь к себе: и loadConfig, и
+   * keysFile зашивают docs/subagent-workflow. Пробовать путь к скрипту нельзя —
+   * e2e гоняет ворота из пакета (spec/), и там защита пакета не находилась,
+   * то есть проверка молчала в тестах; на Windows к этому добавляется короткая
+   * форма os.tmpdir() (GORYAC~1) против длинного import.meta.url. Сломанная
+   * проверка хуже отсутствующей: CI на windows-latest покраснел именно из-за неё.
+   */
+  const engineDir = 'docs/subagent-workflow/';
+  {
     const engineRoot = engineDir.replace(/\/+$/, '');
     const covering = protectedPaths.find((p) => {
       if (typeof p !== 'string') return false;

@@ -403,12 +403,12 @@ try {
     JSON.stringify(engineMeta, null, 2),
   ));
   const engineProtect = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
-  report('G6: защита самого пакета в protectedPaths называется предупреждением',
+  report('G7: защита самого пакета в protectedPaths называется предупреждением',
     /protectedPaths включает сам пакет/.test(engineProtect.out) && /docs\/subagent-workflow\/\*\*/.test(engineProtect.out),
     engineProtect.out);
   write(path.join(policyTask, 'task.md'), miniTaskMd);
   const engineRestored = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
-  report('G6: без пакета в protectedPaths предупреждения нет',
+  report('G7: без пакета в protectedPaths предупреждения нет',
     !/protectedPaths включает сам пакет/.test(engineRestored.out), engineRestored.out);
 
   /*
