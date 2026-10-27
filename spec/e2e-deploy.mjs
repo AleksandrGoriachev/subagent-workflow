@@ -193,12 +193,27 @@ try {
     JSON.stringify(cfgAfter),
   );
 
-  const rotate = runNode(deployedInit, ['--repo', repoA, '--rotate-key']);
+  /*
+   * Ротация проверяется в каталоге ключей самого теста. Без --key-out
+   * init --rotate-key перевыпускает НАСТОЯЩИЙ ключ приёмщика в
+   * %USERPROFILE%\.wf-keys, и любая выдача контракта, сделанная до этого,
+   * становится непринимаемой: в ws-school-app это случилось дважды (27.10 в
+   * 17:01 и 23:25) — гейт сам ломал ключ рабочего пространства. Тест не имеет
+   * права трогать ключи вне своего временного каталога.
+   */
+  const rotateKeyFile = path.join(keysA, 'agent-judge.key.pem');
+  const keyBeforeRotate = readPem(rotateKeyFile);
+  const rotate = runNode(deployedInit, ['--repo', repoA, '--rotate-key', '--key-out', keysA]);
   const rotatedIds = keyIds(repoA);
   report(
     'init --rotate-key перевыпускает ключ и предупреждает',
     rotate.code === 0 && rotatedIds[0].publicKeyPem !== idsA[0].publicKeyPem && /перевыпущен/i.test(rotate.out),
     rotate.out,
+  );
+  report(
+    'ротация в тесте остаётся в каталоге ключей теста',
+    Boolean(readPem(rotateKeyFile)) && readPem(rotateKeyFile) !== keyBeforeRotate,
+    'ключ теста не перевыпущен: ротация ушла в рабочий каталог ключей',
   );
 
   const leaked = listFiles(repoB).filter((rel) => /\.key\.pem$/i.test(rel));
