@@ -32,10 +32,19 @@ on:
 jobs:
   regress:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: test }
+        ports: ['5432:5432']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
+      # Окружение должно совпадать с джобой тестов: критерии ходят в API/БД.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
       - name: regress accepted tasks
         run: node docs/subagent-workflow/scripts/task-regress.mjs --repo . --strict --baseline regress.baseline.json --out regress.json
       - uses: actions/upload-artifact@v4
@@ -57,7 +66,10 @@ node docs/subagent-workflow/scripts/task-regress.mjs --repo . --write-baseline r
 ~~~
 
 `reviewBy` по умолчанию — через 30 дней: долг либо закрывается, либо продлевается
-отдельным диффом.
+отдельным диффом. `--write-baseline` по умолчанию пишет **только** `unproven-lawful`
+(законный долг); нарушения `unproven-violation` в baseline не попадают без явного
+`--include-violations`. Baseline применяется со **следующего** прогона: записали →
+закоммитили → читаем.
 
 Приватных ключей в CI нет: проверка идёт по публичным ключам из `acceptors.json`.
 

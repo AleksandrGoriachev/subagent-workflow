@@ -107,18 +107,18 @@ try {
     task: '0001',
     setup: [],
     teardown: [],
-    redExpect: { mustFail: ['C1', 'C3'], mustPass: ['C2'], reasons: { C1: 'sum is wrong', C3: 'sum is wrong' } },
+    redExpect: { mustFail: ['C1', 'C3'], mustPass: ['C2'], reasons: { C1: 'sum is wrong', C3: 'effect: сумма неверна' } },
     criteria: [
       { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, covers: ['src/app.js'], expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
       { id: 'C2', title: 'негатив', command: 'node checks/negative.mjs', timeoutMs: 60000, expect: { exitCode: 1, stderrContains: 'invalid input' }, tags: ['fast', 'negative'] },
       {
         id: 'C3',
         title: 'эффект для пользователя',
-        command: 'node checks/add.mjs',
+        command: 'node checks/effect.mjs',
         timeoutMs: 60000,
         covers: ['src/app.js'],
         effect: { observable: 'пользователь получает сумму', threshold: 'ok 3', measuredBy: 'C1' },
-        expect: { exitCode: 0, stdoutContains: 'ok 3' },
+        expect: { exitCode: 0, stdoutContains: 'effect ok 3' },
         tags: ['fast', 'behavior'],
       },
     ],
@@ -170,6 +170,7 @@ try {
   fs.writeFileSync(taskMdPath, goodTaskMd);
   write(path.join(repo, 'checks/add.mjs'), 'const { add } = await import("../src/app.js");\nif (add(1, 2) !== 3) { console.error("sum is wrong: " + add(1, 2)); process.exit(1); }\nconsole.log("ok " + add(1, 2));\n');
   write(path.join(repo, 'checks/negative.mjs'), 'console.error("invalid input: rejected as expected"); process.exit(1);\n');
+  write(path.join(repo, 'checks/effect.mjs'), 'const { add } = await import("../src/app.js");\nif (add(1, 2) !== 3) { console.error("effect: сумма неверна: " + add(1, 2)); process.exit(1); }\nconsole.log("effect ok " + add(1, 2));\n');
   write(path.join(repo, 'src/app.js'), 'export const add = (a, b) => a - b;\n');
   git(['add', '-A']);
   git(['commit', '-q', '-m', 'task 0001: контракт']);

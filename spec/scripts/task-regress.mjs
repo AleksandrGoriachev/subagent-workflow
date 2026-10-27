@@ -25,14 +25,15 @@ import {
   runCommand, evaluateExpectation, isManual, formatMs, headCommit,
 } from './lib/common.mjs';
 import { loadAcceptors, verifyRecord } from './sign.mjs';
-import { classifyAcceptance, loadBaseline, baselineEntry, isExpired } from './lib/regress.mjs';
+import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './lib/regress.mjs';
 
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
   console.log('Usage: node task-regress.mjs --repo <dir> [--task <dir>] [--strict] [--json] [--out <file>]');
-  console.log('       [--baseline <file>] [--write-baseline <file>] [--timeout <ms>]');
+  console.log('       [--baseline <file>] [--write-baseline <file>] [--include-violations] [--timeout <ms>]');
   console.log('Перезапускает критерии принятых заданий; ничего не принимает и не пишет в задачи.');
   console.log('--strict: unproven-lawful и просроченный baseline тоже дают exit 1.');
+  console.log('--include-violations: писать в baseline и unproven-violation (по умолчанию — только законный долг).');
   process.exit(0);
 }
 
@@ -188,8 +189,12 @@ if (baseline) {
     if (!entry) continue;
     item.expiredBaseline = isExpired(entry);
     item.baseline = entry;
-    if (item.provenance === 'unproven-lawful' || item.provenance === 'unproven-violation') {
-      item.status = item.status === 'regressed' ? 'regressed' : 'baselined';
+    /*
+     * Только законный долг можно «погасить» baseline. Регресс остаётся регрессом:
+     * baseline фиксирует, что красного не было, а не разрешение ломаться.
+     */
+    if (item.provenance === 'unproven-lawful' && item.status === 'unproven-lawful') {
+      item.status = 'baselined';
     }
   }
 }
@@ -201,15 +206,8 @@ report.summary = { total: report.tasks.length, ...counts };
 const writeBaselinePath = argv['write-baseline'] ? path.resolve(repo, String(argv['write-baseline'])) : null;
 if (writeBaselinePath) {
   const reviewBy = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const entries = report.tasks
-    .filter((item) => item.provenance === 'unproven-lawful' || item.provenance === 'unproven-violation')
-    .map((item) => ({
-      task: item.task,
-      status: item.provenance,
-      reason: item.reason || 'принято с обходом',
-      since: new Date().toISOString().slice(0, 10),
-      reviewBy,
-    }));
+  const entries = baselineCandidates(report.tasks, { includeViolations: Boolean(argv['include-violations']) })
+    .map((entry) => ({ ...entry, since: new Date().toISOString().slice(0, 10), reviewBy }));
   writeJson(writeBaselinePath, { version: 1, generatedAt: new Date().toISOString(), entries });
   console.log('task-regress: baseline записан в ' + path.relative(repo, writeBaselinePath) + ' (' + entries.length + ' записей)');
 }
@@ -236,15 +234,6 @@ if (argv.json) {
   console.log('Итог: ' + Object.entries(report.summary).filter(([key]) => key !== 'total').map(([key, value]) => key + ' ' + value).join(', '));
 }
 
-/* Exit: регресс, ошибка и недоверенная запись — всегда; долг — по правилам. */
-const failingStatuses = new Set(['regressed', 'error', 'untrusted', 'unproven-violation']);
-const failing = report.tasks.filter((item) => {
-  if (item.baseline) {
-    if (item.status === 'baselined') return item.expiredBaseline && strict;
-    return false;
-  }
-  if (failingStatuses.has(item.status)) return true;
-  if (strict && item.status === 'unproven-lawful') return true;
-  return false;
-});
+/* Exit: регресс, ошибка, недоверенная запись и нарушение — всегда; долг — по правилам. */
+const failing = report.tasks.filter((item) => shouldFail(item, strict));
 process.exit(failing.length > 0 ? 1 : 0);

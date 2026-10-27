@@ -160,6 +160,21 @@
       },
       "additionalProperties": false
     },
+    "effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["criterion", "observable", "threshold", "measuredBy"],
+        "properties": {
+          "criterion": { "type": "string" },
+          "observable": { "type": "string" },
+          "threshold": { "type": "string" },
+          "measuredBy": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "effectsRequired": { "type": "boolean" },
     "attack": {
       "type": ["object", "null"],
       "required": ["present", "sha256", "session", "model", "level", "findings", "attestation"],

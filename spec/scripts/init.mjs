@@ -45,6 +45,12 @@ function copyTree(src, dst, force) {
      * без пары. Поэтому файл всегда создаётся заново.
      */
     if (entry.isFile() && entry.name === 'acceptors.json') continue;
+    /*
+     * workflow.config.json — решение проекта (policy/roles/models), а не файл
+     * пакета. Перезапись шаблоном молча вернула бы attack=off и стёрла роли,
+     * поэтому конфиг обновляем точечно, а не копированием.
+     */
+    if (entry.isFile() && entry.name === 'workflow.config.json') continue;
     const from = path.join(src, entry.name);
     const to = path.join(dst, entry.name);
     if (entry.isDirectory()) copyTree(from, to, force);
@@ -77,7 +83,12 @@ if (!fs.existsSync(path.join(repo, '.git'))) {
 }
 const dest = path.join(repo, workflowDir);
 const existedBefore = fs.existsSync(dest);
-copyTree(packageRoot, dest, force);
+const sameSource = path.resolve(packageRoot) === path.resolve(dest);
+if (sameSource) {
+  console.log('init: источник совпадает с целью (запуск из развёрнутой копии) — файлы не копируются');
+} else {
+  copyTree(packageRoot, dest, force);
+}
 fs.mkdirSync(path.join(repo, tasksDir), { recursive: true });
 
 /*
@@ -111,7 +122,10 @@ if (versionSource) {
 }
 
 const configFile = path.join(dest, 'workflow.config.json');
-const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+const configExisted = fs.existsSync(configFile);
+const config = configExisted
+  ? JSON.parse(fs.readFileSync(configFile, 'utf8'))
+  : JSON.parse(fs.readFileSync(path.join(packageRoot, 'workflow.config.json'), 'utf8'));
 config.tasksDir = tasksDir;
 config.logs = logs;
 fs.writeFileSync(configFile, JSON.stringify(config, null, 2) + '\n');
@@ -183,6 +197,7 @@ console.log('  workflow    ' + workflowDir);
 console.log('  tasks       ' + tasksDir);
 console.log('  logs        ' + logs);
 console.log('  files       скопировано ' + stats.copied + ', не тронуто ' + stats.skipped);
+console.log('  config      ' + (configExisted ? 'сохранён (policy/roles/models не тронуты)' : 'создан из шаблона'));
 console.log('  config      ' + path.join(workflowDir, 'workflow.config.json'));
 if (deployedVersion) console.log('  version     ' + deployedVersion);
 if (versionSkipped) {

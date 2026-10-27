@@ -11,7 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
 import { summarizeDecisions } from './scripts/lib/common.mjs';
-import { classifyAcceptance, loadBaseline, baselineEntry, isExpired } from './scripts/lib/regress.mjs';
+import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './scripts/lib/regress.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHECKER = path.join(HERE, 'scripts', 'task-check-acceptance.mjs');
@@ -73,6 +73,26 @@ try {
   report('regress: baseline просрочен', isExpired({ reviewBy: '2020-01-01' }) === true && isExpired({ reviewBy: '2999-01-01' }) === false);
   const baselineProbe = loadBaseline(JSON.stringify({ version: 1, entries: [{ task: '0001', status: 'unproven-lawful', reviewBy: '2026-11-26' }] }));
   report('regress: baseline находит запись по задаче и статусу', baselineEntry(baselineProbe, '0001', 'unproven-lawful') !== null && baselineEntry(baselineProbe, '0001', 'unproven-violation') === null);
+
+  /* 2.3.2: baseline фиксирует долг провенанса, а не разрешение ломаться. */
+  report('regress: задача из baseline с регрессом всё равно валит прогон',
+    shouldFail({ status: 'regressed', baseline: { task: '0001', reviewBy: '2999-01-01' } }, false) === true
+    && shouldFail({ status: 'regressed', baseline: { task: '0001' } }, true) === true);
+  report('regress: погашенный долг валит только при --strict и просрочке',
+    shouldFail({ status: 'baselined', expiredBaseline: false }, false) === false
+    && shouldFail({ status: 'baselined', expiredBaseline: true }, false) === false
+    && shouldFail({ status: 'baselined', expiredBaseline: true }, true) === true);
+  report('regress: нарушение не гасится baseline',
+    shouldFail({ status: 'unproven-violation', baseline: { task: '0001' } }, false) === true);
+  const candidates = baselineCandidates([
+    { task: '0001', provenance: 'unproven-lawful', reason: 'low' },
+    { task: '0002', provenance: 'unproven-violation', reason: 'medium' },
+    { task: '0003', provenance: 'ok', reason: '' },
+  ], {});
+  report('regress: --write-baseline берёт только законный долг',
+    candidates.length === 1 && candidates[0].task === '0001');
+  report('regress: нарушения попадают в baseline только с --include-violations',
+    baselineCandidates([{ task: '0002', provenance: 'unproven-violation' }], { includeViolations: true }).length === 1);
 
   write(path.join(repo, 'src', 'app.js'), 'export const add = (a, b) => a + b;\n');
   write(path.join(taskDir, 'verify.json'), JSON.stringify({ version: 4, kind: 'verify', allPassed: true }) + '\n');

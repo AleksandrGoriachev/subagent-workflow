@@ -560,8 +560,9 @@ measuredBy}`: `measuredBy` обязателен и обязан указыват
 9. `decisions.digest` пересчитан по контракту кандидата; `decisions.assumed` совпадает
    с выведенным; при непустом `assumed` — `releaseReady = false`, для high — отказ.
 10. Решение с `impact = user-visible | public-contract` без доказательства в записи
-    недопустимо; для такого решения нужен критерий с `effect`, а `effects` записи
-    непуст.
+    недопустимо; для такого решения нужен критерий с `effect`. `accept` пишет
+    `effectsRequired=true` и `effects`; `check` проверяет `effects` только при
+    `effectsRequired=true` (записи до 2.3.2 флага не имеют и не ломаются).
 11. `attack.sha256` совпадает с `attack.json` в кандидате; `findings.unresolved = 0`;
     критик — не постановщик; при `policy.roles.modelFamily = fail` семейства
     приёмщика и постановщика различаются.  

@@ -74,6 +74,40 @@ export function baselineEntry(baseline, task, status) {
   return baseline.entries.find((entry) => entry.task === task && entry.status === status) || null;
 }
 
+/*
+ * Кандидаты в baseline — только законный долг (unproven-lawful). Нарушения
+ * (unproven-violation) по умолчанию не легализуются: иначе одна команда
+ * --write-baseline превращает medium/high без красного в «норму».
+ */
+export function baselineCandidates(tasks, { includeViolations = false } = {}) {
+  const allowed = includeViolations
+    ? new Set(['unproven-lawful', 'unproven-violation'])
+    : new Set(['unproven-lawful']);
+  return (Array.isArray(tasks) ? tasks : [])
+    .filter((item) => item && allowed.has(item.provenance))
+    .map((item) => ({
+      task: item.task,
+      status: item.provenance,
+      reason: item.reason || 'принято с обходом',
+    }));
+}
+
+/*
+ * Exit-правило гейта. Регресс/ошибка/недоверенная запись/нарушение — всегда fail,
+ * даже если задача попала в baseline: baseline фиксирует долг провенанса, а не
+ * разрешение ломаться. Это дефект 2.3.1, пойманый разбором на ws-school-app.
+ */
+export function shouldFail(item, strict = false) {
+  if (!item) return false;
+  const status = String(item.status || '');
+  if (status === 'regressed' || status === 'error' || status === 'untrusted' || status === 'unproven-violation') {
+    return true;
+  }
+  if (status === 'baselined') return Boolean(item.expiredBaseline) && strict;
+  if (strict && (status === 'unproven-lawful' || (item.baseline && item.expiredBaseline))) return true;
+  return false;
+}
+
 export function isExpired(entry, now = new Date()) {
   if (!entry || !entry.reviewBy) return false;
   const date = new Date(entry.reviewBy);

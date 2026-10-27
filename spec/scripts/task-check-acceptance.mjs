@@ -93,6 +93,25 @@ function run() {
   }
   if (![4, 5, 6].includes(record.version)) note('версия записи ' + record.version + ', нужна 4, 5 или 6');
   if (record.version >= 5 && !record.decisions) note('запись версии ' + record.version + ' без блока decisions');
+  /*
+   * 2.3.2: эффект проверяется и в CI. Флаг effectsRequired выставляет accept;
+   * у записей, принятых до 2.3.1, его нет — они не ломаются.
+   */
+  if (record.effectsRequired === true) {
+    if (!Array.isArray(record.effects) || record.effects.length === 0) {
+      note('эффект: решение влияет на пользователя, но effects в записи пуст');
+    } else {
+      for (const effect of record.effects) {
+        if (!effect || typeof effect !== 'object'
+          || typeof effect.observable !== 'string' || effect.observable.trim() === ''
+          || typeof effect.threshold !== 'string' || effect.threshold.trim() === ''
+          || typeof effect.measuredBy !== 'string' || effect.measuredBy.trim() === '') {
+          note('эффект: неполный элемент effects (нужны observable, threshold, measuredBy)');
+          break;
+        }
+      }
+    }
+  }
   if (record.status !== 'accepted') note('статус записи: ' + record.status);
 
   const entry = acceptors.find((item) => item.keyId === record.keyId);

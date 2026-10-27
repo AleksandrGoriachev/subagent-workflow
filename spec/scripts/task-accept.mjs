@@ -347,6 +347,7 @@ try {
     },
     acceptorRun,
     effects: effectCheck.effects,
+    effectsRequired: effectCheck.required,
     bypasses,
     red: red
       ? {

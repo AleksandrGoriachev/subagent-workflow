@@ -160,6 +160,20 @@ try {
   report('init из пакета с --force возвращает VERSION пакета', fs.readFileSync(versionFileA, 'utf8').trim() === packageVersion);
   report('init из пакета с --force не меняет ключ', sha256(keyFileA) === keyBefore);
 
+  /* 2.3.2: конфиг проекта — решение проекта, а не файл пакета. */
+  const cfgPath = path.join(repoA, WORKFLOW, 'workflow.config.json');
+  const cfgBefore = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  cfgBefore.policy.attack = 'fail';
+  cfgBefore.roles = { acceptor: { model: 'deepseek-v4.1-flash' } };
+  fs.writeFileSync(cfgPath, JSON.stringify(cfgBefore, null, 2) + '\n');
+  runNode(path.join(HERE, 'scripts', 'init.mjs'), ['--repo', repoA, '--force', '--key-out', keysA]);
+  const cfgAfter = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  report(
+    'init --force сохраняет policy/roles проекта',
+    cfgAfter.policy.attack === 'fail' && cfgAfter.roles && cfgAfter.roles.acceptor !== undefined,
+    JSON.stringify(cfgAfter),
+  );
+
   const rotate = runNode(deployedInit, ['--repo', repoA, '--rotate-key']);
   const rotatedIds = keyIds(repoA);
   report(

@@ -1,5 +1,28 @@
 # Изменения
 
+## 2.3.2 — 2026-10-27
+
+Исправления после разбора 2.3.1 (снова без выкатки, на ws-school-app).
+
+- **Baseline больше не скрывает регресс.** В 2.3.1 задача, попавшая в baseline, не валила
+  прогон даже при `regressed`: гейт защищал бы 3 задачи и молчал про 12. Теперь
+  `regressed`/`error`/`untrusted`/`unproven-violation` — всегда fail; baseline
+  гасит только `unproven-lawful`. Правило вынесено в `shouldFail()` и покрыто тестами.
+- **`--write-baseline` пишет только законный долг.** По умолчанию — `unproven-lawful`;
+  нарушения `unproven-violation` — только с явным `--include-violations` (раньше одна
+  команда «легализовала» medium/high без красного).
+- **`check` проверяет эффект.** `accept` пишет `effectsRequired=true` и `effects`;
+  `check` требует `effects` при этом флаге (записи до 2.3.2 флага не имеют — не
+  ломаются). `acceptance.schema.json` знает `effects`/`effectsRequired`.
+- **`init --force` не откатывает политику.** `workflow.config.json` больше не
+  копируется из пакета: `policy`/`roles`/`models` проекта сохраняются, меняются только
+  `tasksDir`/`logs`. Запуск из развёрнутой копии честно сообщает «источник совпадает
+  с целью».
+- **Документация:** джоба regress в `adapters/ci.md` с окружением (install/build/
+  postgres/playwright); baseline применяется со следующего прогона; `AGENT-DEPLOY`
+  уточняет, что замок v2 не проходит `task-verify`, а закрытые задачи не перезамковываются.
+- Тесты: selftest 30/30, e2e 33/33, e2e-deploy 22/22.
+
 ## 2.3.1 — 2026-10-27
 
 Исправления после разбора 2.3.0 на живом проекте (ws-school-app, 2.2.2 → 2.3.0).
