@@ -29,6 +29,32 @@ const repo = path.resolve(String(argv.repo || process.cwd()));
 const checks = [];
 function check(name, ok, detail, severity = 'fail') { checks.push({ name, ok, detail: detail || '', severity }); }
 
+/*
+ * Сколько заданий объявили risk: high. Ключ человека нужен только для них
+ * (SPEC §11, I-18), поэтому совет про human-* не должен звучать в проекте,
+ * где high-задач нет: иначе он читается как «не хватает внешнего приёмщика»
+ * и уводит в поиск людей вместо работы.
+ */
+function countHighRiskTasks(tasksDir) {
+  let count = 0;
+  const walk = (dir) => {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(full); continue; }
+      if (entry.name !== 'task.md') continue;
+      try {
+        if (/"risk"\s*:\s*"high"/.test(fs.readFileSync(full, 'utf8'))) count += 1;
+      } catch {
+        /* нечитаемый task.md не повод падать в докторе */
+      }
+    }
+  };
+  walk(tasksDir);
+  return count;
+}
+
 const major = Number(String(process.versions.node).split('.')[0]);
 check('Node.js >= 20', major >= 20, 'сейчас ' + process.versions.node);
 
@@ -47,7 +73,12 @@ if (root) {
       const list = loadAcceptors(keysPath);
       const bad = list.filter((key) => !String(key.keyId).startsWith(key.kind + '-'));
       check('ключи: kind совпадает с префиксом', bad.length === 0, bad.map((key) => key.keyId).join(', '));
-      check('ключи: есть human-* для high-risk', list.some((key) => key.kind === 'human'), 'иначе high-risk не принимается человеком', 'warn');
+      const highTasks = countHighRiskTasks(path.join(root, String(config.tasksDir || 'docs/tasks')));
+      check('ключи: human-* для high-risk', !highTasks || list.some((key) => key.kind === 'human'),
+        highTasks
+          ? 'задач risk: high: ' + highTasks + ' — без ключа human-* они не принимаются'
+          : 'задач risk: high нет — ключ human-* не нужен',
+        'warn');
     } catch (err) {
       check('acceptors.json читается', false, err.message);
     }

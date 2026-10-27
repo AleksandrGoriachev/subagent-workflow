@@ -15,6 +15,7 @@ import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCan
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHECKER = path.join(HERE, 'scripts', 'task-check-acceptance.mjs');
+const DOCTOR = path.join(HERE, 'scripts', 'doctor.mjs');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'wf2-selftest-'));
 let failed = 0;
 
@@ -524,6 +525,34 @@ try {
   const versionValue = fs.readFileSync(versionFile, 'utf8').trim();
   report('TOOL совпадает с VERSION', TOOL === 'subagent-workflow/' + versionValue,
     TOOL + ' != subagent-workflow/' + versionValue);
+
+  /*
+   * 2.4.3: ключ человека нужен только для risk: high (SPEC §11, I-18).
+   * Раньше доктор предупреждал про human-* всегда, и в проекте без high-задач
+   * это читалось как «не хватает внешнего приёмщика» — агент шёл искать людей
+   * вместо работы. Проверяем оба конца: молчание без high и предупреждение с ним.
+   */
+  const doctorRepo = path.join(tmp, 'doctor-repo');
+  fs.mkdirSync(doctorRepo, { recursive: true });
+  git(doctorRepo, ['init', '-q']);
+  const doctorWorkflow = path.join(doctorRepo, 'docs', 'subagent-workflow');
+  write(path.join(doctorWorkflow, 'workflow.config.json'),
+    JSON.stringify({ version: 1, tasksDir: 'docs/tasks', keysFile: 'docs/subagent-workflow/acceptors.json' }, null, 2) + '\n');
+  write(path.join(doctorWorkflow, 'acceptors.json'),
+    JSON.stringify({ acceptors: [{ keyId: 'agent-judge', kind: 'agent', owner: 'selftest', publicKeyPem: 'x', fingerprint: 'x' }] }, null, 2) + '\n');
+  const doctorTask = (id, risk) => write(path.join(doctorRepo, 'docs', 'tasks', id, 'task.md'),
+    '# Задание ' + id + '\n\n<!-- TASK-META\n{ "id": "' + id + '", "risk": "' + risk + '" }\n-->\n');
+  doctorTask('0001', 'medium');
+  const doctor = () => spawnSync(process.execPath, [DOCTOR, '--repo', doctorRepo], { encoding: 'utf8' });
+  const quietDoctor = doctor();
+  report('doctor: без задач risk: high про ключ human-* молчит',
+    /задач risk: high нет — ключ human-\* не нужен/.test(quietDoctor.stdout),
+    quietDoctor.stdout + quietDoctor.stderr);
+  doctorTask('0002', 'high');
+  const warnedDoctor = doctor();
+  report('doctor: задача risk: high включает предупреждение о human-*',
+    /WARN\s+ключи: human-\* для high-risk/.test(warnedDoctor.stdout) && /задач risk: high: 1/.test(warnedDoctor.stdout),
+    warnedDoctor.stdout + warnedDoctor.stderr);
 } catch (err) {
   failed += 1;
   console.error('SELFTEST ERROR: ' + err.stack);
