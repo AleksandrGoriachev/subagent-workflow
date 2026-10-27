@@ -19,8 +19,13 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { PLUGIN_VERSION } from './compat.js';
 
-export const TOOL = 'dsh-workflow-console/0.2.1';
+/* Одна точка правды: TOOL не может отстать от package.json, пока он выводится
+ * из PLUGIN_VERSION (тот сверяется с package.json тестом). Раньше строка была
+ * вписана руками и осталась на 0.2.1 при фактических 0.3.0 — та же ошибка, что
+ * пакет закрыл в 2.4.2. */
+export const TOOL = 'dsh-workflow-console/' + PLUGIN_VERSION;
 export const POLICY_LEVELS = ['off', 'warn', 'fail'];
 export const DECISION_CLASSES = ['mechanical', 'semantic', 'contract'];
 export const DECISION_IMPACTS = ['internal', 'user-visible', 'public-contract'];

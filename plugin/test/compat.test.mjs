@@ -45,7 +45,7 @@ test('2.2.x is compatible', () => {
   assert.equal(view.summary.errors, 0);
   assert.equal(view.summary.warnings, 0);
   assert.equal(view.summary.limited, false);
-  assert.equal(view.supported, '2.0.0 – 2.2.x');
+  assert.equal(view.supported, '2.0.0 – 2.4.x (без effect/regress)');
   assert.equal(view.workflowVersion, '2.2.1');
   assert.ok(view.checks.some((item) => item.id === 'package-spec' && item.severity === 'info'));
   assert.equal(view.summary.headline, 'Совместимо с workflow 2.2.1');
@@ -103,9 +103,27 @@ test('missing config is an error but missing VERSION is a warning', () => {
   assert.equal(view.summary.errors, 1);
 });
 
-test('a newer workflow is reported with an update-plugin recommendation', () => {
+test('2.3–2.4 называется по имени, без совета обновить плагин', () => {
   const view = compatView({
-    packageVersion: '2.3.0',
+    packageVersion: '2.4.5',
+    versionSource: 'VERSION',
+    workflow: workflow(),
+    config: config(),
+    tasks,
+  });
+  assert.equal(view.summary.limited, true);
+  assert.equal(view.checks.some((item) => item.id === 'workflow-newer'), false);
+  const check = view.checks.find((item) => item.id === 'workflow-2.3-plus');
+  assert.ok(check, 'для 2.4.5 нужна проверка workflow-2.3-plus');
+  /* Владельцу 2.4.5 совет «обновите плагин» нечего делать: новее этого нет. */
+  assert.doesNotMatch(check.recommendation, /Обновите плагин/);
+  assert.match(check.message, /effect/);
+  assert.match(check.title, /2\.3–2\.4/);
+});
+
+test('a workflow newer than 2.4 is reported with an update-plugin recommendation', () => {
+  const view = compatView({
+    packageVersion: '2.5.0',
     versionSource: 'VERSION',
     workflow: workflow(),
     config: config(),
@@ -147,4 +165,13 @@ test('PLUGIN_VERSION совпадает с package.json', async () => {
   const manifest = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   const { PLUGIN_VERSION } = await import('../lib/compat.js');
   assert.equal(PLUGIN_VERSION, manifest.version, 'версия для панели не должна отставать от package.json');
+});
+
+test('TOOL собирается из PLUGIN_VERSION и не отстаёт', async () => {
+  const fs = await import('node:fs');
+  const manifest = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const { TOOL } = await import('../lib/state.js');
+  const { PLUGIN_VERSION } = await import('../lib/compat.js');
+  assert.equal(TOOL, 'dsh-workflow-console/' + PLUGIN_VERSION);
+  assert.equal(TOOL, 'dsh-workflow-console/' + manifest.version, 'TOOL попадает в /api/status: он не должен называть старую версию');
 });

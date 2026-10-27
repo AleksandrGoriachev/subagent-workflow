@@ -4,6 +4,23 @@ Read-only Web panel for [subagent-workflow](../README.md) repositories inside
 DeepSeek Harness. It reads task artifacts and `workflow.config.json`, and never
 runs a gate, writes a file, or changes `policy`.
 
+## 0.3.1 — версия панели не врёт, диапазон не пугает
+
+- **`TOOL` больше не отстаёт.** В `/api/status` уезжала строка
+  `dsh-workflow-console/0.2.1` при фактических 0.3.0: константа была вписана
+  руками рядом с `PLUGIN_VERSION`. Теперь она собирается из `PLUGIN_VERSION`
+  (`'dsh-workflow-console/' + PLUGIN_VERSION`), а тест сверяет её и с
+  `package.json`. Ровно тот урок, который пакет закрыл в 2.4.2 для своего
+  `TOOL`, — к панели он не был применён.
+- **Диапазон назван честно: 2.0–2.4, но без `effect`/`regress`.** Проверка
+  «Workflow новее 2.2.x» советовала обновить плагин владельцу 2.4.5, то есть
+  вела в никуда. Для 2.3–2.4 теперь отдельная проверка
+  `workflow-2.3-plus`: она перечисляет, чего панель не показывает
+  (`criteria.effect`, `decisions[].evidence.measuredBy`, `effectConsistency`,
+  регресс-базлайн, `summary.timeout`), и говорит прямо: действий не требуется,
+  это вид, а не ворота. Общий совет «обновите плагин» остался только для
+  версий новее 2.4.
+
 ## 0.3.0 — панель отвечает за своё пространство
 
 - **Чужой проект больше не подставляется.** Раньше, если в текущем workspace не было
@@ -108,9 +125,9 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.2.0, supports workflow
-2.0.0 – 2.2.x) with the deployed copy: VERSION/SPEC, required scripts, lock and
-record versions. Checks carry a recommendation, but nothing is executed
+The **Совместимость** tab compares the plugin (0.3.1, supports workflow
+2.0.0 – 2.4.x — показанные поля; `effect`/`regress` см. ниже) with the deployed
+copy: VERSION/SPEC, required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
 banner above every page.
 
