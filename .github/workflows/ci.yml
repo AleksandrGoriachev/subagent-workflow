@@ -38,7 +38,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: plugin tests
-        run: node --test plugin/test/
+        run: node plugin/tools/test.mjs
       - name: client bundle syntax
         run: node --check plugin/lib/client.js
 

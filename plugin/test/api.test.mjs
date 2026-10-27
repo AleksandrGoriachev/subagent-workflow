@@ -79,7 +79,7 @@ test('GET /workflow/api/status reports the repository and policy', async () => {
     assert.equal(response.json.repo.packageVersion, '2.2.1');
     assert.equal(response.json.repo.policy.line, 'decisions=fail, coverage=fail, attack=fail, modelFamily=warn');
     assert.equal(response.json.rootConfigured, true);
-    assert.equal(response.json.repo.compat.pluginVersion, '0.2.0');
+    assert.equal(response.json.repo.compat.pluginVersion, '0.2.1');
     assert.equal(response.json.repo.compat.summary.limited, false);
   } finally {
     fixture.cleanup();
@@ -152,7 +152,7 @@ test('GET /workflow/api/compat reports versions and recommendations', async () =
   try {
     const response = await call(handler, '/workflow/api/compat');
     assert.equal(response.status, 200);
-    assert.equal(response.json.pluginVersion, '0.2.0');
+    assert.equal(response.json.pluginVersion, '0.2.1');
     assert.equal(response.json.supported, '2.0.0 – 2.2.x');
     assert.equal(response.json.workflowVersion, '2.2.1');
     assert.equal(response.json.summary.limited, false);
@@ -164,11 +164,14 @@ test('GET /workflow/api/compat reports versions and recommendations', async () =
   }
 });
 
+const MISSING_ROOT = process.platform === 'win32' ? 'C:\\not-a-real-workflow-root' : '/not-a-real-workflow-root';
+const FOREIGN_ROOT = process.platform === 'win32' ? 'C:\\Windows' : '/etc';
+
 test('a registered workspace is readable even when it is not a configured root', async () => {
   const fixture = makeRepo({ stage: 'accepted' });
   try {
     const runtime = createWorkflowRuntime(
-      { roots: ['C:\\not-a-real-workflow-root'] },
+      { roots: [MISSING_ROOT] },
       { getWorkspaceRegistry: () => ({ list: () => [{ path: fixture.repo, title: 'fixture' }] }) },
     );
     const handler = createWebHandler(runtime);
@@ -200,10 +203,10 @@ test('unknown routes answer 404 and a foreign root answers 400', async () => {
   try {
     const missing = await call(handler, '/workflow/api/nope');
     assert.equal(missing.status, 404);
-    const foreign = await call(handler, '/workflow/api/tasks?root=' + encodeURIComponent('C:\\\\Windows'));
+    const foreign = await call(handler, '/workflow/api/tasks?root=' + encodeURIComponent(FOREIGN_ROOT));
     assert.equal(foreign.status, 400);
     assert.match(foreign.json.error, /не входит/);
-    const status = await call(handler, '/workflow/api/status?root=' + encodeURIComponent('C:\\\\Windows'));
+    const status = await call(handler, '/workflow/api/status?root=' + encodeURIComponent(FOREIGN_ROOT));
     assert.equal(status.status, 200);
     assert.equal(status.json.repo, null);
     assert.match(status.json.error, /не входит/);

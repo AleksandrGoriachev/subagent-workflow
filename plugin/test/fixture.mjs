@@ -461,7 +461,18 @@ export function makeRepo(options = {}) {
     meta: contract.meta,
     criteria,
     config,
-    cleanup: () => fs.rmSync(repo, { recursive: true, force: true }),
+    /*
+     * На Windows каталог в %TEMP% может быть занят антивирусом или ещё не закрытым
+     * процессом: десять секунд ретраев и best-effort. Утечка временного каталога —
+     * не повод валить тест; проверяемое поведение уже проверено выше.
+     */
+    cleanup: () => {
+      try {
+        fs.rmSync(repo, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+      } catch {
+        /* оставляем каталог до очистки ОС */
+      }
+    },
   };
 }
 

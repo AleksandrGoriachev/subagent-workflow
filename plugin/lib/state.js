@@ -20,7 +20,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 
-export const TOOL = 'dsh-workflow-console/0.2.0';
+export const TOOL = 'dsh-workflow-console/0.2.1';
 export const POLICY_LEVELS = ['off', 'warn', 'fail'];
 export const DECISION_CLASSES = ['mechanical', 'semantic', 'contract'];
 export const DECISION_IMPACTS = ['internal', 'user-visible', 'public-contract'];

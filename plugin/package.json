@@ -1,6 +1,6 @@
 {
   "name": "dsh-workflow-console",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Read-only workflow console for subagent-workflow repositories in DeepSeek Harness",
   "license": "MIT",
@@ -19,7 +19,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/",
+    "test": "node tools/test.mjs",
     "check:client": "node --check lib/client.js",
     "dev": "node tools/dev-server.mjs"
   },

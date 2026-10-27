@@ -400,9 +400,18 @@ test('diagnostics buttons run a read-only check and show the log (v2, step 1)', 
     assert.match(lint.props.title, /Только чтение/u);
 
     lint.props.onClick();
-    await delay(600);
+    /*
+     * Проверка запускается отдельным процессом: на загруженной машине она может
+     * занять больше секунды. Ждём появления вывода, а не фиксированные 600 мс.
+     */
+    let rendered = '';
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      await delay(200);
+      hooks.drain();
+      rendered = textOf(hooks.render(slot.component));
+      if (/fake lint: 0001 — ок/u.test(rendered)) break;
+    }
     tree = hooks.render(slot.component);
-    const rendered = textOf(tree);
     assert.match(rendered, /fake lint: 0001 — ок/u);
     assert.match(rendered, /Только чтение: проверка не пишет в репозиторий/u);
     assert.match(rendered, /task-lint\.mjs --task docs\/tasks\/0001/u);
