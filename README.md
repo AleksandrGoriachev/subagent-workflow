@@ -1,4 +1,4 @@
-# subagent-workflow 2.3.2 — полный пакет делегирования и приёмки
+# subagent-workflow 2.4.2 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -142,7 +142,7 @@ node scripts/task-hash.mjs    --task docs/tasks/0001 --write
 ## Проверено
 
 ~~~bash
-node spec/selftest.mjs     # SELFTEST OK (50 проверок)
+node spec/selftest.mjs     # SELFTEST OK (51 проверка)
 node spec/e2e.mjs          # E2E OK (41): атака → init → задача → красный → фикс → приёмка → check
 node spec/e2e-deploy.mjs   # DEPLOY E2E OK (23): init из развёрнутого каталога
 ~~~

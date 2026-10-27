@@ -10,7 +10,7 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
-import { summarizeDecisions, evaluateEffects } from './scripts/lib/common.mjs';
+import { summarizeDecisions, evaluateEffects, TOOL } from './scripts/lib/common.mjs';
 import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './scripts/lib/regress.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -513,6 +513,17 @@ try {
   if (hadConfig) fs.writeFileSync(selftestConfigPath, savedConfig);
   else fs.rmSync(selftestConfigPath, { force: true });
   report('R3b: policy.decisions=warn — предупреждение, запись принимается', warnRun.status === 0 && /не входит в цепь/.test(warnRun.stdout + warnRun.stderr), warnRun.stdout + warnRun.stderr);
+
+  /*
+   * 2.4.2: TOOL не должен отставать от VERSION — иначе записи приёмки и
+   * verify.json представляются старым пакетом.
+   */
+  const versionFile = fs.existsSync(path.join(HERE, 'VERSION'))
+    ? path.join(HERE, 'VERSION')
+    : path.join(HERE, '..', 'VERSION');
+  const versionValue = fs.readFileSync(versionFile, 'utf8').trim();
+  report('TOOL совпадает с VERSION', TOOL === 'subagent-workflow/' + versionValue,
+    TOOL + ' != subagent-workflow/' + versionValue);
 } catch (err) {
   failed += 1;
   console.error('SELFTEST ERROR: ' + err.stack);
