@@ -129,6 +129,18 @@ try {
     deployDiff.missing.length === 0 && deployDiff.extra.length === 0 && deployDiff.changed.length === 0,
     JSON.stringify(deployDiff),
   );
+  /*
+   * 2.4.5: у развёрнутых файлов должен быть свежий mtime. Windows copyFile
+   * сохраняет время источника, а архив собран с постоянными метками; обновление,
+   * не меняющее размер (VERSION 2.4.3 -> 2.4.4, строка TOOL), тогда не видно
+   * git'у — stat-кеш считает файл неизменённым, и git status молчит. Так
+   * обновление можно закоммитить, оставив старый TOOL (ошибка 2.4.2 другим путём).
+   */
+  const deployedFile = path.join(repoA, WORKFLOW, 'scripts', 'lib', 'common.mjs');
+  const fileAgeMs = Math.abs(Date.now() - fs.statSync(deployedFile).mtimeMs);
+  report('развёрнутые файлы получают свежий mtime (git увидит обновление)',
+    fileAgeMs < 10 * 60 * 1000, 'возраст файла, мс: ' + Math.round(fileAgeMs));
+
   const deployedVersion = fs.readFileSync(path.join(repoA, WORKFLOW, 'VERSION'), 'utf8').trim();
   const packageVersion = fs.readFileSync(path.join(packageRoot, 'VERSION'), 'utf8').trim();
   report('развёрнутая копия знает версию пакета', deployedVersion === packageVersion, deployedVersion + ' != ' + packageVersion);

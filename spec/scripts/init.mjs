@@ -56,6 +56,21 @@ function copyTree(src, dst, force) {
     if (entry.isDirectory()) copyTree(from, to, force);
     else if (force || !fs.existsSync(to)) {
       fs.copyFileSync(from, to);
+      /*
+       * Свежий mtime у скопированного файла — не косметика. На Windows
+       * copyFileSync сохраняет время источника, а архив собран с постоянными
+       * метками; обновление, которое не меняет размер (2.4.3 -> 2.4.4 в VERSION и
+       * TOOL), тогда не видно git'у: stat-кеш считает файл неизменённым, и
+       * git status молчит. Так обновление можно закоммитить «успешно», оставив
+       * старый TOOL — ровно та ошибка, что была в 2.4.2. Поэтому время файла
+       * ставим в «сейчас», и git видит правку.
+       */
+      const stamp = new Date();
+      try {
+        fs.utimesSync(to, stamp, stamp);
+      } catch {
+        /* время не выставилось — это не повод не разворачивать пакет */
+      }
       stats.copied += 1;
     } else stats.skipped += 1;
   }
