@@ -60,7 +60,7 @@ function keyIds(repo) {
 }
 
 /* Файлы дерева, без состояния конкретного пространства. */
-const STATE_FILES = new Set(['acceptors.json', 'workflow.config.json']);
+const STATE_FILES = new Set(['acceptors.json', 'workflow.config.json', 'VERSION']);
 
 function listFiles(dir, base = dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -109,6 +109,11 @@ try {
     deployDiff.missing.length === 0 && deployDiff.extra.length === 0 && deployDiff.changed.length === 0,
     JSON.stringify(deployDiff),
   );
+  const packageRoot = path.resolve(HERE, '..');
+  const deployedVersion = fs.readFileSync(path.join(repoA, WORKFLOW, 'VERSION'), 'utf8').trim();
+  const packageVersion = fs.readFileSync(path.join(packageRoot, 'VERSION'), 'utf8').trim();
+  report('развёрнутая копия знает версию пакета', deployedVersion === packageVersion, deployedVersion + ' != ' + packageVersion);
+
   const configA = JSON.parse(fs.readFileSync(path.join(repoA, WORKFLOW, 'workflow.config.json'), 'utf8'));
   report('конфигурация A: каталог заданий и logs по умолчанию', configA.tasksDir === 'docs/tasks' && configA.logs === 'local', JSON.stringify(configA));
   report('A игнорирует журналы прогонов', fs.readFileSync(path.join(repoA, '.gitignore'), 'utf8').includes('docs/tasks/**/*.log'));
