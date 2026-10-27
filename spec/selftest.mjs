@@ -195,7 +195,7 @@ try {
     baseCommit: candidate2,
     candidateCommit: candidate2,
     tree: git(repo, ['rev-parse', 'HEAD^{tree}']),
-    red: { ...base.red, contractCommit: candidate2, criteriaJsonSha256: sha(path.join(task2, 'criteria.json')) },
+    red: { ...base.red, baseSha: candidate2, contractCommit: candidate2, criteriaJsonSha256: sha(path.join(task2, 'criteria.json')) },
     acceptorRun: { ...base.acceptorRun, verifySha256: null, verifyLogSha256: null },
     decisions: { count: summary2.count, digest: summary2.digest, assumed: summary2.assumed, confirmed: summary2.confirmed },
     releaseReady: false,
@@ -217,6 +217,19 @@ try {
   fs.writeFileSync(record2HiddenPath, JSON.stringify(record2Hidden, null, 2) + '\n');
   const record2HiddenRun = runChecker(record2HiddenPath, repo, keysFile, ['--task', 'docs/tasks/0002']);
   report('спрятанный assumed ловится по контракту', record2HiddenRun.status !== 0 && /assumed/.test(record2HiddenRun.stdout + record2HiddenRun.stderr));
+
+  /*
+   * I-32 (2.3.0): запись v6 с красным прогоном от другого контракта отклоняется —
+   * перевыпуск не наследует старый красный.
+   */
+  const record2StaleRed = signRecord({
+    ...record2,
+    red: { ...record2.red, baseSha: base.red.baseSha },
+  }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const record2StaleRedPath = path.join(tmp, 'record2-stale-red.json');
+  fs.writeFileSync(record2StaleRedPath, JSON.stringify(record2StaleRed, null, 2) + '\n');
+  const record2StaleRedRun = runChecker(record2StaleRedPath, repo, keysFile, ['--task', 'docs/tasks/0002']);
+  report('красный прогон от другого контракта отклоняется', record2StaleRedRun.status !== 0 && /baseSha/.test(record2StaleRedRun.stdout + record2StaleRedRun.stderr));
 
   const record2Attack = signRecord({
     ...record2,

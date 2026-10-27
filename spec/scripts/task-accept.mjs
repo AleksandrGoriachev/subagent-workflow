@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, repoRoot, runSync, quoteArg, exists,
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
-  summarizeDecisions,
+  summarizeDecisions, evaluateEffects,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -167,6 +167,15 @@ try {
   if (meta.risk === 'high' && decisionSummary.assumed.length) {
     fail('high-risk: решения без доказательства нельзя принять (' + decisionSummary.assumed.join(', ') + ')');
   }
+
+  /*
+   * Эффект (I-31, 2.3.0): решение с влиянием на пользователя должно опираться на
+   * критерий, который описывает наблюдаемое состояние или порог.
+   */
+  const effectCheck = evaluateEffects(meta, criteria);
+  const effectApplied = applyLevel(gatePolicy.decisions, effectCheck.issues);
+  if (effectApplied.errors.length) fail('эффект: ' + effectApplied.errors.join('; '));
+  for (const warning of effectApplied.warnings) console.warn('task-accept: WARN ' + warning);
 
   /*
    * Атака спецификации (2.2.0). attaсk.json — заявление критика, не подпись:

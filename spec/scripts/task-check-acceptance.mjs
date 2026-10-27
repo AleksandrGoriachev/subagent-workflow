@@ -149,6 +149,14 @@ function run() {
 
   if (record.red) {
     if (record.red.contractCommit !== record.contractCommit) note('red.contractCommit не совпадает с contractCommit');
+    /*
+     * I-32 (2.3.0): красный прогон обязан относиться к этому контракту. Раньше
+     * проверялся только red.contractCommit, поэтому переиспользованный красный
+     * от перевыпуска проходил. Для записей 4 и 5 правило не применяем — история.
+     */
+    if (record.version >= 6 && record.red.baseSha !== record.contractCommit) {
+      note('red.baseSha не совпадает с contractCommit: красный прогон не для этого контракта');
+    }
     if (record.red.criteriaJsonSha256 !== record.criteriaJsonSha256) note('red.criteriaJsonSha256 не совпадает с записью');
     if (!record.red.redExpectation || record.red.redExpectation.ok !== true) note('красный не совпал с redExpect');
   } else if (risk !== 'low') {

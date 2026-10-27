@@ -105,7 +105,7 @@ try {
     teardown: [],
     redExpect: { mustFail: ['C1'], mustPass: ['C2'], reasons: { C1: 'sum is wrong' } },
     criteria: [
-      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, covers: ['src/app.js'], expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
+      { id: 'C1', title: 'сложение', command: 'node checks/add.mjs', timeoutMs: 60000, covers: ['src/app.js'], effect: { observable: 'пользователь получает сумму', threshold: 'ok 3' }, expect: { exitCode: 0, stdoutContains: 'ok 3' }, tags: ['fast', 'behavior'] },
       { id: 'C2', title: 'негатив', command: 'node checks/negative.mjs', timeoutMs: 60000, expect: { exitCode: 1, stderrContains: 'invalid input' }, tags: ['fast', 'negative'] },
     ],
   };
@@ -117,6 +117,16 @@ try {
   write(criteriaPath, JSON.stringify(coversOff, null, 2) + '\n');
   const noCovers = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
   report('lint требует covers для medium', noCovers.code !== 0 && /covers/.test(noCovers.out), noCovers.out);
+  write(criteriaPath, JSON.stringify(criteriaBody, null, 2) + '\n');
+
+  /*
+   * Решение влияет на пользователя, значит нужен критерий эффекта (I-31). Без него
+   * «зелёный» доказывает вызов, а не результат.
+   */
+  const effectOff = { ...criteriaBody, criteria: criteriaBody.criteria.map((c) => { const copy = { ...c }; delete copy.effect; return copy; }) };
+  write(criteriaPath, JSON.stringify(effectOff, null, 2) + '\n');
+  const noEffect = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('lint требует критерий эффекта для решения с влиянием на пользователя', noEffect.code !== 0 && /effect/.test(noEffect.out), noEffect.out);
   write(criteriaPath, JSON.stringify(criteriaBody, null, 2) + '\n');
 
   /* Семантическое решение о пользовательском контракте без доказательства — ошибка. */
@@ -227,6 +237,17 @@ try {
   const metadataCommit = git(['rev-parse', 'HEAD']);
   const checkMeta = run('task-check-acceptance.mjs', ['--file', acceptancePath, '--repo', repo, '--metadata', metadataCommit]);
   report('check-acceptance проверяет metadata-коммит', checkMeta.code === 0, checkMeta.out);
+
+  /*
+   * Regress (2.3.0, R-5): закрытая задача перезапускается. Сломанная проверка
+   * закрытого задания — регресс, а не тишина.
+   */
+  const regressOk = run('task-regress.mjs', ['--repo', repo, '--task', 'docs/tasks/0001']);
+  report('regress принятой задачи зелёный', regressOk.code === 0 && /Итог: ok 1/.test(regressOk.out), regressOk.out);
+  write(path.join(repo, 'src/app.js'), 'export const add = (a, b) => a - b;\n');
+  const regressed = run('task-regress.mjs', ['--repo', repo, '--task', 'docs/tasks/0001']);
+  report('regress ловит сломанную проверку закрытой задачи', regressed.code !== 0 && /regressed/.test(regressed.out), regressed.out);
+  git(['checkout', '--', 'src/app.js']);
 
   const tampered = { ...record, notes: 'подмена' };
   fs.writeFileSync(acceptancePath, JSON.stringify(tampered, null, 2) + '\n');

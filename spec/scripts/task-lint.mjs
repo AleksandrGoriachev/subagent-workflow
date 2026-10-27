@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
-  DECISION_EVIDENCE_KINDS, loadConfig, readJson,
+  DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -272,6 +272,16 @@ try {
   const decisionsApplied = applyLevel(policy.decisions, decisionIssues);
   errors.push(...decisionsApplied.errors);
   warnings.push(...decisionsApplied.warnings);
+
+  /*
+   * Эффект (I-31, 2.3.0): у решения с влиянием на пользователя обязан быть
+   * критерий, который описывает наблюдаемое состояние или порог. Строгость —
+   * та же policy.decisions: речь о доказанности решения.
+   */
+  const effects = evaluateEffects(meta, criteria);
+  const effectsApplied = applyLevel(policy.decisions, effects.issues);
+  errors.push(...effectsApplied.errors);
+  warnings.push(...effectsApplied.warnings);
 
   const secrets = scanSecrets(taskMd + NL + criteria.raw);
   for (const s of secrets) error('Похоже на секрет (' + s.name + ') в строке ' + s.line + ': ' + s.excerpt);

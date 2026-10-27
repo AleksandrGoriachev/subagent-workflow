@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.2.3';
+export const TOOL = 'subagent-workflow/2.3.0';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -666,6 +666,46 @@ export function computeCoverage(meta, criteria, changed, taskRel) {
     else uncovered.push(rel);
   }
   return { declared: covers.length, covered, uncovered };
+}
+
+/*
+ * Эффект (I-31, 2.3.0): критерий описывает наблюдаемое состояние или порог у
+ * пользователя, а не факт вызова. Требуется, когда среди решений есть влияние на
+ * пользователя или внешний контракт.
+ */
+export function userFacingDecisions(decisions) {
+  return (Array.isArray(decisions) ? decisions : []).filter(
+    (decision) => decision && (decision.impact === 'user-visible' || decision.impact === 'public-contract'),
+  );
+}
+
+export function evaluateEffects(meta, criteria) {
+  const required = userFacingDecisions(meta && meta.decisions).length > 0;
+  const issues = [];
+  const effects = [];
+  for (const criterion of criteria.criteria) {
+    if (criterion.effect === undefined) continue;
+    const effect = criterion.effect;
+    const label = 'criterion ' + criterion.id + ': effect';
+    if (!effect || typeof effect !== 'object' || Array.isArray(effect)) {
+      issues.push(label + ' должен быть объектом { observable, threshold }');
+      continue;
+    }
+    if (typeof effect.observable !== 'string' || effect.observable.trim() === '') issues.push(label + ': observable обязателен');
+    if (typeof effect.threshold !== 'string' || effect.threshold.trim() === '') issues.push(label + ': threshold обязателен');
+    if (effect.measuredBy !== undefined && (typeof effect.measuredBy !== 'string' || effect.measuredBy.trim() === '')) {
+      issues.push(label + ': measuredBy должен быть непустой строкой');
+    }
+    const measuredBy = effect.measuredBy === undefined ? String(criterion.id) : String(effect.measuredBy);
+    const target = criteria.criteria.find((item) => String(item.id) === measuredBy);
+    if (!target) issues.push(label + ': measuredBy ссылается на неизвестный критерий ' + measuredBy);
+    else if (isManual(target)) issues.push(label + ': measuredBy указывает на manual-критерий ' + measuredBy);
+    effects.push({ criterion: String(criterion.id), observable: effect.observable, threshold: effect.threshold, measuredBy });
+  }
+  if (required && effects.length === 0) {
+    issues.push('есть решение с impact user-visible/public-contract, но ни один критерий не объявляет effect { observable, threshold }');
+  }
+  return { required, effects, issues };
 }
 
 /**

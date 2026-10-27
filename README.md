@@ -1,4 +1,4 @@
-# subagent-workflow 2.2.3 — полный пакет делегирования и приёмки
+# subagent-workflow 2.3.0 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -42,7 +42,7 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `spec/templates/` | Задание, критерии, схема записи, разбор замечаний, атака, отчёт, владение |
 | `spec/scripts/init.mjs` | Развернуть пространство в проекте |
 | `spec/scripts/new-task.mjs` | Создать задание |
-| `spec/scripts/task-*.mjs` | Ворота: attack, hash, lint, red, verify, accept, check |
+| `spec/scripts/task-*.mjs` | Ворота: attack, hash, lint, red, verify, accept, check, regress |
 | `spec/scripts/actor.mjs` | Аттестация актора, уровень независимости |
 | `spec/scripts/sign.mjs` | Ed25519, канонизация, подпись |
 | `spec/scripts/lib/common.mjs` | Общая библиотека |

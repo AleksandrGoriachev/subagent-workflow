@@ -16,6 +16,7 @@
       "command": "node --test tests/example.test.mjs",
       "cwd": ".",
       "covers": ["src/**"],
+      "effect": { "observable": "<что видит пользователь>", "threshold": "<порог: ≤ 5 s>" },
       "timeoutMs": 120000,
       "expect": {
         "exitCode": 0,
