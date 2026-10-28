@@ -13,7 +13,12 @@ const VERSION = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
 const NAME = 'subagent-workflow';
 const DIR = NAME + '-' + VERSION;
 const DIST = path.join(ROOT, 'dist');
-const EXCLUDE_DIRS = new Set(['dist', 'reports', 'node_modules', '.git', '.tmp', '.idea', '.vscode', 'keys', 'plugin']);
+/*
+ * 'docs' — корень заданий самого пакета (2.4.9+): это внутренний учёт работы над
+ * пакетом (конфиг ворот, acceptors.json, docs/tasks/**), в архив он не уезжает.
+ * Пакет, развёрнутый в проекте, получает движок из spec/, а не из docs/.
+ */
+const EXCLUDE_DIRS = new Set(['dist', 'reports', 'node_modules', '.git', '.tmp', '.idea', '.vscode', 'keys', 'plugin', 'docs']);
 const EXCLUDE_FILES = [/^.DS_Store$/, /\.log$/i, /\.key\.pem$/];
 
 function collect(dir, rel = '', out = []) {
