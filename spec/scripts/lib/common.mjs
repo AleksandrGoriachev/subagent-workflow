@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.4.7';
+export const TOOL = 'subagent-workflow/2.4.8';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -372,9 +372,25 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria) {
   const contract = checkContractCommitted(repo, taskDir, meta);
   const actual = computeLock(repo, taskDir, meta, taskMd, criteria, contract.contractCommit);
   const errors = [];
+  const notes = [];
   if (lock.version !== 3) errors.push('criteria.lock: версия ' + lock.version + ' устарела, нужна 3 — выполните task-hash --write');
+  /*
+   * 2.4.8: `contractCommit` — это HEAD в момент, когда контракт заперт, и равенство
+   * с текущим HEAD обязательно ровно до приёмки: на этом стоят task-red («красный
+   * прогнан на контрактном коммите») и task-accept («HEAD не сдвинулся после
+   * verify»). У принятого задания HEAD уходит всегда — metadata-коммит приёмки,
+   * потом обычная работа, — и требовать равенства вечно значит держать каждое
+   * закрытое задание в ошибке. Это видели на 0001 здесь и на 0103 в ws-school-app:
+   * «ожидалось ecc9f41…, сейчас 72c490e…» при полностью корректной записи.
+   */
+  const accepted = exists(files.acceptance);
   for (const key of ['task', 'taskFileSha256', 'criteriaSha256', 'criteriaJsonSha256', 'attackSha256', 'contractCommit']) {
-    if (lock[key] !== actual[key]) errors.push(key + ': ожидалось ' + lock[key] + ', сейчас ' + actual[key]);
+    if (lock[key] === actual[key]) continue;
+    if (key === 'contractCommit' && accepted) {
+      notes.push('contractCommit: замок на ' + lock[key] + ', HEAD сейчас ' + actual[key] + ' — задание уже принято, сдвиг HEAD ожидаем (metadata-коммит и последующая работа)');
+      continue;
+    }
+    errors.push(key + ': ожидалось ' + lock[key] + ', сейчас ' + actual[key]);
   }
   const lockMap = new Map((lock.protected || []).map((x) => [x.path, x.sha256]));
   const actualMap = new Map(actual.protected.map((x) => [x.path, x.sha256]));
@@ -384,7 +400,7 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria) {
   }
   for (const p of lockMap.keys()) if (!actualMap.has(p)) errors.push('защищённый файл исчез: ' + p);
   for (const error of contract.errors) errors.push('контракт: ' + error);
-  return { ok: errors.length === 0, errors, expected: lock, actual };
+  return { ok: errors.length === 0, errors, notes, expected: lock, actual };
 }
 
 export function dirtyPaths(repo) {

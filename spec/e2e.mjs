@@ -308,6 +308,17 @@ try {
   report('check-acceptance проверяет metadata-коммит', checkMeta.code === 0, checkMeta.out);
 
   /*
+   * 2.4.8: у принятого задания HEAD уходит всегда (metadata-коммит, потом обычная
+   * работа). Раньше на этом стояло вечное «criteria.lock: contractCommit:
+   * ожидалось …» — видели на 0001 здесь и на 0103 в ws-school-app. Сдвиг HEAD
+   * теперь предупреждение; ошибкой он остаётся до приёмки, где он по делу.
+   */
+  const acceptedLint = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('2.4.8: у принятого задания сдвиг HEAD — предупреждение, не ошибка',
+    !/ERROR criteria\.lock: contractCommit/.test(acceptedLint.out) && /WARN\s+criteria\.lock: contractCommit/.test(acceptedLint.out),
+    acceptedLint.out);
+
+  /*
    * G4/G5 (2.4.0): строгость согласованности — policy.decisions. Отдельная
    * low-задача без замка: lint не требует ни covers, ни redExpect, поэтому
    * единственная ошибка — решение вне цепи эффекта.
