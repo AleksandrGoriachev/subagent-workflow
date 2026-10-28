@@ -1,0 +1,153 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0018",
+  "title": "безопасность развёртывания: ключи проекта, порядок init, POST-маршруты",
+  "risk": "medium",
+  "taskFileSha256": "903486aa033e067ba102e14808c394959c4c47f7bf237e415201b76d2d1f6eb0",
+  "criteriaSha256": "3964b6f05ca4e0e1450013a0776143f6e36fadb2c5e07122d9ddcb764a05ebaf",
+  "criteriaJsonSha256": "59401554adbce977e8ce5ed2971df3e3a70519afe61e638319efc68008afd9f0",
+  "contractCommit": "fc9c189f8449b6ee2b1d8d69c2eb681d073ab92a",
+  "baseCommit": "fc9c189f8449b6ee2b1d8d69c2eb681d073ab92a",
+  "candidateCommit": "8ae8acf3ed37f017d641d4deb391627503b08509",
+  "tree": "77057d8f900fe512800f91d244f4868c84edeee2",
+  "worktreeDigest": "aa57f6513269577868615a42a12170f2a35542ab6b0720967e55022b1856bbdb",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-b8721a2a-456c-48a2-94cd-8030d895a8e8",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "dce8c0f8-200a-4087-908d-1c48f3334bf0",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "a07c5b5fa7ad82bec4a827c36beec69c",
+    "runKind": "accept",
+    "startedAt": "2026-10-28T23:38:28.003Z",
+    "finishedAt": "2026-10-28T23:42:37.607Z",
+    "durationMs": 249619,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "2a014099ee68cb5220562a2105640b0663b9d668a393029d9e0701741bf029f4",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "fc9c189f8449b6ee2b1d8d69c2eb681d073ab92a",
+    "contractCommit": "fc9c189f8449b6ee2b1d8d69c2eb681d073ab92a",
+    "criteriaJsonSha256": "59401554adbce977e8ce5ed2971df3e3a70519afe61e638319efc68008afd9f0",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C6"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C6"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/deploy-safety.mjs",
+      "exitCode": 0,
+      "durationMs": 6642,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 33419,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 106990,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 94878,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/acceptance-schema.mjs",
+      "exitCode": 0,
+      "durationMs": 563,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 248,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-10-28T23:42:37.998Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": true,
+  "review": null,
+  "decisions": {
+    "count": 3,
+    "digest": "1623901c820fcd07ab9e7adfd17c771a23d3720d8828e58cb8e9e6decc4e41b4",
+    "assumed": [],
+    "confirmed": 3
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "o18+1gINCWkXeCl424KdzpH3cDzRdMIfXnhoUoaAWLVxOv+htqoBDswVVDM0l/0v2lnB2NTSk7C//i/SEBEgDw=="
+}
