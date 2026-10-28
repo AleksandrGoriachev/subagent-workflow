@@ -319,7 +319,13 @@ try {
   }
 
   if (exists(files.lock)) {
-    const check = verifyLock(repo, taskDir, meta, taskMd, criteria);
+    /*
+     * 2.4.9: послабление по contractCommit — только здесь. Lint не является
+     * воротами исполнения: он описывает состояние уже принятого задания, тогда как
+     * task-verify и task-accept обязаны оставаться строгими. Основание —
+     * валидная запись приёмки (status: 'accepted'), а не наличие файла.
+     */
+    const check = verifyLock(repo, taskDir, meta, taskMd, criteria, { acceptedTolerant: true });
     for (const e of check.errors) error('criteria.lock: ' + e);
     for (const n of check.notes || []) warn('criteria.lock: ' + n);
   } else if (strict) error('criteria.lock отсутствует (--strict): выполните task-hash --write');

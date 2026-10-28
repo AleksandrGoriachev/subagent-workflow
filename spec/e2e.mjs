@@ -252,6 +252,49 @@ try {
   const verifyAgain = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
   report('после удаления непокрытого файла verify снова зелёный', verifyAgain.code === 0, verifyAgain.out);
 
+  /*
+   * 2.4.9: до приёмки послабления нет, и подсунутый acceptance.json его не
+   * включает. HEAD сдвигаем пустым коммитом и откатываем --soft: рабочее дерево
+   * не трогаем, verify остаётся годным для приёмки ниже.
+   */
+  const acceptanceFile = path.join(repo, 'docs/tasks/0001/acceptance.json');
+  git(['commit', '-q', '--allow-empty', '-m', 'e2e: сдвиг HEAD до приёмки']);
+  const beforeAccept = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('2.4.9: без acceptance.json сдвиг HEAD — ERROR contractCommit, а не WARN',
+    /ERROR\s+criteria\.lock: contractCommit/.test(beforeAccept.out)
+      && !/WARN\s+criteria\.lock: contractCommit/.test(beforeAccept.out),
+    beforeAccept.out);
+
+  write(acceptanceFile, '{}\n');
+  const emptyAcceptance = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('2.4.9: пустой acceptance.json — не основание, ERROR остаётся',
+    /ERROR\s+criteria\.lock: contractCommit/.test(emptyAcceptance.out)
+      && !/WARN\s+criteria\.lock: contractCommit/.test(emptyAcceptance.out),
+    emptyAcceptance.out);
+
+  write(acceptanceFile, 'not json\n');
+  const brokenAcceptance = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('2.4.9: битый acceptance.json — не основание, ERROR остаётся',
+    /ERROR\s+criteria\.lock: contractCommit/.test(brokenAcceptance.out)
+      && !/WARN\s+criteria\.lock: contractCommit/.test(brokenAcceptance.out),
+    brokenAcceptance.out);
+
+  write(acceptanceFile, JSON.stringify({ version: 6, task: '0001', status: 'rejected' }, null, 2) + '\n');
+  const foreignAcceptance = run('task-lint.mjs', ['--task', 'docs/tasks/0001']);
+  report('2.4.9: запись с чужим статусом — не основание, ERROR остаётся',
+    /ERROR\s+criteria\.lock: contractCommit/.test(foreignAcceptance.out)
+      && !/WARN\s+criteria\.lock: contractCommit/.test(foreignAcceptance.out),
+    foreignAcceptance.out);
+
+  /* Ворота исполнения строгие всегда: пустой файл не подменяет приёмку. */
+  write(acceptanceFile, '{}\n');
+  const strictVerify = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
+  report('2.4.9: task-verify не считает пустой acceptance.json приёмкой (lock строгий)',
+    strictVerify.code !== 0 && /contractCommit/.test(strictVerify.out), strictVerify.out);
+
+  fs.rmSync(acceptanceFile, { force: true });
+  git(['reset', '--soft', contractCommit]);
+
   const selfAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge'], { env: { DSH_SESSION_ID: 'issuer-session' } });
   report('самоприёмка из сессии постановщика отклоняется', selfAccept.code !== 0 && /issuedBy/.test(selfAccept.out), selfAccept.out);
 
@@ -272,7 +315,7 @@ try {
 
   const accept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { env: { DSH_SESSION_ID: 'judge-session', DSH_MODEL: 'judge-model' } });
   report('accept из другой сессии принимает задачу', accept.code === 0, accept.out);
-  const acceptancePath = path.join(repo, 'docs/tasks/0001/acceptance.json');
+  const acceptancePath = acceptanceFile;
   const record = JSON.parse(fs.readFileSync(acceptancePath, 'utf8'));
   report('разбор замечаний и releaseReady в записи', record.releaseReady === true && record.review && record.review.remarks.length === 3, JSON.stringify({ releaseReady: record.releaseReady, review: record.review }));
   report('запись v6 с актором и уровнем независимости',
@@ -414,13 +457,26 @@ try {
     JSON.stringify(engineMeta, null, 2),
   ));
   const engineProtect = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
-  report('G7: защита самого пакета в protectedPaths называется предупреждением',
-    /protectedPaths включает сам пакет/.test(engineProtect.out) && /docs\/subagent-workflow\/\*\*/.test(engineProtect.out),
+  /*
+   * 2.4.9: тот же текст печатается и как ERROR, и как WARN, поэтому проверяем
+   * уровень, а не подстроку: иначе предупреждение могло бы стать ошибкой незаметно.
+   */
+  report('G7: защита самого пакета в protectedPaths — именно WARN, не ERROR',
+    /WARN\s+protectedPaths включает сам пакет/.test(engineProtect.out)
+      && !/ERROR\s+protectedPaths включает сам пакет/.test(engineProtect.out)
+      && /docs\/subagent-workflow\/\*\*/.test(engineProtect.out),
     engineProtect.out);
+  /* Негативный кейс честнее: защита своих проверок есть, пакета в списке нет. */
+  const ownChecksMeta = { ...miniMeta, protectedPaths: ['checks/**'] };
+  write(path.join(policyTask, 'task.md'), miniTaskMd.replace(
+    JSON.stringify(miniMeta, null, 2),
+    JSON.stringify(ownChecksMeta, null, 2),
+  ));
+  const engineOwnChecks = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
+  report('G7: свои проверки в protectedPaths (checks/**) — предупреждения о пакете нет',
+    /task-lint: 0002/.test(engineOwnChecks.out) && !/protectedPaths включает сам пакет/.test(engineOwnChecks.out),
+    engineOwnChecks.out);
   write(path.join(policyTask, 'task.md'), miniTaskMd);
-  const engineRestored = run('task-lint.mjs', ['--task', 'docs/tasks/0002']);
-  report('G7: без пакета в protectedPaths предупреждения нет',
-    !/protectedPaths включает сам пакет/.test(engineRestored.out), engineRestored.out);
 
   /*
    * Regress (2.3.0, R-5): закрытая задача перезапускается. Сломанная проверка

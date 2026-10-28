@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.4.8';
+export const TOOL = 'subagent-workflow/2.4.9';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -364,7 +364,20 @@ export function computeLock(repo, taskDir, meta, taskMd, criteria, contractCommi
   };
 }
 
-export function verifyLock(repo, taskDir, meta, taskMd, criteria) {
+/**
+ * Запись приёмки считается состоявшейся, только если это валидный JSON с
+ * status === 'accepted'. Факт наличия файла основанием не является: пустой или
+ * битый acceptance.json не должен снимать ни одну проверку (2.4.9).
+ */
+function hasAcceptedRecord(file) {
+  if (!exists(file)) return false;
+  let record;
+  try { record = readJson(file); } catch { return false; }
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
+  return record.status === 'accepted';
+}
+
+export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) {
   const files = taskFiles(taskDir);
   if (!exists(files.lock)) return { ok: false, errors: ['criteria.lock отсутствует — выполните task-hash --write'], expected: null, actual: null };
   let lock;
@@ -375,15 +388,28 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria) {
   const notes = [];
   if (lock.version !== 3) errors.push('criteria.lock: версия ' + lock.version + ' устарела, нужна 3 — выполните task-hash --write');
   /*
-   * 2.4.8: `contractCommit` — это HEAD в момент, когда контракт заперт, и равенство
-   * с текущим HEAD обязательно ровно до приёмки: на этом стоят task-red («красный
-   * прогнан на контрактном коммите») и task-accept («HEAD не сдвинулся после
-   * verify»). У принятого задания HEAD уходит всегда — metadata-коммит приёмки,
-   * потом обычная работа, — и требовать равенства вечно значит держать каждое
-   * закрытое задание в ошибке. Это видели на 0001 здесь и на 0103 в ws-school-app:
+   * `contractCommit` — это HEAD в момент, когда контракт заперт. Равенство с
+   * текущим HEAD обязательно до приёмки, и стоит оно вот на чём: task-red пишет в
+   * red.json базу, которую task-verify сверяет с contractCommit (red.baseSha ===
+   * lock.contractCommit), task-verify берёт contractCommit как базу diff для
+   * проверки границ («изменения вне разрешённых путей»), а task-accept сравнивает
+   * verify.headSha с lock.contractCommit — текущий HEAD он не читает, поэтому
+   * сдвиг HEAD после verify видит именно verifyLock, сравнивая замок с actual.
+   *
+   * У принятого задания HEAD уходит всегда — metadata-коммит приёмки, потом
+   * обычная работа, — и требовать равенства вечно значит держать каждое закрытое
+   * задание в ошибке. Это видели на 0001 здесь и на 0103 в ws-school-app:
    * «ожидалось ecc9f41…, сейчас 72c490e…» при полностью корректной записи.
+   *
+   * Послабление (2.4.8, ужесточено в 2.4.9) узкое с двух сторон:
+   * 1) только при options.acceptedTolerant === true — его передаёт один task-lint;
+   *    task-verify, task-accept, task-red и task-hash работают строго;
+   * 2) только при валидной записи приёмки: файл есть, разбирается как JSON,
+   *    record.status === 'accepted'. Пустой/битый файл или чужой статус — не
+   *    основание: иначе пустой acceptance.json снимал бы инвариант «HEAD не
+   *    двигался после verify» одним касанием (находка ревью 2.4.9).
    */
-  const accepted = exists(files.acceptance);
+  const accepted = options.acceptedTolerant === true && hasAcceptedRecord(files.acceptance);
   for (const key of ['task', 'taskFileSha256', 'criteriaSha256', 'criteriaJsonSha256', 'attackSha256', 'contractCommit']) {
     if (lock[key] === actual[key]) continue;
     if (key === 'contractCommit' && accepted) {
