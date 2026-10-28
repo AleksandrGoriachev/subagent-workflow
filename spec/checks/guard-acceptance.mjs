@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
@@ -193,7 +193,8 @@ const CASES = {
   async panel() {
     const repo = makeRepo({ enabled: false });
     try {
-      const module = await import(path.join(PKG, 'plugin', 'lib', 'guard.js'));
+      /* Windows: import() не принимает абсолютный путь, нужен file:// URL. */
+      const module = await import(pathToFileURL(path.join(PKG, 'plugin', 'lib', 'guard.js')).href);
       if (typeof module.writeGuardEnabled !== 'function') {
         return { ok: false, detail: 'plugin/lib/guard.js не экспортирует writeGuardEnabled' };
       }
