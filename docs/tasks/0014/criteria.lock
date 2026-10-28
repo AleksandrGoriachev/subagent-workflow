@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "task": "0014",
+  "taskFileSha256": "40aee6fc6e749e3bb645de46552196f5760b490933344a8387b7672e7458cb59",
+  "criteriaSha256": "bb908090e2755eba2e3b9acc5352b44a0a3fb3292827673e2010df6ef1997eeb",
+  "criteriaJsonSha256": "503bb67fc33ead7e6bd29a59f33164bbb67c03b3c2d921c114b5b746d39aa7b2",
+  "attackSha256": null,
+  "contractCommit": "e7b9104546af550a2f7fd95baca382645070fe3b",
+  "protected": [
+    {
+      "path": "spec/checks/panel-deploy.mjs",
+      "sha256": "770200703f089354cea8a823b2a691fca0c07382a4edcd34bc1fadbf614e5048"
+    }
+  ],
+  "createdAt": "2026-10-28T19:01:03.890Z",
+  "tool": "subagent-workflow/2.6.2"
+}

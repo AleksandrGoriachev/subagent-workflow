@@ -38,7 +38,7 @@
     {
       "id": "D1",
       "class": "semantic",
-      "impact": "user-visible",
+      "impact": "internal",
       "question": "Откуда панель берёт спеку для развёртывания",
       "chosen": "спека вкладывается в tarball плагина (vendor/spec) при сборке; установка без сети, версия движка = версия tarball",
       "options": [
