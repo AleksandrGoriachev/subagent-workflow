@@ -1,0 +1,114 @@
+{
+  "task": "0002",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C8"
+    ],
+    "mustPass": [
+      "C7"
+    ],
+    "reasons": {
+      "C1": "нет spec/scripts/task-guard.mjs — кейс allow не может пройти",
+      "C2": "нет проверки — отказ некому печатать",
+      "C3": "нет метки обхода и аудита",
+      "C4": "нет чтения guard.enabled",
+      "C5": "init не ставит хуки",
+      "C6": "нет plugin/lib/guard.js",
+      "C8": "версия ещё 2.4.9"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Изменение внутри активного задания проходит",
+      "command": "node spec/checks/guard-acceptance.mjs --case allow",
+      "timeoutMs": 180000,
+      "covers": [
+        "spec/**",
+        "plugin/**",
+        "VERSION",
+        "package.json"
+      ],
+      "effect": {
+        "observable": "изменение вне задания не попадает в историю",
+        "threshold": "при активном задании guard --staged пропускает, без него — exit 1 и путь в выводе",
+        "measuredBy": "C2"
+      },
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Изменение вне заданий отклоняется с названием пути",
+      "command": "node spec/checks/guard-acceptance.mjs --case deny",
+      "timeoutMs": 180000,
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Явная метка обхода разрешает и попадает в аудит",
+      "command": "node spec/checks/guard-acceptance.mjs --case bypass",
+      "timeoutMs": 180000,
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Выключенный guard не мешает",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabled",
+      "timeoutMs": 180000,
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "init ставит хуки локально",
+      "command": "node spec/checks/guard-acceptance.mjs --case hooks",
+      "timeoutMs": 300000,
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Панель пишет только флаг и журнал",
+      "command": "node spec/checks/guard-acceptance.mjs --case panel",
+      "timeoutMs": 180000,
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C7",
+      "title": "Сквозные проверки пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C8",
+      "title": "Версия 2.5.0 в пяти местах",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.5.0"
+      }
+    }
+  ]
+}
