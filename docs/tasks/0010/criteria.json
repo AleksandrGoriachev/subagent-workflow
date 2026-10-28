@@ -1,0 +1,102 @@
+{
+  "task": "0010",
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "reasons": {
+      "C1": "лишнее поле source"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Схема записи знает поля 2.6.0, манифест плагина готов, сборщик печатает имена",
+      "command": "node spec/checks/acceptance-schema.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/templates/**",
+        "spec/checks/**",
+        "plugin/package.json",
+        "tools/pack-plugin.mjs",
+        ".github/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPTANCE SCHEMA OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Тесты плагина",
+      "command": "node plugin/tools/test.mjs",
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "plugin/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Версия спецификации 2.6.0",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.0"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Сквозной цикл пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
