@@ -32,13 +32,18 @@ function tempRepo(withGit) {
   return dir;
 }
 
-const deployMod = await import(pathToFileURLSafe(path.join(PKG, 'plugin', 'lib', 'deploy.js')));
-function pathToFileURLSafe(p) { return 'file:///' + p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, '$1:'); }
+let deployMod = null;
+try {
+  deployMod = await import(pathToFileURL(path.join(PKG, 'plugin', 'lib', 'deploy.js')).href);
+} catch {
+  fail('deploy: модуль plugin/lib/deploy.js');
+}
 
 const specVersion = fs.readFileSync(path.join(PKG, 'VERSION'), 'utf8').trim();
 const specRoot = path.join(PKG, 'spec');
 
 /* 1. Развёртывание в чистый репозиторий. */
+if (!deployMod) { console.log(''); console.log('PANEL DEPLOY FAIL: ' + failed); process.exit(1); }
 if (!deployMod) { console.log(''); console.log('PANEL DEPLOY FAIL: ' + failed); process.exit(1); }
 const repoOk = tempRepo(true);
 try {
