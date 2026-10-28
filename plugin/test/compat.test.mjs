@@ -45,7 +45,7 @@ test('2.2.x is compatible', () => {
   assert.equal(view.summary.errors, 0);
   assert.equal(view.summary.warnings, 0);
   assert.equal(view.summary.limited, false);
-  assert.equal(view.supported, '2.0.0 – 2.4.x');
+  assert.equal(view.supported, '2.0.0 – 2.5.x');
   assert.equal(view.workflowVersion, '2.2.1');
   assert.ok(view.checks.some((item) => item.id === 'package-spec' && item.severity === 'info'));
   assert.equal(view.summary.headline, 'Совместимо с workflow 2.2.1');
@@ -122,9 +122,23 @@ test('2.4.5 — рабочее состояние: ни баннера, ни «�
   assert.equal(view.checks.some((item) => item.id === 'workflow-2.3-plus'), false);
 });
 
-test('устаревший плагин: совет обновиться есть, баннера «ограничен» нет', () => {
+test('2.5.0 — рабочее состояние: guard входит в диапазон, баннера нет', () => {
   const view = compatView({
     packageVersion: '2.5.0',
+    versionSource: 'VERSION',
+    workflow: workflow(),
+    config: config(),
+    tasks,
+  });
+  assert.equal(view.summary.limited, false);
+  assert.equal(view.summary.warnings, 0);
+  assert.equal(view.summary.headline, 'Совместимо с workflow 2.5.0');
+  assert.equal(view.checks.some((item) => item.id === 'workflow-newer'), false);
+});
+
+test('устаревший плагин: совет обновиться есть, баннера «ограничен» нет', () => {
+  const view = compatView({
+    packageVersion: '2.6.0',
     versionSource: 'VERSION',
     workflow: workflow(),
     config: config(),

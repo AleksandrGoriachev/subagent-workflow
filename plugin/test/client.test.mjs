@@ -283,6 +283,49 @@ test('panel renders a real board, task card and policy page', async () => {
   }
 });
 
+test('policy page toggles the guard flag with confirmation (0.5.0)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(80);
+    tree = hooks.render(slot.component);
+
+    const policyButton = findButton(tree, 'Политика');
+    assert.ok(policyButton, 'policy tab');
+    policyButton.props.onClick();
+    await delay(80);
+    tree = hooks.render(slot.component);
+    let rendered = textOf(tree);
+    assert.match(rendered, /Проверка коммитов/u);
+    assert.match(rendered, /guard\.enabled/u);
+
+    const toggle = findButton(tree, 'Включить проверку коммитов');
+    assert.ok(toggle, 'кнопка включения guard');
+    /* В браузере это window.confirm; в тесте — заглушка, как и в реальном окне. */
+    globalThis.window.confirm = () => true;
+    toggle.props.onClick();
+    await delay(160);
+
+    const configPath = path.join(fixture.repo, 'docs', 'subagent-workflow', 'workflow.config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    assert.equal(config.guard.enabled, true, 'панель пишет guard.enabled');
+    assert.ok(fs.existsSync(path.join(fixture.repo, 'docs', 'subagent-workflow', 'guard.log')), 'включение попадает в guard.log');
+
+    tree = hooks.render(slot.component);
+    rendered = textOf(tree);
+    assert.match(rendered, /Проверка коммитов включена/u);
+    assert.ok(findButton(tree, 'Выключить проверку коммитов'), 'после включения кнопка выключает');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test('panel follows the current workspace and opens compatibility', async () => {
   const fixture = makeRepo({ stage: 'remarks' });
   try {

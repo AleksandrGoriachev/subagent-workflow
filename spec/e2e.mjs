@@ -85,6 +85,76 @@ try {
     (secondInit.stdout || '') + (secondInit.stderr || ''),
   );
 
+  /*
+   * 2.5.0: guard — граница истории. Хуки поставлены init-ом (локальный
+   * core.hooksPath), поэтому проверяется настоящий git commit, а не CLI:
+   * выключенный guard молчит, включённый отклоняет коммит вне задания, метка
+   * обхода в сообщении коммита разрешает и остаётся в аудите.
+   */
+  const guardScript = path.join(repo, 'docs/subagent-workflow/scripts/task-guard.mjs');
+  const readConfig = () => JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const setGuard = (enabled) => {
+    const config = readConfig();
+    config.guard = Object.assign(
+      { mode: 'fail', allow: [], bypassMarker: 'workflow-bypass' },
+      config.guard || {},
+      { enabled },
+    );
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+  };
+  const gitTry = (args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  const hooksPath = gitTry(['config', '--get', 'core.hooksPath']);
+  report('2.5.0: init выставил локальный core.hooksPath',
+    hooksPath.status === 0 && hooksPath.stdout.trim() === 'docs/subagent-workflow/hooks',
+    JSON.stringify({ status: hooksPath.status, path: hooksPath.stdout.trim() }));
+
+  setGuard(false);
+  write(path.join(repo, 'src/probe.js'), 'export const probe = 1;\n');
+  git(['add', 'src/probe.js']);
+  const guardOffCommit = gitTry(['commit', '-q', '-m', 'probe: guard выключен']);
+  report('2.5.0: выключенный guard не мешает коммиту вне задания',
+    guardOffCommit.status === 0, (guardOffCommit.stdout || '') + (guardOffCommit.stderr || ''));
+
+  setGuard(true);
+  write(path.join(repo, 'notes.txt'), 'x\n');
+  git(['add', 'notes.txt']);
+  const guardDeny = gitTry(['commit', '-m', 'notes: вне задания']);
+  const guardDenyText = (guardDeny.stdout || '') + (guardDeny.stderr || '');
+  report('2.5.0: включённый guard отклоняет коммит вне задания',
+    guardDeny.status !== 0 && /не покрыт/.test(guardDenyText) && /notes\.txt/.test(guardDenyText),
+    guardDenyText);
+
+  const guardBypass = gitTry(['commit', '-q', '-m', 'notes: срочно [workflow-bypass: проверка e2e]']);
+  report('2.5.0: метка обхода в сообщении разрешает коммит',
+    guardBypass.status === 0, (guardBypass.stdout || '') + (guardBypass.stderr || ''));
+  const guardAudit = spawnSync(
+    process.execPath,
+    [guardScript, '--repo', repo, '--audit', '--range', 'HEAD~1..HEAD'],
+    { encoding: 'utf8' },
+  );
+  report('2.5.0: --audit показывает метку обхода',
+    guardAudit.status === 0 && /workflow-bypass/.test((guardAudit.stdout || '') + (guardAudit.stderr || '')),
+    (guardAudit.stdout || '') + (guardAudit.stderr || ''));
+
+  /*
+   * pre-push: тот же guard на диапазоне, который уезжает. Ветка новая, поэтому
+   * хук проверяет коммиты, которых нет ни в одном remote.
+   */
+  const bareOrigin = path.join(tmp, 'origin.git');
+  spawnSync('git', ['init', '--bare', '-q', bareOrigin], { encoding: 'utf8' });
+  gitTry(['remote', 'add', 'origin', bareOrigin]);
+  const deniedPush = gitTry(['push', 'origin', 'HEAD']);
+  const deniedPushText = (deniedPush.stdout || '') + (deniedPush.stderr || '');
+  report('2.5.0: guard отклоняет push с изменением вне задания',
+    deniedPush.status !== 0 && /не покрыт/.test(deniedPushText), deniedPushText);
+
+  /* Дальше цикл идёт с выключенным guard: граница проверена отдельно выше. */
+  setGuard(false);
+  const allowedPush = gitTry(['push', 'origin', 'HEAD']);
+  report('2.5.0: выключенный guard не мешает push',
+    allowedPush.status === 0, (allowedPush.stdout || '') + (allowedPush.stderr || ''));
+  report('2.5.0: guard выключен — рабочий цикл задачи не меняется', readConfig().guard.enabled === false);
+
   const task = run('new-task.mjs', ['--repo', repo, '--id', '0001', '--title', 'Сложение', '--risk', 'medium'], { env: { DSH_SESSION_ID: 'issuer-session', DSH_MODEL: 'e2e-model' } });
   report('new-task создаёт задание с issuedBy', task.code === 0 && fs.readFileSync(path.join(repo, 'docs/tasks/0001/task.md'), 'utf8').includes('issuer-session'), task.out);
 

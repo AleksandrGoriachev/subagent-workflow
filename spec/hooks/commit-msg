@@ -1,0 +1,21 @@
+#!/bin/sh
+# subagent-workflow 2.5.0 — коммит без активного задания отклоняется.
+#
+# $1 — файл сообщения коммита. Только здесь видна метка обхода
+# (guard.bypassMarker, по умолчанию "workflow-bypass"); без метки изменение,
+# не покрытое активным заданием, коммит не получает.
+#
+# Пределы честные: git commit --no-verify пропускает этот хук целиком — следа в
+# аудите не остаётся. Обход по метке остаётся: task-guard --audit его печатает.
+repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+guard="$repo/docs/subagent-workflow/scripts/task-guard.mjs"
+[ -f "$guard" ] || exit 0
+if ! command -v node >/dev/null 2>&1; then
+  echo "task-guard: node не найден — проверка покрытия пропущена" >&2
+  exit 0
+fi
+message=""
+if [ -n "$1" ] && [ -f "$1" ]; then
+  message=$(cat "$1")
+fi
+exec node "$guard" --repo "$repo" --staged --message="$message"

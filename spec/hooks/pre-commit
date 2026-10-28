@@ -1,0 +1,21 @@
+#!/bin/sh
+# subagent-workflow 2.5.0 — ранний отчёт перед коммитом.
+#
+# Решение принимает commit-msg: git отдаёт сообщение коммита только хукам
+# commit-msg/prepare-commit-msg, а метка обхода живёт именно в сообщении.
+# Здесь task-guard --audit показывает, что не покрыто активным заданием, и не
+# отказывает; отказ — в commit-msg (и в task-guard --staged вручную).
+repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+guard="$repo/docs/subagent-workflow/scripts/task-guard.mjs"
+[ -f "$guard" ] || exit 0
+if ! command -v node >/dev/null 2>&1; then
+  echo "task-guard: node не найден — проверка покрытия пропущена" >&2
+  exit 0
+fi
+report=$(node "$guard" --repo "$repo" --audit)
+# Печатаем только при реальных нарушениях: подстрока «не покрыт: » с двоеточием,
+# чтобы строка итога «не покрыто 0» не включала отчёт на каждом коммите.
+case "$report" in
+  *"не покрыт: "* ) printf '%s\n' "$report" >&2 ;;
+esac
+exit 0

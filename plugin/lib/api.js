@@ -3,9 +3,10 @@
  *
  * The handler is a pure wiring function (mock request/response objects work in
  * tests) so the routes can be exercised without a DSH host. Every route reads
- * Read routes are GET and go through state.js. The single POST route
- * (/api/run) runs one of the package's read-only gates and returns its log:
- * it never writes to the repository, never signs and never accepts.
+ * Read routes are GET and go through state.js. POST routes are the two explicit
+ * exceptions: /api/run runs one of the package's read-only gates and returns its
+ * log (never writes, signs or accepts), and /api/guard flips guard.enabled in
+ * workflow.config.json — the panel's single write, logged to guard.log.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,6 +19,7 @@ import {
 } from './state.js';
 import { compatView, PLUGIN_VERSION } from './compat.js';
 import { buildCheck, runCheck, CHECK_IDS, CHECK_TITLES } from './checks.js';
+import { writeGuardEnabled, readGuard, GUARD_CONFIG_REL } from './guard.js';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
@@ -231,9 +233,9 @@ export function createWebHandler(runtime) {
         return;
       }
       const rel = pathname.slice(API_PREFIX.length) || '/';
-      const runRoute = rel === '/api/run';
-      if (runRoute ? method !== 'POST' : method !== 'GET') {
-        res.setHeader('Allow', runRoute ? 'POST' : 'GET');
+      const postRoutes = rel === '/api/run' || rel === '/api/guard';
+      if (postRoutes ? method !== 'POST' : method !== 'GET') {
+        res.setHeader('Allow', postRoutes ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
         return;
       }
@@ -332,6 +334,52 @@ export function createWebHandler(runtime) {
         return;
       }
 
+      if (rel === '/api/guard') {
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        /*
+         * Единственная запись панели: флаг guard.enabled для выбранного
+         * пространства плюс строка в guard.log. Ничего другого здесь не
+         * пишется — иначе панель стала бы вторым редактором конфигурации.
+         */
+        if (typeof body.enabled !== 'boolean') {
+          sendJson(res, 400, { error: 'enabled должен быть true или false' });
+          return;
+        }
+        const target = selectRoot(runtime, body.root);
+        if (!target.root) {
+          sendJson(res, 400, { error: target.error });
+          return;
+        }
+        if (!fs.existsSync(target.root)) {
+          sendJson(res, 404, { error: 'корень не найден: ' + target.root });
+          return;
+        }
+        if (!fs.existsSync(path.join(target.root, GUARD_CONFIG_REL))) {
+          sendJson(res, 400, { error: 'workflow не развёрнут: нет ' + GUARD_CONFIG_REL });
+          return;
+        }
+        const report = writeGuardEnabled(target.root, body.enabled);
+        sendJson(res, 200, {
+          plugin: runtime.plugin,
+          root: report.root,
+          enabled: report.guard.enabled,
+          previous: report.previous,
+          changed: report.changed,
+          actor: report.actor,
+          loggedAt: report.loggedAt,
+          configPath: report.configPath,
+          logPath: report.logPath,
+          note: 'записан только guard.enabled; включение и выключение отмечены в guard.log',
+        });
+        return;
+      }
+
       if (rel === '/api/tasks') {
         if (!selection.root) {
           sendJson(res, 400, { error: selection.error });
@@ -356,11 +404,20 @@ export function createWebHandler(runtime) {
           return;
         }
         const info = readRepoInfo(selection.root);
+        const guard = readGuard(selection.root);
         sendJson(res, 200, {
           plugin: runtime.plugin,
           root: info.root,
           configPath: info.configPath,
           ...policyView(info.config, { root: info.root, configPath: info.configPath }),
+          /* guard — настройка ворот, а не политика: панель только показывает и переключает флаг. */
+          guard: {
+            enabled: guard.enabled,
+            mode: guard.mode,
+            allow: guard.allow,
+            bypassMarker: guard.bypassMarker,
+            logPath: guard.logPath,
+          },
         });
         return;
       }

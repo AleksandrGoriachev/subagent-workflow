@@ -2,8 +2,9 @@
  * dsh-workflow-console client half (classic browser module).
  *
  * Registered through the DSH module loader as a conversation view: a board of
- * workflow tasks, a task card and the policy page. Read-only: the only request
- * methods are GET; the only button writes nothing to the repository.
+ * workflow tasks, a task card and the policy page. Read-mostly: the only POST
+ * routes are the read-only gates of /api/run and the guard flag (/api/guard) —
+ * the panel's single write, logged to docs/subagent-workflow/guard.log.
  *
  * Kept as plain classic JS on purpose — DSH serves lib/client.js directly and
  * third-party plugin clients have no bundler (same approach as dsh-llm-memory).
@@ -778,6 +779,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         const [running, setRunning] = React.useState(null);
         const [runResult, setRunResult] = React.useState(null);
         const [showAllRoots, setShowAllRoots] = React.useState(false);
+        const [guardBusy, setGuardBusy] = React.useState(false);
+        const [guardNote, setGuardNote] = React.useState(null);
 
         async function load(selectedRoot, explicit = false) {
           setBusy(true);
@@ -903,6 +906,45 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             setRunResult({ check: id, task: taskId || null, ok: false, error: errorText(failure) });
           } finally {
             setRunning(null);
+          }
+        }
+
+        /*
+         * Единственная запись панели: guard.enabled для текущего пространства.
+         * Подтверждение обязательно — включение меняет то, что происходит с
+         * git commit и git push в этом репозитории. Журнал guard.log фиксирует
+         * оба перехода.
+         */
+        async function setGuard(enabled) {
+          if (!root || guardBusy) return;
+          const question = enabled
+            ? "Включить проверку коммитов для этого пространства?\n\n"
+              + "Коммит или пуш с изменением вне активного задания будет отклонён. "
+              + "Осознанный обход — метка [workflow-bypass: причина] в сообщении коммита "
+              + "(её видно в аудите) или --no-verify (следа не остаётся)."
+            : "Выключить проверку коммитов для этого пространства?\n\n"
+              + "Коммиты и пуши снова проходят без активного задания. "
+              + "Включение и выключение записываются в guard.log.";
+          if (typeof window !== "undefined" && typeof window.confirm === "function" && !window.confirm(question)) return;
+          setGuardBusy(true);
+          setError(null);
+          setGuardNote(null);
+          try {
+            const response = await fetch(BASE + "/api/guard", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ root: root, enabled: enabled }),
+            });
+            const data = await readJson(response);
+            const head = enabled ? "Проверка коммитов включена." : "Проверка коммитов выключена.";
+            const tail = data.changed === false ? " Значение уже было таким — конфигурация не менялась." : "";
+            const logNote = data.logPath ? " Строка добавлена в " + data.logPath + "." : "";
+            setGuardNote(head + tail + logNote);
+            setPolicy(await apiGet("/api/policy", root));
+          } catch (failure) {
+            setError(errorText(failure));
+          } finally {
+            setGuardBusy(false);
           }
         }
 
@@ -1680,7 +1722,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return h(
             "div",
             null,
-            h("div", { style: S.hint }, "fail — запрещать, warn — предупреждать, off — не проверять. Эффективная политика (как её видит doctor). Правка из панели не делается: измените workflow.config.json и перечитайте."),
+            h("div", { style: S.hint }, "fail — запрещать, warn — предупреждать, off — не проверять. Эффективная политика (как её видит doctor). Правка политики из панели не делается: измените workflow.config.json и перечитайте. Исключение одно — флаг guard в разделе «Проверка коммитов»."),
             h("div", { style: S.pre }, policy.line || "—"),
             h("div", { style: S.kv }, h("span", { style: S.kvLabel }, "config"), h("span", { style: S.mono }, fmt(policy.configPath))),
             section(
@@ -1695,6 +1737,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 row[2],
               ])),
             ),
+            section("Проверка коммитов (guard)", renderGuard()),
             section(
               "Модели",
               Object.keys(policy.models || {}).length === 0
@@ -1717,6 +1760,57 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               (policy.warnings || []).length === 0
                 ? h("div", { style: S.empty }, "Предупреждений нет.")
                 : h("ul", { style: S.list }, policy.warnings.map((warning, index) => h("li", { key: index }, warning))),
+            ),
+          );
+        }
+
+        /*
+         * guard — единственная настройка, которую панель меняет. Показываем
+         * эффективные значения и пределы честно: --no-verify обходит хуки
+         * целиком, метка обхода остаётся в аудите.
+         */
+        function renderGuard() {
+          if (!root) return h("div", { style: S.empty }, "Корень не настроен.");
+          const guard = (policy && policy.guard) || {};
+          const on = guard.enabled === true;
+          const disabled = Boolean(guardBusy) || Boolean(busy) || !root;
+          return h(
+            "div",
+            null,
+            h(
+              "div",
+              { style: S.hint },
+              "guard отклоняет коммит и пуш, если изменённый путь не входит в активное задание "
+                + "(allowedPaths задания с замком и без записи приёмки), в guard.allow или не помечен "
+                + "меткой обхода. Выключенный guard не мешает ничем.",
+            ),
+            h("div", { style: S.kv }, h("span", { style: S.kvLabel }, "guard.enabled"), h("span", { style: S.mono }, on ? "true" : "false")),
+            h("div", { style: S.kv }, h("span", { style: S.kvLabel }, "режим"), h("span", { style: S.mono }, fmt(guard.mode))),
+            h("div", { style: S.kv }, h("span", { style: S.kvLabel }, "allow"), h("span", { style: S.mono }, guard.allow && guard.allow.length > 0 ? guard.allow.join(", ") : "—")),
+            h("div", { style: S.kv }, h("span", { style: S.kvLabel }, "метка обхода"), h("span", { style: S.mono }, fmt(guard.bypassMarker))),
+            h(
+              "div",
+              { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
+              h(
+                "button",
+                {
+                  type: "button",
+                  style: disabled ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: disabled,
+                  onClick: () => void setGuard(!on),
+                  title: on ? "Выключить проверку коммитов" : "Включить проверку коммитов",
+                },
+                guardBusy ? "Запись…" : (on ? "Выключить проверку коммитов" : "Включить проверку коммитов"),
+              ),
+            ),
+            guardNote ? h("div", { style: S.hint }, guardNote) : null,
+            h(
+              "div",
+              { style: S.hint },
+              "Пишется ровно один ключ guard.enabled; включение и выключение с временем и сессией "
+                + "дописываются в " + fmt(guard.logPath) + ". Это единственная запись панели. "
+                + "Пределы: git commit --no-verify и git push --no-verify пропускают хуки целиком "
+                + "(следа в аудите нет), метка обхода остаётся в аудите task-guard --audit.",
             ),
           );
         }

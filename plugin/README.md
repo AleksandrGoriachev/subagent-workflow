@@ -1,8 +1,27 @@
 # dsh-workflow-console
 
-Read-only Web panel for [subagent-workflow](../README.md) repositories inside
-DeepSeek Harness. It reads task artifacts and `workflow.config.json`, and never
-runs a gate, writes a file, or changes `policy`.
+Web panel for [subagent-workflow](../README.md) repositories inside DeepSeek
+Harness. It reads task artifacts and `workflow.config.json`; the only write is
+the commit-and-push guard flag (below) — it never runs a gate, never changes
+`policy` and never signs or accepts anything.
+
+## 0.5.0 — кнопка guard: единственная запись панели
+
+- **Проверка коммитов включается с панели.** Страница «Политика» показывает
+  эффективные `guard.enabled`, `mode`, `allow` и `bypassMarker` и переключает
+  флаг с подтверждением — для текущего workspace. `POST
+  /workflow/api/guard` пишет ровно один ключ `guard.enabled` (остальные ключи
+  конфигурации байт в байт) и дописывает строку `<ISO> enabled=true|false
+  actor=<сессия|unknown>` в `docs/subagent-workflow/guard.log`: оба перехода
+  фиксируются (I-29), отсутствие строки не означает «выключено».
+- **Пределы названы в интерфейсе.** `git commit --no-verify` и
+  `git push --no-verify` обходят локальные хуки целиком (следа в аудите нет);
+  метка `[workflow-bypass: …]` в сообщении коммита разрешает и коммит, и пуш
+  (при пушe сообщения читаются из коммитов диапазона) — и остаётся в
+  `task-guard --audit`.
+- **Диапазон версий — `2.0.0 – 2.5.x`**, версия плагина 0.5.0. Тесты: маршрут
+  `/api/guard` (только `guard.enabled` + журнал, POST-only, проверка тела и
+  корня) и кнопка в клиенте.
 
 ## 0.4.1 — панель повторяет ворота в эффекте, регресс в карточке
 
@@ -194,8 +213,8 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.4.1, supports workflow
-2.0.0 – 2.4.x, включая `effect` и регресс-долг) with the deployed copy: VERSION/SPEC,
+The **Совместимость** tab compares the plugin (0.5.0, supports workflow
+2.0.0 – 2.5.x, включая `effect`, регресс-долг и guard) with the deployed copy: VERSION/SPEC,
 required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
 banner above every page.

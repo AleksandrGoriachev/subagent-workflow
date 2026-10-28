@@ -161,7 +161,7 @@ test('GET /workflow/api/compat reports versions and recommendations', async () =
     const response = await call(handler, '/workflow/api/compat');
     assert.equal(response.status, 200);
     assert.match(response.json.pluginVersion, /^\d+\.\d+\.\d+$/);
-    assert.equal(response.json.supported, '2.0.0 – 2.4.x');
+    assert.equal(response.json.supported, '2.0.0 – 2.5.x');
     assert.equal(response.json.workflowVersion, '2.2.1');
     assert.equal(response.json.summary.limited, false);
     assert.ok(Array.isArray(response.json.checks));
@@ -358,6 +358,66 @@ test('run is POST-only and other routes stay GET-only', async () => {
     const post = await call(handler, '/workflow/api/status', { method: 'POST' });
     assert.equal(post.status, 405);
     assert.equal(post.headers.allow, 'GET');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('POST /workflow/api/guard flips only guard.enabled and logs it', async () => {
+  const { fixture, handler } = setup();
+  try {
+    const configPath = path.join(fixture.repo, 'docs', 'subagent-workflow', 'workflow.config.json');
+    const before = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const on = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      body: { root: fixture.repo, enabled: true },
+    });
+    assert.equal(on.status, 200);
+    assert.equal(on.json.enabled, true);
+    assert.match(on.json.note, /только guard\.enabled/u);
+    const after = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    assert.equal(after.guard.enabled, true);
+    for (const key of Object.keys(before)) {
+      assert.deepEqual(after[key], before[key], 'ключ ' + key + ' не менялся');
+    }
+    assert.deepEqual(Object.keys(after).filter((key) => !(key in before)), ['guard']);
+    const logText = fs.readFileSync(path.join(fixture.repo, 'docs', 'subagent-workflow', 'guard.log'), 'utf8');
+    assert.match(logText, /enabled=true/u);
+    assert.match(logText, /actor=/u);
+
+    const policy = await call(handler, '/workflow/api/policy');
+    assert.equal(policy.json.guard.enabled, true);
+    assert.equal(policy.json.guard.bypassMarker, 'workflow-bypass');
+
+    const off = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      body: { root: fixture.repo, enabled: false },
+    });
+    assert.equal(off.status, 200);
+    assert.equal(off.json.changed, true);
+    const afterOff = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    assert.equal(afterOff.guard.enabled, false);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('guard route is POST-only and validates its body and root', async () => {
+  const { fixture, handler } = setup();
+  try {
+    const get = await call(handler, '/workflow/api/guard');
+    assert.equal(get.status, 405);
+    assert.equal(get.headers.allow, 'POST');
+
+    const bad = await call(handler, '/workflow/api/guard', { method: 'POST', body: { root: fixture.repo } });
+    assert.equal(bad.status, 400);
+    assert.match(bad.json.error, /true или false/u);
+
+    const foreign = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      body: { root: 'C:\\definitely\\not\\allowed', enabled: true },
+    });
+    assert.equal(foreign.status, 400);
   } finally {
     fixture.cleanup();
   }

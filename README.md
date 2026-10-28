@@ -1,4 +1,4 @@
-# subagent-workflow 2.4.9 — полный пакет делегирования и приёмки
+# subagent-workflow 2.5.0 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -43,6 +43,8 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `spec/scripts/init.mjs` | Развернуть пространство в проекте |
 | `spec/scripts/new-task.mjs` | Создать задание |
 | `spec/scripts/task-*.mjs` | Ворота: attack, hash, lint, red, verify, accept, check, regress |
+| `spec/scripts/task-guard.mjs` | Коммит без задания: покрытие индекса и диапазона, аудит обходов (2.5.0) |
+| `spec/hooks/` | Хуки git: `init` ставит их локальным `core.hooksPath` |
 | `spec/scripts/actor.mjs` | Аттестация актора, уровень независимости |
 | `spec/scripts/sign.mjs` | Ed25519, канонизация, подпись |
 | `spec/scripts/lib/common.mjs` | Общая библиотека |
@@ -59,10 +61,13 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 
 ## Плагин DSH (отдельный пакет)
 
-`plugin/` — read-only панель для DSH (`dsh-workflow-console`): доска задач,
-карточка, политика. В релизный архив не входит, а `init` копирует только
-`spec/`, поэтому в развёрнутое пространство плагин не попадает: это хост-пакет,
-а не часть переносимой спецификации. Установка и границы — `plugin/README.md`.
+`plugin/` — панель для DSH (`dsh-workflow-console`): доска задач, карточка,
+политика. Панель read-only с одним исключением: кнопка «Включить/выключить
+проверку коммитов» пишет ровно `guard.enabled` в `workflow.config.json` и строку
+в `guard.log` — оба перехода, с временем и сессией. В релизный архив не входит,
+а `init` копирует только `spec/`, поэтому в развёрнутое пространство плагин не
+попадает: это хост-пакет, а не часть переносимой спецификации. Установка и
+границы — `plugin/README.md`.
 
 ## Конфигурация
 
@@ -79,6 +84,7 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `models` | Реестр «модель → семейство» для проверки «другой агент» |
 | `roles` | Ожидаемые модели ролей: acceptor, critic, observer |
 | `verifyTimeoutMs` | Бюджет свежего прогона при приёмке |
+| `guard` | `enabled`, `mode`, `allow`, `bypassMarker`: проверка коммита без задания (2.5.0) |
 
 ## Атака спецификации и политика (2.2.0)
 
@@ -106,6 +112,52 @@ node scripts/task-attack.mjs --task docs/tasks/0001 --init     # скелет
 node scripts/task-attack.mjs --task docs/tasks/0001 --check    # проверка находок
 node scripts/task-hash.mjs    --task docs/tasks/0001 --write
 ~~~
+
+## Коммит без задания (2.5.0)
+
+Ворота проверяют задание, но не мешают изменению попасть в историю мимо него.
+`task-guard` стоит на границе коммита и пуша:
+
+~~~bash
+node docs/subagent-workflow/scripts/task-guard.mjs --repo . --staged
+node docs/subagent-workflow/scripts/task-guard.mjs --repo . --staged --message "task 0003: ..."
+node docs/subagent-workflow/scripts/task-guard.mjs --repo . --range origin/main..HEAD
+node docs/subagent-workflow/scripts/task-guard.mjs --repo . --audit --range HEAD~3..HEAD
+~~~
+
+~~~json
+"guard": { "enabled": true, "mode": "fail", "allow": ["docs/**"],
+           "bypassMarker": "workflow-bypass" }
+~~~
+
+- **Покрытие считается по дереву того коммита, где лежит изменение, а не по
+  текущему рабочему дереву.** Иначе после приёмки `acceptance.json` закрывал бы
+  задание задним числом, и штатный порядок «приёмка → коммит → пуш» ломался бы
+  собственным хуком (дефект P1 задания 0004).
+- Путь покрыт, если он входит в `allowedPaths` задания, активного в этом коммите
+  (`criteria.lock` есть, `acceptance.json` нет); лежит в каталоге задания
+  `docs/tasks/<id>/**` (пока задание открыто — весь каталог, после закрытия —
+  только его артефакты: `acceptance.json`, отчёты, `verify`/`red`,
+  `criteria.lock`); входит в `guard.allow`; либо в сообщении коммита есть метка
+  обхода.
+- `--range` оценивает каждый коммит диапазона отдельно и читает метку обхода из
+  его сообщения: у push нет `--message` (дефект P2). `--staged` сравнивает
+  индекс с рабочим деревом, сообщение создаваемого коммита передаёт `commit-msg`.
+- `enabled !== true` — скрипт молчит и выходит 0: выключенный guard не меняет
+  поведение репозитория.
+- Непокрытый путь: exit 1 и строка `не покрыт: <путь>` с подсказкой.
+- `--audit` всегда exit 0 и печатает найденные метки обхода и нарушения.
+- `init` ставит `pre-commit`, `commit-msg` и `pre-push` и **локальный**
+  `core.hooksPath docs/subagent-workflow/hooks`; глобальный конфиг не трогается,
+  повторный `init` идемпотентен. Решение принимает `commit-msg`: git отдаёт
+  сообщение коммита только ему.
+- Панель переключает флаг для текущего пространства с подтверждением и пишет
+  строку в `guard.log`.
+
+**Пределы.** `git commit --no-verify` и `git push --no-verify` пропускают хуки
+целиком — в аудите этого следа не остаётся. Проверка локальная: это не
+pre-receive и не защита от владельца машины. Метка обхода не запрещается —
+`--audit` её печатает.
 
 ## Решения и покрытие (2.1.0)
 
@@ -152,7 +204,9 @@ E2E включает отказ самоприёмке из сессии пос�
 ## Чего пакет не делает
 
 Не доказывает, что за клавиатурой сидел человек, и не защищает от владельца машины:
-если приватный ключ доступен процессу агента, подпись — tamper-evidence. Реальный
+если приватный ключ доступен процессу агента, подпись — tamper-evidence. Так же и
+guard: `--no-verify` обходит локальные хуки целиком, а аудит показывает только
+явные метки. Реальный
 уровень независимости честно записывается в `independence.level` и проверяется
 правилами риска.
 

@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { generateKeyPair, publicKeyFingerprint } from './sign.mjs';
 
 function args(argv) {
@@ -82,11 +83,20 @@ if (argv.help) {
   console.log('       [--key-id agent-judge] [--key-out <dir>] [--owner <name>]');
   console.log('       [--force]        обновить файлы пакета (ключ не меняется)');
   console.log('       [--rotate-key]   явная ротация ключа: старые записи станут untrusted');
+  console.log('       Хуки (2.5.0): локальный git config core.hooksPath docs/subagent-workflow/hooks;');
+  console.log('       проверка коммита включается флагом guard.enabled в workflow.config.json.');
   process.exit(0);
 }
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repo = path.resolve(String(argv.repo || '.'));
+/*
+ * Локальная настройка git: core.hooksPath в глобальном конфиге переключил бы
+ * хуки во всех репозиториях машины, а init отвечает за одно пространство (D2).
+ */
+function runGit(args) {
+  return spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+}
 const tasksDir = String(argv.tasks || 'docs/tasks').replace(/\\/g, '/');
 const workflowDir = 'docs/subagent-workflow';
 const logs = String(argv.logs || 'local');
@@ -144,6 +154,42 @@ const config = configExisted
 config.tasksDir = tasksDir;
 config.logs = logs;
 fs.writeFileSync(configFile, JSON.stringify(config, null, 2) + '\n');
+
+/*
+ * 2.5.0: хуки — часть развёрнутого пространства. git config core.hooksPath
+ * ставится ЛОКАЛЬНО (решение D2): глобальный переключил бы хуки во всех
+ * репозиториях машины. Повторный init идемпотентен: то же значение не меняется,
+ * предупреждение печатается только при реальной замене чужого пути.
+ *
+ * Сами хуки безвредны, пока guard.enabled !== true: task-guard молча выходит 0.
+ * Так включение проверки — один флаг, а не повторное развёртывание.
+ */
+const hooksRel = path.posix.join(workflowDir, 'hooks');
+const hooksDir = path.join(repo, hooksRel);
+const hookNames = ['pre-commit', 'commit-msg', 'pre-push'];
+const hooksState = { path: hooksRel, installed: false, previous: null, git: false, missing: [] };
+if (fs.existsSync(hooksDir)) {
+  for (const name of hookNames) {
+    const file = path.join(hooksDir, name);
+    if (!fs.existsSync(file)) { hooksState.missing.push(name); continue; }
+    /*
+     * На POSIX git запускает хук только с правом исполнения. Копия с Windows
+     * приезжает с режимом 644, поэтому права ставим явно (на Windows chmod
+     * ничего не значит, но и не вредит).
+     */
+    try { fs.chmodSync(file, 0o755); } catch { /* Windows: режим не применим */ }
+  }
+  hooksState.git = fs.existsSync(path.join(repo, '.git'));
+  if (hooksState.git) {
+    const previous = runGit(['config', '--get', 'core.hooksPath']);
+    hooksState.previous = previous.status === 0 ? String(previous.stdout || '').trim() : null;
+    const applied = runGit(['config', 'core.hooksPath', hooksRel]);
+    hooksState.installed = applied.status === 0;
+    if (!hooksState.installed) {
+      console.warn('init: WARN не удалось выставить core.hooksPath: ' + String(applied.stderr || '').trim());
+    }
+  }
+}
 
 const keysFile = path.join(dest, 'acceptors.json');
 const keyId = String(argv['key-id'] || 'agent-judge');
@@ -205,6 +251,15 @@ const ignoreText = fs.existsSync(gitignore) ? fs.readFileSync(gitignore, 'utf8')
 if (!ignoreText.split(/\r?\n/).includes(ignoreLine)) {
   fs.appendFileSync(gitignore, (ignoreText && !ignoreText.endsWith('\n') ? '\n' : '') + '# subagent-workflow: журналы прогонов\n' + ignoreLine + '\n');
 }
+/*
+ * guard.log — локальный след включения/выключения проверки (I-29), а не история
+ * репозитория: журнал не должен попадать в коммиты и в чужой diff.
+ */
+const guardLogRel = path.posix.join(workflowDir, 'guard.log');
+const ignoreGuard = fs.existsSync(gitignore) ? fs.readFileSync(gitignore, 'utf8') : '';
+if (!ignoreGuard.split(/\r?\n/).includes(guardLogRel)) {
+  fs.appendFileSync(gitignore, (ignoreGuard && !ignoreGuard.endsWith('\n') ? '\n' : '') + '# subagent-workflow: журнал включения guard\n' + guardLogRel + '\n');
+}
 
 console.log('init: рабочее пространство ' + (existedBefore ? 'обновлено' : 'готово'));
 console.log('  repo        ' + repo);
@@ -215,6 +270,17 @@ console.log('  files       скопировано ' + stats.copied + ', не т�
 console.log('  config      ' + (configExisted ? 'сохранён (policy/roles/models не тронуты)' : 'создан из шаблона'));
 console.log('  config      ' + path.join(workflowDir, 'workflow.config.json'));
 if (deployedVersion) console.log('  version     ' + deployedVersion);
+if (fs.existsSync(hooksDir)) {
+  const state = hooksState.installed
+    ? 'локальный core.hooksPath'
+    : hooksState.git
+      ? 'core.hooksPath НЕ выставлен — проверьте git'
+      : 'не git-репозиторий: хуки не включены';
+  console.log('  hooks       ' + hooksRel + ' (' + state + ')');
+  if (hooksState.previous && hooksState.previous !== hooksRel) {
+    console.warn('init: WARN core.hooksPath был "' + hooksState.previous + '" — заменён на "' + hooksRel + '" (локально, глобальный не тронут)');
+  }
+}
 if (versionSkipped) {
   console.warn('init: WARN VERSION не обновлён: файлы существующей копии не тронуты (запустите с --force для обновления)');
 }
@@ -235,3 +301,4 @@ console.log('  git add ' + tasksDir + '/0001 checks && git commit -m "task 0001:
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-hash.mjs') + ' --task ' + tasksDir + '/0001 --write');
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-lint.mjs') + ' --task ' + tasksDir + '/0001 --strict');
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-red.mjs')  + ' --task ' + tasksDir + '/0001 --base HEAD');
+console.log('  guard: включите проверку коммитов на панели или флагом guard.enabled в ' + path.posix.join(workflowDir, 'workflow.config.json'));

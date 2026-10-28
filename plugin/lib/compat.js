@@ -7,9 +7,9 @@
  * never actions the panel performs.
  */
 /* Версия для панели. Обязана совпадать с package.json — это проверяет тест. */
-export const PLUGIN_VERSION = '0.4.1';
-/* Диапазон, который панель показывает. С 0.4.0 в него входят effect и регресс. */
-export const SUPPORTED_LABEL = '2.0.0 – 2.4.x';
+export const PLUGIN_VERSION = '0.5.0';
+/* Диапазон, который панель показывает. С 0.5.0 в него входит guard (2.5.0). */
+export const SUPPORTED_LABEL = '2.0.0 – 2.5.x';
 
 export function parseVersion(value) {
   const match = String(value === null || value === undefined ? '' : value).match(/(\d+)\.(\d+)(?:\.(\d+))?/);
@@ -135,7 +135,7 @@ export function compatView(input = {}) {
         'Обновите развёрнутую копию до 2.2.x.',
         true,
       ));
-    } else if (parsed.major > 2 || parsed.minor > 4) {
+    } else if (parsed.major > 2 || parsed.minor > 5) {
       /*
        * Ветка для случая, когда устарел сам плагин: он не знает формат этой
        * версии workflow. Здесь совет обновиться уместен — но баннера
@@ -145,7 +145,7 @@ export function compatView(input = {}) {
       checks.push(check(
         'workflow-newer',
         'warn',
-        'Workflow новее 2.4',
+        'Workflow новее 2.5',
         'Пакет новее известного панели диапазона: панель может не знать новые поля и правила. На работу ворот это не влияет — панель только читает файлы.',
         'Обновите плагин dsh-workflow-console, когда выйдет версия с поддержкой этого workflow.',
       ));

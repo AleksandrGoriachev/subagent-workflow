@@ -18,5 +18,11 @@
   },
   "models": {},
   "roles": {},
-  "verifyTimeoutMs": 1800000
+  "verifyTimeoutMs": 1800000,
+  "guard": {
+    "enabled": false,
+    "mode": "fail",
+    "allow": [],
+    "bypassMarker": "workflow-bypass"
+  }
 }
