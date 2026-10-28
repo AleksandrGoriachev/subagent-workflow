@@ -18,6 +18,11 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+/* 2.6.2: проверка относится к пакету (spec/checks); в развёрнутой копии spec/SPEC.md нет — SKIP. */
+if (!fs.existsSync(path.join(ROOT, 'spec', 'SPEC.md'))) {
+  console.log('SKIP: проверка относится к пакету (spec/checks), а не к развёрнутой копии');
+  process.exit(0);
+}
 const HOOKS = ['pre-commit', 'commit-msg', 'pre-push'];
 const CI = path.join(ROOT, '.github', 'workflows', 'ci.yml');
 let failed = 0;

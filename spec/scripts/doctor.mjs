@@ -119,6 +119,20 @@ const actor = detectActor(process.env, config ? config.actor : {});
 const independence = assessIndependence({ actor, issuedBy: null, executorSession: null, risk: 'medium' });
 check('актор виден окружению', actor.attestedBy === 'env',
   (actor.source || 'нет источника') + ' (' + (actor.sourceKind || 'none') + ') / ' + (actor.session || 'нет сессии'));
+/*
+ * 2.6.2: «актор не виден» без рецепта читается как поломка движка, хотя лечится
+ * настройкой. Строка WARN только подсказывает и не меняет вердикт: FAIL выше и
+ * отказ medium остаются на месте. Два штатных пути — источник в actor.sources
+ * (обёртка проекта, вид runner) и плагин сессии OpenCode V2: старого shell.env
+ * там нет, id сессии приходит из tool.execute.before и попадает в окружение
+ * shell через shell.create.before как DSH_SESSION_ID.
+ */
+if (actor.attestedBy !== 'env') {
+  check('актор: как дать сессию из окружения', false,
+    'задайте источник в actor.sources (например WF_ACTOR_SESSION, вид runner) или в IDE (opencode V2) '
+      + 'проверьте плагин сессии ~/.config/opencode/plugins/wf-session.ts и перезапустите приложение',
+    'warn');
+}
 check('medium возможен в этой сессии', independence.ok, independence.errors.join('; '));
 
 if (argv.json) console.log(JSON.stringify({ repo, checks }, null, 2));

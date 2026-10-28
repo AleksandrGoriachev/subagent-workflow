@@ -22,6 +22,11 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
+/* 2.6.2: проверка относится к пакету (spec/checks); в развёрнутой копии spec/SPEC.md нет — SKIP. */
+if (!fs.existsSync(path.join(PKG, 'spec', 'SPEC.md'))) {
+  console.log('SKIP: проверка относится к пакету (spec/checks), а не к развёрнутой копии');
+  process.exit(0);
+}
 const CONFIG_REL = path.join('docs', 'subagent-workflow', 'workflow.config.json');
 const SCRIPT = (repo, name) => path.join(repo, 'docs', 'subagent-workflow', 'scripts', name);
 let failed = 0;

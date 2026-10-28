@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.6.1';
+export const TOOL = 'subagent-workflow/2.6.2';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -368,8 +368,13 @@ export function computeLock(repo, taskDir, meta, taskMd, criteria, contractCommi
  * Запись приёмки считается состоявшейся, только если это валидный JSON с
  * status === 'accepted'. Факт наличия файла основанием не является: пустой или
  * битый acceptance.json не должен снимать ни одну проверку (2.4.9).
+ *
+ * Один предикат на двух потребителей (2.6.2): verifyLock ослабляет
+ * contractCommit, а task-lint переводит диагностику принятого задания в WARN.
+ * Копия правила в lint разошлась бы с воротами молча — ровно так ослабление
+ * 2.4.8 и стало дырой.
  */
-function hasAcceptedRecord(file) {
+export function hasAcceptedRecord(file) {
   if (!exists(file)) return false;
   let record;
   try { record = readJson(file); } catch { return false; }

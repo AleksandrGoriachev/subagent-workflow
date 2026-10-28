@@ -16,6 +16,11 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+/* 2.6.2: проверка относится к пакету (spec/checks); в развёрнутой копии spec/SPEC.md нет — SKIP. */
+if (!fs.existsSync(path.join(ROOT, 'spec', 'SPEC.md'))) {
+  console.log('SKIP: проверка относится к пакету (spec/checks), а не к развёрнутой копии');
+  process.exit(0);
+}
 const SCHEMA = path.join(ROOT, 'spec', 'templates', 'acceptance.schema.json');
 const PLUGIN_PKG = path.join(ROOT, 'plugin', 'package.json');
 const PACK_TOOL = path.join(ROOT, 'tools', 'pack-plugin.mjs');

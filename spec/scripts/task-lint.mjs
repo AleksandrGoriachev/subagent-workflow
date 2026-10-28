@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
-  DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects,
+  DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects, hasAcceptedRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -297,8 +297,20 @@ try {
       }
     }
   }
+  /*
+   * 2.6.2: по ПРИНЯТОМУ заданию диагностика не валит прогон. Обновление пакета
+   * штатно меняет защищённые файлы (замок краснеет), а правила решений и
+   * эффекта могли появиться позже приёмки — на исторической задаче это десятки
+   * ERROR, хотя задание уже закрыто и перезамок после красного запрещён (I-3).
+   * Основание — валидная запись приёмки, тот же предикат, что в verifyLock:
+   * пустой, битый файл или чужой статус строгости не снимают. Для открытого
+   * задания всё остаётся ERROR: lint не ворота исполнения, но и не разрешение.
+   */
+  const acceptedRecord = hasAcceptedRecord(files.acceptance);
+  const quality = (message) => (acceptedRecord ? warn : error)(message);
+
   const decisionsApplied = applyLevel(policy.decisions, decisionIssues);
-  errors.push(...decisionsApplied.errors);
+  for (const message of decisionsApplied.errors) quality(message);
   warnings.push(...decisionsApplied.warnings);
 
   /*
@@ -308,7 +320,7 @@ try {
    */
   const effects = evaluateEffects(meta, criteria);
   const effectsApplied = applyLevel(policy.decisions, effects.issues);
-  errors.push(...effectsApplied.errors);
+  for (const message of effectsApplied.errors) quality(message);
   warnings.push(...effectsApplied.warnings);
 
   const secrets = scanSecrets(taskMd + NL + criteria.raw);
@@ -324,9 +336,11 @@ try {
      * воротами исполнения: он описывает состояние уже принятого задания, тогда как
      * task-verify и task-accept обязаны оставаться строгими. Основание —
      * валидная запись приёмки (status: 'accepted'), а не наличие файла.
+     * 2.6.2: у принятого задания тем же основанием снимаются и остальные
+     * расхождения замка — «защищённый файл изменён» после обновления пакета.
      */
     const check = verifyLock(repo, taskDir, meta, taskMd, criteria, { acceptedTolerant: true });
-    for (const e of check.errors) error('criteria.lock: ' + e);
+    for (const e of check.errors) quality('criteria.lock: ' + e);
     for (const n of check.notes || []) warn('criteria.lock: ' + n);
   } else if (strict) error('criteria.lock отсутствует (--strict): выполните task-hash --write');
   else warn('criteria.lock отсутствует: выполните task-hash --write до красного прогона');
