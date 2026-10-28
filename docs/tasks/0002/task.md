@@ -66,7 +66,7 @@
       "reversible": false,
       "evidence": {
         "kind": "criterion",
-        "ref": "C5"
+        "ref": "C2"
       }
     },
     {
@@ -98,7 +98,7 @@
       "reversible": true,
       "evidence": {
         "kind": "criterion",
-        "ref": "C6"
+        "ref": "C1"
       }
     }
   ],

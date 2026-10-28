@@ -16,13 +16,13 @@
       "C7"
     ],
     "reasons": {
-      "C1": "нет spec/scripts/task-guard.mjs — кейс allow не может пройти",
-      "C2": "нет проверки — отказ некому печатать",
-      "C3": "нет метки обхода и аудита",
-      "C4": "нет чтения guard.enabled",
-      "C5": "init не ставит хуки",
-      "C6": "нет plugin/lib/guard.js",
-      "C8": "версия ещё 2.4.9"
+      "C1": "FAIL allow",
+      "C2": "FAIL deny",
+      "C3": "FAIL bypass",
+      "C4": "FAIL disabled",
+      "C5": "FAIL hooks",
+      "C6": "FAIL panel",
+      "C8": "VERSION OK: 2.4.9"
     }
   },
   "criteria": [
@@ -51,6 +51,9 @@
       "title": "Изменение вне заданий отклоняется с названием пути",
       "command": "node spec/checks/guard-acceptance.mjs --case deny",
       "timeoutMs": 180000,
+      "tags": [
+        "negative"
+      ],
       "expect": {
         "exitCode": 0
       }
@@ -60,6 +63,9 @@
       "title": "Явная метка обхода разрешает и попадает в аудит",
       "command": "node spec/checks/guard-acceptance.mjs --case bypass",
       "timeoutMs": 180000,
+      "tags": [
+        "negative"
+      ],
       "expect": {
         "exitCode": 0
       }
@@ -69,6 +75,9 @@
       "title": "Выключенный guard не мешает",
       "command": "node spec/checks/guard-acceptance.mjs --case disabled",
       "timeoutMs": 180000,
+      "tags": [
+        "negative"
+      ],
       "expect": {
         "exitCode": 0
       }
