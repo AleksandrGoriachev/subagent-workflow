@@ -1,6 +1,6 @@
 {
   "name": "dsh-workflow-console",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "Read-only workflow console for subagent-workflow repositories in DeepSeek Harness",
   "license": "MIT",
@@ -15,8 +15,13 @@
     "cordis.patch.yml",
     "README.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AleksandrGoriachev/subagent-workflow"
+  },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "dsh": ">=0.2.0-0 <0.3.0"
   },
   "scripts": {
     "test": "node tools/test.mjs",

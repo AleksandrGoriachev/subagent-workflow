@@ -46,7 +46,9 @@
         "family": { "type": ["string", "null"] },
         "host": { "type": "string" },
         "keyId": { "type": "string", "minLength": 1 },
-        "attestedBy": { "enum": ["env", "key", "declared", "none"] }
+        "attestedBy": { "enum": ["env", "key", "declared", "none"] },
+        "source": { "type": ["string", "null"] },
+        "sourceKind": { "enum": ["harness", "runner", "ci", "manual", null] }
       },
       "additionalProperties": false
     },
@@ -58,7 +60,8 @@
         "separateSession": { "type": "boolean" },
         "reportWithheld": { "type": "boolean" },
         "keyCustody": { "enum": ["agent-key", "human-key", "none"] },
-        "modelLevel": { "enum": ["different-family", "same-family", "unknown"] }
+        "modelLevel": { "enum": ["different-family", "same-family", "unknown"] },
+        "basis": { "enum": ["harness", "runner", "ci", "manual", "none", null] }
       },
       "additionalProperties": false
     },

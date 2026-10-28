@@ -37,10 +37,26 @@
   новый `adapters/opencode.md` (`WF_ACTOR_SESSION` как `runner`),
   `adapters/README.md`, README (цепочка источников), RELEASE-CHECKLIST (пункт
   про `actor-sources.mjs`).
+- **Схема записи знает поля 2.6.0.** `spec/templates/acceptance.schema.json`:
+  `actor.source`, `actor.sourceKind` и `independence.basis` объявлены
+  необязательными; `additionalProperties: false` сохранён, поэтому незнакомое
+  поле по-прежнему отклоняется, а записи до 2.6.0 остаются валидными. Внешний
+  потребитель больше не отклоняет корректную запись 2.6.0. Схема проверяется
+  машиной: `node spec/checks/acceptance-schema.mjs`, шаг в CI (джоба `test`).
+- **Плагин 0.6.0 собирается в устанавливаемый tarball.**
+  `plugin/package.json`: версия 0.6.0, `engines.dsh: ">=0.2.0-0 <0.3.0"`,
+  `repository`; диапазон совместимости панели — `2.0.0 – 2.6.x`.
+  `node tools/pack-plugin.mjs` (скрипт `pack:plugin` в корне) собирает
+  `dist/dsh-workflow-console-<версия>.tgz`, кладёт рядом байт-в-байт
+  `dsh-workflow-console.tgz` (стабильное имя для `workflowInstallSpec`) и
+  `.sha256` для обоих; `--plan` печатает имена, ничего не собирая.
 - **Версия 2.6.0** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
-  секция CHANGELOG и абзац «Версия 2.6.0:» в SPEC. Панель не менялась.
-- Тесты: selftest 65/65, e2e 60/60, plugin 78/78,
-  `actor-sources` 8/8; `tools/check-version.mjs` → VERSION OK: 2.6.0.
+  секция CHANGELOG и абзац «Версия 2.6.0:» в SPEC. Версия плагина отдельная —
+  0.6.0.
+- Тесты: selftest 65/65, e2e 60/60, plugin 79/79,
+  `actor-sources` 8/8, `acceptance-schema` → ACCEPTANCE SCHEMA OK;
+  `tools/check-version.mjs` → VERSION OK: 2.6.0; `tools/pack-plugin.mjs` →
+  tarball и оба `.sha256`.
 
 ## 2.5.2 — 2026-10-28
 

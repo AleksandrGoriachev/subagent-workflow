@@ -2,7 +2,7 @@
 
 Применяется к каждому релизу `subagent-workflow` — и в этом репозитории, и в любом
 проекте, который выкатывает новую версию себе. Порядок важен: версия в файлах →
-прогоны → архив → git → релиз → CI → развёрнутые копии → запись в память.
+прогоны → архив и tarball → git → релиз → CI → развёрнутые копии → запись в память.
 
 Причина существования файла: 2.4.2 вышла с README и `TOOL` на две версии ниже,
 потому что версия жила в пяти местах, а проверялась в одном. С тех пор проверка
@@ -28,6 +28,8 @@
 - [ ] Windows: `node spec/selftest.mjs`, `node spec/e2e.mjs`, `node spec/e2e-deploy.mjs`
 - [ ] приёмочные проверки задания: `node spec/checks/guard-acceptance.mjs --all`
       (покрытие индекса, отказ вне задания, метка обхода и аудит, хуки, панель)
+- [ ] схема записи: `node spec/checks/acceptance-schema.mjs` →
+      `ACCEPTANCE SCHEMA OK` (она же проверяется в CI, джоба `test`)
 - [ ] источники актора: `node spec/checks/actor-sources.mjs` → `ACTOR SOURCES OK`
       (runner/harness дают `separate-session`, ci/manual — `declared`, пустое
       окружение и неизвестный вид источника закрывают ворота; legacy-конфиг без
@@ -43,9 +45,18 @@
       `~/.wf-keys/*` не меняются (проверка — mtime до/после; урок 2.4.3, когда
       тест ротации дважды перевыпустил ключ в ws-school-app)
 
-## 3. Архив
+## 3. Архив и tarball
 
 - [ ] `node tools/pack.mjs` → `dist/subagent-workflow-X.Y.Z.zip` + `.sha256`
+- [ ] `node tools/pack-plugin.mjs` → `dist/dsh-workflow-console-X.Y.Z.tgz`,
+      байт-в-байт `dist/dsh-workflow-console.tgz` и `.sha256` для обоих
+- [ ] **каждый релиз** содержит `dsh-workflow-console.tgz` — стабильное имя для
+      `workflowInstallSpec`
+      (`releases/latest/download/dsh-workflow-console.tgz`), версионированную
+      копию и оба `.sha256`. Tarball собирается из `plugin/` без копирования и
+      без правки манифеста; `node tools/pack-plugin.mjs --plan` печатает имена,
+      а `tar -tzf dist/dsh-workflow-console.tgz` содержит `package/package.json`,
+      `package/lib/`, `package/cordis.patch.yml` и `package/README.md`
 - [ ] распаковать в пустой каталог, `node tools/verify.mjs` — число файлов и хеши
 - [ ] из распакованного архива: `node spec/selftest.mjs` — зелёный
 - [ ] `init --force` из архива на копию проекта: `VERSION` и `TOOL` новые,
@@ -62,7 +73,8 @@
 - [ ] тег `vX.Y.Z`, `name`: короткая строка «что изменилось»
 - [ ] тело: разделы «Что нового», «Проверки» (числа тестов и sha256), «Обновление»
       (`init --force`; ключ и конфиг сохраняются)
-- [ ] ассеты: zip и zip.sha256
+- [ ] ассеты: zip и zip.sha256, `dsh-workflow-console.tgz` (стабильное имя),
+      `dsh-workflow-console-X.Y.Z.tgz` и оба `.sha256`
 - [ ] ссылка на релиз в ответе заказчику
 
 ## 6. CI
@@ -70,6 +82,9 @@
 - [ ] 12/12 (test, plugin, deploy × ubuntu/windows × node 22/24) — зелёные
 - [ ] в джобе `test` есть шаг `guard-acceptance --all` и он зелёный на ubuntu и
       windows: приёмочные кейсы обхода — часть CI, а не только заданий
+- [ ] в джобе `test` сразу после `selftest` идёт
+      `node spec/checks/acceptance-schema.mjs` и зелёный на ubuntu и windows:
+      схема записи проверяется машиной при каждом пуше
 - [ ] в джобе `test` сразу после `e2e` идёт шаг `node spec/checks/hooks-mode.mjs`
       и зелёный на ubuntu и windows; шага `chmod +x spec/hooks/*` нет — CI не
       подменяет права под тестами (2.5.2)

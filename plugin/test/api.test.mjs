@@ -161,7 +161,7 @@ test('GET /workflow/api/compat reports versions and recommendations', async () =
     const response = await call(handler, '/workflow/api/compat');
     assert.equal(response.status, 200);
     assert.match(response.json.pluginVersion, /^\d+\.\d+\.\d+$/);
-    assert.equal(response.json.supported, '2.0.0 – 2.5.x');
+    assert.equal(response.json.supported, '2.0.0 – 2.6.x');
     assert.equal(response.json.workflowVersion, '2.2.1');
     assert.equal(response.json.summary.limited, false);
     assert.ok(Array.isArray(response.json.checks));

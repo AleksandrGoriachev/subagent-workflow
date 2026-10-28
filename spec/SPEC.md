@@ -326,6 +326,22 @@
    DSH и контрольный отказ при пустом окружении); шаблон
    `spec/workflow.config.json` с `sources`/`modelSources`; новый адаптер
    `adapters/opencode.md`.
+5. **Схема записи знает поля 2.6.0.** `spec/templates/acceptance.schema.json`:
+   в `actor` объявлены необязательные `source` и `sourceKind`, в
+   `independence` — `basis`. Оба объекта сохраняют
+   `additionalProperties: false`: незнакомое поле по-прежнему отклоняется, а
+   записи до 2.6.0 без новых полей валидны. Схема проверяется машиной —
+   `node spec/checks/acceptance-schema.mjs`, шаг в CI (джоба `test` после
+   `selftest`), — а не только глазами при приёмке.
+6. **Плагин устанавливается из tarball.** `plugin/package.json` — версия 0.6.0
+   отдельно от версии спецификации, `engines.dsh: ">=0.2.0-0 <0.3.0"`,
+   `dsh.bundle.patch`, `dsh.client.platform: web` и `private: true`.
+   `node tools/pack-plugin.mjs` собирает из `plugin/` файл
+   `dist/dsh-workflow-console-<версия>.tgz`, кладёт рядом байт-в-байт копию
+   `dsh-workflow-console.tgz` — стабильное имя ассета, которое указывает
+   `workflowInstallSpec` (`releases/latest/download/dsh-workflow-console.tgz`), —
+   и `.sha256` для обоих. Каждый релиз содержит этот стабильный ассет,
+   версионированную копию и суммы.
 
 ## 0.1. Быстрый старт с нуля
 

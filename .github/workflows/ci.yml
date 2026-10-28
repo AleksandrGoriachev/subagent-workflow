@@ -23,6 +23,8 @@ jobs:
         run: node tools/check-version.mjs
       - name: selftest
         run: node spec/selftest.mjs
+      - name: схема записи приёмки
+        run: node spec/checks/acceptance-schema.mjs
       - name: e2e
         run: node spec/e2e.mjs
       - name: режим хуков в индексе

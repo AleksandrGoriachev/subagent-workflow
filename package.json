@@ -21,6 +21,7 @@
     "verify": "node spec/scripts/task-verify.mjs",
     "accept": "node spec/scripts/task-accept.mjs",
     "check": "node spec/scripts/task-check-acceptance.mjs",
-    "pack": "node tools/pack.mjs"
+    "pack": "node tools/pack.mjs",
+    "pack:plugin": "node tools/pack-plugin.mjs"
   }
 }

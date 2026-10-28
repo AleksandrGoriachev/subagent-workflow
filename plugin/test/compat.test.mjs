@@ -45,7 +45,7 @@ test('2.2.x is compatible', () => {
   assert.equal(view.summary.errors, 0);
   assert.equal(view.summary.warnings, 0);
   assert.equal(view.summary.limited, false);
-  assert.equal(view.supported, '2.0.0 – 2.5.x');
+  assert.equal(view.supported, '2.0.0 – 2.6.x');
   assert.equal(view.workflowVersion, '2.2.1');
   assert.ok(view.checks.some((item) => item.id === 'package-spec' && item.severity === 'info'));
   assert.equal(view.summary.headline, 'Совместимо с workflow 2.2.1');
@@ -122,9 +122,9 @@ test('2.4.5 — рабочее состояние: ни баннера, ни «�
   assert.equal(view.checks.some((item) => item.id === 'workflow-2.3-plus'), false);
 });
 
-test('2.5.0 — рабочее состояние: guard входит в диапазон, баннера нет', () => {
+test('2.6.0 — рабочее состояние: guard и запись 2.6.0 входят в диапазон, баннера нет', () => {
   const view = compatView({
-    packageVersion: '2.5.0',
+    packageVersion: '2.6.0',
     versionSource: 'VERSION',
     workflow: workflow(),
     config: config(),
@@ -132,13 +132,13 @@ test('2.5.0 — рабочее состояние: guard входит в диа�
   });
   assert.equal(view.summary.limited, false);
   assert.equal(view.summary.warnings, 0);
-  assert.equal(view.summary.headline, 'Совместимо с workflow 2.5.0');
+  assert.equal(view.summary.headline, 'Совместимо с workflow 2.6.0');
   assert.equal(view.checks.some((item) => item.id === 'workflow-newer'), false);
 });
 
 test('устаревший плагин: совет обновиться есть, баннера «ограничен» нет', () => {
   const view = compatView({
-    packageVersion: '2.6.0',
+    packageVersion: '2.7.0',
     versionSource: 'VERSION',
     workflow: workflow(),
     config: config(),
@@ -188,6 +188,16 @@ test('unknown version is a warning, not a hard failure', () => {
   assert.equal(view.summary.limited, false);
   assert.equal(view.summary.warnings, 1);
   assert.ok(view.checks.some((item) => item.id === 'version-unknown'));
+});
+
+test('манифест сохраняет files, dsh и engines.dsh после 0.6.0', async () => {
+  const fs = await import('node:fs');
+  const manifest = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.deepEqual(manifest.files, ['lib', 'cordis.patch.yml', 'README.md'], 'в tarball должны попасть lib, cordis.patch.yml и README.md');
+  assert.deepEqual(manifest.dsh, { bundle: { patch: './cordis.patch.yml' }, client: { platform: 'web' } });
+  assert.equal(manifest.engines.dsh, '>=0.2.0-0 <0.3.0');
+  assert.equal(manifest.private, true);
+  assert.equal(manifest.repository.url, 'https://github.com/AleksandrGoriachev/subagent-workflow');
 });
 
 test('PLUGIN_VERSION совпадает с package.json', async () => {

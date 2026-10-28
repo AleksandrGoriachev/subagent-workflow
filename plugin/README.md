@@ -5,6 +5,21 @@ Harness. It reads task artifacts and `workflow.config.json`; the only write is
 the commit-and-push guard flag (below) — it never runs a gate, never changes
 `policy` and never signs or accepts anything.
 
+## 0.6.0 — установка из tarball, схема записи 2.6.0
+
+- **Ставится из tarball.** Релиз публикует `dsh-workflow-console.tgz` —
+  стабильное имя для `workflowInstallSpec`
+  (`releases/latest/download/dsh-workflow-console.tgz`) — и версионированную
+  копию `dsh-workflow-console-<версия>.tgz`; рядом `.sha256` для обоих.
+  Локально tarball собирает `npm run pack:plugin` (тот же
+  `node tools/pack-plugin.mjs`): файлы ложатся в `dist/`.
+- **Требуется DSH `>=0.2.0-0 <0.3.0`** — объявлено в `engines.dsh`.
+- **Диапазон версий — `2.0.0 – 2.6.x`**, версия плагина 0.6.0: панель
+  показывает запись 2.6.0 (`actor.source`, `actor.sourceKind`,
+  `independence.basis`) так же, как `effect`, регресс-долг и guard.
+- Тест манифеста проверяет, что `files` и `dsh` не потерялись после смены
+  версии; тестов 79.
+
 ## 0.5.0 — кнопка guard: единственная запись панели
 
 - **Проверка коммитов включается с панели.** Страница «Политика» показывает
@@ -148,6 +163,12 @@ The plugin ships separately from the portable `subagent-workflow` archive
 (decision 2026-10-26): the archive is copied into a repository, the plugin is a
 DSH host package.
 
+Release builds are installed from the tarball `dsh-workflow-console.tgz` (the
+stable asset name; the versioned copy `dsh-workflow-console-<version>.tgz` and
+both `.sha256` files sit next to it). The package requires DSH
+`>=0.2.0-0 <0.3.0` — declared in `engines.dsh`. To build the tarball locally,
+run `npm run pack:plugin` from the repository root; the asset lands in `dist/`.
+
 1. Put this `plugin/` directory where the DSH profile can link it, for example
    `~/.dsh/plugins/dsh-workflow-console`.
 2. Add the package to `~/.dsh/profiles/<profile>/package.json` — both the
@@ -213,8 +234,8 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.5.0, supports workflow
-2.0.0 – 2.5.x, включая `effect`, регресс-долг и guard) with the deployed copy: VERSION/SPEC,
+The **Совместимость** tab compares the plugin (0.6.0, supports workflow
+2.0.0 – 2.6.x, включая `effect`, регресс-долг, guard и запись 2.6.0) with the deployed copy: VERSION/SPEC,
 required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
 banner above every page.
