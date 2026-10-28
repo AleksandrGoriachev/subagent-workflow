@@ -189,6 +189,88 @@ const CASES = {
       cleanup(keys);
     }
   },
+  /*
+   * Пуш коммита, сделанного при открытом задании, ПОСЛЕ приёмки должен проходить:
+   * порядок workflow — «коммит по кандидату, пуш после записи о приёмке». Проверка
+   * покрытия обязана смотреть на состояние на момент коммита, а не на текущий
+   * acceptance.json, иначе штатный порядок блокируется собственным хуком.
+   */
+  pushAfterAcceptance() {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-push-'));
+    const repo = path.join(base, 'repo');
+    const bare = path.join(base, 'remote.git');
+    fs.mkdirSync(repo, { recursive: true });
+    try {
+      run('git', ['init', '--bare', '-q', bare], base);
+      git(repo, ['init', '-q']);
+      git(repo, ['config', 'user.email', 'guard@local']);
+      git(repo, ['config', 'user.name', 'guard']);
+      git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
+      copyTree(path.join(PKG, 'spec'), path.join(repo, 'docs', 'subagent-workflow'));
+      write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(false), null, 2) + '\n');
+      const dir = path.join(repo, 'docs', 'tasks', '0001');
+      write(path.join(dir, 'task.md'), ['# Задание 0001. Активное', '',
+        '<!-- TASK-META',
+        JSON.stringify({
+          id: '0001', version: 1, title: 'активное', risk: 'low', created: '2026-10-28',
+          owner: 'архитектор', executor: 'subagent:executor', acceptor: 'subagent:judge',
+          base: 'HEAD', criteria: 'criteria.json', allowedPaths: ['src/**'], hashExclude: [], decisions: [],
+        }, null, 2),
+        '-->', '', '## Цель', '', 'Заглушка.', ''].join('\n'));
+      write(path.join(dir, 'criteria.json'), JSON.stringify({ task: '0001', criteria: [{ id: 'C1', title: 'c', command: 'node -e "1"', expect: { exitCode: 0 } }] }, null, 2) + '\n');
+      write(path.join(dir, 'criteria.lock'), JSON.stringify({ version: 3, task: '0001', contractCommit: '0'.repeat(40), protected: [] }, null, 2) + '\n');
+      write(path.join(repo, 'README.md'), '# проба\n');
+      git(repo, ['add', '-A']);
+      git(repo, ['commit', '-q', '-m', 'base (guard off)']);
+      git(repo, ['remote', 'add', 'origin', bare]);
+      git(repo, ['push', '-q', '-u', 'origin', 'HEAD:refs/heads/main']);
+      /* Включаем guard в рабочем дереве, не коммитя: конфиг читается хуком. */
+      write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(true), null, 2) + '\n');
+      write(path.join(repo, 'src', 'a.js'), 'export const a = 1;\n');
+      git(repo, ['add', 'src/a.js']);
+      const commit = git(repo, ['commit', '-q', '-m', 'работа по заданию']);
+      /* Приёмка появляется ПОСЛЕ коммита — как в штатном порядке. */
+      write(path.join(repo, 'docs', 'tasks', '0001', 'acceptance.json'), JSON.stringify({ task: '0001', status: 'accepted', version: 6 }, null, 2) + '\n');
+      const push = git(repo, ['push', 'origin', 'HEAD:refs/heads/main']);
+      return {
+        ok: commit.code === 0 && push.code === 0,
+        detail: 'commit=' + commit.code + ' push=' + push.code + ' ' + push.out.trim().slice(0, 220),
+      };
+    } finally { cleanup(base); }
+  },
+  /*
+   * Метка обхода обязана работать и на пуше: иначе задокументированный обход
+   * действует только до пуша, а это не то, что обещано.
+   */
+  bypassOnPush() {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-pushby-'));
+    const repo = path.join(base, 'repo');
+    const bare = path.join(base, 'remote.git');
+    fs.mkdirSync(repo, { recursive: true });
+    try {
+      run('git', ['init', '--bare', '-q', bare], base);
+      git(repo, ['init', '-q']);
+      git(repo, ['config', 'user.email', 'guard@local']);
+      git(repo, ['config', 'user.name', 'guard']);
+      git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
+      copyTree(path.join(PKG, 'spec'), path.join(repo, 'docs', 'subagent-workflow'));
+      write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(false), null, 2) + '\n');
+      write(path.join(repo, 'README.md'), '# проба\n');
+      git(repo, ['add', '-A']);
+      git(repo, ['commit', '-q', '-m', 'base (guard off)']);
+      git(repo, ['remote', 'add', 'origin', bare]);
+      git(repo, ['push', '-q', '-u', 'origin', 'HEAD:refs/heads/main']);
+      write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(true), null, 2) + '\n');
+      write(path.join(repo, 'hotfix.txt'), 'срочно\n');
+      git(repo, ['add', 'hotfix.txt']);
+      const commit = git(repo, ['commit', '-q', '-m', 'hotfix [workflow-bypass: срочно]']);
+      const push = git(repo, ['push', 'origin', 'HEAD:refs/heads/main']);
+      return {
+        ok: commit.code === 0 && push.code === 0,
+        detail: 'commit=' + commit.code + ' push=' + push.code + ' ' + push.out.trim().slice(0, 220),
+      };
+    } finally { cleanup(base); }
+  },
   /* Панель пишет только флаг guard и оставляет след в журнале. */
   async panel() {
     const repo = makeRepo({ enabled: false });

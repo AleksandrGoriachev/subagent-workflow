@@ -1,0 +1,314 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0003",
+  "createdAt": "2026-10-28T07:24:52.897Z",
+  "headSha": "fde89c76e14d898418d053754778e1867ad902e5",
+  "contractCommit": "fde89c76e14d898418d053754778e1867ad902e5",
+  "criteriaSha256": "9d461fa2169189ae472bfa41fe626419da38b272d97993ddd48e75893b3e39d7",
+  "criteriaJsonSha256": "d18a89f1b896112404c49aea4f772e775bbb31a1937164cc68413f638acc3c8d",
+  "taskFileSha256": "d6592d17293b8770f99ea391f48213f48a5c97768c297d9ea3a8fe0d012c1a8f",
+  "changedPaths": [
+    "CHANGELOG.md",
+    "README.md",
+    "RELEASE-CHECKLIST.md",
+    "VERSION",
+    "docs/tasks/0003/criteria.lock",
+    "docs/tasks/0003/red.json",
+    "package.json",
+    "plugin/README.md",
+    "plugin/lib/api.js",
+    "plugin/lib/client.js",
+    "plugin/lib/compat.js",
+    "plugin/lib/guard.js",
+    "plugin/package.json",
+    "plugin/test/api.test.mjs",
+    "plugin/test/client.test.mjs",
+    "plugin/test/compat.test.mjs",
+    "spec/SPEC.md",
+    "spec/e2e.mjs",
+    "spec/hooks/commit-msg",
+    "spec/hooks/pre-commit",
+    "spec/hooks/pre-push",
+    "spec/scripts/init.mjs",
+    "spec/scripts/lib/common.mjs",
+    "spec/scripts/task-guard.mjs",
+    "spec/workflow.config.json"
+  ],
+  "coverage": {
+    "declared": 4,
+    "covered": [
+      {
+        "path": "VERSION",
+        "criterion": "C1"
+      },
+      {
+        "path": "package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/client.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/compat.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/guard.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/api.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/compat.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/e2e.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/hooks/commit-msg",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/hooks/pre-commit",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/hooks/pre-push",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/init.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-guard.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/workflow.config.json",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": true,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C1",
+        "observable": "изменение вне задания не попадает в историю",
+        "threshold": "при активном задании guard --staged пропускает, без него — exit 1 и путь в выводе",
+        "measuredBy": "C2"
+      }
+    ],
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C2"
+      },
+      {
+        "decision": "D2",
+        "criterion": "C2",
+        "carrier": "C1",
+        "measuredBy": "C2"
+      },
+      {
+        "decision": "D3",
+        "criterion": "C2",
+        "carrier": "C1",
+        "measuredBy": "C2"
+      },
+      {
+        "decision": "D4",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C2"
+      }
+    ],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/guard-acceptance.mjs --case allow",
+      "exitCode": 0,
+      "durationMs": 3266,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "c268a91e5f43b9a18f40e6f1132526febdfc8cbd20399b80b0ccf98510ef0923",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS allow — exit=0 \n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/guard-acceptance.mjs --case deny",
+      "exitCode": 0,
+      "durationMs": 2955,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "c63dd37aa671d6bb81142b05e0d9c20c9c9243fdedeee6b7e548d77b59430549",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS deny — exit=1 path=true explains=true task-guard: коммит отклонён — изменение вне активного задания\n  не покрыт: notes.txt\n\nПокрытие (D3): allowedPaths активного задания (criteria.lock есть, acceptance.json нет),\nкаталог незакрытого задания docs/tasks/<id>/**, guard.allow или м\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/guard-acceptance.mjs --case bypass",
+      "exitCode": 0,
+      "durationMs": 6642,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "aafd56a32cc2de7ab078d5dfb8be347425f18f628eb93e932f2e1defc63f4ff0",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS bypass — allow=0 audit=0 mentions=true task-guard: аудит диапазона HEAD~1..HEAD (коммитов: 1)\n  fe808a9718d5 hotfix [workflow-bypass: срочно] — обход по метке \"workflow-bypass\"\n  итог: меток обхода 1, непокрытых путей 0\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabled",
+      "exitCode": 0,
+      "durationMs": 4841,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "e4d14094bab8459abff480238187e409d6beede21807be804367ff1f96eb251d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS disabled — exit=0 \n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/guard-acceptance.mjs --case hooks",
+      "exitCode": 0,
+      "durationMs": 2788,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "d293246a3c5d1dacf42949f5cd206c788acc770f66532ef50fc064e08b14fd8f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS hooks — init=0 hooksPath=\"docs/subagent-workflow/hooks\" global=1 preCommit=true prePush=true\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/guard-acceptance.mjs --case panel",
+      "exitCode": 0,
+      "durationMs": 3202,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "6c071ea0a572dabf416c79c381b5631853701d00b09ee74ec02203e3310031b9",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS panel — restSame=true logged=true toggled=true first={\"root\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-AFeGoA\",\"configPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-AFeGoA\\\\docs\\\\subagent-workflow\\\\workflow.config.json\",\"logPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-AFeGoA\\\\docs\\\\subagent-workflow\\\\guard.log\",\"guard\":{\"enabled\":true},\"previous\":false,\"changed\":true,\"actor\":\"session-2287b54f-ee61-4539-b719-67d6fe5f823e\",\"loggedAt\":\"2026-10-28T07:22:50.087Z\"} second={\"root\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-AFeGoA\",\"configPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-AFeGoA\\\\docs\\\\subagent-workflow\\\\workflow.config.json\",\"logPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-AFeGoA\\\\docs\\\\subagent-workflow\\\\guard.log\",\"guard\":{\"enabled\":false},\"previous\":true,\"changed\":true,\"actor\":\"session-2287b54f-ee61-4539-b719-67d6fe5f823e\",\"loggedAt\":\"2026-10-28T07:22:50.094Z\"}\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 116425,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "c3e518ade97756aa7f7b7461013f16c0a74a80e2ab1e4cc7771125f3887078db",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  init разворачивает рабочее пространство\nPASS  init создаёт закреплённый ключ\nPASS  e2e-deploy запускается из развёрнутой копии\nPASS  init из развёрнутого каталога создаёт свой ключ, а не копирует acceptors.json\nPASS  2.5.0: init выставил локальный core.hooksPath\nPASS  2.5.0: выключенный guard не мешает коммиту вне задания\nPASS  2.5.0: включённый guard отклоняет коммит вне задания\nPASS  2.5.0: метка обхода в сообщении разрешает коммит\nPASS  2.5.0: --audit показывает метку обхода\nPASS  2.5.0: guard отклоняет push с изменением вне задания\nPASS  2.5.0: выключенный guard не мешает push\nPASS  2.5.0: guard выключен — рабочий цикл задачи не меняется\nPASS  new-task создаёт задание с issuedBy\nPASS  G6: C3 — самостоятельный сценарий, а не копия C1\nPASS  lint требует covers для medium\nPASS  lint требует критерий эффекта для решения с влиянием на пользователя\nPASS  lint отклоняет effect.measuredBy на сам критерий\nPASS  lint отклоняет семантическое решение без доказательства\nPASS  G2: lint отклоняет решение вне цепи эффекта\nPASS  hash без атаки отказывает при policy.attack=fail\nPASS  hash не запирает контракт с нерешённой blocking-находкой\nPASS  task-attack отклоняет нерешённый blocking\nPASS  task-attack принимает закрытую находку\nPASS  hash создаёт замок для закоммиченного контракта\nPASS  lint --strict зелёный\nPASS  red доказывает падение по ожиданию\nPASS  verify зелёный после фикса\nPASS  verify записывает эффект и цепь решения\nPASS  verify валит изменённый файл без покрытия критерием\nPASS  после удаления непокрытого файла verify снова зелёный\nPASS  2.4.9: без acceptance.json сдвиг HEAD — ERROR contractCommit, а не WARN\nPASS  2.4.9: пустой acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: битый acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: запись с чужим статусом — не основание, ERROR остаётся\nPASS  2.4.9: task-verify не считает пустой acceptance.json приёмкой (lock строгий)\nPASS  самоприёмка из сессии постановщика отклоняется\nPASS  blocking-замечание без решения не принимается\nPASS  accept из другой сессии принимает задачу\nPASS  разбор замечаний и releaseReady в записи\nPASS  запись v6 с актором и уровнем независимости\nPASS  эффект записан в приёмку с измерителем\nPASS  G3: запись хранит согласованность решения и эффекта\nPASS  решения записаны с digest и без assumed\nPASS  атака попала в запись с digest и без нерешённых находок\nPASS  проверка ролей: приёмщик другого семейства, чем постановщик\nPASS  check-acceptance принимает запись\nPASS  check-acceptance проверяет metadata-коммит\nPASS  2.4.8: у принятого задания сдвиг HEAD — предупреждение, не ошибка\nPASS  G4: policy.decisions=fail отклоняет решение вне цепи\nPASS  G4: policy.decisions=warn — предупреждение, exit 0\nPASS  G5: policy.decisions=off — ни ошибки, ни предупреждения\nPASS  G7: защита самого пакета в protectedPaths — именно WARN, не ERROR\nPASS  G7: свои проверки в protectedPaths (checks/**) — предупреждения о пакете нет\nPASS  regress принятой задачи зелёный\nPASS  regress ловит сломанную проверку закрытой задачи\nPASS  regress помечает таймаут отдельно\nPASS  подмена записи ловится\n\nE2E OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C8",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 320,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "e2353f4801d5710b4309329f3855acf0eaf4b2a340a8900fc9074c86c34f22cf",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.5.0\nPASS  package.json                  — 2.5.0\nPASS  README.md                     — # subagent-workflow 2.5.0 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.5.0. Дата: 2026-10-28.\nPASS  spec/scripts/lib/common.mjs   — export const TOOL = 'subagent-workflow/2.5.0';\nPASS  CHANGELOG.md                  — ## 2.5.0 — 2026-10-28\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.5.0:»\n\nVERSION OK: 2.5.0\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 8,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "fde89c76e14d898418d053754778e1867ad902e5",
+    "contractCommit": "fde89c76e14d898418d053754778e1867ad902e5",
+    "criteriaJsonSha256": "d18a89f1b896112404c49aea4f772e775bbb31a1937164cc68413f638acc3c8d",
+    "failed": 7,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C8"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C8"
+      ],
+      "mustPass": [
+        "C7"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "d5816a7814c1607549b4aa2b1c67dfeeb692e33ff26beb2e6c56aa8738003015",
+  "log": "verify.log"
+}
