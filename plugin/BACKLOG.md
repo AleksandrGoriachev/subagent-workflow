@@ -9,7 +9,7 @@
 | WC-2 | proposed | low | Тултип на тач-экранах и по клавиатурному фокусу |
 | WC-3 | done | high | Диагностика: запуск doctor/lint/check-acceptance из панели |
 | WC-4 | proposed | high | Первая запись: task-hash --write и new-task из панели |
-| WC-5 | proposed | medium | Показ effect и регресса (workflow 2.3–2.4) |
+| WC-5 | done | medium | Показ effect и регресса (workflow 2.3–2.4) |
 
 ## WC-5. Показ effect и регресса (workflow 2.3–2.4)
 

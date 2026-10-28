@@ -4,6 +4,27 @@ Read-only Web panel for [subagent-workflow](../README.md) repositories inside
 DeepSeek Harness. It reads task artifacts and `workflow.config.json`, and never
 runs a gate, writes a file, or changes `policy`.
 
+## 0.4.0 — доказательство и эффект, регресс-долг (WC-5)
+
+Закрыт пробел 2.3–2.4: панель читает то, что ворота этих версий пишут в файлы.
+
+- **Карточка: раздел «Доказательство и эффект».** Цепь «критерий-носитель →
+  измеритель» (`criteria.effect`: `observable`, `threshold`, `measuredBy`), какие
+  решения обязаны на неё ссылаться (`decisions[].evidence.ref`), что записали
+  `verify.json.effects` и `effectConsistency` приёмки. Шесть состояний названы
+  словами: не требуется, цепь собрана, требуется но не объявлен, объявлен неверно,
+  решение мимо цепи, ворота записали несогласованность.
+- **Доска: бейджи «эффект» и «регресс».** Эффект виден без открытия карточки;
+  регресс берётся из `regress.baseline.json` (единственный след регресса на диске —
+  сам регресс запускают ворота). Просроченный `reviewBy` помечается, долг
+  считается в строке сводки.
+- **Проверка «Workflow 2.3–2.4: effect и регресс не показываются» снята** — она была
+  честной, пока пробел был. `SUPPORTED_LABEL` снова `2.0.0 – 2.4.x`.
+- **Флаг `effect-problem`** со строгостью из политики: при `decisions: fail` это
+  ошибка, при `warn` — предупреждение, при `off` — молчание. Панель не выдумывает
+  строгость, она берёт её у репозитория.
+- Тестов 69 (было 61): случаи `effectsView`, `readBaseline` и проекции доски.
+
 ## 0.3.2 — баннер «функционал ограничен» только для устаревшей копии
 
 Правило заказчика (2026-10-28): «Понятно, что будет работать, — такое уведомление
@@ -142,9 +163,9 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.3.1, supports workflow
-2.0.0 – 2.4.x — показанные поля; `effect`/`regress` см. ниже) with the deployed
-copy: VERSION/SPEC, required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
+The **Совместимость** tab compares the plugin (0.4.0, supports workflow
+2.0.0 – 2.4.x, включая `effect` и регресс-долг) with the deployed copy: VERSION/SPEC,
+required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
 banner above every page.
 

@@ -141,6 +141,8 @@ window.__ModuleLoader__.load({
     const WARNING_HINT = "Некритичные предупреждения: assumed-решения, старые версии замка или записи, непокрытые файлы. Не блокируют, но видны в карточке.";
     const ASSUMED_HINT = "Решения без доказательства: нет ни исполнимого критерия, ни подтверждения человека. Пока такие есть, releaseReady=false.";
     const ATTACK_HINT = "Атака задания: есть blocking-находки без решения. Контракт не запирается, пока они не закрыты.";
+const EFFECT_HINT = "Эффект решения (I-34): у решения с impact user-visible его доказательство должно ссылаться на критерий-носитель эффекта или на его измеритель. Проблема — в карточке, раздел «Доказательство и эффект».";
+const REGRESS_HINT = "Регресс-долг из regress.baseline.json: задание записано туда при приёмке. Панель только читает файл — сам регресс запускают ворота.";
     const MANUAL_HINT = "Ручная проверка: критерий подтверждает человек, команды у него нет.";
     const NO_RESOLUTION_HINT = "Находка без решения: пока она не закрыта, контракт не запирается.";
     const BLOCKING_HINT = "Blocking: находка закрывает замок контракта, пока у неё нет resolution.";
@@ -179,6 +181,28 @@ window.__ModuleLoader__.load({
       if (value === "warn") return "warn — предупреждать: видно в отчёте, но ворота не останавливает.";
       if (value === "off") return "off — не проверять: правило выключено в workflow.config.json.";
       return "Значение политики: " + fmt(value) + ".";
+    }
+
+    function effectHint(effects) {
+      /* На доске unlinked — число, в карточке — список решений. */
+      const unlinkedText = Array.isArray(effects.unlinked)
+        ? effects.unlinked.map((item) => item.decision + "→" + item.ref).join(", ")
+        : "без связи: " + (Number(effects.unlinked) || 0);
+      const text = {
+        missing: "решение с impact user-visible/public-contract требует эффекта, но ни один критерий его не объявляет",
+        invalid: "объявление effect некорректно: " + (Array.isArray(effects.issues) ? effects.issues.join("; ") : "смотрите карточку"),
+        unlinked: "решение ссылается мимо цепи эффекта: " + unlinkedText,
+        mismatch: "ворота записали несогласованность эффекта решения",
+      }[effects.status] || "состояние эффекта: " + fmt(effects.status);
+      return EFFECT_HINT + " Сейчас: " + text + ".";
+    }
+
+    function regressHint(entry) {
+      const parts = ["статус " + fmt(entry.status)];
+      if (entry.reviewBy) parts.push("пересмотр до " + entry.reviewBy + (entry.expired ? " — срок истёк" : ""));
+      if (entry.since) parts.push("с " + entry.since);
+      if (entry.reason) parts.push(entry.reason);
+      return REGRESS_HINT + " " + parts.join("; ") + ".";
     }
 
     function cardAriaLabel(task) {
@@ -1067,6 +1091,22 @@ window.__ModuleLoader__.load({
                     task.coverageUncovered > 0
                       ? badge("покрытие", T.warn, coverageHint(task.coverageUncovered), false)
                       : null,
+                    task.effects && task.effects.status !== "none" && task.effects.status !== "ok"
+                      ? badge(
+                          "эффект",
+                          task.effects.status === "ok" ? T.tertiary : (task.effects.status === "missing" || task.effects.status === "invalid" ? T.danger : T.warn),
+                          effectHint(task.effects),
+                          false,
+                        )
+                      : null,
+                    task.regress
+                      ? badge(
+                          "регресс: " + fmt(task.regress.status),
+                          task.regress.expired ? T.warn : T.tertiary,
+                          regressHint(task.regress),
+                          false,
+                        )
+                      : null,
                   ),
                 )),
           );
@@ -1192,6 +1232,14 @@ window.__ModuleLoader__.load({
                 ];
                 if (remarks > 0) parts.push("с замечаниями: " + remarks);
                 if (skipped.length > 0) parts.push("пропущено файлов: " + skipped.length);
+                /*
+                 * 0.4.0 (WC-5): регресс-долг. Ворота запускаются в терминале, на
+                 * диске от них остаётся только baseline — он и называется.
+                 */
+                const debt = board.regress;
+                if (debt && debt.present) {
+                  parts.push("регресс-долг: " + debt.entries + (debt.expired > 0 ? " (просрочено " + debt.expired + ")" : ""));
+                }
                 return parts.map((text, index) => h(
                   "span",
                   { key: index, style: index === 0 ? S.summaryStrong : S.summaryMuted },
@@ -1361,6 +1409,66 @@ window.__ModuleLoader__.load({
           );
         }
 
+        function renderEffects(effects) {
+          if (!effects) return h("div", { style: S.empty }, "Эффект не объявлен: в criteria.json нет ни одного effect.");
+          const statusText = {
+            none: "не заявлен и не требуется",
+            ok: "цепь собрана",
+            missing: "требуется, но не объявлен",
+            invalid: "объявлен неверно",
+            unlinked: "решение мимо цепи",
+            mismatch: "ворота записали несогласованность",
+          }[effects.status] || fmt(effects.status);
+          return h(
+            "div",
+            null,
+            kvGrid([
+              ["состояние", statusText],
+              ["требуется решением", effects.required ? "да" : "нет"],
+              ["критериев с effect", effects.declared.length],
+              ["связей", effects.links.length],
+              ["без связи", effects.unlinked.length],
+              ["verify.json", effects.verify ? (effects.verify.ok ? "ok" : "несогласовано") : "—"],
+              ["запись приёмки", effects.record ? (effects.record.ok ? "ok" : "несогласовано") : "—"],
+            ]),
+            effects.declared.length
+              ? table(
+                  ["критерий", "наблюдаемо", "порог", "измеритель"],
+                  effects.declared.map((item) => [
+                    item.criterion,
+                    item.observable || "—",
+                    item.threshold || "—",
+                    item.measuredBy || "—",
+                  ]),
+                )
+              : null,
+            effects.links.length
+              ? h(
+                  "ul",
+                  { style: S.list },
+                  effects.links.map((link, index) => h(
+                    "li",
+                    { key: index },
+                    "решение " + link.decision + " → " + link.ref + " (цепь " + link.criterion + "→" + link.measuredBy + ")",
+                  )),
+                )
+              : null,
+            effects.unlinked.length
+              ? h(
+                  "div",
+                  { style: Object.assign({}, S.hint, { color: T.danger, marginTop: "8px" }) },
+                  "Мимо цепи: " + effects.unlinked.map((item) => item.decision + "→" + item.ref).join(", "),
+                )
+              : null,
+            effects.issues.length
+              ? h("ul", { style: S.list }, effects.issues.map((message, index) => h("li", { key: index }, message)))
+              : null,
+            effects.status === "none" && effects.required === false
+              ? h("div", { style: S.hint }, "Эффект не требуется: нет решения с impact user-visible или public-contract.")
+              : null,
+          );
+        }
+
         function renderAttack(attack) {
           if (!attack) return h("div", { style: S.empty }, "attack.json нет — атака не проводилась.");
           return h(
@@ -1490,6 +1598,7 @@ window.__ModuleLoader__.load({
             section("Флаги", renderFlags(card.flags)),
             section("Контракт", renderContract(card.contract)),
             section("Решения", renderDecisions(card.decisions)),
+            section("Доказательство и эффект", renderEffects(card.effects)),
             section("Критерии", renderCriteria(card.criteria)),
             section("Покрытие", renderCoverage(card.coverage)),
             section("Атака", renderAttack(card.attack)),

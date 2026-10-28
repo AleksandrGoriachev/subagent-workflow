@@ -45,7 +45,7 @@ test('2.2.x is compatible', () => {
   assert.equal(view.summary.errors, 0);
   assert.equal(view.summary.warnings, 0);
   assert.equal(view.summary.limited, false);
-  assert.equal(view.supported, '2.0.0 – 2.4.x (без effect/regress)');
+  assert.equal(view.supported, '2.0.0 – 2.4.x');
   assert.equal(view.workflowVersion, '2.2.1');
   assert.ok(view.checks.some((item) => item.id === 'package-spec' && item.severity === 'info'));
   assert.equal(view.summary.headline, 'Совместимо с workflow 2.2.1');
@@ -103,7 +103,7 @@ test('missing config is an error but missing VERSION is a warning', () => {
   assert.equal(view.summary.errors, 1);
 });
 
-test('2.4.5 — рабочее состояние: инфо про effect, без баннера «ограничен»', () => {
+test('2.4.5 — рабочее состояние: ни баннера, ни «мы это не показываем»', () => {
   const view = compatView({
     packageVersion: '2.4.5',
     versionSource: 'VERSION',
@@ -111,18 +111,15 @@ test('2.4.5 — рабочее состояние: инфо про effect, бе�
     config: config(),
     tasks,
   });
-  /* Пакет новее панели — это не ограничение: ворота работают, панель читает те же файлы. */
+  /*
+   * 0.4.0: effect и регресс панель читает, поэтому пробел 2.3–2.4 больше не
+   * называется — проверка снята вместе с пробелом, а не «спрятана».
+   */
   assert.equal(view.summary.limited, false, 'баннер «функционал ограничен» на 2.4.5 не показывается');
   assert.equal(view.summary.warnings, 0);
   assert.equal(view.summary.headline, 'Совместимо с workflow 2.4.5');
   assert.equal(view.checks.some((item) => item.id === 'workflow-newer'), false);
-  const check = view.checks.find((item) => item.id === 'workflow-2.3-plus');
-  assert.ok(check, 'для 2.4.5 нужна проверка workflow-2.3-plus');
-  assert.equal(check.severity, 'info');
-  /* Владельцу 2.4.5 совет «обновите плагин» нечего делать: новее этого нет. */
-  assert.doesNotMatch(check.recommendation, /Обновите плагин/);
-  assert.match(check.message, /effect/);
-  assert.match(check.title, /2\.3–2\.4/);
+  assert.equal(view.checks.some((item) => item.id === 'workflow-2.3-plus'), false);
 });
 
 test('устаревший плагин: совет обновиться есть, баннера «ограничен» нет', () => {

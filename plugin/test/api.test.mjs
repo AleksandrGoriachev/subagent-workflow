@@ -96,7 +96,15 @@ test('GET /workflow/api/tasks returns the board with stages and skipped files', 
     assert.equal(task.id, '0001');
     assert.equal(task.stage, 'remarks');
     assert.equal(task.stageLabel, 'замечания');
-    assert.equal(task.errors, 0);
+    /*
+     * 0.4.0: панель читает effect. Фикстура — решение с impact user-visible и
+     * без объявленного criteria.effect, то есть ровно то, что ворота при
+     * policy.decisions=fail считают ошибкой. Раньше панель об этом молчала.
+     */
+    assert.equal(task.errors, 1);
+    assert.ok(task.flags.some((flag) => flag.code === 'effect-problem'));
+    assert.equal(task.effects.status, 'missing');
+    assert.equal(task.effects.required, true);
     assert.ok(task.warnings >= 2);
     assert.equal(response.json.counts.remarks, 1);
     assert.equal(response.json.skipped.length, 1);
@@ -153,7 +161,7 @@ test('GET /workflow/api/compat reports versions and recommendations', async () =
     const response = await call(handler, '/workflow/api/compat');
     assert.equal(response.status, 200);
     assert.match(response.json.pluginVersion, /^\d+\.\d+\.\d+$/);
-    assert.equal(response.json.supported, '2.0.0 – 2.4.x (без effect/regress)');
+    assert.equal(response.json.supported, '2.0.0 – 2.4.x');
     assert.equal(response.json.workflowVersion, '2.2.1');
     assert.equal(response.json.summary.limited, false);
     assert.ok(Array.isArray(response.json.checks));

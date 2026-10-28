@@ -423,6 +423,104 @@ export function coverageView(verify) {
   };
 }
 
+/**
+ * Доказательство и эффект (I-34, 2.4.0): цепь «критерий-носитель → измеритель»,
+ * какие решения обязаны на неё ссылаться и что записали ворота. Чистая функция:
+ * тесты кормят её объектами, без файловой системы.
+ *
+ * Статусы: none — эффект не заявлен и не требуется; ok — цепь собрана и
+ * согласована; missing — решение требует эффекта, а критериев с effect нет;
+ * invalid — effect объявлен неверно (нет observable/threshold/measuredBy,
+ * измеритель = сам критерий); unlinked — решение ссылается мимо цепи;
+ * mismatch — ворота записали несогласованность (verify/record ok=false).
+ */
+export function effectsView(meta, criteriaList, { verify = null, record = null } = {}) {
+  const list = Array.isArray(criteriaList) ? criteriaList : [];
+  const byId = new Map(list.map((criterion) => [String(criterion.id), criterion]));
+  const issues = [];
+  const declared = [];
+  for (const criterion of list) {
+    if (!criterion || criterion.effect === undefined) continue;
+    const effect = criterion.effect;
+    const label = 'критерий ' + criterion.id + ': effect';
+    if (!effect || typeof effect !== 'object' || Array.isArray(effect)) {
+      issues.push(label + ' должен быть объектом { observable, threshold, measuredBy }');
+      continue;
+    }
+    const observable = typeof effect.observable === 'string' ? effect.observable.trim() : '';
+    const threshold = typeof effect.threshold === 'string' ? effect.threshold.trim() : '';
+    const measuredBy = typeof effect.measuredBy === 'string' ? effect.measuredBy.trim() : '';
+    if (!observable) issues.push(label + ': observable обязателен');
+    if (!threshold) issues.push(label + ': threshold обязателен');
+    if (!measuredBy) issues.push(label + ': measuredBy обязателен');
+    else if (measuredBy === String(criterion.id)) issues.push(label + ': measuredBy не может указывать на сам критерий');
+    else if (!byId.has(measuredBy)) issues.push(label + ': measuredBy ссылается на неизвестный критерий ' + measuredBy);
+    else if (isManual(byId.get(measuredBy))) issues.push(label + ': measuredBy указывает на manual-критерий ' + measuredBy);
+    declared.push({
+      criterion: String(criterion.id),
+      observable: observable || null,
+      threshold: threshold || null,
+      measuredBy: measuredBy || null,
+      measuredKnown: measuredBy !== '' && byId.has(measuredBy),
+    });
+  }
+
+  const applicable = (meta && Array.isArray(meta.decisions) ? meta.decisions : []).filter((decision) => {
+    if (!decision || typeof decision !== 'object' || Array.isArray(decision)) return false;
+    if (decision.class !== 'semantic' && decision.class !== 'contract') return false;
+    if (decision.impact !== 'user-visible' && decision.impact !== 'public-contract') return false;
+    const evidence = decision.evidence;
+    if (!evidence || evidence.kind !== 'criterion' || typeof evidence.ref !== 'string') return false;
+    const criterion = byId.get(evidence.ref.trim());
+    return Boolean(criterion) && !isManual(criterion);
+  });
+  const links = [];
+  const unlinked = [];
+  for (const decision of applicable) {
+    const ref = String(decision.evidence.ref).trim();
+    const matched = declared.filter((chain) => chain.measuredBy === ref || (chain.criterion === ref && chain.measuredBy));
+    if (matched.length === 0) {
+      unlinked.push({ decision: String(decision.id), ref });
+      continue;
+    }
+    for (const chain of matched) {
+      links.push({ decision: String(decision.id), ref, criterion: chain.criterion, measuredBy: chain.measuredBy });
+    }
+  }
+
+  const required = applicable.length > 0;
+  const verifyEffects = verify && verify.effects && typeof verify.effects === 'object'
+    ? {
+        required: verify.effects.required === true,
+        checked: verify.effects.checked === true,
+        ok: verify.effects.ok !== false,
+        mode: verify.effects.mode || null,
+      }
+    : null;
+  const recordEffects = record && record.effectConsistency && typeof record.effectConsistency === 'object'
+    ? {
+        checked: record.effectConsistency.checked === true,
+        ok: record.effectConsistency.ok !== false,
+        mode: record.effectConsistency.mode || null,
+      }
+    : null;
+
+  const mismatch = Boolean((verifyEffects && verifyEffects.ok === false) || (recordEffects && recordEffects.ok === false));
+  const status = mismatch
+    ? 'mismatch'
+    : issues.length > 0
+      ? 'invalid'
+      : required && declared.length === 0
+        ? 'missing'
+        : unlinked.length > 0
+          ? 'unlinked'
+          : declared.length === 0
+            ? 'none'
+            : 'ok';
+
+  return { required, declared, links, unlinked, issues, verify: verifyEffects, record: recordEffects, status };
+}
+
 export function verifyView(verify) {
   if (!verify || typeof verify !== 'object') return null;
   return {
@@ -439,6 +537,17 @@ export function verifyView(verify) {
     worktreeDigest: verify.worktreeDigest || null,
     red: verify.red || null,
     coverage: coverageView(verify),
+    /* 0.4.0: что ворота записали про эффект на зелёном прогоне. */
+    effects: verify.effects && typeof verify.effects === 'object'
+      ? {
+          required: verify.effects.required === true,
+          checked: verify.effects.checked === true,
+          mode: verify.effects.mode || null,
+          ok: verify.effects.ok !== false,
+          declared: Array.isArray(verify.effects.declared) ? verify.effects.declared.length : 0,
+          links: Array.isArray(verify.effects.links) ? verify.effects.links.length : 0,
+        }
+      : null,
     bypasses: verify.bypasses && typeof verify.bypasses === 'object' ? verify.bypasses : {},
   };
 }
@@ -569,6 +678,38 @@ export function recordView(record) {
     attack,
     actor,
     independence,
+    /*
+     * 0.4.0 (WC-5): эффект решения. Ворота 2.3+ пишут его в запись, панель
+     * раньше просто не читала — и «Совместимость» честно называла этот пробел.
+     */
+    effectsRequired: record.effectsRequired === true,
+    effects: Array.isArray(record.effects)
+      ? record.effects.map((effect) => (effect && typeof effect === 'object'
+        ? {
+            criterion: effect.criterion === undefined ? null : String(effect.criterion),
+            observable: effect.observable || null,
+            threshold: effect.threshold || null,
+            measuredBy: effect.measuredBy || null,
+          }
+        : null)).filter(Boolean)
+      : [],
+    effectConsistency: record.effectConsistency && typeof record.effectConsistency === 'object'
+      ? {
+          checked: record.effectConsistency.checked === true,
+          ok: record.effectConsistency.ok !== false,
+          mode: record.effectConsistency.mode || null,
+          links: Array.isArray(record.effectConsistency.links)
+            ? record.effectConsistency.links.map((link) => (link && typeof link === 'object'
+              ? {
+                  decision: link.decision === undefined ? null : String(link.decision),
+                  criterion: link.criterion || null,
+                  carrier: link.carrier || null,
+                  measuredBy: link.measuredBy || null,
+                }
+              : null)).filter(Boolean)
+            : [],
+        }
+      : null,
     review: record.review === undefined ? null : reviewView(record.review),
     acceptorRun: record.acceptorRun && typeof record.acceptorRun === 'object'
       ? {
@@ -637,6 +778,7 @@ export function buildTaskState(input = {}) {
     config = null,
     head = null,
     gitLog = null,
+    regress = null,
     parseErrors = [],
   } = input;
 
@@ -672,6 +814,18 @@ export function buildTaskState(input = {}) {
   const verifyInfo = verifyView(verify);
   const coverageInfo = coverageView(verify);
   const recordInfo = recordView(acceptance);
+  const effectsInfo = effectsView(meta, criteria, { verify, record: acceptance });
+  if (effectsInfo.status !== 'none' && effectsInfo.status !== 'ok') {
+    const level = policy.decisions === 'fail' ? 'error' : policy.decisions === 'warn' ? 'warn' : null;
+    const text = {
+      missing: 'решение с impact user-visible/public-contract требует эффекта, но ни один критерий его не объявляет',
+      invalid: 'эффект объявлен неверно: ' + effectsInfo.issues.join('; '),
+      unlinked: 'решение ссылается мимо цепи эффекта: '
+        + effectsInfo.unlinked.map((item) => item.decision + '→' + item.ref).join(', '),
+      mismatch: 'ворота записали несогласованность эффекта решения',
+    }[effectsInfo.status] || 'эффект решения объявлен неполно';
+    if (level) flags.push(flag('effect-problem', level, text, effectsInfo));
+  }
   const risk = meta && typeof meta.risk === 'string' ? meta.risk : null;
   const attackRequired = Boolean(risk && risk !== 'low' && policy.attack !== 'off');
 
@@ -887,6 +1041,8 @@ export function buildTaskState(input = {}) {
       expect: criterion && criterion.expect && typeof criterion.expect === 'object' ? criterion.expect : null,
     })),
     decisions: { ...decisions, items: decisionRows },
+    effects: effectsInfo,
+    regress: regress || null,
     lock: lockInfo,
     attack: attackInfo,
     red: redInfo,
@@ -921,6 +1077,18 @@ export function boardTask(state) {
     lockVersion: state.lock ? state.lock.version : null,
     recordVersion: state.record ? state.record.version : null,
     releaseReady: state.record ? state.record.releaseReady : null,
+    /* 0.4.0 (WC-5): эффект виден на доске, иначе о нём знает только карточка. */
+    effects: state.effects
+      ? {
+          status: state.effects.status,
+          required: state.effects.required,
+          declared: state.effects.declared.length,
+          links: state.effects.links.length,
+          unlinked: state.effects.unlinked.length,
+        }
+      : null,
+    /* 0.4.0: запись в regress.baseline.json — единственный след регресса на диске. */
+    regress: state.regress || null,
   };
 }
 
@@ -1229,7 +1397,7 @@ export function readWorkflowInfo(root) {
   };
 }
 
-function readOneTask(root, dir, { config, repoFiles, hashCache }) {
+function readOneTask(root, dir, { config, repoFiles, hashCache, baseline = null }) {
   const parseErrors = [];
   const files = {
     task: path.join(dir, 'task.md'),
@@ -1268,6 +1436,7 @@ function readOneTask(root, dir, { config, repoFiles, hashCache }) {
   return buildTaskState({
     id,
     dir: taskRel,
+    regress: baseline && baseline.byTask ? baseline.byTask[String(id)] || null : null,
     taskMd,
     criteriaRaw,
     lock: lockRaw.value,
@@ -1285,6 +1454,50 @@ function readOneTask(root, dir, { config, repoFiles, hashCache }) {
   });
 }
 
+/**
+ * regress.baseline.json (2.3.1): легализованный долг регресса.
+ *
+ * Панель — только чтение: сама она регресс не запускает (это ворота), и на диске
+ * от него остаётся ровно этот файл. Читаем его, чтобы назвать статус задания и
+ * срок пересмотра, а не выдумывать «регресс не проверялся».
+ */
+export function readBaseline(root) {
+  const resolved = path.resolve(root);
+  const file = path.join(resolved, 'regress.baseline.json');
+  const rel = 'regress.baseline.json';
+  const empty = { present: false, path: rel, generatedAt: null, version: null, entries: [], byTask: {}, expired: [], error: null };
+  if (!exists(file)) return empty;
+  let parsed;
+  try {
+    parsed = JSON.parse(readText(file));
+  } catch (error) {
+    return { ...empty, present: true, error: String(error && error.message ? error.message : error) };
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const entries = (Array.isArray(parsed && parsed.entries) ? parsed.entries : [])
+    .filter((entry) => entry && typeof entry.task === 'string' && typeof entry.status === 'string')
+    .map((entry) => ({
+      task: String(entry.task),
+      status: String(entry.status),
+      reason: String(entry.reason || ''),
+      since: entry.since ? String(entry.since) : null,
+      reviewBy: entry.reviewBy ? String(entry.reviewBy) : null,
+      expired: Boolean(entry.reviewBy && String(entry.reviewBy).slice(0, 10) < today),
+    }));
+  const byTask = {};
+  for (const entry of entries) if (!byTask[entry.task]) byTask[entry.task] = entry;
+  return {
+    present: true,
+    path: rel,
+    generatedAt: parsed && parsed.generatedAt ? String(parsed.generatedAt) : null,
+    version: parsed && parsed.version !== undefined ? Number(parsed.version) || null : null,
+    entries,
+    byTask,
+    expired: entries.filter((entry) => entry.expired),
+    error: null,
+  };
+}
+
 /** Read the whole repository: config, task list and every task's board state. */
 export function readRepository(root, options = {}) {
   const resolved = path.resolve(root);
@@ -1295,6 +1508,7 @@ export function readRepository(root, options = {}) {
   const hashCache = new Map();
   const head = readGitHead(resolved);
   const packageInfo = readPackageInfo(resolved);
+  const baseline = readBaseline(resolved);
   const tasks = [];
   const skipped = [];
 
@@ -1316,7 +1530,7 @@ export function readRepository(root, options = {}) {
       skipped.push({ path: rel, reason: 'каталог без task.md' });
       continue;
     }
-    tasks.push(readOneTask(resolved, dir, { config, repoFiles, hashCache }));
+    tasks.push(readOneTask(resolved, dir, { config, repoFiles, hashCache, baseline }));
   }
 
   const order = new Map(STAGE_ORDER.map((code, index) => [code, index]));
@@ -1340,6 +1554,15 @@ export function readRepository(root, options = {}) {
     tasks: tasks.map(boardTask),
     counts: countStages(tasks),
     skipped,
+    /* 0.4.0: долг регресса — на доске, а не только в терминале. */
+    regress: {
+      present: baseline.present,
+      path: baseline.path,
+      generatedAt: baseline.generatedAt,
+      error: baseline.error,
+      entries: baseline.entries.length,
+      expired: baseline.expired.length,
+    },
     tool: TOOL,
   };
 }
@@ -1379,7 +1602,7 @@ export function readTask(root, id) {
   }
   const repoFiles = listRepoFiles(resolved);
   const hashCache = new Map();
-  const state = readOneTask(resolved, dir, { config, repoFiles, hashCache });
+  const state = readOneTask(resolved, dir, { config, repoFiles, hashCache, baseline: readBaseline(resolved) });
   const taskRel = toPosix(path.relative(resolved, dir));
   const head = readGitHead(resolved);
   const log = readGitLog(resolved, [taskRel]);

@@ -5,6 +5,8 @@ import path from 'node:path';
 import { makeRepo, snapshotFiles, git, DECISIONS } from './fixture.mjs';
 import {
   buildTaskState,
+  effectsView,
+  readBaseline,
   canonicalize,
   sha256Text,
   summarizeDecisions,
@@ -258,5 +260,104 @@ test('a v5 record with assumed decisions is accepted but not release-ready', () 
     assert.ok(card.flags.some((flag) => flag.code === 'release-not-ready'));
   } finally {
     fixture.cleanup();
+  }
+});
+
+/*
+ * 0.4.0 (WC-5): доказательство и эффект. Чистая функция — проверяем ровно
+ * правила I-34, без файлов и без git.
+ */
+test('effectsView: решение на измерителе — цепь собрана', () => {
+  /* Решение ссылается на измеритель C1 — это законная часть цепи C2→C1. */
+  const meta = { decisions: [{ id: 'D1', class: 'semantic', impact: 'user-visible', evidence: { kind: 'criterion', ref: 'C1' } }] };
+  const criteria = [
+    { id: 'C1' },
+    { id: 'C2', effect: { observable: 'сумма', threshold: 'sum 3', measuredBy: 'C1' } },
+    { id: 'C3' },
+  ];
+  const view = effectsView(meta, criteria);
+  assert.equal(view.required, true);
+  assert.equal(view.status, 'ok');
+  assert.equal(view.declared.length, 1);
+  assert.equal(view.links.length, 1);
+  assert.equal(view.links[0].decision, 'D1');
+  assert.equal(view.unlinked.length, 0);
+});
+
+test('effectsView: решение мимо цепи — unlinked и название в списке', () => {
+  const meta = { decisions: [{ id: 'D1', class: 'contract', impact: 'public-contract', evidence: { kind: 'criterion', ref: 'C2' } }] };
+  const criteria = [
+    { id: 'C1' },
+    { id: 'C2' },
+    { id: 'C3', effect: { observable: 'сумма', threshold: 'sum 3', measuredBy: 'C1' } },
+  ];
+  const view = effectsView(meta, criteria);
+  assert.equal(view.status, 'unlinked');
+  assert.deepEqual(view.unlinked, [{ decision: 'D1', ref: 'C2' }]);
+});
+
+test('effectsView: решение требует эффекта, а effect не объявлен — missing', () => {
+  const meta = { decisions: [{ id: 'D1', class: 'semantic', impact: 'user-visible', evidence: { kind: 'criterion', ref: 'C1' } }] };
+  const view = effectsView(meta, [{ id: 'C1' }]);
+  assert.equal(view.status, 'missing');
+  assert.equal(view.required, true);
+  assert.equal(view.declared.length, 0);
+});
+
+test('effectsView: измеритель на себе — invalid с объяснением', () => {
+  const criteria = [{ id: 'C1', effect: { observable: 'сумма', threshold: 'sum 3', measuredBy: 'C1' } }];
+  const view = effectsView({ decisions: [] }, criteria);
+  assert.equal(view.status, 'invalid');
+  assert.match(view.issues.join(' '), /сам критерий/);
+});
+
+test('effectsView: ворота записали несогласованность — mismatch', () => {
+  const criteria = [
+    { id: 'C1' },
+    { id: 'C2', effect: { observable: 'сумма', threshold: 'sum 3', measuredBy: 'C1' } },
+  ];
+  const view = effectsView({ decisions: [] }, criteria, { record: { effectConsistency: { checked: true, ok: false } } });
+  assert.equal(view.status, 'mismatch');
+  assert.equal(view.record.ok, false);
+});
+
+test('effectsView: без решений с impact и без effect — none, а не «ok»', () => {
+  const view = effectsView({ decisions: [] }, [{ id: 'C1' }]);
+  assert.equal(view.status, 'none');
+  assert.equal(view.required, false);
+});
+
+test('readBaseline: читает долг и помечает просроченный срок', () => {
+  const dir = fs.mkdtempSync(path.join(process.env.TEMP || '/tmp', 'wf-pl-baseline-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'regress.baseline.json'), JSON.stringify({
+      version: 1,
+      generatedAt: '2026-10-01T00:00:00.000Z',
+      entries: [
+        { task: '0001', status: 'unproven-lawful', reason: 'low без красного', since: '2026-10-01', reviewBy: '2999-01-01' },
+        { task: '0002', status: 'unproven-violation', reason: 'нет красного', since: '2026-10-01', reviewBy: '2000-01-01' },
+      ],
+    }, null, 2) + '\n');
+    const baseline = readBaseline(dir);
+    assert.equal(baseline.present, true);
+    assert.equal(baseline.entries.length, 2);
+    assert.equal(baseline.byTask['0001'].status, 'unproven-lawful');
+    assert.equal(baseline.byTask['0001'].expired, false);
+    assert.equal(baseline.byTask['0002'].expired, true);
+    assert.equal(baseline.expired.length, 1);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('readBaseline: файла нет — совместимо и молча', () => {
+  const dir = fs.mkdtempSync(path.join(process.env.TEMP || '/tmp', 'wf-pl-nobaseline-'));
+  try {
+    const baseline = readBaseline(dir);
+    assert.equal(baseline.present, false);
+    assert.equal(baseline.entries.length, 0);
+    assert.equal(baseline.error, null);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });
