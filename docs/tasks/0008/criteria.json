@@ -1,0 +1,87 @@
+{
+  "task": "0008",
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C4"
+    ],
+    "mustPass": [
+      "C2",
+      "C3"
+    ],
+    "reasons": {
+      "C1": "attestedBy=none",
+      "C4": "VERSION OK: 2.5.2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Источники актора: runner/harness дают separate-session, ci/manual — declared",
+      "command": "node spec/checks/actor-sources.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast",
+        "behavior",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/**",
+        "spec/checks/**",
+        "spec/workflow.config.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACTOR SOURCES OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Сквозной цикл, включая приёмку без DSH",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Версия 2.6.0 в пяти местах",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.0"
+      }
+    }
+  ]
+}
