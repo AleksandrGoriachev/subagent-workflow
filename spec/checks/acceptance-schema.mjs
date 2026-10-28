@@ -130,6 +130,14 @@ if (!fs.existsSync(PACK_TOOL)) {
   else pass('сборщик печатает стабильное и версионированное имена');
 }
 
+/* 4. Схема проверяется в CI, а не только руками. */
+const CI_PATH = path.join(ROOT, '.github', 'workflows', 'ci.yml');
+let ci = '';
+try { ci = fs.readFileSync(CI_PATH, 'utf8'); } catch { ci = ''; }
+if (ci === '') fail('есть .github/workflows/ci.yml');
+else if (!/node spec\/checks\/acceptance-schema\.mjs/.test(ci)) fail('в CI есть шаг acceptance-schema.mjs', 'шага нет в ci.yml');
+else pass('в CI есть шаг acceptance-schema.mjs');
+
 if (failed > 0) {
   console.log('');
   console.log('ACCEPTANCE SCHEMA FAIL: ' + failed);

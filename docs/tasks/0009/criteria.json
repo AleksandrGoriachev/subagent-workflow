@@ -28,7 +28,8 @@
         "spec/templates/**",
         "spec/checks/**",
         "plugin/package.json",
-        "tools/pack-plugin.mjs"
+        "tools/pack-plugin.mjs",
+        ".github/**"
       ],
       "expect": {
         "exitCode": 0,
