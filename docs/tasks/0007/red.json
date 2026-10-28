@@ -1,0 +1,103 @@
+{
+  "version": 4,
+  "kind": "red",
+  "task": "0007",
+  "createdAt": "2026-10-28T12:50:35.800Z",
+  "base": "HEAD",
+  "baseSha": "72cb8738c8bdd9f8bc0b958d33b14ab9dfc32990",
+  "headSha": "72cb8738c8bdd9f8bc0b958d33b14ab9dfc32990",
+  "contractCommit": "72cb8738c8bdd9f8bc0b958d33b14ab9dfc32990",
+  "criteriaSha256": "469687c0c61c46b9fd04997cf17d56f8153ccf57a3f4d137cbd63bcd9861bca5",
+  "criteriaJsonSha256": "94bbb4c5e0a86b059a6b1f1450999741e47abbc6d7d0da062531129b8669f5be",
+  "dirtyPaths": [
+    "docs/tasks/0007/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/hooks-mode.mjs",
+      "exitCode": 1,
+      "durationMs": 656,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: HOOKS MODE OK"
+      ],
+      "stdoutSha256": "d2b8ab7e98ca32d727646603ec1e292f01c25b198cc7812024962f9df23a78eb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "FAIL spec/hooks/pre-commit: режим 100644, ожидалось 100755 (git update-index --chmod=+x)\nFAIL spec/hooks/commit-msg: режим 100644, ожидалось 100755 (git update-index --chmod=+x)\nFAIL spec/hooks/pre-push: режим 100644, ожидалось 100755 (git update-index --chmod=+x)\nFAIL CI чинит права хуков (chmod +x spec/hooks): дефект режима замаскирован — шаг убрать\nFAIL в CI нет шага node spec/checks/hooks-mode.mjs: регрессию режима никто не поймает\n\nHOOKS MODE FAIL: 5\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 1,
+      "durationMs": 113326,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "e170c307b47e71b3a3b0fc1d759960f14dade401ed68be7d1181f1d2865fed8d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  init разворачивает рабочее пространство\nPASS  init создаёт закреплённый ключ\nPASS  e2e-deploy запускается из развёрнутой копии\nPASS  init из развёрнутого каталога создаёт свой ключ, а не копирует acceptors.json\nPASS  2.5.0: init выставил локальный core.hooksPath\nPASS  2.5.0: выключенный guard не мешает коммиту вне задания\nPASS  2.5.0: включённый guard отклоняет коммит вне задания\nPASS  2.5.0: метка обхода в сообщении разрешает коммит\nPASS  2.5.0: --audit показывает метку обхода\nPASS  2.5.0: guard отклоняет push с изменением вне задания\nPASS  2.5.0: выключенный guard не мешает push\nPASS  2.5.0: guard выключен — рабочий цикл задачи не меняется\nPASS  new-task создаёт задание с issuedBy\nPASS  G6: C3 — самостоятельный сценарий, а не копия C1\nPASS  lint требует covers для medium\nPASS  lint требует критерий эффекта для решения с влиянием на пользователя\nPASS  lint отклоняет effect.measuredBy на сам критерий\nPASS  lint отклоняет семантическое решение без доказательства\nPASS  G2: lint отклоняет решение вне цепи эффекта\nPASS  hash без атаки отказывает при policy.attack=fail\nPASS  hash не запирает контракт с нерешённой blocking-находкой\nPASS  task-attack отклоняет нерешённый blocking\nPASS  task-attack принимает закрытую находку\nPASS  hash создаёт замок для закоммиченного контракта\nPASS  lint --strict зелёный\nPASS  red доказывает падение по ожиданию\nPASS  verify зелёный после фикса\nPASS  verify записывает эффект и цепь решения\nPASS  verify валит изменённый файл без покрытия критерием\nPASS  после удаления непокрытого файла verify снова зелёный\nPASS  2.4.9: без acceptance.json сдвиг HEAD — ERROR contractCommit, а не WARN\nPASS  2.4.9: пустой acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: битый acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: запись с чужим статусом — не основание, ERROR остаётся\nPASS  2.4.9: task-verify не считает пустой acceptance.json приёмкой (lock строгий)\nPASS  самоприёмка из сессии постановщика отклоняется\nPASS  blocking-замечание без решения не принимается\nPASS  accept из другой сессии принимает задачу\nFAIL  2.5.2: кандидат сохраняет право исполнения из индекса\n      100644 blob 9f9fa6efce0544667b3dd504b917d7fb0ddb8a48\tsrc/cli.mjs\nPASS  разбор замечаний и releaseReady в записи\nPASS  запись v6 с актором и уровнем независимости\nPASS  эффект записан в приёмку с измерителем\nPASS  G3: запись хранит согласованность решения и эффекта\nPASS  решения записаны с digest и без assumed\nPASS  атака попала в запись с digest и без нерешённых находок\nPASS  проверка ролей: приёмщик другого семейства, чем постановщик\nPASS  check-acceptance принимает запись\nPASS  check-acceptance проверяет metadata-коммит\nPASS  2.4.8: у принятого задания сдвиг HEAD — предупреждение, не ошибка\nPASS  G4: policy.decisions=fail отклоняет решение вне цепи\nPASS  G4: policy.decisions=warn — предупреждение, exit 0\nPASS  G5: policy.decisions=off — ни ошибки, ни предупреждения\nPASS  G7: защита самого пакета в protectedPaths — именно WARN, не ERROR\nPASS  G7: свои проверки в protectedPaths (checks/**) — предупреждения о пакете нет\nPASS  regress принятой задачи зелёный\nPASS  regress ловит сломанную проверку закрытой задачи\nPASS  regress помечает таймаут отдельно\nPASS  подмена записи ловится\n\nE2E FAILED: 1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 89109,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "48d06eef053fb44448069847650dd661a24e02f3c4f28f13589924c74c21fa7b",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 446,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "stdout не содержит: VERSION OK: 2.5.2"
+      ],
+      "stdoutSha256": "112f135fa5812ce75448a85a81c770fc792bdd7bb1d59025727ad8e8f6906f34",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.5.1\nPASS  package.json                  — 2.5.1\nPASS  README.md                     — # subagent-workflow 2.5.1 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.5.1. Дата: 2026-10-28.\nPASS  spec/scripts/lib/common.mjs   — export const TOOL = 'subagent-workflow/2.5.1';\nPASS  CHANGELOG.md                  — ## 2.5.1 — 2026-10-28\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.5.1:»\n\nVERSION OK: 2.5.1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 3,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C4"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C4"
+    ],
+    "mustPass": [
+      "C3"
+    ]
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

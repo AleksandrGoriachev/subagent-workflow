@@ -28,6 +28,10 @@
 - [ ] Windows: `node spec/selftest.mjs`, `node spec/e2e.mjs`, `node spec/e2e-deploy.mjs`
 - [ ] приёмочные проверки задания: `node spec/checks/guard-acceptance.mjs --all`
       (покрытие индекса, отказ вне задания, метка обхода и аудит, хуки, панель)
+- [ ] режим хуков в индексе: `git ls-files -s spec/hooks` — все три `100755`,
+      `node spec/checks/hooks-mode.mjs` → `HOOKS MODE OK`. На Windows режим
+      выставляется только git-ом (`git update-index --chmod=+x`): файловая
+      система его не хранит, а `git add` берёт режим из рабочего дерева
 - [ ] WSL Ubuntu: те же три из `spec/`
 - [ ] `node plugin/tools/test.mjs` и `node --check plugin/lib/client.js` (если трогали панель)
 - [ ] Новая правка покрыта проверкой, которая падает, если условие снять
@@ -62,6 +66,9 @@
 - [ ] 12/12 (test, plugin, deploy × ubuntu/windows × node 22/24) — зелёные
 - [ ] в джобе `test` есть шаг `guard-acceptance --all` и он зелёный на ubuntu и
       windows: приёмочные кейсы обхода — часть CI, а не только заданий
+- [ ] в джобе `test` сразу после `e2e` идёт шаг `node spec/checks/hooks-mode.mjs`
+      и зелёный на ubuntu и windows; шага `chmod +x spec/hooks/*` нет — CI не
+      подменяет права под тестами (2.5.2)
 - [ ] если красный: сначала причина (код или инфраструктура), потом пуш
 
 ## 7. Развёрнутые копии

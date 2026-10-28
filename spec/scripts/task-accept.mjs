@@ -61,6 +61,42 @@ function ignoredPaths(repoRoot, paths) {
   return new Set(r.stdout.split(/\r?\n/).filter(Boolean));
 }
 
+/*
+ * Право исполнения — свойство поставки, а не настройка рабочей машины (2.5.2).
+ *
+ * `git add` берёт режим файла из рабочего дерева, а Windows его не хранит:
+ * файл, помеченный 100755 в индексе, после `git add` снова становится 100644,
+ * и принятое дерево расходится с проверенным. Поэтому режим читается из
+ * РЕАЛЬНОГО индекса (`git ls-files -s` без GIT_INDEX_FILE) и переносится в
+ * индекс кандидата тем же `--chmod=+x`. Содержимое кандидата не меняется —
+ * только режим; путь, не помеченный в индексе исполняемым, остаётся 100644.
+ */
+function restoreExecutableModes(repoRoot, candidateEnv) {
+  const real = runSync('git ls-files -s -z', { cwd: repoRoot, unsetEnv: ['GIT_INDEX_FILE'] });
+  if (real.exitCode !== 0) fail('git ls-files -s (индекс репозитория): ' + real.stderr.trim());
+  const executable = [];
+  for (const entry of real.stdout.split('\0')) {
+    const parsed = entry.match(/^(\d{6}) [0-9a-f]+ \d+\t(.+)$/s);
+    if (parsed && parsed[1] === '100755') executable.push(parsed[2]);
+  }
+  if (executable.length === 0) return;
+  const candidate = runSync('git ls-files -s -z', { cwd: repoRoot, env: candidateEnv });
+  if (candidate.exitCode !== 0) fail('git ls-files -s (кандидат): ' + candidate.stderr.trim());
+  const inCandidate = new Set();
+  for (const entry of candidate.stdout.split('\0')) {
+    const parsed = entry.match(/^\d{6} [0-9a-f]+ \d+\t(.+)$/s);
+    if (parsed) inCandidate.add(parsed[1]);
+  }
+  const targets = executable.filter((file) => inCandidate.has(file));
+  if (targets.length === 0) return;
+  /* Порциями: список аргументов не должен упираться в предел командной строки. */
+  for (let i = 0; i < targets.length; i += 50) {
+    const batch = targets.slice(i, i + 50);
+    const chmod = runSync('git update-index --chmod=+x -- ' + batch.map(quoteArg).join(' '), { cwd: repoRoot, env: candidateEnv });
+    if (chmod.exitCode !== 0) fail('git update-index --chmod=+x: ' + chmod.stderr.trim());
+  }
+}
+
 function createCandidate(repoRoot, filesToAdd, message) {
   const indexPath = path.join(os.tmpdir(), 'task-accept-' + process.pid + '-' + Date.now() + '.index');
   const env = {
@@ -80,6 +116,7 @@ function createCandidate(repoRoot, filesToAdd, message) {
       const add = runSync('git add -A -- ' + filesToAdd.map(quoteArg).join(' '), { cwd: repoRoot, env });
       if (add.exitCode !== 0) fail('git add: ' + add.stderr.trim());
     }
+    restoreExecutableModes(repoRoot, env);
     const treeRes = runSync('git write-tree', { cwd: repoRoot, env });
     if (treeRes.exitCode !== 0) fail('git write-tree: ' + treeRes.stderr.trim());
     const tree = treeRes.stdout.trim();
