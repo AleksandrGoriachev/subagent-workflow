@@ -1,0 +1,88 @@
+{
+  "task": "0007",
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C4"
+    ],
+    "mustPass": [
+      "C3"
+    ],
+    "reasons": {
+      "C1": "ожидалось 100755",
+      "C2": "кандидат сохраняет право исполнения",
+      "C4": "VERSION OK: 2.5.1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Режим хуков в индексе и проверка в CI",
+      "command": "node spec/checks/hooks-mode.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "behavior",
+        "negative"
+      ],
+      "covers": [
+        "spec/hooks/**",
+        ".github/**",
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "HOOKS MODE OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Сквозной цикл: кандидат сохраняет право исполнения",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Версия 2.5.2 в пяти местах",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.5.2"
+      }
+    }
+  ]
+}

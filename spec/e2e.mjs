@@ -305,6 +305,14 @@ try {
   report('red доказывает падение по ожиданию', red.code === 0 && fs.readFileSync(path.join(repo, 'docs/tasks/0001/red.json'), 'utf8').includes('"ok": true'), red.out);
 
   write(path.join(repo, 'src/app.js'), 'export const add = (a, b) => a + b;\n');
+  /*
+   * 2.5.2: право исполнения — часть принятого дерева, а не настройка машины.
+   * Файл помечается исполняемым в индексе (на Windows иначе никак), а сборка
+   * кандидата обязана режим сохранить: `git add` берёт его из рабочего дерева
+   * и на Windows теряет, хотя в индексе он есть.
+   */
+  git(['add', 'src/cli.mjs']);
+  git(['update-index', '--chmod=+x', 'src/cli.mjs']);
   const verify = run('task-verify.mjs', ['--task', 'docs/tasks/0001']);
   report('verify зелёный после фикса', verify.code === 0, verify.out);
   const verifyJson = JSON.parse(fs.readFileSync(path.join(repo, 'docs/tasks/0001/verify.json'), 'utf8'));
@@ -387,6 +395,9 @@ try {
   report('accept из другой сессии принимает задачу', accept.code === 0, accept.out);
   const acceptancePath = acceptanceFile;
   const record = JSON.parse(fs.readFileSync(acceptancePath, 'utf8'));
+  const candidateEntry = git(['ls-tree', record.candidateCommit, 'src/cli.mjs']).trim();
+  const candidateMode = candidateEntry.split(/\s+/)[0];
+  report('2.5.2: кандидат сохраняет право исполнения из индекса', candidateMode === '100755', candidateEntry);
   report('разбор замечаний и releaseReady в записи', record.releaseReady === true && record.review && record.review.remarks.length === 3, JSON.stringify({ releaseReady: record.releaseReady, review: record.review }));
   report('запись v6 с актором и уровнем независимости',
     record.version === 6 && record.actor.session === 'judge-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
