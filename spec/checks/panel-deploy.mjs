@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /*
- * Приёмочные проверки задания 0014 (панель 0.7.0):
+ * Приёмочные проверки задания 0014 (панель 0.7.0) с контрактом 0.7.1:
  * 1) модуль развёртывания есть и работает: успех в чистом git-репозитории, повтор — already-deployed,
- *    не-git — not-a-repo;
- * 2) POST /workflow/api/deploy требует confirm и разворачивает движок в корень workspace;
- * 3) кнопка в клиенте и сборка tarball: спека вкладывается (vendor), версия плагина 0.7.0.
+ *    не-git — not-a-repo; ключ приёмщика — в проекте (<repo>/.wf-keys) и в .gitignore;
+ * 2) POST /workflow/api/deploy (application/json) требует confirm и разворачивает движок
+ *    в корень workspace;
+ * 3) кнопка в клиенте и сборка tarball: спека вкладывается (vendor), версия плагина 0.7.1,
+ *    подтверждение называет ключ проекта.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -44,7 +46,6 @@ const specRoot = path.join(PKG, 'spec');
 
 /* 1. Развёртывание в чистый репозиторий. */
 if (!deployMod) { console.log(''); console.log('PANEL DEPLOY FAIL: ' + failed); process.exit(1); }
-if (!deployMod) { console.log(''); console.log('PANEL DEPLOY FAIL: ' + failed); process.exit(1); }
 const repoOk = tempRepo(true);
 try {
   const first = deployMod.deployWorkflow(repoOk, { specRoot });
@@ -61,6 +62,15 @@ try {
   else fail('deploy: выставлен core.hooksPath', 'получено: ' + (hooksPath || '(пусто)'));
   if (fs.existsSync(path.join(repoOk, 'docs', 'tasks'))) pass('deploy: создан docs/tasks');
   else fail('deploy: создан docs/tasks');
+  /* 0.7.1: ключ приёмщика создаётся в проекте, а не в домашнем каталоге. */
+  const keyFile = path.join(repoOk, '.wf-keys', 'agent-judge.key.pem');
+  if (fs.existsSync(keyFile)) pass('deploy: ключ проекта в .wf-keys/');
+  else fail('deploy: ключ проекта в .wf-keys/', keyFile + ' нет');
+  const ignore = fs.existsSync(path.join(repoOk, '.gitignore'))
+    ? fs.readFileSync(path.join(repoOk, '.gitignore'), 'utf8').split(/\r?\n/)
+    : [];
+  if (ignore.includes('.wf-keys/')) pass('deploy: .wf-keys/ в .gitignore проекта');
+  else fail('deploy: .wf-keys/ в .gitignore проекта');
   const second = deployMod.deployWorkflow(repoOk, { specRoot });
   if (second.ok === false && second.code === 'already-deployed') pass('deploy: повтор даёт already-deployed');
   else fail('deploy: повтор даёт already-deployed', JSON.stringify(second).slice(0, 200));
@@ -83,7 +93,10 @@ try {
   const call = async (body) => {
     const res = { statusCode: 200, headers: {}, body: '', setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = b === undefined ? '' : String(b); } };
     const listeners = { data: [], end: [], error: [] };
-    const req = { method: 'POST', url: '/workflow/api/deploy', socket: { remoteAddress: '127.0.0.1' }, on(ev, fn) { (listeners[ev] || listeners.data).push(fn); return req; } };
+    /* 0.7.1: маршрут требует application/json и свой Origin; заголовки как у клиента. */
+    const req = { method: 'POST', url: '/workflow/api/deploy', socket: { remoteAddress: '127.0.0.1' },
+      headers: { 'content-type': 'application/json' },
+      on(ev, fn) { (listeners[ev] || listeners.data).push(fn); return req; } };
     queueMicrotask(() => { for (const fn of listeners.data) fn(Buffer.from(JSON.stringify(body), 'utf8')); for (const fn of listeners.end) fn(); });
     await handler(req, res);
     return { status: res.statusCode, json: (() => { try { return JSON.parse(res.body); } catch { return null; } })() };
@@ -102,9 +115,12 @@ try {
   const client = fs.readFileSync(path.join(PKG, 'plugin', 'lib', 'client.js'), 'utf8');
   if (/Развернуть workflow здесь/.test(client) && /api\/deploy/.test(client)) pass('клиент: кнопка и вызов /api/deploy');
   else fail('клиент: кнопка и вызов /api/deploy');
+  /* 0.7.1: подтверждение обещает .wf-keys/ проекта и неприкосновенность глобального. */
+  if (/\.wf-keys\//.test(client) && /not|не трогается/i.test(client)) pass('клиент: ключ проекта в подтверждении');
+  else fail('клиент: ключ проекта в подтверждении');
   const pkg = JSON.parse(fs.readFileSync(path.join(PKG, 'plugin', 'package.json'), 'utf8'));
-  if (pkg.version === '0.7.0') pass('плагин: версия 0.7.0');
-  else fail('плагин: версия 0.7.0', 'сейчас ' + pkg.version);
+  if (pkg.version === '0.7.1') pass('плагин: версия 0.7.1');
+  else fail('плагин: версия 0.7.1', 'сейчас ' + pkg.version);
   if (Array.isArray(pkg.files) && pkg.files.includes('vendor')) pass('сборка: vendor в files');
   else fail('сборка: vendor в files');
   const pack = fs.readFileSync(path.join(PKG, 'tools', 'pack-plugin.mjs'), 'utf8');

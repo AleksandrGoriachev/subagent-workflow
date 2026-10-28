@@ -7,7 +7,7 @@
  * never actions the panel performs.
  */
 /* Версия для панели. Обязана совпадать с package.json — это проверяет тест. */
-export const PLUGIN_VERSION = '0.7.0';
+export const PLUGIN_VERSION = '0.7.1';
 /* Диапазон, который панель показывает. С 0.6.0 в него входят guard (2.5.0) и запись 2.6.0. */
 export const SUPPORTED_LABEL = '2.0.0 – 2.6.x';
 

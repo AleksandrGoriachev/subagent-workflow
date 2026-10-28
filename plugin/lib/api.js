@@ -9,6 +9,12 @@
  * workflow.config.json (logged to guard.log); /api/deploy runs the bundled
  * spec's init.mjs in the selected root — the panel's second explicit write, and
  * it happens only with confirm: true.
+ *
+ * 2.6.3 (B4): both writing POST routes (/api/guard, /api/deploy) require
+ * `Content-Type: application/json` (415 otherwise) and an Origin of this host or
+ * no Origin at all (403 otherwise). The checks run before the body is read and
+ * before anything is written: a cross-site `text/plain` request — a browser
+ * "simple request" with no preflight — cannot flip the guard or start a deploy.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -136,6 +142,56 @@ function isLoopback(req) {
   const address = req.socket && req.socket.remoteAddress;
   if (address === undefined || address === null || address.length === 0) return true;
   return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
+}
+
+/*
+ * 2.6.3 (B4): защита изменяющих POST-маршрутов.
+ *
+ * Content-Type обязателен и только application/json: text/plain — «простой
+ * запрос» браузера, он уходит с чужой страницы без preflight, и сервер не
+ * должен разбирать такое тело как команду. Origin: отсутствие допустимо (curl,
+ * старое same-origin поведение), а чужой Origin отвергается. Проверки стоят до
+ * чтения тела и любых записей.
+ */
+const LOOPBACK_ORIGIN_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+function isJsonRequest(req) {
+  const headers = req && req.headers ? req.headers : {};
+  const raw = headers['content-type'];
+  if (typeof raw !== 'string') return false;
+  return raw.split(';')[0].trim().toLowerCase() === 'application/json';
+}
+
+function originAllowed(req) {
+  const headers = req && req.headers ? req.headers : {};
+  const raw = headers.origin;
+  if (raw === undefined || raw === null || String(raw).trim() === '') return true;
+  let origin;
+  try {
+    origin = new URL(String(raw));
+  } catch {
+    return false;
+  }
+  if (origin.protocol !== 'http:' && origin.protocol !== 'https:') return false;
+  const host = typeof headers.host === 'string' ? headers.host.trim().toLowerCase() : '';
+  if (host.length > 0) return origin.host.toLowerCase() === host;
+  /*
+   * Заголовка Host нет только у прямого вызова обработчика (тесты) и у
+   * нестандартных прокси: там сверять не с чем, поэтому разрешаем loopback-
+   * источник — панель всегда открыта на 127.0.0.1/localhost.
+   */
+  return LOOPBACK_ORIGIN_HOSTS.has(origin.hostname);
+}
+
+/** @returns {{status: number, error: string}|null} */
+function writeRequestProblem(req) {
+  if (!isJsonRequest(req)) {
+    return { status: 415, error: 'Content-Type должен быть application/json' };
+  }
+  if (!originAllowed(req)) {
+    return { status: 403, error: 'Origin не совпадает с хостом панели' };
+  }
+  return null;
 }
 
 /** Read a small JSON body; the only POST route takes one. */
@@ -338,6 +394,12 @@ export function createWebHandler(runtime) {
       }
 
       if (rel === '/api/guard') {
+        /* 2.6.3 (B4): тип и Origin — до тела и до записи. */
+        const problem = writeRequestProblem(req);
+        if (problem) {
+          sendJson(res, problem.status, { error: problem.error });
+          return;
+        }
         let body;
         try {
           body = await readJsonBody(req);
@@ -384,6 +446,12 @@ export function createWebHandler(runtime) {
       }
 
       if (rel === '/api/deploy') {
+        /* 2.6.3 (B4): тип и Origin — до тела и до записи. */
+        const problem = writeRequestProblem(req);
+        if (problem) {
+          sendJson(res, problem.status, { error: problem.error });
+          return;
+        }
         let body;
         try {
           body = await readJsonBody(req);

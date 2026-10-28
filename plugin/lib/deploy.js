@@ -1,10 +1,17 @@
 /**
- * Развёртывание движка в корень workspace (0.7.0).
+ * Развёртывание движка в корень workspace (0.7.1).
  *
  * Единственная операция записи, которую панель делает по явной команде
  * пользователя: вложенная спека (`vendor/spec`) запускается через `init.mjs` в
  * выбранный корень. Модуль ничего не подписывает, не коммитит и не трогает
  * `guard.enabled` — это отдельная кнопка и отдельный маршрут.
+ *
+ * 0.7.1 (B1 ночного ревью): ключ приёмщика создаётся В ПРОЕКТЕ —
+ * `<repo>/.wf-keys/`, туда его направляет явный `--key-out`. Глобальный
+ * `%USERPROFILE%\.wf-keys` не трогается: развернули A, потом B — ключ A цел,
+ * его `acceptors.json` по-прежнему сходится с подписью. Каталог ключа
+ * попадает в `.gitignore` проекта (это делает init; deploy дополнительно
+ * проверяет строку идемпотентно).
  *
  * Корень приходит только из `selectRoot` (runtime.roots), а спека — из tarball
  * плагина: установка не требует сети. В dev-копии плагина vendor нет, поэтому
@@ -24,6 +31,33 @@ export const CONFIG_REL = path.join('docs', 'subagent-workflow', 'workflow.confi
 /* Вложенная спека tarball и dev-фолбэк: ровно тот же выбор, что у packs-plugin. */
 export const VENDOR_SPEC = path.join(PACKAGE_ROOT, 'vendor', 'spec');
 export const DEV_SPEC = path.resolve(PACKAGE_ROOT, '..', 'spec');
+
+/* 0.7.1: ключ приёмщика — каталог проекта, а не глобальный профиль машины. */
+export const KEY_DIR_REL = '.wf-keys';
+export const KEY_ID = 'agent-judge';
+
+/**
+ * Каталог ключа обязан быть в .gitignore проекта: приватный ключ не коммитится.
+ * init ставит строку сам; здесь — идемпотентная страховка на случай сборки со
+ * старым init (и чтобы обещание панели не зависело от версии вложенной спеки).
+ */
+function ensureKeyIgnored(repo) {
+  const file = path.join(repo, '.gitignore');
+  const line = KEY_DIR_REL + '/';
+  let text = '';
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    text = '';
+  }
+  if (text.split(/\r?\n/).includes(line)) return;
+  try {
+    fs.appendFileSync(file, (text && !text.endsWith('\n') ? '\n' : '')
+      + '# subagent-workflow: ключ приёмщика проекта\n' + line + '\n');
+  } catch {
+    /* .gitignore не записался — init всё равно поставит строку; ключ важнее */
+  }
+}
 
 export const DEFAULT_TIMEOUT_MS = 180000;
 /* Панель показывает хвост вывода: длинный лог не должен раздувать ответ. */
@@ -106,8 +140,15 @@ export function deployWorkflow(root, options = {}) {
    * init запускается в репозитории: --force обновляет файлы пакета, ключ и
    * workflow.config.json не перезаписывает (это решает сам init). Вывод
    * захватывается целиком: по нему панель объясняет отказ.
+   *
+   * --key-out обязателен (0.7.1): без него init писал бы ключ в глобальный
+   * %USERPROFILE%\.wf-keys и второе развёртывание уничтожало бы ключ первого
+   * проекта. Путь — каталог проекта; --key-id фиксируем явно, чтобы умолчание
+   * init не меняло адрес ключа молча.
    */
-  const result = spawnSync(process.execPath, [init, '--repo', repo, '--force'], {
+  const keyDir = path.join(repo, KEY_DIR_REL);
+  const result = spawnSync(process.execPath,
+    [init, '--repo', repo, '--force', '--key-out', keyDir, '--key-id', KEY_ID], {
     cwd: repo,
     encoding: 'utf8',
     timeout: timeoutMs,
@@ -135,6 +176,8 @@ export function deployWorkflow(root, options = {}) {
       log,
     };
   }
+  /* Ключ проекта мог быть создан до записи VERSION: игнор ставим до проверки ниже. */
+  ensureKeyIgnored(repo);
   /*
    * Успех без VERSION — это не успех: значит сборка приехала без VERSION рядом со
    * спекой (pack-plugin кладёт его в vendor), и «развёрнуто» определить нечем.

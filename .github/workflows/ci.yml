@@ -25,14 +25,22 @@ jobs:
         run: node spec/selftest.mjs
       - name: схема записи приёмки
         run: node spec/checks/acceptance-schema.mjs
+      - name: acceptance-p0 — повторная приёмка и preflight (0011)
+        run: node spec/checks/acceptance-p0.mjs
+      - name: actor-sources — источники актора (0008)
+        run: node spec/checks/actor-sources.mjs
       - name: e2e
         run: node spec/e2e.mjs
+      - name: deployed-copy — проверки вне пакета и lint принятого (0013)
+        run: node spec/checks/deployed-copy.mjs
       - name: режим хуков в индексе
         run: node spec/checks/hooks-mode.mjs
       - name: guard-acceptance — приёмочные кейсы guard (все)
         run: node spec/checks/guard-acceptance.mjs --all
       - name: panel-deploy — развёртывание движка из панели (0015)
         run: node spec/checks/panel-deploy.mjs
+      - name: deploy-safety — ключ проекта и POST-маршруты (0018)
+        run: node spec/checks/deploy-safety.mjs
 
   plugin:
     name: plugin / ${{ matrix.os }} / node ${{ matrix.node }}

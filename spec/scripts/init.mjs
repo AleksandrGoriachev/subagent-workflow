@@ -11,8 +11,18 @@
  *   init --rotate-key  — явная ротация ключа (старые записи этим ключом станут
  *                        untrusted — это осознанное действие, а не побочный эффект).
  *
+ * 2.6.3 (B2): VERSION пишется ПОСЛЕДНИМ — после конфига, хуков и ключа. Раньше
+ * он появлялся раньше, и падение на сломанном конфиге оставляло ложное
+ * «уже развёрнуто»: кнопка панели навсегда отвечала already-deployed, а ключа и
+ * хуков в проекте не было.
+ *
+ * 2.6.3 (B1): при --key-out внутри репозитория каталог ключа добавляется в
+ * .gitignore проекта. Ключ проекта живёт в <repo>/.wf-keys/, глобальный
+ * %USERPROFILE%\.wf-keys не трогается: два развёрнутых проекта — два ключа.
+ *
  * Запускать из распакованного пакета:
- *   node scripts/init.mjs --repo <путь к проекту> [--key-id agent-judge] [--force]
+ *   node scripts/init.mjs --repo <путь к проекту> [--key-id agent-judge]
+ *                         [--key-out <каталог ключей>] [--force]
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -121,30 +131,23 @@ fs.mkdirSync(path.join(repo, tasksDir), { recursive: true });
  * файлы пакета обновлены (--force) или копия создаётся впервые: иначе получилось бы
  * «версия новая, содержимое старое» — именно так в ws-school-app оказался каталог
  * 2.2.2 без текста I-29…I-32.
- */
-/*
- * VERSION лежит в корне пакета (рядом с spec/) и в корне развёрнутой копии.
- * Из развёрнутой копии обновлять нечем — её VERSION и есть целевой файл;
- * поэтому источник ищем только среди того, что не совпадает с целью.
+ *
+ * 2.6.3: здесь только читаем источник. Сама запись — в конце, после конфига,
+ * хуков и ключа (см. «VERSION последним»): пока эти шаги не прошли, файла быть
+ * не должно, иначе отказ превращается в неотличимое «уже развёрнуто».
  */
 const deployedVersionPath = path.join(dest, 'VERSION');
 const versionSource = [
   path.join(packageRoot, '..', 'VERSION'),
   path.join(packageRoot, 'VERSION'),
 ].find((candidate) => fs.existsSync(candidate) && path.resolve(candidate) !== path.resolve(deployedVersionPath)) || null;
+let sourceVersion = null;
+if (versionSource) {
+  const text = fs.readFileSync(versionSource, 'utf8').trim();
+  if (text) sourceVersion = text;
+}
 let deployedVersion = null;
 let versionSkipped = false;
-if (versionSource) {
-  const sourceVersion = fs.readFileSync(versionSource, 'utf8').trim();
-  if (sourceVersion) {
-    if (force || !existedBefore || !fs.existsSync(deployedVersionPath)) {
-      fs.writeFileSync(deployedVersionPath, sourceVersion + '\n');
-      deployedVersion = sourceVersion;
-    } else {
-      versionSkipped = true;
-    }
-  }
-}
 
 const configFile = path.join(dest, 'workflow.config.json');
 const configExisted = fs.existsSync(configFile);
@@ -196,6 +199,30 @@ const keyId = String(argv['key-id'] || 'agent-judge');
 const home = process.env.USERPROFILE || process.env.HOME || os.homedir();
 const keyOut = path.resolve(String(argv['key-out'] || path.join(home, '.wf-keys')));
 let createdKey = null;
+
+/*
+ * .gitignore один на все строки init: помощник дописывает строку, если её ещё
+ * нет, и ничего не делает при повторе (идемпотентно).
+ */
+const gitignore = path.join(repo, '.gitignore');
+function appendIgnore(comment, line) {
+  const text = fs.existsSync(gitignore) ? fs.readFileSync(gitignore, 'utf8') : '';
+  if (text.split(/\r?\n/).includes(line)) return false;
+  fs.appendFileSync(gitignore, (text && !text.endsWith('\n') ? '\n' : '') + comment + '\n' + line + '\n');
+  return true;
+}
+
+/*
+ * 2.6.3 (B1): ключ проекта лежит в <repo>/.wf-keys/ и не должен попасть в git.
+ * Строка ставится ДО создания ключа: даже если init упадёт сразу после
+ * makeKeyPair, приватный ключ уже игнорируется. Каталог вне репозитория
+ * (например --key-out во временный каталог теста) сюда не относится.
+ */
+const keyOutRel = path.relative(repo, keyOut);
+const keyInRepo = keyOutRel !== '' && !keyOutRel.startsWith('..') && !path.isAbsolute(keyOutRel);
+if (keyInRepo) {
+  appendIgnore('# subagent-workflow: ключ приёмщика проекта', keyOutRel.split(path.sep).join('/') + '/');
+}
 let rotatedKey = null;
 let keptKey = null;
 
@@ -245,20 +272,28 @@ if (!fs.existsSync(keysFile)) {
   keptKey = { keyId: keyId };
 }
 
-const gitignore = path.join(repo, '.gitignore');
 const ignoreLine = logs === 'commit' ? '!docs/tasks/**/*.log' : 'docs/tasks/**/*.log';
-const ignoreText = fs.existsSync(gitignore) ? fs.readFileSync(gitignore, 'utf8') : '';
-if (!ignoreText.split(/\r?\n/).includes(ignoreLine)) {
-  fs.appendFileSync(gitignore, (ignoreText && !ignoreText.endsWith('\n') ? '\n' : '') + '# subagent-workflow: журналы прогонов\n' + ignoreLine + '\n');
-}
+appendIgnore('# subagent-workflow: журналы прогонов', ignoreLine);
 /*
  * guard.log — локальный след включения/выключения проверки (I-29), а не история
  * репозитория: журнал не должен попадать в коммиты и в чужой diff.
  */
 const guardLogRel = path.posix.join(workflowDir, 'guard.log');
-const ignoreGuard = fs.existsSync(gitignore) ? fs.readFileSync(gitignore, 'utf8') : '';
-if (!ignoreGuard.split(/\r?\n/).includes(guardLogRel)) {
-  fs.appendFileSync(gitignore, (ignoreGuard && !ignoreGuard.endsWith('\n') ? '\n' : '') + '# subagent-workflow: журнал включения guard\n' + guardLogRel + '\n');
+appendIgnore('# subagent-workflow: журнал включения guard', guardLogRel);
+
+/*
+ * VERSION последним (2.6.3, B2). Только здесь, после файлов, конфига, хуков и
+ * ключа: падение раньше оставляет проект без VERSION, и следующий запуск
+ * (в том числе кнопка панели) снова разворачивает его, а не отвечает
+ * already-deployed на недоразвёрнутое пространство.
+ */
+if (sourceVersion) {
+  if (force || !existedBefore || !fs.existsSync(deployedVersionPath)) {
+    fs.writeFileSync(deployedVersionPath, sourceVersion + '\n');
+    deployedVersion = sourceVersion;
+  } else {
+    versionSkipped = true;
+  }
 }
 
 console.log('init: рабочее пространство ' + (existedBefore ? 'обновлено' : 'готово'));
@@ -284,13 +319,15 @@ if (fs.existsSync(hooksDir)) {
 if (versionSkipped) {
   console.warn('init: WARN VERSION не обновлён: файлы существующей копии не тронуты (запустите с --force для обновления)');
 }
+/* Ключ проекта лежит внутри репозитория, но каталог в .gitignore; глобальный — вне. */
+const privateNote = keyInRepo ? '  (каталог в .gitignore проекта)' : '  (вне репозитория!)';
 if (createdKey) {
   console.log('  key         ' + createdKey.keyId + ' (создан)');
-  console.log('  private     ' + createdKey.privateKey + '  (вне репозитория!)');
+  console.log('  private     ' + createdKey.privateKey + privateNote);
   console.log('  public      ' + path.join(workflowDir, 'acceptors.json'));
 } else if (rotatedKey) {
   console.log('  key         ' + rotatedKey.keyId + ' (перевыпущен)');
-  console.log('  private     ' + rotatedKey.privateKey + '  (вне репозитория!)');
+  console.log('  private     ' + rotatedKey.privateKey + privateNote);
 } else if (keptKey) {
   console.log('  key         ' + keptKey.keyId + ' (закреплён ранее, не менялся)');
 }

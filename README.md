@@ -1,4 +1,4 @@
-# subagent-workflow 2.6.2 — полный пакет делегирования и приёмки
+# subagent-workflow 2.6.3 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -62,12 +62,16 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 ## Плагин DSH (отдельный пакет)
 
 `plugin/` — панель для DSH (`dsh-workflow-console`): доска задач, карточка,
-политика. Панель read-only с одним исключением: кнопка «Включить/выключить
-проверку коммитов» пишет ровно `guard.enabled` в `workflow.config.json` и строку
-в `guard.log` — оба перехода, с временем и сессией. В релизный архив не входит,
-а `init` копирует только `spec/`, поэтому в развёрнутое пространство плагин не
-попадает: это хост-пакет, а не часть переносимой спецификации. Установка и
-границы — `plugin/README.md`.
+политика. У панели ровно две записи, обе по явному подтверждению: кнопка
+«Включить/выключить проверку коммитов» пишет `guard.enabled` в
+`workflow.config.json` и строку в `guard.log` (оба перехода, с временем и
+сессией), а кнопка «Развернуть workflow здесь» ставит движок в открытое
+пространство и создаёт ключ приёмщика **проекта** в `<repo>/.wf-keys/`
+(глобальный `~/.wf-keys` не трогается). `POST /api/guard` и `/api/deploy`
+принимают только `application/json` и только свой `Origin`. В релизный архив не
+входит, а `init` копирует только `spec/`, поэтому в развёрнутое пространство
+плагин не попадает: это хост-пакет, а не часть переносимой спецификации.
+Установка и границы — `plugin/README.md`.
 
 ## Конфигурация
 

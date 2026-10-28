@@ -10,9 +10,18 @@ import {
 import { makeRepo, snapshotFiles, git } from './fixture.mjs';
 
 function makeRequest(url, options = {}) {
+  /*
+   * 2.6.3: изменяющие POST-маршруты требуют application/json. Тело в тесте —
+   * JSON, поэтому заголовок ставится по умолчанию; конкретный тест может
+   * передать свой (text/plain, чужой Origin, отсутствие заголовка).
+   */
+  const headers = options.headers !== undefined
+    ? options.headers
+    : (options.body === undefined ? {} : { 'content-type': 'application/json' });
   const request = {
     method: options.method || 'GET',
     url,
+    headers,
     socket: { remoteAddress: options.remote === undefined ? '127.0.0.1' : options.remote },
   };
   if (options.body !== undefined) {
@@ -559,5 +568,148 @@ test('deploy без confirm ничего не пишет, POST-only и пров�
   } finally {
     removeDir(repo);
     removeDir(plain);
+  }
+});
+
+/*
+ * 2.6.3 (B4): изменяющие маршруты принимают только application/json. text/plain —
+ * «простой запрос» браузера, который уходит с чужой страницы без preflight;
+ * ответ 415 приходит до чтения тела, поэтому ни конфиг, ни движок не меняются.
+ */
+test('POST guard/deploy требуют application/json — иначе 415 и никакой записи', async () => {
+  const { fixture, handler } = setup();
+  const repo = makeEmptyRepo();
+  try {
+    const configPath = path.join(fixture.repo, 'docs', 'subagent-workflow', 'workflow.config.json');
+    const configBefore = fs.readFileSync(configPath, 'utf8');
+
+    const guardPlain = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: { root: fixture.repo, enabled: false },
+    });
+    assert.equal(guardPlain.status, 415);
+    assert.equal(fs.readFileSync(configPath, 'utf8'), configBefore, 'конфиг не тронут');
+    assert.equal(fs.existsSync(path.join(fixture.repo, 'docs', 'subagent-workflow', 'guard.log')), false, 'guard.log не создан');
+
+    const deployHandler = createWebHandler(createWorkflowRuntime({ roots: [repo] }));
+    const deployPlain = await call(deployHandler, '/workflow/api/deploy', {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: { root: repo, confirm: true },
+    });
+    assert.equal(deployPlain.status, 415);
+    assert.equal(fs.existsSync(path.join(repo, 'docs')), false, 'движок не развернут');
+
+    /* Заголовка нет вовсе — тоже 415: маршрут не разбирает «просто текст». */
+    const noType = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      headers: {},
+      body: { root: fixture.repo, enabled: false },
+    });
+    assert.equal(noType.status, 415);
+    assert.equal(fs.readFileSync(configPath, 'utf8'), configBefore);
+
+    /* application/json; charset=utf-8 — тот же тип, запрос законный. */
+    const okType = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: { root: fixture.repo, enabled: true },
+    });
+    assert.equal(okType.status, 200);
+  } finally {
+    fixture.cleanup();
+    removeDir(repo);
+  }
+});
+
+/*
+ * 2.6.3 (B4): чужой Origin отвергается раньше тела и записей. Свой loopback-
+ * Origin и отсутствие заголовка (curl) допустимы: панель не должна сломаться.
+ */
+test('POST guard/deploy отвергают чужой Origin — 403, до записи', async () => {
+  const { fixture, handler } = setup();
+  const repo = makeEmptyRepo();
+  try {
+    const configPath = path.join(fixture.repo, 'docs', 'subagent-workflow', 'workflow.config.json');
+    const before = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+    const evilGuard = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: 'http://evil.example' },
+      body: { root: fixture.repo, enabled: true },
+    });
+    assert.equal(evilGuard.status, 403);
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, 'utf8')), before, 'чужой Origin не меняет конфиг');
+    assert.equal(fs.existsSync(path.join(fixture.repo, 'docs', 'subagent-workflow', 'guard.log')), false);
+
+    const deployHandler = createWebHandler(createWorkflowRuntime({ roots: [repo] }));
+    const evilDeploy = await call(deployHandler, '/workflow/api/deploy', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
+      body: { root: repo, confirm: true },
+    });
+    assert.equal(evilDeploy.status, 403);
+    assert.equal(fs.existsSync(path.join(repo, 'docs')), false, 'чужой Origin не разворачивает движок');
+
+    /* Свой Origin: host совпадает с Host-заголовком. */
+    const same = await call(handler, '/workflow/api/guard', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        host: '127.0.0.1:57312',
+        origin: 'http://127.0.0.1:57312',
+      },
+      body: { root: fixture.repo, enabled: true },
+    });
+    assert.equal(same.status, 200, 'свой Origin принимается');
+    assert.equal(JSON.parse(fs.readFileSync(configPath, 'utf8')).guard.enabled, true);
+  } finally {
+    fixture.cleanup();
+    removeDir(repo);
+  }
+});
+
+/*
+ * 2.6.3 (B1): развёртывание кладёт ключ в проект и не создаёт глобальный.
+ * HOME/USERPROFILE подменяются на пустой временный каталог — проверка не
+ * зависит от настоящего профиля машины.
+ */
+test('deploy создаёт ключ проекта и не трогает глобальный ключ', async () => {
+  const saved = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE };
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-deploy-home-'));
+  process.env.HOME = home;
+  process.env.USERPROFILE = home;
+  const a = makeEmptyRepo();
+  const b = makeEmptyRepo();
+  try {
+    const handlerA = createWebHandler(createWorkflowRuntime({ roots: [a] }));
+    const first = await call(handlerA, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: a, confirm: true },
+    });
+    assert.equal(first.status, 200);
+    const keyA = path.join(a, '.wf-keys', 'agent-judge.key.pem');
+    assert.ok(fs.existsSync(keyA), 'ключ проекта A создан');
+    const ignore = fs.readFileSync(path.join(a, '.gitignore'), 'utf8').split(/\r?\n/);
+    assert.ok(ignore.includes('.wf-keys/'), '.wf-keys/ в .gitignore проекта');
+    assert.equal(fs.existsSync(path.join(home, '.wf-keys')), false, 'глобальный каталог ключей не создан');
+
+    const keyABefore = fs.readFileSync(keyA, 'utf8');
+    const handlerB = createWebHandler(createWorkflowRuntime({ roots: [b] }));
+    const second = await call(handlerB, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: b, confirm: true },
+    });
+    assert.equal(second.status, 200);
+    assert.equal(fs.readFileSync(keyA, 'utf8'), keyABefore, 'развёртывание B не меняет ключ A');
+    assert.ok(fs.existsSync(path.join(b, '.wf-keys', 'agent-judge.key.pem')), 'у B свой ключ');
+    assert.equal(fs.existsSync(path.join(home, '.wf-keys')), false, 'глобальный каталог так и не создан');
+  } finally {
+    if (saved.HOME === undefined) delete process.env.HOME; else process.env.HOME = saved.HOME;
+    if (saved.USERPROFILE === undefined) delete process.env.USERPROFILE; else process.env.USERPROFILE = saved.USERPROFILE;
+    removeDir(home);
+    removeDir(a);
+    removeDir(b);
   }
 });

@@ -174,9 +174,18 @@ function apiFetch(handler) {
         this.writableEnded = true;
       },
     };
+    /*
+     * 2.6.3: как настоящий HTTP-слой, имена заголовков в нижнем регистре — от
+     * них зависит проверка Content-Type/Origin изменяющих POST-маршрутов.
+     */
+    const headers = {};
+    for (const [key, value] of Object.entries(init.headers || {})) {
+      headers[String(key).toLowerCase()] = value;
+    }
     const request = {
       method,
       url: parsed.pathname + parsed.search,
+      headers,
       socket: { remoteAddress: '127.0.0.1' },
     };
     if (typeof init.body === 'string' && init.body.length > 0) {
@@ -684,6 +693,9 @@ test('empty state deploys the engine with confirmation (0.7.0)', async () => {
     assert.match(questions[0], /docs\/tasks\//u);
     assert.match(questions[0], /\.gitignore/u);
     assert.match(questions[0], /core\.hooksPath/u);
+    /* 2.6.3: ключ проекта назван, глобальный — прямо исключён. */
+    assert.match(questions[0], /\.wf-keys\//u);
+    assert.match(questions[0], /Глобальный ~\/\.wf-keys не трогается/u);
 
     /* Согласие: пока движок ставится, кнопка честно говорит «Разворачиваю…». */
     globalThis.window.confirm = () => true;
@@ -700,6 +712,9 @@ test('empty state deploys the engine with confirmation (0.7.0)', async () => {
     }
     assert.ok(fs.existsSync(versionFile), 'кнопка развернула движок');
     assert.equal(fs.readFileSync(versionFile, 'utf8').trim(), repoVersion);
+    /* 2.6.3: ключ приёмщика — в проекте, каталог игнорируется git. */
+    assert.ok(fs.existsSync(path.join(repo, '.wf-keys', 'agent-judge.key.pem')), 'ключ проекта создан кнопкой');
+    assert.ok(fs.readFileSync(path.join(repo, '.gitignore'), 'utf8').split(/\r?\n/).includes('.wf-keys/'));
 
     /* Панель перечитала состояние: успех с версией и настоящая доска вместо пустоты. */
     let finalText = '';

@@ -3,16 +3,38 @@
 Web panel for [subagent-workflow](../README.md) repositories inside DeepSeek
 Harness. It reads task artifacts and `workflow.config.json`; there are exactly
 two writes, both behind a confirmation: the commit-and-push guard flag and one
-explicit deployment of the engine into the open workspace (0.7.0). It never
-changes `policy`, never runs a gate, never signs and never accepts anything.
+explicit deployment of the engine into the open workspace (0.7.0 → 0.7.1). It
+never changes `policy`, never runs a gate, never signs and never accepts
+anything.
+
+## 0.7.1 — ключ проекта и защита POST-маршрутов
+
+- **Ключ приёмщика создаётся в проекте.** `deployWorkflow` передаёт `init`
+  явные `--key-out <repo>/.wf-keys` и `--key-id agent-judge`, а `.wf-keys/`
+  попадает в `.gitignore` проекта. Глобальный `%USERPROFILE%\.wf-keys` не
+  создаётся и не перезаписывается: развернули A, затем B — ключ A и его
+  `acceptors.json` целы. Подтверждение кнопки называет `.wf-keys/` и прямо
+  говорит, что глобальный ключ не трогается.
+- **POST-маршруты защищены типом и Origin.** `/api/guard` и `/api/deploy`
+  требуют `Content-Type: application/json` (иначе 415) и `Origin` своего хоста
+  или его отсутствие (иначе 403); проверки идут до чтения тела и до любых
+  записей, поэтому cross-site `text/plain` не выключает guard и не запускает
+  развёртывание.
+- **`VERSION` пишется последним.** `init` пишет версию после конфига, ключа и
+  хуков: сломанный `workflow.config.json` не оставляет ложное
+  «уже развёрнуто».
+- Версия плагина 0.7.1, тестов 87: 415/403 на обоих маршрутах,
+  ключ проекта и отсутствие глобального ключа, прежние сценарии развёртывания
+  (успех, повтор, не-git, чужой корень, 404/405) не ослаблены.
 
 ## 0.7.0 — кнопка «Развернуть workflow здесь»
 
 Пространство без движка больше не упирается в терминал: пустое состояние и
 вкладка «Совместимость» показывают кнопку **«Развернуть workflow здесь»**.
 
-- **Одна явная запись.** `POST /workflow/api/deploy` с `{confirm: true, root}`
-  запускает `init.mjs --force` из вложенной спеки и отвечает
+- **Вторая явная запись панели.** `POST /workflow/api/deploy` с
+  `{confirm: true, root}` запускает `init.mjs --force` из вложенной спеки
+  (0.7.1 добавляет `--key-out <repo>/.wf-keys`) и отвечает
   `{ok, version, log}`; без `confirm: true` — 400 и ничего не пишется. Повтор в
   уже развёрнутом пространстве — 400 `already-deployed`: кнопкой движок не
   обновляется, это отдельное задание.
@@ -22,8 +44,9 @@ changes `policy`, never runs a gate, never signs and never accepts anything.
   не-git — 400 `not-a-repo`, нет движка в сборке, init упал или не уложился в
   таймаут — 400 `init-failed` с хвостом вывода.
 - **Подтверждение перечисляет изменения.** `docs/subagent-workflow/` (движок,
-  ворота, хуки, публичный ключ приёмщика), `docs/tasks/`, строки журналов в
-  `.gitignore`, локальный `git config core.hooksPath =
+  ворота, хуки, публичный ключ приёмщика), `docs/tasks/`, `.wf-keys/` проекта
+  (0.7.1: приватный ключ, каталог в `.gitignore`; глобальный не трогается),
+  строки журналов в `.gitignore`, локальный `git config core.hooksPath =
   docs/subagent-workflow/hooks`. Пока идёт запись, кнопка говорит
   «Разворачиваю…»; успех — с версией, отказ — с кодом и последними строками
   вывода init; после успеха панель перечитывает состояние и открывает доску.
@@ -276,7 +299,7 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.7.0, supports workflow
+The **Совместимость** tab compares the plugin (0.7.1, supports workflow
 2.0.0 – 2.6.x, включая `effect`, регресс-долг, guard и запись 2.6.0) with the deployed copy: VERSION/SPEC,
 required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
