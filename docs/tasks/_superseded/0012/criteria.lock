@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "task": "0012",
+  "taskFileSha256": "bec7449b72581b78c2016149441b3e20a7b9d98d37d09bfc9bfe0dc420871266",
+  "criteriaSha256": "9eb88c2ded9bb527d2a7fba971c62015ab3df6ea2774be7da6448e25e61ff9a0",
+  "criteriaJsonSha256": "3829881486b2a7a3dc03336efacf1a9aebd67e6e53530175fc56aff59a34789a",
+  "attackSha256": null,
+  "contractCommit": "5dcc6e70a1ee8bc13931b9b4913f74db6a79c0e0",
+  "protected": [
+    {
+      "path": "spec/checks/acceptance-p0.mjs",
+      "sha256": "8383dcf801ba6535f85b4923d5333b7760b5a23f73356ad0d49b892c91493023"
+    },
+    {
+      "path": "spec/checks/acceptance-schema.mjs",
+      "sha256": "2b22b3662e3c491b0b4fd194069e90c2612f09f689887cfdae3e6059ff4569b6"
+    },
+    {
+      "path": "spec/checks/actor-sources.mjs",
+      "sha256": "c3d664527c94977a2c0b0fef375cf4748048650054d558618442f0bb5c49e5f8"
+    },
+    {
+      "path": "spec/checks/ci-guard-step.mjs",
+      "sha256": "aceb94e19720d28ce3017a11b7ac4857f5d1470a7b9cf6636b634bb52eab2592"
+    },
+    {
+      "path": "spec/checks/deployed-copy.mjs",
+      "sha256": "f70b058a75cb56a1a0f14b7b3c930e9ca0d0aab223de06c1bd7c5a140fd188d4"
+    },
+    {
+      "path": "spec/checks/guard-acceptance.mjs",
+      "sha256": "f2d8cc96bcc4f903636b5f5bd9d1cc7a3ebf92b5436195f3fa0bbffad57c737b"
+    },
+    {
+      "path": "spec/checks/hooks-mode.mjs",
+      "sha256": "6f4692252444cba6061a6608a37bf67ce73c77300e117247ad3112329d564073"
+    }
+  ],
+  "createdAt": "2026-10-28T17:44:37.268Z",
+  "tool": "subagent-workflow/2.6.1"
+}

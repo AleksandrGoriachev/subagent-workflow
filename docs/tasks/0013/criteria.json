@@ -1,0 +1,86 @@
+{
+  "task": "0013",
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C4"
+    ],
+    "mustPass": [
+      "C2",
+      "C3"
+    ],
+    "reasons": {
+      "C1": "печатает SKIP",
+      "C4": "VERSION OK: 2.6.1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Проверки пакета вне пакета и lint принятых заданий",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "timeoutMs": 600000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/checks/**",
+        "spec/scripts/task-lint.mjs",
+        "spec/scripts/doctor.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOYED COPY OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сквозной цикл пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Версия 2.6.2 в пяти местах",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.2"
+      }
+    }
+  ]
+}
