@@ -37,7 +37,8 @@ const taskDir = path.resolve(argv.task || argv._[0] || '.');
 const repo = path.resolve(argv.repo || repoRoot(taskDir));
 const config = loadConfig(repo);
 const logsCommitted = config.logs === 'commit';
-const VERIFY_SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'task-verify.mjs');
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const VERIFY_SCRIPT = path.join(SCRIPT_DIR, 'task-verify.mjs');
 
 function fail(message) { console.error('task-accept: ' + message); process.exit(1); }
 
@@ -97,7 +98,7 @@ function restoreExecutableModes(repoRoot, candidateEnv) {
   }
 }
 
-function createCandidate(repoRoot, filesToAdd, message) {
+function createCandidate(repoRoot, filesToAdd, message, pathsToRemove = []) {
   const indexPath = path.join(os.tmpdir(), 'task-accept-' + process.pid + '-' + Date.now() + '.index');
   const env = {
     ...process.env,
@@ -112,6 +113,19 @@ function createCandidate(repoRoot, filesToAdd, message) {
   try {
     const read = runSync('git read-tree HEAD', { cwd: repoRoot, env });
     if (read.exitCode !== 0) fail('git read-tree: ' + read.stderr.trim());
+    /*
+     * 0011 (F-1): кандидат не наследует ранее закоммиченную запись приёмки.
+     * read-tree берёт дерево HEAD целиком, поэтому metadata-коммит с
+     * acceptance.json попадал в кандидата и task-check-acceptance отказывал
+     * «acceptance.json входит в кандидатный коммит». Путь приходит снаружи:
+     * удаляется только запись текущего задания, записи других остаются частью
+     * дерева. Если записи в индексе нет, --ignore-unmatch делает команду
+     * успешной.
+     */
+    if (pathsToRemove.length > 0) {
+      const remove = runSync('git rm --cached --ignore-unmatch -q -- ' + pathsToRemove.map(quoteArg).join(' '), { cwd: repoRoot, env });
+      if (remove.exitCode !== 0) fail('git rm --cached: ' + remove.stderr.trim());
+    }
     if (filesToAdd.length > 0) {
       const add = runSync('git add -A -- ' + filesToAdd.map(quoteArg).join(' '), { cwd: repoRoot, env });
       if (add.exitCode !== 0) fail('git add: ' + add.stderr.trim());
@@ -267,6 +281,26 @@ try {
       },
     }, null, 2));
     process.exit(0);
+  }
+
+  /*
+   * Preflight обходов (0011, F-3): то, что видно из аргументов, проверяется
+   * ДО прогона критериев. Иначе забытый --note или несуществующий --review
+   * стоят полного прогона (у Playwright — минуты), а отказ приходит уже после
+   * него. Проверки после прогона ниже остаются в силе: preflight только
+   * отказывает раньше и не заменяет защиту по фактически активным обходам.
+   */
+  const requestedBypasses = [
+    ['allow-missing-red', '--allow-missing-red'],
+    ['allow-manual', '--allow-manual'],
+    ['allow-declared-actor', '--allow-declared-actor'],
+    ['reuse-verify', '--reuse-verify'],
+  ].filter(([key]) => argv[key]).map(([, flag]) => flag);
+  if (requestedBypasses.length > 0 && !argv.note) {
+    fail('обход (' + requestedBypasses.join(', ') + ') требует --note с причиной; проверка идёт до прогона критериев');
+  }
+  if (argv.review && !exists(path.resolve(String(argv.review)))) {
+    fail('нет файла review: ' + path.resolve(String(argv.review)) + '; проверка идёт до прогона критериев');
   }
 
   let verify;
@@ -455,10 +489,16 @@ try {
   ])].filter((file) => file !== acceptanceRel);
   const ignored = ignoredPaths(repo, candidatePaths);
   const candidateFiles = candidatePaths.filter((file) => !ignored.has(file));
+  /*
+   * 0011: запись текущего задания передаётся в кандидат явно — createCandidate
+   * удаляет её из индекса после read-tree HEAD, чтобы metadata-коммит не
+   * наследовался кандидатом. Записи других заданий не затрагиваются.
+   */
   const candidate = createCandidate(
     repo,
     candidateFiles,
     'task ' + meta.id + ': accepted candidate; criteria=' + lockCheck.expected.criteriaJsonSha256 + '; contract=' + contractCommit + '; verify=' + (acceptorRun.nonce || 'reused'),
+    [acceptanceRel],
   );
   body.candidateCommit = candidate.commit;
   body.tree = candidate.tree;
@@ -489,7 +529,14 @@ try {
     console.log('  git reset --hard ' + candidate.commit + '   # рабочее дерево уже равно кандидату');
     console.log('  git add ' + acceptanceRel);
     console.log('  git commit -m "task ' + meta.id + ': приёмка (metadata)"');
-    console.log('Проверка записи: node scripts/task-check-acceptance.mjs --file ' + acceptanceRel + ' --repo .');
+    /*
+     * 0011 (F-2): путь к проверке записи вычисляется от самого скрипта
+     * относительно корня репозитория. В пакете это spec/scripts/…, в
+     * развёрнутой копии — docs/subagent-workflow/scripts/…; прежнее
+     * «scripts/…» в развёрнутой копии не существовало.
+     */
+    const checkScriptRel = relPosix(repo, path.join(SCRIPT_DIR, 'task-check-acceptance.mjs'));
+    console.log('Проверка записи: node ' + checkScriptRel + ' --file ' + acceptanceRel + ' --repo .');
   }
 } catch (err) {
   if (argv.json) console.log(JSON.stringify({ ok: false, errors: [err.message] }, null, 2));

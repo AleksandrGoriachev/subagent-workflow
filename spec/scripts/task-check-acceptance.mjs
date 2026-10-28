@@ -63,7 +63,9 @@ function fileAt(repo, rev, rel) {
 const argv = parseArgs(process.argv.slice(2));
 if (argv.help) {
   console.log('Usage: task-check-acceptance.mjs --file <acceptance.json> --repo <dir> --keys <acceptors.json>');
-  console.log('       [--task <путь к каталогу задания>] [--metadata <sha metadata-коммита>] [--json]');
+  console.log('       [--task <путь к каталогу задания>] [--json]');
+  console.log('       [--metadata <sha>] — коммит, который добавил acceptance.json поверх кандидата.');
+  console.log('       Сверяйте не по HEAD: после приёмки поверх идут обычные коммиты.');
   process.exit(0);
 }
 
@@ -360,10 +362,22 @@ function run() {
   }
 
   if (argv.metadata) {
+    /*
+     * 0011 (F-2): сверять нужно metadata-коммит — первый коммит, который
+     * добавляет acceptance.json поверх кандидата, — а не HEAD: после приёмки
+     * HEAD уходит обычными коммитами, и «--metadata HEAD» даёт ложный отказ.
+     * В сообщении — ожидаемый кандидат и фактический родитель переданного
+     * коммита, иначе непонятно, что именно не совпало.
+     */
     const metadata = String(argv.metadata);
     const parent = gitTry(repo, ['rev-parse', metadata + '^']);
-    if (!parent || parent.trim() !== candidate) note('metadata-коммит не является потомком кандидата');
-    else {
+    const parentSha = parent ? parent.trim() : null;
+    if (parentSha !== candidate) {
+      note('переданный metadata-коммит ' + metadata + ' не является потомком кандидата: его родитель '
+        + (parentSha || '—') + ', ожидался кандидат ' + candidate
+        + '. Сверяйте по metadata-коммиту — первому коммиту, который добавляет ' + acceptanceRel
+        + ' после кандидата, — а не по HEAD');
+    } else {
       const changed = git(repo, ['diff', '--name-only', candidate, metadata]).split('\n').filter(Boolean);
       if (changed.length !== 1 || changed[0] !== acceptanceRel) {
         note('metadata-коммит меняет не только acceptance.json: ' + changed.join(', '));
