@@ -1,0 +1,59 @@
+{
+  "task": "0006",
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C3"
+    ],
+    "mustPass": [
+      "C2"
+    ],
+    "reasons": {
+      "C1": "FAIL шаг guard-acceptance",
+      "C3": "VERSION OK: 2.5.0"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Шаг guard-acceptance есть в CI и вызывает --all",
+      "command": "node spec/checks/ci-guard-step.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "negative"
+      ],
+      "covers": [
+        ".github/**",
+        "spec/checks/**",
+        "VERSION",
+        "package.json"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Сквозные проверки пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "covers": [
+        "spec/**",
+        "plugin/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Версия 2.5.1 в пяти местах",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.5.1"
+      }
+    }
+  ]
+}

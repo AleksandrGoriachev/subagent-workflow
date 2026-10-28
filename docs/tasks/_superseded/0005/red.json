@@ -1,0 +1,85 @@
+{
+  "version": 4,
+  "kind": "red",
+  "task": "0005",
+  "createdAt": "2026-10-28T10:58:48.866Z",
+  "base": "HEAD",
+  "baseSha": "9cb701b4f78c892ec013eb885eb706e56008e03e",
+  "headSha": "9cb701b4f78c892ec013eb885eb706e56008e03e",
+  "contractCommit": "9cb701b4f78c892ec013eb885eb706e56008e03e",
+  "criteriaSha256": "ea79e535c98a02f30491f48ce6235a5a3bbfba78739818753a275f283a13e501",
+  "criteriaJsonSha256": "45a4165a094869c9870d8b9ac50a21c632ac2ec6b0a2c267f7203a05a7f62935",
+  "dirtyPaths": [
+    "docs/tasks/0005/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/ci-guard-step.mjs",
+      "exitCode": 1,
+      "durationMs": 218,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "ae77801b7eadfee7681b749202818ff0bd568539e53f4240c663c98e03eb5528",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "FAIL шаг guard-acceptance: в ci.yml нет ни одной строки run: с guard-acceptance.mjs\n     нужно: run: node spec/checks/guard-acceptance.mjs --all\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 95696,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "c3e518ade97756aa7f7b7461013f16c0a74a80e2ab1e4cc7771125f3887078db",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  init разворачивает рабочее пространство\nPASS  init создаёт закреплённый ключ\nPASS  e2e-deploy запускается из развёрнутой копии\nPASS  init из развёрнутого каталога создаёт свой ключ, а не копирует acceptors.json\nPASS  2.5.0: init выставил локальный core.hooksPath\nPASS  2.5.0: выключенный guard не мешает коммиту вне задания\nPASS  2.5.0: включённый guard отклоняет коммит вне задания\nPASS  2.5.0: метка обхода в сообщении разрешает коммит\nPASS  2.5.0: --audit показывает метку обхода\nPASS  2.5.0: guard отклоняет push с изменением вне задания\nPASS  2.5.0: выключенный guard не мешает push\nPASS  2.5.0: guard выключен — рабочий цикл задачи не меняется\nPASS  new-task создаёт задание с issuedBy\nPASS  G6: C3 — самостоятельный сценарий, а не копия C1\nPASS  lint требует covers для medium\nPASS  lint требует критерий эффекта для решения с влиянием на пользователя\nPASS  lint отклоняет effect.measuredBy на сам критерий\nPASS  lint отклоняет семантическое решение без доказательства\nPASS  G2: lint отклоняет решение вне цепи эффекта\nPASS  hash без атаки отказывает при policy.attack=fail\nPASS  hash не запирает контракт с нерешённой blocking-находкой\nPASS  task-attack отклоняет нерешённый blocking\nPASS  task-attack принимает закрытую находку\nPASS  hash создаёт замок для закоммиченного контракта\nPASS  lint --strict зелёный\nPASS  red доказывает падение по ожиданию\nPASS  verify зелёный после фикса\nPASS  verify записывает эффект и цепь решения\nPASS  verify валит изменённый файл без покрытия критерием\nPASS  после удаления непокрытого файла verify снова зелёный\nPASS  2.4.9: без acceptance.json сдвиг HEAD — ERROR contractCommit, а не WARN\nPASS  2.4.9: пустой acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: битый acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: запись с чужим статусом — не основание, ERROR остаётся\nPASS  2.4.9: task-verify не считает пустой acceptance.json приёмкой (lock строгий)\nPASS  самоприёмка из сессии постановщика отклоняется\nPASS  blocking-замечание без решения не принимается\nPASS  accept из другой сессии принимает задачу\nPASS  разбор замечаний и releaseReady в записи\nPASS  запись v6 с актором и уровнем независимости\nPASS  эффект записан в приёмку с измерителем\nPASS  G3: запись хранит согласованность решения и эффекта\nPASS  решения записаны с digest и без assumed\nPASS  атака попала в запись с digest и без нерешённых находок\nPASS  проверка ролей: приёмщик другого семейства, чем постановщик\nPASS  check-acceptance принимает запись\nPASS  check-acceptance проверяет metadata-коммит\nPASS  2.4.8: у принятого задания сдвиг HEAD — предупреждение, не ошибка\nPASS  G4: policy.decisions=fail отклоняет решение вне цепи\nPASS  G4: policy.decisions=warn — предупреждение, exit 0\nPASS  G5: policy.decisions=off — ни ошибки, ни предупреждения\nPASS  G7: защита самого пакета в protectedPaths — именно WARN, не ERROR\nPASS  G7: свои проверки в protectedPaths (checks/**) — предупреждения о пакете нет\nPASS  regress принятой задачи зелёный\nPASS  regress ловит сломанную проверку закрытой задачи\nPASS  regress помечает таймаут отдельно\nPASS  подмена записи ловится\n\nE2E OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 211,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "stdout не содержит: VERSION OK: 2.5.1"
+      ],
+      "stdoutSha256": "e2353f4801d5710b4309329f3855acf0eaf4b2a340a8900fc9074c86c34f22cf",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.5.0\nPASS  package.json                  — 2.5.0\nPASS  README.md                     — # subagent-workflow 2.5.0 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.5.0. Дата: 2026-10-28.\nPASS  spec/scripts/lib/common.mjs   — export const TOOL = 'subagent-workflow/2.5.0';\nPASS  CHANGELOG.md                  — ## 2.5.0 — 2026-10-28\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.5.0:»\n\nVERSION OK: 2.5.0\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 2,
+  "failedIds": [
+    "C1",
+    "C3"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C3"
+    ],
+    "mustPass": [
+      "C2"
+    ]
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}
