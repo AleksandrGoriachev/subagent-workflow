@@ -1,0 +1,137 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "897c9cec137f595ea7f5a6270eace9ed",
+  "runKind": "accept",
+  "task": "0006",
+  "createdAt": "2026-10-28T11:59:37.256Z",
+  "headSha": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+  "contractCommit": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+  "criteriaSha256": "ea79e535c98a02f30491f48ce6235a5a3bbfba78739818753a275f283a13e501",
+  "criteriaJsonSha256": "2459ea032541533f01450102cfe73d0383aba8ca14244dba6ce45d6710d0aa3c",
+  "taskFileSha256": "76dc4257a3579a28d0cfaf107934d218d8a6978e581942fe7e2601d334b2ae42",
+  "changedPaths": [
+    ".github/workflows/ci.yml",
+    "CHANGELOG.md",
+    "README.md",
+    "RELEASE-CHECKLIST.md",
+    "VERSION",
+    "docs/tasks/0006/criteria.lock",
+    "docs/tasks/0006/red.json",
+    "docs/tasks/0006/verify.json",
+    "package.json",
+    "spec/SPEC.md",
+    "spec/scripts/lib/common.mjs"
+  ],
+  "coverage": {
+    "declared": 6,
+    "covered": [
+      {
+        "path": ".github/workflows/ci.yml",
+        "criterion": "C1"
+      },
+      {
+        "path": "VERSION",
+        "criterion": "C1"
+      },
+      {
+        "path": "package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C2"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/ci-guard-step.mjs",
+      "exitCode": 0,
+      "durationMs": 265,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "70825354c37bb29a79235ad7aa7ac4586c82a8f3e6711fbb217239ce0e67e60c",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS шаг guard-acceptance: 1 вызов(ов) с --all\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 110640,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "c3e518ade97756aa7f7b7461013f16c0a74a80e2ab1e4cc7771125f3887078db",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  init разворачивает рабочее пространство\nPASS  init создаёт закреплённый ключ\nPASS  e2e-deploy запускается из развёрнутой копии\nPASS  init из развёрнутого каталога создаёт свой ключ, а не копирует acceptors.json\nPASS  2.5.0: init выставил локальный core.hooksPath\nPASS  2.5.0: выключенный guard не мешает коммиту вне задания\nPASS  2.5.0: включённый guard отклоняет коммит вне задания\nPASS  2.5.0: метка обхода в сообщении разрешает коммит\nPASS  2.5.0: --audit показывает метку обхода\nPASS  2.5.0: guard отклоняет push с изменением вне задания\nPASS  2.5.0: выключенный guard не мешает push\nPASS  2.5.0: guard выключен — рабочий цикл задачи не меняется\nPASS  new-task создаёт задание с issuedBy\nPASS  G6: C3 — самостоятельный сценарий, а не копия C1\nPASS  lint требует covers для medium\nPASS  lint требует критерий эффекта для решения с влиянием на пользователя\nPASS  lint отклоняет effect.measuredBy на сам критерий\nPASS  lint отклоняет семантическое решение без доказательства\nPASS  G2: lint отклоняет решение вне цепи эффекта\nPASS  hash без атаки отказывает при policy.attack=fail\nPASS  hash не запирает контракт с нерешённой blocking-находкой\nPASS  task-attack отклоняет нерешённый blocking\nPASS  task-attack принимает закрытую находку\nPASS  hash создаёт замок для закоммиченного контракта\nPASS  lint --strict зелёный\nPASS  red доказывает падение по ожиданию\nPASS  verify зелёный после фикса\nPASS  verify записывает эффект и цепь решения\nPASS  verify валит изменённый файл без покрытия критерием\nPASS  после удаления непокрытого файла verify снова зелёный\nPASS  2.4.9: без acceptance.json сдвиг HEAD — ERROR contractCommit, а не WARN\nPASS  2.4.9: пустой acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: битый acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: запись с чужим статусом — не основание, ERROR остаётся\nPASS  2.4.9: task-verify не считает пустой acceptance.json приёмкой (lock строгий)\nPASS  самоприёмка из сессии постановщика отклоняется\nPASS  blocking-замечание без решения не принимается\nPASS  accept из другой сессии принимает задачу\nPASS  разбор замечаний и releaseReady в записи\nPASS  запись v6 с актором и уровнем независимости\nPASS  эффект записан в приёмку с измерителем\nPASS  G3: запись хранит согласованность решения и эффекта\nPASS  решения записаны с digest и без assumed\nPASS  атака попала в запись с digest и без нерешённых находок\nPASS  проверка ролей: приёмщик другого семейства, чем постановщик\nPASS  check-acceptance принимает запись\nPASS  check-acceptance проверяет metadata-коммит\nPASS  2.4.8: у принятого задания сдвиг HEAD — предупреждение, не ошибка\nPASS  G4: policy.decisions=fail отклоняет решение вне цепи\nPASS  G4: policy.decisions=warn — предупреждение, exit 0\nPASS  G5: policy.decisions=off — ни ошибки, ни предупреждения\nPASS  G7: защита самого пакета в protectedPaths — именно WARN, не ERROR\nPASS  G7: свои проверки в protectedPaths (checks/**) — предупреждения о пакете нет\nPASS  regress принятой задачи зелёный\nPASS  regress ловит сломанную проверку закрытой задачи\nPASS  regress помечает таймаут отдельно\nPASS  подмена записи ловится\n\nE2E OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 362,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "112f135fa5812ce75448a85a81c770fc792bdd7bb1d59025727ad8e8f6906f34",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.5.1\nPASS  package.json                  — 2.5.1\nPASS  README.md                     — # subagent-workflow 2.5.1 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.5.1. Дата: 2026-10-28.\nPASS  spec/scripts/lib/common.mjs   — export const TOOL = 'subagent-workflow/2.5.1';\nPASS  CHANGELOG.md                  — ## 2.5.1 — 2026-10-28\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.5.1:»\n\nVERSION OK: 2.5.1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+    "contractCommit": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+    "criteriaJsonSha256": "2459ea032541533f01450102cfe73d0383aba8ca14244dba6ce45d6710d0aa3c",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C3"
+      ],
+      "mustPass": [
+        "C2"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "5812e4badd0101f6e0454ba48c48bce276bbdb3b026ae8c371a664abc9676991",
+  "log": "verify.log"
+}

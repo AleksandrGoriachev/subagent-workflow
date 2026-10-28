@@ -25,6 +25,11 @@ jobs:
         run: node spec/selftest.mjs
       - name: e2e
         run: node spec/e2e.mjs
+      - name: хуки исполняемые (linux)
+        if: runner.os == 'Linux'
+        run: chmod +x spec/hooks/*
+      - name: guard-acceptance — приёмочные кейсы guard (все)
+        run: node spec/checks/guard-acceptance.mjs --all
 
   plugin:
     name: plugin / ${{ matrix.os }} / node ${{ matrix.node }}
