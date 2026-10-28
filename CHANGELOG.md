@@ -1,5 +1,47 @@
 # Изменения
 
+## 2.6.0 — 2026-10-28
+
+- **DSH перестал быть обязательным.** Источник актора — настраиваемая цепочка
+  `actor.sources` в `workflow.config.json`: каждая запись `{ env, kind }`,
+  `kind` ∈ `harness | runner | ci | manual`, побеждает первый непустой.
+  Модель резолвится так же (`actor.modelSources`). `loadConfig` нормализует
+  блок: невалидные записи отбрасываются, текст ошибки — в `actor.errors`;
+  конфиг без `sources` синтезируется по-старому (`primaryEnv` → `harness`,
+  `fallbackEnv` → `manual`), а конфиг без legacy-полей не падает — дефолты
+  подставляет нормализация. Старые поля сохранены: их читает панель.
+- **Вид источника решает уровень.** `harness`/`runner` → `attestedBy: env` и
+  `separate-session`; `ci`/`manual` → `declared`, уровень не выше
+  `declared`. Неизвестный вид — ошибка конфигурации, а не разрешение.
+  `doctor` и `actor.mjs` читают конфиг: раньше они вызывали
+  `detectActor(process.env)` без него, настроенный источник был невидим, и
+  честный проект вне DSH получал FAIL. `doctor` печатает
+  `<source> (<sourceKind>) / <session>` и краснеет на `actor.errors`.
+- **Основание видно в записи.** Запись v6 получает `actor.source`,
+  `actor.sourceKind` и `independence.basis`; `task-check-acceptance` сверяет
+  вид с уровнем («источник актора <kind> не соответствует уровню <level>»),
+  записи без поля проверяются как раньше. `new-task`, `task-attack` и
+  `task-accept` берут сессию и модель из того же резолвера; `task-accept`
+  отказывает при битом `actor.sources`.
+- **Шаблон конфига** — с `sources` (DSH как `harness`, `WF_ACTOR_SESSION` как
+  `runner`) и `modelSources`.
+- **Проверки.** `spec/checks/actor-sources.mjs` — 8 сценариев (runner, harness,
+  ci, manual, пустое окружение, два legacy, неизвестный вид `vendor`);
+  `selftest` — кейсы на каждый вид, пустое окружение, legacy-конфиг, конфиг без
+  legacy-полей, `modelSources`, неизвестный вид и сверка записи в
+  `task-check-acceptance`; `e2e` — приёмка medium при одном
+  `WF_ACTOR_SESSION` без DSH (в записи `runner` и `basis`) и контрольный
+  отказ при пустом окружении.
+- **Документация:** SPEC §13 (таблица видов и абзац «Версия 2.6.0»),
+  `adapters/dsh.md` (DSH как `harness`-источник), `adapters/generic.md` и
+  новый `adapters/opencode.md` (`WF_ACTOR_SESSION` как `runner`),
+  `adapters/README.md`, README (цепочка источников), RELEASE-CHECKLIST (пункт
+  про `actor-sources.mjs`).
+- **Версия 2.6.0** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
+  секция CHANGELOG и абзац «Версия 2.6.0:» в SPEC. Панель не менялась.
+- Тесты: selftest 65/65, e2e 60/60, plugin 78/78,
+  `actor-sources` 8/8; `tools/check-version.mjs` → VERSION OK: 2.6.0.
+
 ## 2.5.2 — 2026-10-28
 
 - **Право исполнения хуков — свойство поставки.** `spec/hooks/pre-commit`,

@@ -167,6 +167,23 @@ function run() {
   if ((risk === 'medium' || risk === 'high') && independence.separateSession !== true) {
     note('independence.separateSession должен быть true для medium/high');
   }
+  /*
+   * 2.6.0: вид источника актора сверяется с уровнем. harness и runner — это
+   * separate-session, ci и manual — только declared. Иначе запись утверждает
+   * независимость, которой у источника нет (поле выставил кто угодно).
+   * Записи без actor.sourceKind (до 2.6.0) проверяются как раньше.
+   */
+  if (actor.sourceKind !== undefined && actor.sourceKind !== null) {
+    const sourceKind = String(actor.sourceKind);
+    const levelForSource = sourceKind === 'harness' || sourceKind === 'runner'
+      ? 'separate-session'
+      : sourceKind === 'ci' || sourceKind === 'manual' ? 'declared' : null;
+    if (levelForSource === null) {
+      note('источник актора ' + sourceKind + ': неизвестный вид — допустимы harness, runner, ci, manual');
+    } else if (independence.level !== levelForSource) {
+      note('источник актора ' + sourceKind + ' не соответствует уровню ' + independence.level);
+    }
+  }
 
   if (risk === 'high') {
     if (record.humanSignoff !== true) note('high-risk без humanSignoff=true');

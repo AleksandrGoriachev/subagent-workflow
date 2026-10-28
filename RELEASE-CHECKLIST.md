@@ -28,6 +28,10 @@
 - [ ] Windows: `node spec/selftest.mjs`, `node spec/e2e.mjs`, `node spec/e2e-deploy.mjs`
 - [ ] приёмочные проверки задания: `node spec/checks/guard-acceptance.mjs --all`
       (покрытие индекса, отказ вне задания, метка обхода и аудит, хуки, панель)
+- [ ] источники актора: `node spec/checks/actor-sources.mjs` → `ACTOR SOURCES OK`
+      (runner/harness дают `separate-session`, ci/manual — `declared`, пустое
+      окружение и неизвестный вид источника закрывают ворота; legacy-конфиг без
+      `sources` ведёт себя как раньше)
 - [ ] режим хуков в индексе: `git ls-files -s spec/hooks` — все три `100755`,
       `node spec/checks/hooks-mode.mjs` → `HOOKS MODE OK`. На Windows режим
       выставляется только git-ом (`git update-index --chmod=+x`): файловая

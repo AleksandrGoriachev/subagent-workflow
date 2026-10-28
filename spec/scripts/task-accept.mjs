@@ -159,13 +159,14 @@ try {
     fail('приватный ключ не соответствует закреплённому публичному ключу ' + keyId);
   }
 
-  const actor = detectActor(process.env, {
-    kind: entry.kind,
-    model: String(process.env[config.actor.modelEnv] || 'unknown'),
-    host: os.hostname(),
-    primaryEnv: config.actor.primaryEnv,
-    fallbackEnv: config.actor.fallbackEnv,
-  });
+  /*
+   * Актор — по цепочке источников из конфига (2.6.0): DSH не обязателен, но и
+   * ci/manual не дают separate-session — вид источника решает, чем подтверждена
+   * сессия. Битый actor.sources закрывает ворота: приёмка не должна угадывать.
+   */
+  const actorSourceErrors = Array.isArray(config.actor.errors) ? config.actor.errors : [];
+  if (actorSourceErrors.length > 0) fail('actor.sources: ' + actorSourceErrors.join('; '));
+  const actor = detectActor(process.env, { ...config.actor, kind: entry.kind, host: os.hostname() });
   const issuedBy = meta.issuedBy || null;
   const executorSession = typeof meta.executorSession === 'string' ? meta.executorSession : null;
   const independence = assessIndependence({ actor, issuedBy, executorSession, risk: meta.risk });
@@ -251,8 +252,8 @@ try {
     console.log(JSON.stringify({
       dryRun: true,
       note: 'проверки не перезапускались',
-      actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, keyId },
-      independence: { level: independence.level, separateSession: independence.level !== 'same-session', reportWithheld: !argv['report-read'], keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key' },
+      actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, source: actor.source, sourceKind: actor.sourceKind, keyId },
+      independence: { level: independence.level, basis: independence.basis, separateSession: independence.level !== 'same-session', reportWithheld: !argv['report-read'], keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key' },
       acceptance: {
         version: 6, status: 'accepted', task: String(meta.id), candidateCommit: null, tree: null, worktreeDigest: digest,
         decisions: { count: decisionSummary.count, digest: decisionSummary.digest, assumed: decisionSummary.assumed, confirmed: decisionSummary.confirmed },
@@ -374,9 +375,20 @@ try {
     tree: null,
     worktreeDigest: digest,
     issuedBy: issuedBy || { kind: 'agent', session: null },
-    actor: { kind: actor.kind, session: actor.session, model: actor.model, family: familyOf(config, actor.model), host: actor.host, keyId, attestedBy: actor.attestedBy },
+    actor: {
+      kind: actor.kind,
+      session: actor.session,
+      model: actor.model,
+      family: familyOf(config, actor.model),
+      host: actor.host,
+      keyId,
+      attestedBy: actor.attestedBy,
+      source: actor.source,
+      sourceKind: actor.sourceKind,
+    },
     independence: {
       level: independence.level,
+      basis: independence.basis,
       separateSession: independence.level === 'separate-session' || independence.level === 'human',
       reportWithheld: !argv['report-read'],
       keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key',
@@ -459,7 +471,8 @@ try {
   } else {
     console.log('task-accept: ' + meta.id + ' принят');
     console.log('  acceptor      ' + acceptor + ' (' + entry.kind + ')');
-    console.log('  actor         ' + actor.kind + ' / ' + (actor.session || '—') + ' [' + actor.attestedBy + ']');
+    console.log('  actor         ' + actor.kind + ' / ' + (actor.session || '—') + ' [' + actor.attestedBy + ']'
+      + (actor.source ? ' ' + actor.source + ' (' + actor.sourceKind + ')' : ''));
     console.log('  independence  ' + independence.level + ' (нужно ' + independence.required + ')');
     console.log('  key           ' + keyId);
     console.log('  fresh run     ' + (acceptorRun.fresh ? 'да (' + acceptorRun.nonce + ')' : 'нет (reused)'));

@@ -6,7 +6,12 @@
   "actor": {
     "primaryEnv": "DSH_SESSION_ID",
     "fallbackEnv": "TASK_ACTOR_SESSION",
-    "modelEnv": "DSH_MODEL"
+    "modelEnv": "DSH_MODEL",
+    "sources": [
+      { "env": "DSH_SESSION_ID", "kind": "harness" },
+      { "env": "WF_ACTOR_SESSION", "kind": "runner" }
+    ],
+    "modelSources": ["DSH_MODEL", "WF_ACTOR_MODEL"]
   },
   "policy": {
     "decisions": "fail",

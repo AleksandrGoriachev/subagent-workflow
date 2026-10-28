@@ -1,4 +1,4 @@
-# subagent-workflow 2.5.2 — полный пакет делегирования и приёмки
+# subagent-workflow 2.6.0 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -48,12 +48,12 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `spec/scripts/actor.mjs` | Аттестация актора, уровень независимости |
 | `spec/scripts/sign.mjs` | Ed25519, канонизация, подпись |
 | `spec/scripts/lib/common.mjs` | Общая библиотека |
-| `spec/selftest.mjs` | Проверка правил записи (25 проверок, включая regress-классификацию) |
+| `spec/selftest.mjs` | Проверка правил записи (65 проверок, включая regress-классификацию и источники актора) |
 | `spec/e2e.mjs` | Полный цикл на временном репозитории |
 | `spec/e2e-deploy.mjs` | Развёртывание из развёрнутого каталога (отдельная джоба CI) |
 | `INSTALL.md` | Установка из архива, проверка целостности, обновление |
 | `CHANGELOG.md`, `VERSION` | История и версия пакета |
-| `adapters/` | Подключение харнессов: DSH, произвольный раннер, CI |
+| `adapters/` | Подключение харнессов: DSH, OpenCode, произвольный раннер, CI |
 | `examples/minimal/` | Пример задания с намеренным дефектом |
 | `tools/pack.mjs`, `tools/verify.mjs` | Сборка архива и проверка контрольных сумм |
 | `deploy/AGENT-DEPLOY.md` | Инструкция агенту по разворачиванию |
@@ -78,13 +78,24 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `tasksDir` | Где лежат задания |
 | `keysFile` | `acceptors.json` с публичными ключами |
 | `logs` | `local` (логи не коммитятся, хешей нет) или `commit` |
-| `actor.primaryEnv` | Переменная с сессией агента (DSH: `DSH_SESSION_ID`) |
-| `actor.fallbackEnv` | Запасная переменная (уровень `declared`) |
+| `actor.sources` | Цепочка источников актора: `[{ env, kind }]`, `kind` — `harness` / `runner` / `ci` / `manual`; первый непустой побеждает (2.6.0) |
+| `actor.modelSources` | Цепочка переменных модели; первая непустая, иначе `unknown` (2.6.0) |
+| `actor.primaryEnv` | Legacy: переменная с сессией агента (DSH: `DSH_SESSION_ID`); без `sources` — вид `harness` |
+| `actor.fallbackEnv` | Legacy: запасная переменная (вид `manual`, уровень `declared`) |
 | `policy` | `fail` / `warn` / `off` для `decisions`, `coverage`, `attack`, `roles.modelFamily` |
 | `models` | Реестр «модель → семейство» для проверки «другой агент» |
 | `roles` | Ожидаемые модели ролей: acceptor, critic, observer |
 | `verifyTimeoutMs` | Бюджет свежего прогона при приёмке |
 | `guard` | `enabled`, `mode`, `allow`, `bypassMarker`: проверка коммита без задания (2.5.0) |
+
+С 2.6.0 источник актора — настраиваемая цепочка, а не два жёстких имени. DSH —
+один из видов (`harness`), обёртка проекта — `runner`, джоба CI — `ci`, ручное
+значение — `manual`. `harness` и `runner` дают `separate-session`,
+`ci` и `manual` — только `declared`. Основание пишется в запись
+(`actor.source`, `actor.sourceKind`, `independence.basis`), а
+`task-check-acceptance` сверяет вид с уровнем. Legacy-поля
+`primaryEnv`/`fallbackEnv` продолжают работать: без `sources` они
+синтезируются как `harness` и `manual`.
 
 ## Атака спецификации и политика (2.2.0)
 

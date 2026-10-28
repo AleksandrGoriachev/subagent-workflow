@@ -20,11 +20,19 @@ node docs/subagent-workflow/scripts/actor.mjs --json
 ~~~
 
 2. Найдите переменную с идентификатором сессии/агента (или задайте свою в обёртке).
-3. Пропишите её в `docs/subagent-workflow/workflow.config.json`:
+3. Пропишите её в `docs/subagent-workflow/workflow.config.json` вместе с видом
+   источника (2.6.0):
 
 ~~~json
-{ "actor": { "primaryEnv": "MY_HARNESS_SESSION_ID", "modelEnv": "MY_HARNESS_MODEL" } }
+{ "actor": { "sources": [{ "env": "MY_HARNESS_SESSION_ID", "kind": "runner" }],
+             "modelSources": ["MY_HARNESS_MODEL"] } }
 ~~~
+
+`kind`: `harness` — сессию выдаёт харнесс; `runner` — обёртка проекта; `ci` —
+идентификатор джобы; `manual` — значение выставлено руками. Первые два дают
+`separate-session`, последние два — только `declared`. Legacy-поля
+`primaryEnv`/`fallbackEnv` продолжают работать: без `sources` они
+синтезируются как `harness` и `manual`.
 
 4. Проверьте:
 
@@ -35,11 +43,12 @@ node docs/subagent-workflow/scripts/doctor.mjs --repo .
 
 ## Матрица
 
-| Харнесс | Переменная | Что даёт | Приёмка |
-| --- | --- | --- | --- |
-| DSH | `DSH_SESSION_ID` | своя сессия у каждого агента, доходит до child-процессов | субагент в отдельной сессии |
-| Иной агентный раннер | своя, через `primaryEnv` | зависит от раннера | отдельная сессия/чат |
-| CI | id джобы | та же машина, не независимый агент | только проверка записей, не создание |
-| Человек | — | ключ `human-*` | high-risk подписывает человек |
+| Харнесс | Вид | Переменная | Что даёт | Приёмка |
+| --- | --- | --- | --- | --- |
+| DSH | `harness` | `DSH_SESSION_ID` | своя сессия у каждого агента, доходит до child-процессов | субагент в отдельной сессии |
+| OpenCode | `runner` | `WF_ACTOR_SESSION` из обёртки | зависит от обёртки | отдельный процесс/сессия |
+| Иной агентный раннер | `runner` | своя, в `actor.sources` | зависит от раннера | отдельная сессия/чат |
+| CI | `ci` | id джобы | та же машина, не независимый агент | только проверка записей, не создание |
+| Человек | — | ключ `human-*` | независимость подтверждается ключом | high-risk подписывает человек |
 
-Подробности: `dsh.md`, `generic.md`, `ci.md`.
+Подробности: `dsh.md`, `opencode.md`, `generic.md`, `ci.md`.

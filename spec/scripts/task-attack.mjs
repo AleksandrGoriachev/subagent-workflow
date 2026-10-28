@@ -19,6 +19,7 @@ import {
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack, ATTACK_CLASSES } from './lib/attack.mjs';
+import { detectActor } from './actor.mjs';
 
 const NL = String.fromCharCode(10);
 const argv = parseArgv(process.argv.slice(2));
@@ -38,8 +39,17 @@ try {
   const config = loadConfig(repo);
   const policy = policyOf(config);
   const attackFile = path.join(taskDir, 'attack.json');
-  const criticModel = String(process.env[config.actor.modelEnv] || 'unknown');
-  const criticSession = String(process.env[config.actor.primaryEnv] || process.env[config.actor.fallbackEnv] || '');
+  /*
+   * Критик — тоже актор: сессия и модель из той же цепочки источников, что у
+   * приёмщика. attestedBy берётся из результата (env у harness/runner,
+   * declared у ci/manual), а не выводится из «сессия непустая».
+   */
+  const criticActor = detectActor(process.env, config.actor);
+  const criticModel = criticActor.model;
+  const criticSession = criticActor.session || '';
+  const criticAttestedBy = criticActor.attestedBy === 'env'
+    ? 'env'
+    : criticActor.attestedBy === 'key' ? 'key' : 'declared';
   const family = (config.models || {})[criticModel] || null;
 
   if (argv.prompt) {
@@ -57,7 +67,7 @@ try {
       version: 1,
       task: String(meta.id),
       createdAt: new Date().toISOString(),
-      critic: { session: '<твоя сессия ' + (criticSession || '(DSH_SESSION_ID)') + '>', model: criticModel, attestedBy: 'env' },
+      critic: { session: '<твоя сессия ' + (criticSession || '(источник actor.sources не задан)') + '>', model: criticModel, attestedBy: criticAttestedBy },
       findings: [{
         id: 'A1', class: 'missing-case', severity: 'blocking',
         claim: 'чего нет в задании', case: 'конкретный случай или точный вопрос', resolution: null,
@@ -83,11 +93,12 @@ try {
       version: 1,
       task: String(meta.id),
       createdAt: new Date().toISOString(),
-      critic: { session: criticSession, model: criticModel, family, attestedBy: criticSession ? 'env' : 'declared' },
+      critic: { session: criticSession, model: criticModel, family, attestedBy: criticAttestedBy },
       findings: [],
     });
     console.log('task-attack: создан скелет ' + attackFile);
-    console.log('  критик   ' + (criticSession || '—') + ' / ' + criticModel);
+    console.log('  критик   ' + (criticSession || '—') + ' / ' + criticModel + ' [' + criticAttestedBy
+      + (criticActor.source ? ', ' + criticActor.source + ' (' + criticActor.sourceKind + ')' : '') + ']');
     process.exit(0);
   }
 

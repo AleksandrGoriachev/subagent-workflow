@@ -1,15 +1,31 @@
 # DSH
 
-## Идентификатор
+## DSH — источник вида `harness`
 
 DSH выставляет `DSH_SESSION_ID` каждому агенту, и переменная доходит до дочерних
 процессов. Проверено экспериментом: у субагента свой UUID, у родителя — свой.
+
+С 2.6.0 DSH — не единственный источник, а один из видов в цепочке
+`actor.sources`. Шаблон конфига уже содержит его:
+
+~~~json
+"actor": {
+  "sources": [
+    { "env": "DSH_SESSION_ID", "kind": "harness" },
+    { "env": "WF_ACTOR_SESSION", "kind": "runner" }
+  ],
+  "modelSources": ["DSH_MODEL", "WF_ACTOR_MODEL"]
+}
+~~~
 
 ~~~bash
 node docs/subagent-workflow/scripts/actor.mjs --json
 ~~~
 
-Ожидаемо: `attestedBy: "env"`, непустой `session`.
+Ожидаемо: `attestedBy: "env"`, непустой `session`, `source: "DSH_SESSION_ID"`,
+`sourceKind: "harness"`, `basis: "harness"`. Если `DSH_SESSION_ID` нет, но
+обёртка проекта выставила `WF_ACTOR_SESSION`, ворота возьмут её (вид `runner`)
+и дадут тот же уровень: пакет не требует DSH.
 
 ## Как запускать роли
 

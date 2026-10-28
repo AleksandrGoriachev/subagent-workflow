@@ -1,6 +1,6 @@
 # Спецификация: делегирование субагентам с проверяемой приёмкой
 
-Версия: 2.5.2. Дата: 2026-10-28.
+Версия: 2.6.0. Дата: 2026-10-28.
 Статус: проект-независимая, готова к разворачиванию в новом репозитории.
 Основание: редакция 1.3 (роли, риск-уровни, контракт, свежий прогон, redExpect) плюс
 исправление главного дефекта — роль приёмщика проверяется машиной, а не декларацией.
@@ -299,6 +299,33 @@
    `e2e` в джобе `test` идёт `node spec/checks/hooks-mode.mjs` — проверка
    режима в индексе и отсутствия подмены прав. Проверка, зелёная в CI и красная
    локально, хуже отсутствующей: она создаёт видимость покрытия.
+
+Версия 2.6.0:
+
+1. **DSH — один из источников, а не обязательный.** Источник актора —
+   настраиваемая цепочка `actor.sources` (`{ env, kind }`); первый непустой
+   побеждает. Модель — такая же цепочка `actor.modelSources`. Старые поля
+   `primaryEnv`/`fallbackEnv`/`modelEnv` сохранены: конфиг без `sources`
+   синтезируется как раньше (`primaryEnv` → `harness`, `fallbackEnv` →
+   `manual`), а конфиг без старых полей не падает — дефолты подставляет
+   нормализация в `loadConfig`.
+2. **Вид источника решает уровень.** `harness` и `runner` дают
+   `attestedBy: env` и `separate-session`; `ci` и `manual` — `declared` и
+   уровень не выше `declared`. Неизвестный вид — ошибка конфигурации:
+   `doctor` красный, `task-accept` отказывает. `doctor` и `actor.mjs` читают
+   конфиг: раньше они вызывали резолвер без него, и настроенный источник был
+   невидим — честный проект вне DSH получал FAIL (дефект, ради которого
+   выпущена версия).
+3. **Основание видно в записи.** Запись v6 получает `actor.source`,
+   `actor.sourceKind` и `independence.basis`; `task-check-acceptance` сверяет
+   вид с уровнем, записи без поля принимаются как раньше. `new-task`,
+   `task-attack` и `task-accept` берут сессию и модель из того же резолвера.
+4. **Проверки и шаблон.** `spec/checks/actor-sources.mjs` — 8 сценариев
+   (runner, harness, ci, manual, пустое окружение, два legacy, неизвестный вид);
+   кейсы в `selftest` и `e2e` (приёмка medium при одном `WF_ACTOR_SESSION` без
+   DSH и контрольный отказ при пустом окружении); шаблон
+   `spec/workflow.config.json` с `sources`/`modelSources`; новый адаптер
+   `adapters/opencode.md`.
 
 ## 0.1. Быстрый старт с нуля
 
@@ -801,10 +828,11 @@ measuredBy}`: `measuredBy` обязателен и обязан указыват
   "worktreeDigest": "…",
   "issuedBy": { "kind": "agent", "session": "…", "model": "…" },
   "actor": { "kind": "agent", "session": "…", "model": "glm-5.3-flash",
-             "family": "zhipu", "host": "…", "keyId": "agent-main", "attestedBy": "env" },
-  "independence": { "level": "separate-session", "separateSession": true,
-                    "reportWithheld": true, "keyCustody": "agent-key",
-                    "modelLevel": "different-family" },
+             "family": "zhipu", "host": "…", "keyId": "agent-main", "attestedBy": "env",
+             "source": "DSH_SESSION_ID", "sourceKind": "harness" },
+  "independence": { "level": "separate-session", "basis": "harness",
+                    "separateSession": true, "reportWithheld": true,
+                    "keyCustody": "agent-key", "modelLevel": "different-family" },
   "acceptorRun": { "fresh": true, "nonce": "…", "runKind": "accept",
                    "startedAt": "…", "finishedAt": "…", "durationMs": 60000,
                    "host": "…", "node": "v25.4.0",
@@ -829,6 +857,11 @@ measuredBy}`: `measuredBy` обязателен и обязан указыват
 }
 ~~~
 
+С 2.6.0 запись хранит основание независимости: `actor.source` (имя переменной,
+из которой взята сессия), `actor.sourceKind` (`harness | runner | ci | manual`)
+и `independence.basis`. Номер версии записи не меняется — поля добавлены, а
+записи до 2.6.0 без них проверяются как раньше.
+
 **Хеши.** `taskFileSha256` и `criteriaJsonSha256` — SHA-256 байтов файлов в
 кандидатном коммите (не в рабочей копии). `criteriaSha256` — SHA-256 канонизированного
 блока таблицы критериев из `task.md`.
@@ -845,6 +878,9 @@ measuredBy}`: `measuredBy` обязателен и обязан указыват
    машинно не проверяются и не считаются ошибкой.
 2. `actor.session` непустой и `!== issuedBy.session`, `!== executorSession`.
 3. `independence.level` ≥ минимума риска; `declared` только для low.
+   Если записан `actor.sourceKind`: `harness`/`runner` требуют
+   `separate-session`, `ci`/`manual` — `declared`; неизвестный вид и
+   расхождение с уровнем — ошибка.
 4. High: `actor.kind = human`, `keyId` из `human-*`, `humanSignoff`, `securityReview`,
    активных обходов нет.
 5. `acceptorRun.fresh = true` для medium/high; `redExpectation.ok = true`;
@@ -970,18 +1006,41 @@ measuredBy}`: `measuredBy` обязателен и обязан указыват
 
 ## 13. Портируемость и адаптеры
 
-Всё, что зависит от харнесса, — это источник идентификатора актора.
+Всё, что зависит от харнесса, — это источник идентификатора актора. С 2.6.0 это
+не «два имени в коде», а настраиваемая цепочка `actor.sources` в
+`workflow.config.json`: каждая запись — `{ "env": "<переменная>", "kind": "<вид>" }`.
+Первый источник с непустым значением побеждает, а ВИД источника решает, чем
+подтверждена сессия.
 
-| Харнесс | Источник сессии | Примечание |
-| --- | --- | --- |
-| DSH | `DSH_SESSION_ID` (у каждого агента свой, доходит до child-процессов) | Проверено экспериментом |
-| CI | переменная окружения джобы (`CI_JOB_ID`, `GITHUB_RUN_ID`) | Уровень `separate-session` не даёт: это та же машина |
-| Иной агентный раннер | `TASK_ACTOR_SESSION` | `attestedBy: declared`, уровень не выше `declared` |
-| Человек | ключ `human-*`, `--human <кто>` | Сессии нет; независимость подтверждается ключом |
+| Вид (`kind`) | Источник сессии | `attestedBy` | Уровень | Где включается |
+| --- | --- | --- | --- | --- |
+| `harness` | харнесс агента (DSH: `DSH_SESSION_ID`, у каждого агента свой, доходит до child-процессов) | `env` | `separate-session` | шаблон конфига, по умолчанию |
+| `runner` | обёртка проекта (`WF_ACTOR_SESSION`); DSH не нужен | `env` | `separate-session` | `actor.sources` проекта |
+| `ci` | идентификатор джобы (`GITHUB_RUN_ID`, `CI_JOB_ID`) | `declared` | `declared`: та же машина, medium/high закрыты | `actor.sources` |
+| `manual` | значение выставил человек или скрипт (`TASK_ACTOR_SESSION`) | `declared` | `declared`: medium/high закрыты | `actor.sources` или legacy `fallbackEnv` |
+| человек | ключ `human-*`, `--human <кто>` | `key` | `human` | ключ человека |
+| — | окружение пустое | `none` | `declared` | — |
+
+Модель резолвится так же: `actor.modelSources` — первый непустой, иначе
+`unknown` (не «другое семейство»).
+
+Legacy-конфиг без `sources` поведения не меняет: `primaryEnv` синтезируется как
+`harness`, `fallbackEnv` — как `manual`; `primaryEnv`/`fallbackEnv`/`modelEnv`
+остаются в объекте и читаются панелью. Конфиг без этих полей не падает —
+дефолты подставляет нормализация.
 
 Правило: если окружение не даёт идентификатор, ворота не выдумывают его. Запись
 получает `attestedBy: declared` и уровень `declared`, допустимый только для low.
-Молчаливое повышение уровня запрещено.
+Молчаливое повышение уровня запрещено: `ci` и `manual` никогда не дают
+`separate-session`, а неизвестный вид источника — ошибка конфигурации (`doctor`
+красный, `task-accept` отказывает), а не разрешение.
+
+Основание видно в записи: `actor.source` (имя переменной), `actor.sourceKind`
+(вид) и `independence.basis`. `task-check-acceptance` сверяет вид с уровнем:
+`harness`/`runner` требуют `separate-session`, `ci`/`manual` — `declared`;
+записи до 2.6.0 без поля проверяются как раньше. Подключение конкретного
+харнесса — `adapters/dsh.md` (harness), `adapters/opencode.md` и
+`adapters/generic.md` (runner), `adapters/ci.md` (только проверка записей).
 
 ## 14. Антипаттерны
 

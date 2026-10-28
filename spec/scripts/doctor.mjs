@@ -63,9 +63,17 @@ check('git доступен', gitVersion.status === 0, (gitVersion.stdout || '')
 
 const root = findRepoRoot(repo);
 check('git-репозиторий найден', Boolean(root), root || 'нет .git: выполните git init');
+let config = null;
 if (root) {
-  const config = loadConfig(root);
+  config = loadConfig(root);
   check('workflow.config.json', config.loaded, config.file);
+  /*
+   * 2.6.0: битый блок actor.sources закрывает ворота, а не трактуется как
+   * «источник не настроен». Иначе неизвестный вид (kind: "vendor") молча
+   * выпал бы из цепочки, и честный проект получил бы отказ «без причины».
+   */
+  const sourceErrors = Array.isArray(config.actor.errors) ? config.actor.errors : [];
+  if (sourceErrors.length > 0) check('источники актора в конфиге', false, sourceErrors.join('; '));
   const keysPath = path.join(root, config.keysFile);
   check('acceptors.json', exists(keysPath), keysPath);
   if (exists(keysPath)) {
@@ -102,9 +110,15 @@ if (root) {
   }
 }
 
-const actor = detectActor(process.env);
+/*
+ * Актор читается с конфигом: настроенный источник (runner, ci, manual) обязан
+ * быть виден так же, как DSH. Без конфига честный проект вне DSH получал FAIL,
+ * хотя всё настроил (дефект, ради которого выпущена 2.6.0).
+ */
+const actor = detectActor(process.env, config ? config.actor : {});
 const independence = assessIndependence({ actor, issuedBy: null, executorSession: null, risk: 'medium' });
-check('актор виден окружению', actor.attestedBy === 'env', actor.attestedBy + ' / ' + (actor.session || 'нет сессии'));
+check('актор виден окружению', actor.attestedBy === 'env',
+  (actor.source || 'нет источника') + ' (' + (actor.sourceKind || 'none') + ') / ' + (actor.session || 'нет сессии'));
 check('medium возможен в этой сессии', independence.ok, independence.errors.join('; '));
 
 if (argv.json) console.log(JSON.stringify({ repo, checks }, null, 2));

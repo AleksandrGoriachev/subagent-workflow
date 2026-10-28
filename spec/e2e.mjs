@@ -4,7 +4,8 @@
  * репозитории и проходит полный цикл настоящими воротами.
  *
  * init → new-task → контракт → hash → lint → red → фикс → verify →
- * отказ самоприёмке → accept из другой сессии → check → metadata-коммит → подмена.
+ * отказ самоприёмке → accept из другой сессии (2.6.0: без DSH) → check →
+ * metadata-коммит → подмена.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -24,9 +25,16 @@ function report(label, ok, detail) {
 }
 
 function run(script, args, opts = {}) {
+  /*
+   * 2.6.0: unsetEnv нужен, чтобы сценарий «DSH нет» был честным — процесс e2e
+   * сам запускается из DSH, и унаследованный DSH_SESSION_ID сделал бы проверку
+   * вакуумной.
+   */
+  const env = { ...process.env, ...(opts.env || {}) };
+  for (const key of opts.unsetEnv || []) delete env[key];
   const r = spawnSync(process.execPath, [path.join(HERE, 'scripts', script), ...args], {
     cwd: opts.cwd || repo,
-    env: { ...process.env, ...(opts.env || {}) },
+    env,
     encoding: 'utf8',
     timeout: 300000,
   });
@@ -391,8 +399,20 @@ try {
     ],
   }, null, 2));
 
-  const accept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { env: { DSH_SESSION_ID: 'judge-session', DSH_MODEL: 'judge-model' } });
-  report('accept из другой сессии принимает задачу', accept.code === 0, accept.out);
+  /*
+   * 2.6.0: актор без DSH. Контроль — источник runner настроен шаблоном
+   * конфига, но окружение пустое: ворота отказывают, сессию не выдумывают.
+   */
+  const noSessionAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { unsetEnv: ['DSH_SESSION_ID', 'DSH_MODEL', 'WF_ACTOR_SESSION', 'WF_ACTOR_MODEL', 'TASK_ACTOR_SESSION', 'TASK_ACTOR_MODEL'] });
+  report('2.6.0: источник runner настроен, окружение пустое — приёмка medium отказывает',
+    noSessionAccept.code !== 0 && /независимости|не дало идентификатор/.test(noSessionAccept.out), noSessionAccept.out);
+
+  /*
+   * И приёмка medium проходит отдельной сессией без DSH: только обёртка
+   * проекта выставила WF_ACTOR_SESSION/WF_ACTOR_MODEL (вид runner).
+   */
+  const accept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { env: { WF_ACTOR_SESSION: 'wrapper-session', WF_ACTOR_MODEL: 'judge-model' }, unsetEnv: ['DSH_SESSION_ID', 'DSH_MODEL', 'TASK_ACTOR_SESSION', 'TASK_ACTOR_MODEL'] });
+  report('2.6.0: приёмка medium без DSH — один WF_ACTOR_SESSION даёт отдельную сессию', accept.code === 0, accept.out);
   const acceptancePath = acceptanceFile;
   const record = JSON.parse(fs.readFileSync(acceptancePath, 'utf8'));
   const candidateEntry = git(['ls-tree', record.candidateCommit, 'src/cli.mjs']).trim();
@@ -400,8 +420,12 @@ try {
   report('2.5.2: кандидат сохраняет право исполнения из индекса', candidateMode === '100755', candidateEntry);
   report('разбор замечаний и releaseReady в записи', record.releaseReady === true && record.review && record.review.remarks.length === 3, JSON.stringify({ releaseReady: record.releaseReady, review: record.review }));
   report('запись v6 с актором и уровнем независимости',
-    record.version === 6 && record.actor.session === 'judge-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
+    record.version === 6 && record.actor.session === 'wrapper-session' && record.independence.level === 'separate-session' && record.signatureAlgorithm === 'ed25519' && record.contractCommit === contractCommit,
     JSON.stringify({ version: record.version, actor: record.actor, level: record.independence.level }));
+  report('2.6.0: запись хранит источник актора и основание независимости',
+    record.actor.source === 'WF_ACTOR_SESSION' && record.actor.sourceKind === 'runner'
+      && record.actor.attestedBy === 'env' && record.independence.basis === 'runner',
+    JSON.stringify({ source: record.actor.source, sourceKind: record.actor.sourceKind, basis: record.independence.basis }));
   report('эффект записан в приёмку с измерителем',
     Array.isArray(record.effects) && record.effects.length === 1 && record.effects[0].measuredBy === 'C1',
     JSON.stringify(record.effects));

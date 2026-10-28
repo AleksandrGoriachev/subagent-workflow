@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, repoRoot } from './lib/common.mjs';
+import { detectActor } from './actor.mjs';
 
 function args(argv) {
   const out = { _: [] };
@@ -24,7 +25,8 @@ function args(argv) {
 const argv = args(process.argv.slice(2));
 if (argv.help || !argv.id) {
   console.log('Usage: node new-task.mjs --id 0001 --title "..." --risk medium [--repo .] [--executor subagent:executor] [--acceptor subagent:judge]');
-  console.log('issuedBy берётся из DSH_SESSION_ID (или TASK_ACTOR_SESSION) и DSH_MODEL.');
+  console.log('issuedBy берётся из первого непустого источника actor.sources (например DSH_SESSION_ID или WF_ACTOR_SESSION),');
+  console.log('модель — из actor.modelSources. Источник и его вид печатаются ниже.');
   process.exit(argv.id ? 0 : 1);
 }
 
@@ -39,10 +41,17 @@ const taskDir = path.join(repo, config.tasksDir, id);
 if (fs.existsSync(taskDir) && !argv.force) { console.error('new-task: каталог уже существует: ' + taskDir); process.exit(1); }
 fs.mkdirSync(taskDir, { recursive: true });
 
-const session = String(process.env[config.actor.primaryEnv] || process.env[config.actor.fallbackEnv] || '').trim();
-const model = String(process.env[config.actor.modelEnv] || process.env.TASK_ACTOR_MODEL || 'unknown');
+/* Тот же резолвер, что у ворот: источники, вид основания и модель из конфига. */
+const actor = detectActor(process.env, config.actor);
+const session = actor.session || '';
+const model = actor.model;
+const sourceErrors = Array.isArray(config.actor.errors) ? config.actor.errors : [];
+if (sourceErrors.length > 0) {
+  console.error('new-task: WARN actor.sources: ' + sourceErrors.join('; '));
+}
 if (risk !== 'low' && session === '') {
-  console.error('new-task: нет сессии постановщика (' + config.actor.primaryEnv + '): для medium/high issuedBy обязателен');
+  const configured = config.actor.sources.map((source) => source.env).join(', ') || 'нет источников';
+  console.error('new-task: нет сессии постановщика — ни один источник актора не задан (' + configured + '): для medium/high issuedBy обязателен');
   process.exit(1);
 }
 
@@ -63,7 +72,8 @@ criteria = criteria.replace(/"task": "NNNN"/, '"task": ' + JSON.stringify(id));
 fs.writeFileSync(path.join(taskDir, 'criteria.json'), criteria);
 
 console.log('new-task: создано ' + path.relative(repo, taskDir).split(path.sep).join('/'));
-if (session) console.log('  issuedBy   ' + session);
+if (session) console.log('  issuedBy   ' + session + ' [' + actor.attestedBy + '] ' + actor.source + ' (' + actor.sourceKind + ')');
+if (!session) console.log('  issuedBy   — (источник актора не задан; допустимо только для low)');
 console.log('');
 console.log('Дальше:');
 console.log('  1. Заполните цель, границы и критерии в task.md/criteria.json.');

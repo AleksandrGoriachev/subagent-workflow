@@ -10,7 +10,8 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
-import { summarizeDecisions, evaluateEffects, TOOL } from './scripts/lib/common.mjs';
+import { summarizeDecisions, evaluateEffects, TOOL, loadConfig } from './scripts/lib/common.mjs';
+import { detectActor, assessIndependence } from './scripts/actor.mjs';
 import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './scripts/lib/regress.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -213,6 +214,116 @@ try {
   fs.writeFileSync(lowPath, JSON.stringify(low, null, 2));
   const lowRun = runChecker(lowPath, repo, keysFile);
   report('low с declared-актором принимается', lowRun.status === 0, lowRun.stdout + lowRun.stderr);
+
+  /*
+   * 2.6.0: источники актора. Уровень держится не на «переменная есть», а на
+   * виде источника: harness/runner — env/separate-session, ci/manual —
+   * declared. Пустое окружение — none/declared. Legacy-конфиг не меняет
+   * поведения, неизвестный вид закрывает ворота.
+   */
+  const resolveActor = (actorConfig, env) => {
+    const actor = detectActor(env, actorConfig);
+    const independence = assessIndependence({ actor, issuedBy: null, executorSession: null, risk: 'medium' });
+    return { actor, independence };
+  };
+  const sourceCases = [
+    { kind: 'harness', envName: 'DSH_SESSION_ID', env: { DSH_SESSION_ID: 'harness-1' }, attestedBy: 'env', level: 'separate-session' },
+    { kind: 'runner', envName: 'WF_ACTOR_SESSION', env: { WF_ACTOR_SESSION: 'runner-1' }, attestedBy: 'env', level: 'separate-session' },
+    { kind: 'ci', envName: 'GITHUB_RUN_ID', env: { GITHUB_RUN_ID: '42' }, attestedBy: 'declared', level: 'declared' },
+    { kind: 'manual', envName: 'TASK_ACTOR_SESSION', env: { TASK_ACTOR_SESSION: 'manual-1' }, attestedBy: 'declared', level: 'declared' },
+  ];
+  for (const item of sourceCases) {
+    const resolved = resolveActor({ sources: [{ env: item.envName, kind: item.kind }] }, item.env);
+    report('актор ' + item.kind + ': ' + item.attestedBy + ' / ' + item.level,
+      resolved.actor.attestedBy === item.attestedBy
+        && resolved.actor.source === item.envName
+        && resolved.actor.sourceKind === item.kind
+        && resolved.independence.level === item.level
+        && resolved.independence.basis === item.kind,
+      JSON.stringify(resolved));
+  }
+
+  const emptyActor = resolveActor({ sources: [{ env: 'WF_ACTOR_SESSION', kind: 'runner' }] }, {});
+  report('пустое окружение: none/declared, сессии и источника нет',
+    emptyActor.actor.attestedBy === 'none'
+      && emptyActor.actor.session === null
+      && emptyActor.actor.source === null
+      && emptyActor.actor.sourceKind === null
+      && emptyActor.independence.level === 'declared'
+      && emptyActor.independence.basis === 'none'
+      && emptyActor.independence.ok === false,
+    JSON.stringify(emptyActor));
+
+  const cfgDir = path.join(tmp, 'config-cases');
+  const loadActorConfig = (name, actorConfig) => {
+    write(path.join(cfgDir, name + '.json'), JSON.stringify({ version: 1, actor: actorConfig }, null, 2) + '\n');
+    return loadConfig(cfgDir, name + '.json').actor;
+  };
+  const legacyConfig = loadActorConfig('legacy', { primaryEnv: 'DSH_SESSION_ID', fallbackEnv: 'TASK_ACTOR_SESSION', modelEnv: 'DSH_MODEL' });
+  report('legacy-конфиг: primary → harness, fallback → manual',
+    legacyConfig.sources.length === 2
+      && legacyConfig.sources[0].env === 'DSH_SESSION_ID' && legacyConfig.sources[0].kind === 'harness'
+      && legacyConfig.sources[1].env === 'TASK_ACTOR_SESSION' && legacyConfig.sources[1].kind === 'manual'
+      && legacyConfig.errors.length === 0,
+    JSON.stringify(legacyConfig));
+  const legacyPrimary = resolveActor(legacyConfig, { DSH_SESSION_ID: 'legacy-primary' });
+  const legacyFallback = resolveActor(legacyConfig, { TASK_ACTOR_SESSION: 'legacy-fallback' });
+  report('legacy-конфиг не меняет поведения: env/separate-session и declared',
+    legacyPrimary.actor.attestedBy === 'env' && legacyPrimary.independence.level === 'separate-session'
+      && legacyFallback.actor.attestedBy === 'declared' && legacyFallback.independence.level === 'declared',
+    JSON.stringify({ legacyPrimary, legacyFallback }));
+
+  const bareConfig = loadActorConfig('bare', { sources: [{ env: 'WF_ACTOR_SESSION', kind: 'runner' }] });
+  report('конфиг без legacy-полей не падает: дефолты подставлены',
+    bareConfig.primaryEnv === 'DSH_SESSION_ID'
+      && bareConfig.fallbackEnv === 'TASK_ACTOR_SESSION'
+      && bareConfig.modelEnv === 'DSH_MODEL'
+      && bareConfig.sources.length === 1
+      && bareConfig.errors.length === 0,
+    JSON.stringify(bareConfig));
+
+  const vendorConfig = loadActorConfig('vendor', { sources: [{ env: 'WF_ACTOR_SESSION', kind: 'vendor' }] });
+  const vendorActor = resolveActor(vendorConfig, { WF_ACTOR_SESSION: 'vendor-session' });
+  report('неизвестный вид источника: ошибка конфига, а не сессия',
+    vendorConfig.errors.length === 1
+      && /vendor/.test(vendorConfig.errors[0])
+      && vendorConfig.sources.length === 0
+      && vendorActor.actor.attestedBy === 'none'
+      && vendorActor.independence.level === 'declared',
+    JSON.stringify({ vendorConfig, vendorActor }));
+
+  const modelConfig = loadActorConfig('models', { sources: [{ env: 'WF_ACTOR_SESSION', kind: 'runner' }], modelSources: ['WF_ACTOR_MODEL'] });
+  report('модель берётся из modelSources, без них — unknown',
+    detectActor({ WF_ACTOR_SESSION: 'x', WF_ACTOR_MODEL: 'model-r' }, modelConfig).model === 'model-r'
+      && detectActor({}, { sources: [] }).model === 'unknown',
+    JSON.stringify({ model: detectActor({ WF_ACTOR_SESSION: 'x', WF_ACTOR_MODEL: 'model-r' }, modelConfig).model }));
+
+  /*
+   * Сверка записи: вид источника обязан совпадать с уровнем. Запись с
+   * runner/separate-session принимается, ci с separate-session — отклоняется
+   * словами «источник актора ci не соответствует уровню …».
+   */
+  const runnerRecord = signRecord({
+    ...base,
+    actor: { ...base.actor, source: 'WF_ACTOR_SESSION', sourceKind: 'runner' },
+    independence: { ...base.independence, basis: 'runner' },
+  }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const runnerRecordPath = path.join(tmp, 'record-runner.json');
+  fs.writeFileSync(runnerRecordPath, JSON.stringify(runnerRecord, null, 2) + '\n');
+  const runnerRecordRun = runChecker(runnerRecordPath, repo, keysFile);
+  report('запись с источником runner и separate-session принимается', runnerRecordRun.status === 0, runnerRecordRun.stdout + runnerRecordRun.stderr);
+
+  const ciRecord = signRecord({
+    ...base,
+    actor: { ...base.actor, session: 'ci-session', attestedBy: 'declared', source: 'GITHUB_RUN_ID', sourceKind: 'ci' },
+    independence: { ...base.independence, level: 'separate-session', basis: 'ci' },
+  }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
+  const ciRecordPath = path.join(tmp, 'record-ci.json');
+  fs.writeFileSync(ciRecordPath, JSON.stringify(ciRecord, null, 2) + '\n');
+  const ciRecordRun = runChecker(ciRecordPath, repo, keysFile);
+  report('источник ci с уровнем separate-session отклоняется',
+    ciRecordRun.status !== 0 && /источник актора ci не соответствует уровню/.test(ciRecordRun.stdout + ciRecordRun.stderr),
+    ciRecordRun.stdout + ciRecordRun.stderr);
 
   /*
    * 2.1.0: решения. Запись v5 с assumed-решением принимается (работа шла), но
