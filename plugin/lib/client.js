@@ -194,7 +194,18 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         unlinked: "решение ссылается мимо цепи эффекта: " + unlinkedText,
         mismatch: "ворота записали несогласованность эффекта решения",
       }[effects.status] || "состояние эффекта: " + fmt(effects.status);
-      return EFFECT_HINT + " Сейчас: " + text + ".";
+      /* 0.4.1: при decisions=off флаг не поднимается — говорим это словами. */
+      const policyNote = "severity" in effects && !effects.severity
+        ? " Политика decisions=off — панель флаг не поднимает."
+        : "";
+      return EFFECT_HINT + " Сейчас: " + text + "." + policyNote;
+    }
+
+    /* 0.4.1: цвет бейджа «эффект» — строгость флага effect-problem, не статус. */
+    function effectSeverityColor(severity) {
+      if (severity === "error") return T.danger;
+      if (severity === "warn") return T.warn;
+      return T.tertiary;
     }
 
     function regressHint(entry) {
@@ -212,6 +223,14 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
       if (task.risk) parts.push("риск " + task.risk);
       if (task.errors > 0) parts.push("блокирующих " + task.errors);
       if (task.warnings > 0) parts.push("предупреждений " + task.warnings);
+      /*
+       * 0.4.1: бейджи внутри кнопки-карточки не фокусируются, поэтому их
+       * подсказки (эффект и регресс) попадают в aria-label самой кнопки.
+       */
+      if (task.effects && task.effects.status !== "none" && task.effects.status !== "ok") {
+        parts.push(effectHint(task.effects));
+      }
+      if (task.regress) parts.push(regressHint(task.regress));
       return parts.join(", ") + ". Открыть карточку.";
     }
 
@@ -1094,7 +1113,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                     task.effects && task.effects.status !== "none" && task.effects.status !== "ok"
                       ? badge(
                           "эффект",
-                          task.effects.status === "ok" ? T.tertiary : (task.effects.status === "missing" || task.effects.status === "invalid" ? T.danger : T.warn),
+                          effectSeverityColor(task.effects.severity),
                           effectHint(task.effects),
                           false,
                         )
@@ -1409,32 +1428,59 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           );
         }
 
+        /*
+         * 0.4.1: null — это не «effect нет», а старый/неполный ответ сервера;
+         * отсутствие effect называется словами только при declared=0 и status=none.
+         * Одна формулировка вместо дубля «не требуется» (kvGrid + строка ниже).
+         */
         function renderEffects(effects) {
-          if (!effects) return h("div", { style: S.empty }, "Эффект не объявлен: в criteria.json нет ни одного effect.");
+          if (!effects) {
+            return h("div", { style: S.empty }, "Данные об эффекте недоступны: в ответе API нет раздела effects (старый сервер или старая панель).");
+          }
+          const declared = Array.isArray(effects.declared) ? effects.declared : [];
+          const links = Array.isArray(effects.links) ? effects.links : [];
+          const unlinked = Array.isArray(effects.unlinked) ? effects.unlinked : [];
+          /* 0.4.1: проекция доски присылает unlinked числом — не падаем и показываем его. */
+          const unlinkedCount = Array.isArray(effects.unlinked)
+            ? effects.unlinked.length
+            : Number(effects.unlinked) || 0;
           const statusText = {
-            none: "не заявлен и не требуется",
+            none: "нет ни одного effect — и ни одно решение не требует эффекта",
             ok: "цепь собрана",
             missing: "требуется, но не объявлен",
             invalid: "объявлен неверно",
             unlinked: "решение мимо цепи",
             mismatch: "ворота записали несогласованность",
           }[effects.status] || fmt(effects.status);
+          /*
+           * 0.4.1: checked=false — проверка не проводилась; «ok» показываем только
+           * тогда, когда ворота действительно её провели.
+           */
+          const proofText = (value) => {
+            if (!value) return "—";
+            if (!value.checked) return "не проверялось";
+            return value.ok ? "ok" : "несогласовано";
+          };
+          const rows = [
+            ["состояние", statusText],
+            ["требуется решением", effects.required ? "да" : "нет"],
+            ["критериев с effect", declared.length],
+            ["связей", links.length],
+            ["без связи", unlinkedCount],
+            ["verify.json", proofText(effects.verify)],
+            ["запись приёмки", proofText(effects.record)],
+          ];
+          if (effects.status !== "none" && effects.status !== "ok" && effects.severity === null) {
+            rows.push(["флаг", "не поднимается: policy decisions=off"]);
+          }
           return h(
             "div",
             null,
-            kvGrid([
-              ["состояние", statusText],
-              ["требуется решением", effects.required ? "да" : "нет"],
-              ["критериев с effect", effects.declared.length],
-              ["связей", effects.links.length],
-              ["без связи", effects.unlinked.length],
-              ["verify.json", effects.verify ? (effects.verify.ok ? "ok" : "несогласовано") : "—"],
-              ["запись приёмки", effects.record ? (effects.record.ok ? "ok" : "несогласовано") : "—"],
-            ]),
-            effects.declared.length
+            kvGrid(rows),
+            declared.length
               ? table(
                   ["критерий", "наблюдаемо", "порог", "измеритель"],
-                  effects.declared.map((item) => [
+                  declared.map((item) => [
                     item.criterion,
                     item.observable || "—",
                     item.threshold || "—",
@@ -1442,30 +1488,43 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   ]),
                 )
               : null,
-            effects.links.length
+            links.length
               ? h(
                   "ul",
                   { style: S.list },
-                  effects.links.map((link, index) => h(
+                  links.map((link, index) => h(
                     "li",
                     { key: index },
                     "решение " + link.decision + " → " + link.ref + " (цепь " + link.criterion + "→" + link.measuredBy + ")",
                   )),
                 )
               : null,
-            effects.unlinked.length
+            unlinked.length
               ? h(
                   "div",
                   { style: Object.assign({}, S.hint, { color: T.danger, marginTop: "8px" }) },
-                  "Мимо цепи: " + effects.unlinked.map((item) => item.decision + "→" + item.ref).join(", "),
+                  "Мимо цепи: " + unlinked.map((item) => item.decision + "→" + item.ref).join(", "),
                 )
               : null,
-            effects.issues.length
+            Array.isArray(effects.issues) && effects.issues.length
               ? h("ul", { style: S.list }, effects.issues.map((message, index) => h("li", { key: index }, message)))
               : null,
-            effects.status === "none" && effects.required === false
-              ? h("div", { style: S.hint }, "Эффект не требуется: нет решения с impact user-visible или public-contract.")
-              : null,
+          );
+        }
+
+        /* 0.4.1: регресс-долг из regress.baseline.json — в карточке, не только бейджем на доске. */
+        function renderRegress(entry) {
+          if (!entry) return h("div", { style: S.empty }, "В regress.baseline.json записи по этому заданию нет.");
+          return h(
+            "div",
+            null,
+            kvGrid([
+              ["статус", fmt(entry.status)],
+              ["since", entry.since || "—"],
+              ["reviewBy", entry.reviewBy ? entry.reviewBy + (entry.expired ? " — срок истёк" : "") : "—"],
+              ["reason", entry.reason || "—"],
+            ]),
+            h("div", { style: S.hint }, REGRESS_HINT),
           );
         }
 
@@ -1603,6 +1662,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             section("Покрытие", renderCoverage(card.coverage)),
             section("Атака", renderAttack(card.attack)),
             section("Запись", renderRecord(card.record)),
+            section("Регресс", renderRegress(card.regress)),
             section("Git", renderGit(card.git)),
           );
         }

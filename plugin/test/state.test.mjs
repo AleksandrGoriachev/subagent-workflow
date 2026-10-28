@@ -22,6 +22,7 @@ import {
   sha256 as specSha256,
   summarizeDecisions as specSummarizeDecisions,
   loadConfig as specLoadConfig,
+  evaluateEffects as specEvaluateEffects,
 } from '../../spec/scripts/lib/common.mjs';
 import { policyOf as specPolicyOf, familyOf as specFamilyOf } from '../../spec/scripts/lib/policy.mjs';
 
@@ -325,6 +326,70 @@ test('effectsView: без решений с impact и без effect — none, а
   const view = effectsView({ decisions: [] }, [{ id: 'C1' }]);
   assert.equal(view.status, 'none');
   assert.equal(view.required, false);
+});
+
+/*
+ * 0.4.1: панель повторяет правило ворот, а не своё. Ворота (userFacingDecisions)
+ * требуют effect для ЛЮБОГО решения с impact user-visible/public-contract — без
+ * оглядки на class и evidence. Панель раньше требовала ещё class
+ * semantic|contract и evidence.kind=criterion и могла сказать «эффект не
+ * требуется», когда ворота дают ошибку. Сверяем с evaluateEffects из
+ * spec/scripts/lib/common.mjs: тест фиксирует совпадение, а не мнение панели.
+ */
+test('effectsView: required и missing — ровно правило ворот, без оглядки на class/evidence', () => {
+  const criteria = [{ id: 'C1' }, { id: 'C2' }];
+  const cases = [
+    {
+      name: 'class=mechanical, impact=user-visible, effect нет',
+      decisions: [{ id: 'D1', class: 'mechanical', impact: 'user-visible' }],
+    },
+    {
+      name: 'class нет, impact=public-contract, effect нет',
+      decisions: [{ id: 'D1', impact: 'public-contract' }],
+    },
+    {
+      name: 'evidence не критерий, impact=user-visible',
+      decisions: [{ id: 'D1', class: 'semantic', impact: 'user-visible', evidence: { kind: 'human' } }],
+    },
+    {
+      name: 'impact=internal — эффект не требуется',
+      decisions: [{ id: 'D1', class: 'semantic', impact: 'internal', evidence: { kind: 'criterion', ref: 'C1' } }],
+    },
+    { name: 'решений нет', decisions: [] },
+  ];
+  for (const item of cases) {
+    const meta = { decisions: item.decisions };
+    const view = effectsView(meta, criteria);
+    const gate = specEvaluateEffects(meta, { criteria });
+    assert.equal(view.required, gate.required, item.name + ': required совпадает с воротами');
+    const gateMissing = gate.issues.some((message) => /ни один критерий не объявляет effect/.test(message));
+    assert.equal(view.status === 'missing', gateMissing, item.name + ': «missing» совпадает с ошибкой ворот');
+  }
+});
+
+/*
+ * 0.4.1: бейдж «эффект» на доске красится строгостью флага effect-problem, а
+ * строгость берётся из политики. При decisions=off флага нет — нет и severity.
+ */
+test('boardTask: строгость проблемы эффекта приходит из policy, а не из статуса', () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    const on = readRepository(fixture.repo).tasks.find((item) => item.id === '0001');
+    assert.equal(on.effects.status, 'missing');
+    assert.equal(on.effects.severity, 'error');
+    assert.ok(on.flags.some((flag) => flag.code === 'effect-problem' && flag.severity === 'error'));
+
+    const configPath = path.join(fixture.repo, 'docs/subagent-workflow/workflow.config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    config.policy.decisions = 'off';
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+    const off = readRepository(fixture.repo).tasks.find((item) => item.id === '0001');
+    assert.equal(off.effects.status, 'missing', 'статус тот же: эффекта по-прежнему нет');
+    assert.equal(off.effects.severity, null, 'при off строгости нет');
+    assert.ok(!off.flags.some((flag) => flag.code === 'effect-problem'), 'при off флага нет');
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('readBaseline: читает долг и помечает просроченный срок', () => {

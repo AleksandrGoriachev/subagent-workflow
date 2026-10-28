@@ -465,6 +465,18 @@ export function effectsView(meta, criteriaList, { verify = null, record = null }
     });
   }
 
+  /*
+   * 0.4.1: «эффект требуется» — ровно правило ворот (userFacingDecisions,
+   * spec/scripts/lib/common.mjs): любое решение с impact user-visible или
+   * public-contract, без оглядки на class и evidence. Раньше панель требовала
+   * ещё class semantic|contract и evidence.kind=criterion — и могла сказать
+   * «эффект не требуется», когда ворота дают ошибку. Список applicable ниже
+   * остаётся узким: он про цепь доказательства (isEffectLinkApplicable).
+   */
+  const userFacing = (meta && Array.isArray(meta.decisions) ? meta.decisions : []).filter(
+    (decision) => decision && (decision.impact === 'user-visible' || decision.impact === 'public-contract'),
+  );
+
   const applicable = (meta && Array.isArray(meta.decisions) ? meta.decisions : []).filter((decision) => {
     if (!decision || typeof decision !== 'object' || Array.isArray(decision)) return false;
     if (decision.class !== 'semantic' && decision.class !== 'contract') return false;
@@ -488,7 +500,7 @@ export function effectsView(meta, criteriaList, { verify = null, record = null }
     }
   }
 
-  const required = applicable.length > 0;
+  const required = userFacing.length > 0;
   const verifyEffects = verify && verify.effects && typeof verify.effects === 'object'
     ? {
         required: verify.effects.required === true,
@@ -815,8 +827,16 @@ export function buildTaskState(input = {}) {
   const coverageInfo = coverageView(verify);
   const recordInfo = recordView(acceptance);
   const effectsInfo = effectsView(meta, criteria, { verify, record: acceptance });
+  /*
+   * 0.4.1: строгость проблемы эффекта — из политики. Панель проецирует её в
+   * boardTask, чтобы бейдж доски красился флагом effect-problem, а не статусом:
+   * при decisions=off флага нет, и красный бейдж врал бы.
+   */
+  effectsInfo.severity = effectsInfo.status !== 'none' && effectsInfo.status !== 'ok'
+    ? (policy.decisions === 'fail' ? 'error' : policy.decisions === 'warn' ? 'warn' : null)
+    : null;
   if (effectsInfo.status !== 'none' && effectsInfo.status !== 'ok') {
-    const level = policy.decisions === 'fail' ? 'error' : policy.decisions === 'warn' ? 'warn' : null;
+    const level = effectsInfo.severity;
     const text = {
       missing: 'решение с impact user-visible/public-contract требует эффекта, но ни один критерий его не объявляет',
       invalid: 'эффект объявлен неверно: ' + effectsInfo.issues.join('; '),
@@ -1085,6 +1105,8 @@ export function boardTask(state) {
           declared: state.effects.declared.length,
           links: state.effects.links.length,
           unlinked: state.effects.unlinked.length,
+          /* 0.4.1: строгость флага effect-problem (error/warn/null при decisions=off). */
+          severity: state.effects.severity || null,
         }
       : null,
     /* 0.4.0: запись в regress.baseline.json — единственный след регресса на диске. */

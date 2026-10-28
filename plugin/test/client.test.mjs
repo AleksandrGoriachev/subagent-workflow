@@ -51,6 +51,12 @@ function findButton(tree, text) {
   );
 }
 
+function findBadge(tree, text) {
+  return elements(tree).find(
+    (element) => element.type === 'span' && textOf(element).replace(/\s+/g, ' ').trim() === text,
+  );
+}
+
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -363,6 +369,143 @@ test('badges explain themselves: hints on hover and focus (WC-1)', async () => {
     );
     assert.ok(flagCode, 'код флага в карточке');
     assert.match(flagCode.props.title, /защищённые файлы/i);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+/*
+ * 0.4.1: бейджи внутри кнопки-карточки не фокусируются, поэтому подсказки
+ * эффекта и регресса обязаны попадать в aria-label самой кнопки. И в карточке
+ * появляется раздел «Регресс» с просроченным reviewBy.
+ */
+test('card aria-label carries effect and regress hints, card shows «Регресс» (0.4.1)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    fs.writeFileSync(path.join(fixture.repo, 'regress.baseline.json'), JSON.stringify({
+      version: 1,
+      generatedAt: '2026-10-01T00:00:00.000Z',
+      entries: [{
+        task: '0001',
+        status: 'unproven-lawful',
+        reason: 'low: красный прогон не требуется',
+        since: '2026-10-01',
+        reviewBy: '2000-01-01',
+      }],
+    }, null, 2) + '\n');
+
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+
+    const cardButton = findButton(tree, '0001');
+    const aria = cardButton.props['aria-label'];
+    assert.match(aria, /Эффект решения/u, 'подсказка эффекта в aria-label кнопки');
+    assert.match(aria, /Регресс-долг/u, 'подсказка регресса в aria-label кнопки');
+    assert.match(aria, /unproven-lawful/u);
+    assert.match(aria, /срок истёк/u);
+
+    const effectBadge = findBadge(tree, 'эффект');
+    assert.ok(effectBadge, 'бейдж «эффект» на доске');
+    assert.match(effectBadge.props.title, /требует эффекта/u);
+    assert.equal(effectBadge.props.tabIndex, undefined, 'внутри кнопки бейдж не фокусируется');
+
+    const regressBadge = findBadge(tree, 'регресс: unproven-lawful');
+    assert.ok(regressBadge, 'бейдж регресса на доске');
+    assert.equal(regressBadge.props.tabIndex, undefined, 'внутри кнопки бейдж не фокусируется');
+
+    cardButton.props.onClick();
+    await delay(120);
+    const rendered = textOf(hooks.render(slot.component));
+    assert.match(rendered, /Регресс/u, 'раздел «Регресс» в карточке');
+    assert.match(rendered, /reviewBy/u);
+    assert.match(rendered, /unproven-lawful/u);
+    assert.match(rendered, /2000-01-01 — срок истёк/u);
+    assert.match(rendered, /low: красный прогон не требуется/u);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+/*
+ * 0.4.1: цвет бейджа «эффект» — строгость флага effect-problem из политики.
+ * Статус missing одинаков во всех трёх случаях, значит различие даёт policy.
+ */
+test('badge «эффект» colored by policy severity, not by status (0.4.1)', async () => {
+  const cases = [
+    { policy: 'fail', token: '#ec1313', hint: /требует эффекта/u },
+    { policy: 'warn', token: '#f59e0b', hint: /требует эффекта/u },
+    { policy: 'off', token: 'rgba(127,127,127,0.78)', hint: /decisions=off/u },
+  ];
+  for (const item of cases) {
+    const fixture = makeRepo({ stage: 'remarks' });
+    try {
+      const configPath = path.join(fixture.repo, 'docs', 'subagent-workflow', 'workflow.config.json');
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      config.policy.decisions = item.policy;
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+
+      const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+      globalThis.fetch = apiFetch(handler);
+      const hooks = makeReact();
+      const plugin = await loadBundle(hooks.React);
+      const slot = mount(plugin);
+      let tree = hooks.render(slot.component);
+      hooks.drain();
+      await delay(120);
+      tree = hooks.render(slot.component);
+
+      const effectBadge = findBadge(tree, 'эффект');
+      assert.ok(effectBadge, 'бейдж «эффект» при decisions=' + item.policy);
+      assert.ok(
+        String(effectBadge.props.style.color).includes(item.token),
+        'decisions=' + item.policy + ': цвет бейджа из строгости (' + effectBadge.props.style.color + ')',
+      );
+      assert.match(effectBadge.props.title, item.hint);
+    } finally {
+      fixture.cleanup();
+    }
+  }
+});
+
+/*
+ * 0.4.1: checked=false — это «не проверялось», а не «ok». «ok» показываем
+ * только когда ворота действительно провели проверку.
+ */
+test('card says «не проверялось» when gates did not check the effect (0.4.1)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    const verifyPath = path.join(fixture.taskDir, 'verify.json');
+    const verify = JSON.parse(fs.readFileSync(verifyPath, 'utf8'));
+    verify.effects = { required: true, checked: false, ok: true };
+    fs.writeFileSync(verifyPath, JSON.stringify(verify, null, 2) + '\n');
+    const recordPath = path.join(fixture.taskDir, 'acceptance.json');
+    const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'));
+    record.effectConsistency = { checked: false, ok: true };
+    fs.writeFileSync(recordPath, JSON.stringify(record, null, 2) + '\n');
+
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+    findButton(tree, '0001').props.onClick();
+    await delay(120);
+    const rendered = textOf(hooks.render(slot.component));
+
+    assert.match(rendered, /не проверялось/u);
+    assert.ok(!/verify\.json\s+ok/u.test(rendered), 'verify.json не должен выглядеть проверенным');
+    assert.ok(!/запись приёмки\s+ok/u.test(rendered), 'запись приёмки не должна выглядеть проверенной');
   } finally {
     fixture.cleanup();
   }

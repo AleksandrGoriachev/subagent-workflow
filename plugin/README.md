@@ -4,6 +4,37 @@ Read-only Web panel for [subagent-workflow](../README.md) repositories inside
 DeepSeek Harness. It reads task artifacts and `workflow.config.json`, and never
 runs a gate, writes a file, or changes `policy`.
 
+## 0.4.1 — панель повторяет ворота в эффекте, регресс в карточке
+
+Закрыты замечания независимого ревью 0.4.0.
+
+- **Правило «эффект требуется» взято у ворот.** `effectsView` больше не добавляет
+  своих условий (`class: semantic|contract`, `evidence.kind=criterion`): эффект
+  требуется для любого решения с `impact: user-visible|public-contract`, как в
+  `userFacingDecisions` из `spec/scripts/lib/common.mjs`. Тест сверяет `required`
+  и `missing` с `evaluateEffects`: решение `class: mechanical` с
+  `impact: user-visible` и без `effect` даёт `missing`, а не «эффект не
+  требуется».
+- **Подсказки эффекта и регресса доступны с клавиатуры.** `aria-label` кнопки
+  карточки на доске содержит подсказки бейджей «эффект» и «регресс» (сами бейджи
+  внутри кнопки не фокусируются).
+- **Карточка: раздел «Регресс».** Статус, `since`, `reviewBy` с пометкой «срок
+  истёк» и причина из `regress.baseline.json`; без записи — «в
+  regress.baseline.json записи по этому заданию нет».
+- **«Не проверялось» вместо «ok».** При `checked: false` в `verify.json` и в
+  записи приёмки панель пишет «не проверялось»; «ok» остаётся только после
+  реальной проверки.
+- **Цвет бейджа «эффект» — из политики.** `boardTask` проецирует строгость флага
+  `effect-problem`: `decisions: fail` — error (красный), `warn` —
+  предупреждение, `off` — нейтральный и без флага. Раньше цвет зависел от
+  статуса, и при `off` бейдж был красным.
+- **Карточка терпима к старому ответу и к проекции доски.** `effects: null` — это
+  «данные об эффекте недоступны (старый ответ API)», а не «effect нет»; «нет ни
+  одного effect» говорится только при `declared: 0` и `status: none`;
+  `unlinked` числом не ломает карточку. Убраны мёртвая ветка `status: ok` в
+  бейдже и дубль «не требуется».
+- Тестов 74 (было 69).
+
 ## 0.4.0 — доказательство и эффект, регресс-долг (WC-5)
 
 Закрыт пробел 2.3–2.4: панель читает то, что ворота этих версий пишут в файлы.
@@ -163,7 +194,7 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.4.0, supports workflow
+The **Совместимость** tab compares the plugin (0.4.1, supports workflow
 2.0.0 – 2.4.x, включая `effect` и регресс-долг) with the deployed copy: VERSION/SPEC,
 required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
