@@ -1,0 +1,100 @@
+{
+  "task": "0014",
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "reasons": {
+      "C1": "PANEL DEPLOY OK"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Развёртывание из панели: модуль, API, кнопка, сборка",
+      "command": "node spec/checks/panel-deploy.mjs",
+      "timeoutMs": 600000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/**",
+        "tools/pack-plugin.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL DEPLOY OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сквозной цикл пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Тесты панели",
+      "command": "node plugin/tools/test.mjs",
+      "timeoutMs": 600000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Версия спеки не изменилась",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.2"
+      }
+    }
+  ]
+}
