@@ -5,7 +5,7 @@
  * 1. Схема приёмки знает новые поля записи (actor.source, actor.sourceKind,
  *    independence.basis), по-прежнему принимает записи без них и отклоняет
  *    незнакомое поле (контроль: иначе «дописали в схему» ничего не доказывает).
- * 2. Манифест плагина готов к установке из tarball: версия 0.6.0, engines.dsh,
+ * 2. Манифест плагина готов к установке из tarball: версия 0.7.0, engines.dsh,
  *    dsh.bundle, dsh.client, состав files.
  * 3. Сборщик tools/pack-plugin.mjs умеет --plan и печатает стабильное и
  *    версионированное имена ассетов.
@@ -104,7 +104,7 @@ if (pkg) {
   const v = String(pkg.version || '');
   if (pkg.name !== 'dsh-workflow-console') fail('имя плагина', String(pkg.name));
   else pass('имя плагина dsh-workflow-console');
-  if (v !== '0.6.0') fail('версия плагина 0.6.0', v); else pass('версия плагина 0.6.0');
+  if (v !== '0.7.0') fail('версия плагина 0.7.0', v); else pass('версия плагина 0.7.0');
   const engines = pkg.engines || {};
   if (engines.dsh !== '>=0.2.0-0 <0.3.0') fail('engines.dsh', JSON.stringify(engines.dsh));
   else pass('engines.dsh объявлен');
@@ -114,7 +114,8 @@ if (pkg) {
   if (!dsh.client || dsh.client.platform !== 'web') fail('dsh.client.platform', JSON.stringify(dsh.client));
   else pass('dsh.client.platform web');
   const files = Array.isArray(pkg.files) ? pkg.files : [];
-  const needed = ['lib', 'cordis.patch.yml', 'README.md'];
+  /* 0.7.0: vendor — вложенная спека, без неё кнопка развернуть движок не может. */
+  const needed = ['lib', 'cordis.patch.yml', 'README.md', 'vendor'];
   const missing = needed.filter((item) => !files.includes(item));
   if (missing.length) fail('files плагина', 'нет ' + missing.join(', '));
   else pass('files плагина полный');

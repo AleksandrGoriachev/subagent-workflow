@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createWorkflowRuntime, createWebHandler } from '../lib/api.js';
-import { makeRepo } from './fixture.mjs';
+import { makeRepo, git } from './fixture.mjs';
 
 const ELEMENT = Symbol.for('react.element');
 
@@ -637,6 +638,179 @@ test('panel does not substitute a foreign project: empty state first, configured
     assert.match(text, /Сложение возвращает сумму/);
   } finally {
     fixture.cleanup();
+  }
+});
+
+/*
+ * 0.7.0: в пространстве без движка пустое состояние не отправляет в терминал, а
+ * предлагает кнопку. Подтверждение перечисляет, что появится в проекте; отказ от
+ * подтверждения не пишет ничего; после согласия движок разворачивается и панель
+ * перечитывает состояние.
+ */
+test('empty state deploys the engine with confirmation (0.7.0)', async () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-deploy-'));
+  git(repo, ['init', '-q']);
+  git(repo, ['config', 'user.email', 'deploy@local']);
+  git(repo, ['config', 'user.name', 'deploy']);
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(80);
+    tree = hooks.render(slot.component);
+    let rendered = textOf(tree);
+    assert.match(rendered, /workflow не развёрнут/u);
+
+    let deploy = findButton(tree, 'Развернуть workflow здесь');
+    assert.ok(deploy, 'кнопка развёртывания в пустом состоянии');
+    assert.match(deploy.props.title, /Развернуть движок/u);
+
+    /* Отказ в подтверждении: ни файлов, ни каталогов. */
+    const questions = [];
+    globalThis.window.confirm = (text) => {
+      questions.push(String(text));
+      return false;
+    };
+    deploy.props.onClick();
+    await delay(80);
+    assert.equal(fs.existsSync(path.join(repo, 'docs')), false, 'без подтверждения ничего не создаётся');
+    assert.equal(questions.length, 1);
+    assert.match(questions[0], /docs\/subagent-workflow\//u);
+    assert.match(questions[0], /docs\/tasks\//u);
+    assert.match(questions[0], /\.gitignore/u);
+    assert.match(questions[0], /core\.hooksPath/u);
+
+    /* Согласие: пока движок ставится, кнопка честно говорит «Разворачиваю…». */
+    globalThis.window.confirm = () => true;
+    tree = hooks.render(slot.component);
+    findButton(tree, 'Развернуть workflow здесь').props.onClick();
+    assert.ok(findButton(hooks.render(slot.component), 'Разворачиваю'), 'состояние «Разворачиваю…»');
+
+    const repoVersion = fs.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim();
+    const versionFile = path.join(repo, 'docs', 'subagent-workflow', 'VERSION');
+    for (let attempt = 0; attempt < 60 && !fs.existsSync(versionFile); attempt += 1) {
+      await delay(200);
+      hooks.drain();
+      hooks.render(slot.component);
+    }
+    assert.ok(fs.existsSync(versionFile), 'кнопка развернула движок');
+    assert.equal(fs.readFileSync(versionFile, 'utf8').trim(), repoVersion);
+
+    /* Панель перечитала состояние: успех с версией и настоящая доска вместо пустоты. */
+    let finalText = '';
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      await delay(100);
+      hooks.drain();
+      tree = hooks.render(slot.component);
+      finalText = textOf(tree);
+      if (finalText.includes('версия ' + repoVersion)) break;
+    }
+    assert.match(finalText, /Workflow развёрнут: версия /u);
+    assert.ok(finalText.includes('версия ' + repoVersion), 'показана версия развёрнутого движка');
+    assert.match(finalText, /Перечитано|перечитала состояние/u);
+    assert.ok(!findButton(tree, 'Развернуть workflow здесь'), 'после развёртывания кнопка больше не предлагается');
+    assert.match(finalText, /В этом репозитории нет задач workflow/u);
+  } finally {
+    try {
+      fs.rmSync(repo, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+    } catch {
+      /* утечка временного каталога не отменяет проверенное поведение */
+    }
+  }
+});
+
+test('deploy failure shows the code and the init tail (0.7.0)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-nogit-'));
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [dir] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(80);
+    tree = hooks.render(slot.component);
+    const deploy = findButton(tree, 'Развернуть workflow здесь');
+    assert.ok(deploy, 'кнопка есть и в не-git пространстве: отказ объясняет сервер');
+
+    globalThis.window.confirm = () => true;
+    deploy.props.onClick();
+    let rendered = '';
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      await delay(100);
+      hooks.drain();
+      rendered = textOf(hooks.render(slot.component));
+      if (/not-a-repo/u.test(rendered)) break;
+    }
+    assert.match(rendered, /Развернуть не удалось/u);
+    assert.match(rendered, /not-a-repo/u, 'код отказа виден в плашке');
+    assert.match(rendered, /не git-репозиторий/u);
+    assert.equal(fs.existsSync(path.join(dir, 'docs')), false, 'отказ ничего не пишет');
+  } finally {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
+  }
+});
+
+/*
+ * 0.7.0: пустое состояние — не единственный вход. Вкладка «Совместимость» в
+ * пространстве без движка показывает ту же кнопку и тот же список изменений:
+ * «workflow не развёрнут» не должен отправлять в терминал ни с одного экрана.
+ */
+test('compatibility tab offers the same deploy button (0.7.0)', async () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-compat-deploy-'));
+  git(repo, ['init', '-q']);
+  git(repo, ['config', 'user.email', 'deploy@local']);
+  git(repo, ['config', 'user.name', 'deploy']);
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(80);
+    findButton(tree, 'Совместимость').props.onClick();
+    await delay(40);
+    tree = hooks.render(slot.component);
+    const rendered = textOf(tree);
+    assert.match(rendered, /совместимость станет доступна после развёртывания/u);
+    assert.match(rendered, /Развёртывание движка/u);
+
+    const deploy = findButton(tree, 'Развернуть workflow здесь');
+    assert.ok(deploy, 'кнопка развёртывания на вкладке «Совместимость»');
+    assert.match(deploy.props.title, /Развернуть движок/u);
+
+    /* Подтверждение то же: отказ ничего не пишет, даже если это вкладка совместимости. */
+    const questions = [];
+    globalThis.window.confirm = (text) => {
+      questions.push(String(text));
+      return false;
+    };
+    deploy.props.onClick();
+    await delay(80);
+    assert.equal(questions.length, 1);
+    assert.match(questions[0], /docs\/subagent-workflow\//u);
+    assert.match(questions[0], /core\.hooksPath/u);
+    assert.equal(fs.existsSync(path.join(repo, 'docs')), false, 'без подтверждения ничего не создаётся');
+  } finally {
+    try {
+      fs.rmSync(repo, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+    } catch {
+      /* утечка временного каталога не отменяет проверенное поведение */
+    }
   }
 });
 

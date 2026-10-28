@@ -30,6 +30,9 @@
       (покрытие индекса, отказ вне задания, метка обхода и аудит, хуки, панель)
 - [ ] схема записи: `node spec/checks/acceptance-schema.mjs` →
       `ACCEPTANCE SCHEMA OK` (она же проверяется в CI, джоба `test`)
+- [ ] развёртывание из панели: `node spec/checks/panel-deploy.mjs` →
+      `PANEL DEPLOY OK` (модуль, маршрут, кнопка, версия 0.7.0 и vendor в files;
+      в CI — джоба `test`, сразу после приёмочных проверок; задание 0015)
 - [ ] источники актора: `node spec/checks/actor-sources.mjs` → `ACTOR SOURCES OK`
       (runner/harness дают `separate-session`, ci/manual — `declared`, пустое
       окружение и неизвестный вид источника закрывают ворота; legacy-конфиг без
@@ -57,6 +60,12 @@
       без правки манифеста; `node tools/pack-plugin.mjs --plan` печатает имена,
       а `tar -tzf dist/dsh-workflow-console.tgz` содержит `package/package.json`,
       `package/lib/`, `package/cordis.patch.yml` и `package/README.md`
+- [ ] **в tarball вложена спека** (0.7.0): `tar -tzf dist/dsh-workflow-console.tgz`
+      содержит `package/vendor/spec/scripts/init.mjs` и `package/vendor/VERSION`;
+      панель разворачивает движок из них офлайн, версия движка = версия tarball.
+      `tools/pack-plugin.mjs` кладёт спеку перед `npm pack` и убирает после (в том
+      числе при ошибке) — в `git status` каталога `plugin/vendor/` оставаться не
+      должно; `--plan` не пишет ничего
 - [ ] распаковать в пустой каталог, `node tools/verify.mjs` — число файлов и хеши
 - [ ] из распакованного архива: `node spec/selftest.mjs` — зелёный
 - [ ] `init --force` из архива на копию проекта: `VERSION` и `TOOL` новые,
@@ -88,6 +97,10 @@
 - [ ] в джобе `test` сразу после `e2e` идёт шаг `node spec/checks/hooks-mode.mjs`
       и зелёный на ubuntu и windows; шага `chmod +x spec/hooks/*` нет — CI не
       подменяет права под тестами (2.5.2)
+- [ ] в джобе `test` после приёмочных проверок идёт шаг
+      `node spec/checks/panel-deploy.mjs` и зелёный на ubuntu и windows: кнопка
+      развёртывания и сборка vendor проверяются на каждом пуше, а не только в
+      задании (0.7.0)
 - [ ] если красный: сначала причина (код или инфраструктура), потом пуш
 
 ## 7. Развёрнутые копии

@@ -2,9 +2,10 @@
  * dsh-workflow-console client half (classic browser module).
  *
  * Registered through the DSH module loader as a conversation view: a board of
- * workflow tasks, a task card and the policy page. Read-mostly: the only POST
- * routes are the read-only gates of /api/run and the guard flag (/api/guard) —
- * the panel's single write, logged to docs/subagent-workflow/guard.log.
+ * workflow tasks, a task card and the policy page. Read-mostly: POST routes are
+ * the read-only gates of /api/run, the guard flag (/api/guard) and one explicit
+ * deployment of the engine into the open workspace (/api/deploy, only with
+ * confirm: true) — the panel's two writes, both behind a confirmation.
  *
  * Kept as plain classic JS on purpose — DSH serves lib/client.js directly and
  * third-party plugin clients have no bundler (same approach as dsh-llm-memory).
@@ -22,6 +23,21 @@ window.__ModuleLoader__.load({
     const VIEW_ID = "workflow";
     const VIEW_LABEL = "Workflow";
     const ORDER = 40;
+
+    /*
+     * 0.7.0: развёртывание движка. Кнопка ставит вложенную в tarball спеку в
+     * открытое пространство; корень выбирает сервер (selectRoot), поэтому
+     * клиент не может «развернуть в чужой проект».
+     */
+    const DEPLOY_LABEL = "Развернуть workflow здесь";
+    const DEPLOY_ROUTE = "/api/deploy";
+    /* Что именно появится в проекте: этот список показывает подтверждение. */
+    const DEPLOY_CHANGES = [
+      "docs/subagent-workflow/ — движок, ворота, шаблоны, хуки и публичный ключ приёмщика;",
+      "docs/tasks/ — каталог заданий (пустой, если его ещё нет);",
+      ".gitignore — строки журналов прогонов и guard.log;",
+      "git config core.hooksPath = docs/subagent-workflow/hooks (локально, не глобально).",
+    ];
 
     const STAGES = [
       {
@@ -543,6 +559,16 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
       return error && error.message ? error.message : String(error);
     }
 
+    /*
+     * Хвост вывода для отказа: init печатает десятки строк, а панель показывает
+     * последнее — по нему видно, на каком файле или ключе развёртывание встало.
+     */
+    function tailText(text, limit) {
+      const value = String(text || "");
+      if (value.length <= limit) return value;
+      return "…\n" + value.slice(value.length - limit);
+    }
+
     async function readJson(response) {
       const text = await response.text();
       let data = null;
@@ -781,6 +807,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         const [showAllRoots, setShowAllRoots] = React.useState(false);
         const [guardBusy, setGuardBusy] = React.useState(false);
         const [guardNote, setGuardNote] = React.useState(null);
+        const [deployBusy, setDeployBusy] = React.useState(false);
+        const [deployNote, setDeployNote] = React.useState(null);
 
         async function load(selectedRoot, explicit = false) {
           setBusy(true);
@@ -910,7 +938,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         }
 
         /*
-         * Единственная запись панели: guard.enabled для текущего пространства.
+         * Первая из двух записей панели: guard.enabled для текущего пространства.
          * Подтверждение обязательно — включение меняет то, что происходит с
          * git commit и git push в этом репозитории. Журнал guard.log фиксирует
          * оба перехода.
@@ -945,6 +973,82 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             setError(errorText(failure));
           } finally {
             setGuardBusy(false);
+          }
+        }
+
+        /*
+         * 0.7.0: развёртывание движка в это же пространство.
+         *
+         * Корень — только свой: показанный репозиторий, иначе текущий workspace,
+         * иначе корень по умолчанию. Произвольный путь клиент не присылает, и
+         * сервер всё равно сверяет его с runtime.roots (selectRoot).
+         */
+        function deployTarget() {
+          if (root) return root;
+          if (currentWorkspace && currentWorkspace.path) return currentWorkspace.path;
+          if (status && status.root) return status.root;
+          return null;
+        }
+
+        function deployConfirmation(target) {
+          return [
+            "Развернуть workflow в этом пространстве?",
+            "",
+            target,
+            "",
+            "Будут созданы:",
+            ...DEPLOY_CHANGES.map((line) => "— " + line),
+            "",
+            "Это одна запись в проект; отменить её из панели нельзя. Продолжить?",
+          ].join("\n");
+        }
+
+        async function deployWorkflowHere() {
+          const target = deployTarget();
+          if (!target || deployBusy) return;
+          const question = deployConfirmation(target);
+          if (typeof window !== "undefined" && typeof window.confirm === "function" && !window.confirm(question)) return;
+          setDeployBusy(true);
+          setDeployNote(null);
+          setError(null);
+          try {
+            const response = await fetch(BASE + DEPLOY_ROUTE, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ root: target, confirm: true }),
+            });
+            /*
+             * Ответ читаем сами: у отказа (400) в теле code и хвост лога, а
+             * readJson превратил бы их в одну строку ошибки.
+             */
+            const text = await response.text();
+            let data = {};
+            try {
+              data = text.length > 0 ? JSON.parse(text) : {};
+            } catch {
+              data = { error: "ответ не JSON: HTTP " + response.status };
+            }
+            if (!response.ok || data.ok !== true) {
+              setDeployNote({
+                kind: "error",
+                code: data.code || "http-" + response.status,
+                text: data.error || "развёртывание не выполнено: HTTP " + response.status,
+                log: data.log || "",
+              });
+              return;
+            }
+            setDeployNote({
+              kind: "ok",
+              code: null,
+              text: "Workflow развёрнут: версия " + fmt(data.version) + ". Панель перечитала состояние.",
+              log: "",
+            });
+            /* Перечитываем состояние: пустое состояние сменяется доской. */
+            await load(target, true);
+          } catch (failure) {
+            setDeployNote({ kind: "error", code: "network", text: errorText(failure), log: "" });
+          } finally {
+            setDeployBusy(false);
           }
         }
 
@@ -1205,14 +1309,14 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         function renderBoard() {
           if (!board) {
             if (status && status.error) return h("div", { style: S.empty }, status.error);
-            return h(
+            const empty = h(
               "div",
               { style: S.empty },
               h("div", { style: { fontWeight: 600, marginBottom: "6px" } }, "В этом пространстве workflow не развёрнут"),
               h("div", { style: S.hint },
-                "Панель показывает только то пространство, из которого её открыли. Чтобы включить его: разверните пакет "
-                + "в корне проекта (node docs/subagent-workflow/scripts/init.mjs --repo . --force) или откройте проект "
-                + "как отдельное рабочее пространство."),
+                "Панель показывает только то пространство, из которого её открыли. Чтобы включить его, "
+                + "нажмите «Развернуть workflow здесь» ниже — движок встанет из этой сборки, без сети. "
+                + "Альтернатива из терминала — из распакованного пакета: node spec/scripts/init.mjs --repo <проект> --force."),
               localProjects.length > 0
                 ? h(
                     "div",
@@ -1261,6 +1365,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   )
                 : null,
             );
+            /* Тупик «workflow не развёрнут»: кнопка ставит движок здесь же. */
+            return h("div", null, empty, renderDeploy());
           }
           const tasks = board.tasks || [];
           const skipped = board.skipped || [];
@@ -1808,15 +1914,112 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               "div",
               { style: S.hint },
               "Пишется ровно один ключ guard.enabled; включение и выключение с временем и сессией "
-                + "дописываются в " + fmt(guard.logPath) + ". Это единственная запись панели. "
+                + "дописываются в " + fmt(guard.logPath) + ". Это одна из двух записей панели, "
+                + "вторая — развёртывание движка по кнопке. "
                 + "Пределы: git commit --no-verify и git push --no-verify пропускают хуки целиком "
                 + "(следа в аудите нет), метка обхода остаётся в аудите task-guard --audit.",
             ),
           );
         }
 
+        /*
+         * 0.7.0: единственный тупик панели закрыт кнопкой. Раньше пространство
+         * без движка показывало только совет идти в терминал.
+         */
+        function renderDeploy() {
+          const target = deployTarget();
+          if (!target) return null;
+          const disabled = Boolean(deployBusy) || Boolean(busy);
+          return h(
+            "section",
+            { style: S.section },
+            h("h3", { style: S.sectionTitle }, "Развёртывание движка"),
+            h(
+              "div",
+              { style: S.stageText },
+              "Кнопка ставит движок из этой сборки панели прямо в пространство " + target
+                + " — офлайн, без скачивания. Развёртывание идёт только по подтверждению и не меняет "
+                + "policy, задачи и записи приёмки: второй запуск вернёт already-deployed.",
+            ),
+            h("ul", { style: S.list }, DEPLOY_CHANGES.map((line, index) => h("li", { key: index }, line))),
+            h(
+              "div",
+              { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
+              h(
+                "button",
+                {
+                  type: "button",
+                  style: disabled ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: disabled,
+                  onClick: () => void deployWorkflowHere(),
+                  title: "Развернуть движок subagent-workflow в " + target + ", спросив подтверждение",
+                  "aria-label": DEPLOY_LABEL + ": " + target,
+                },
+                deployBusy ? "Разворачиваю…" : DEPLOY_LABEL,
+              ),
+            ),
+            h(
+              "div",
+              { style: S.hint },
+              "Версия движка — версия этой сборки панели. Закрытый ключ приёмки init кладёт вне репозитория.",
+            ),
+          );
+        }
+
+        /*
+         * Итог развёртывания — отдельной плашкой над страницей: успех (с версией)
+         * и отказ (с кодом и хвостом вывода init) должны быть видны и после
+         * того, как панель перечитала состояние.
+         */
+        function renderDeployNote() {
+          if (!deployNote) return null;
+          const ok = deployNote.kind === "ok";
+          const color = ok ? T.success : T.danger;
+          const logText = tailText(deployNote.log, 3000);
+          return h(
+            "div",
+            { style: Object.assign({}, S.runBox, { borderColor: color }) },
+            h(
+              "div",
+              { style: S.runHead },
+              h(
+                "span",
+                { style: Object.assign({}, S.runStatus, { color, borderColor: color }) },
+                ok ? "ок" : deployNote.code || "отказ",
+              ),
+              h("span", { style: S.runTitle }, ok ? "Движок развёрнут" : "Развернуть не удалось"),
+              h("span", { style: S.spacer }),
+              h(
+                "button",
+                { type: "button", style: S.button, onClick: () => setDeployNote(null), title: "Скрыть сообщение" },
+                "×",
+              ),
+            ),
+            h("div", { style: { fontSize: "12px", whiteSpace: "pre-wrap" } }, deployNote.text),
+            logText.length > 0 ? h("pre", { style: S.runLog }, logText) : null,
+          );
+        }
+
         function renderCompat() {
-          if (!root) return h("div", { style: S.empty }, "Корень не настроен.");
+          /*
+           * В пространстве без движка вкладка «Совместимость» тоже не тупик:
+           * здесь та же кнопка развёртывания.
+           */
+          if (!root) {
+            if (!deployTarget()) {
+              return h("div", { style: S.empty }, "Корень не настроен: добавьте roots в cordis.patch.yml.");
+            }
+            return h(
+              "div",
+              null,
+              h(
+                "div",
+                { style: S.empty },
+                "Workflow в этом пространстве не развёрнут: совместимость станет доступна после развёртывания.",
+              ),
+              renderDeploy(),
+            );
+          }
           if (!compat) return h("div", { style: S.empty }, "Чтение совместимости…");
           const summary = compat.summary || {};
           const versions = compat.versions || {};
@@ -1954,6 +2157,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             { style: S.content },
             renderLocation(),
             renderRun(),
+            renderDeployNote(),
             error ? h("p", { style: S.error }, error) : null,
             status && status.error && !status.repo
               ? h(

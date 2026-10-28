@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {
   createWorkflowRuntime,
@@ -437,5 +438,126 @@ test('a full request sweep does not change files or git status', async () => {
     assert.equal(git(fixture.repo, ['status', '--porcelain']), statusBefore);
   } finally {
     fixture.cleanup();
+  }
+});
+
+/*
+ * 0.7.0: развёртывание движка из панели.
+ *
+ * Корень — только из runtime.roots, запись — только с confirm: true. Тесты
+ * работают в одноразовом git-репозитории без workflow: init запускается по-
+ * настоящему, поэтому проверяется и версия, и хуки, и повтор.
+ */
+const REPO_VERSION = fs.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim();
+
+function makeEmptyRepo() {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-deploy-api-'));
+  git(repo, ['init', '-q']);
+  git(repo, ['config', 'user.email', 'deploy@local']);
+  git(repo, ['config', 'user.name', 'deploy']);
+  return repo;
+}
+
+function removeDir(dir) {
+  try {
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+  } catch {
+    /* утечка временного каталога не отменяет уже проверенное поведение */
+  }
+}
+
+test('POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0)', async () => {
+  const repo = makeEmptyRepo();
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [repo] }));
+    const response = await call(handler, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: repo, confirm: true },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.ok, true);
+    assert.equal(response.json.root, repo);
+    assert.equal(response.json.version, REPO_VERSION, 'версия движка равна версии сборки');
+    assert.match(response.json.log, /init:/u, 'лог init уезжает в ответ');
+
+    const versionFile = path.join(repo, 'docs', 'subagent-workflow', 'VERSION');
+    assert.equal(fs.readFileSync(versionFile, 'utf8').trim(), REPO_VERSION);
+    assert.ok(fs.existsSync(path.join(repo, 'docs', 'tasks')), 'каталог заданий создан');
+    assert.equal(git(repo, ['config', '--get', 'core.hooksPath']), 'docs/subagent-workflow/hooks');
+
+    /* Состояние действительно перечитано: конфиг движка теперь загружается. */
+    const status = await call(handler, '/workflow/api/status');
+    assert.equal(status.json.repo.configLoaded, true);
+
+    /* Повтор безопасен: обновления кнопкой нет, код already-deployed. */
+    const again = await call(handler, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: repo, confirm: true },
+    });
+    assert.equal(again.status, 400);
+    assert.equal(again.json.code, 'already-deployed');
+    assert.equal(again.json.version, REPO_VERSION, 'в отказе видно, какая версия уже стоит');
+  } finally {
+    removeDir(repo);
+  }
+});
+
+test('deploy без confirm ничего не пишет, POST-only и проверяет корень', async () => {
+  const repo = makeEmptyRepo();
+  const plain = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-deploy-plain-'));
+  const missing = path.join(os.tmpdir(), 'wf-deploy-missing-' + Date.now().toString(36));
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [repo] }));
+    const before = fs.readdirSync(repo).sort();
+
+    const noConfirm = await call(handler, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: repo },
+    });
+    assert.equal(noConfirm.status, 400);
+    assert.match(noConfirm.json.error, /confirm/u);
+    assert.deepEqual(fs.readdirSync(repo).sort(), before, 'без подтверждения не создаётся ничего');
+    assert.equal(fs.existsSync(path.join(repo, 'docs')), false);
+
+    /* Неверный confirm — тоже отказ: булево true, а не «истинноподобное». */
+    const truthy = await call(handler, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: repo, confirm: 'yes' },
+    });
+    assert.equal(truthy.status, 400);
+
+    const get = await call(handler, '/workflow/api/deploy');
+    assert.equal(get.status, 405);
+    assert.equal(get.headers.allow, 'POST');
+
+    const foreign = await call(handler, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: process.platform === 'win32' ? 'C:\\definitely\\not\\allowed' : '/definitely/not/allowed', confirm: true },
+    });
+    assert.equal(foreign.status, 400, 'корень вне runtime.roots не принимается');
+    assert.match(foreign.json.error, /не входит/u);
+
+    /* Не-git: отказ до любой записи, ни docs, ни хуков. */
+    const plainHandler = createWebHandler(createWorkflowRuntime({ roots: [plain] }));
+    const nonGit = await call(plainHandler, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: plain, confirm: true },
+    });
+    assert.equal(nonGit.status, 400);
+    assert.equal(nonGit.json.code, 'not-a-repo');
+    assert.equal(fs.existsSync(path.join(plain, 'docs')), false);
+
+    /* Корень в списке, но каталога нет: 404, а не «развернули в никуда». */
+    const missingHandler = createWebHandler(createWorkflowRuntime({ roots: [missing] }));
+    const absent = await call(missingHandler, '/workflow/api/deploy', {
+      method: 'POST',
+      body: { root: missing, confirm: true },
+    });
+    assert.equal(absent.status, 404);
+
+    assert.equal(fs.existsSync(path.join(repo, 'docs')), false, 'ни один отказ не пишет в репозиторий');
+  } finally {
+    removeDir(repo);
+    removeDir(plain);
   }
 });

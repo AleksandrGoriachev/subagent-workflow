@@ -2,11 +2,13 @@
  * HTTP half: loopback-only routes for the panel.
  *
  * The handler is a pure wiring function (mock request/response objects work in
- * tests) so the routes can be exercised without a DSH host. Every route reads
- * Read routes are GET and go through state.js. POST routes are the two explicit
- * exceptions: /api/run runs one of the package's read-only gates and returns its
- * log (never writes, signs or accepts), and /api/guard flips guard.enabled in
- * workflow.config.json — the panel's single write, logged to guard.log.
+ * tests) so the routes can be exercised without a DSH host. Read routes are GET
+ * and go through state.js. POST routes are the three explicit exceptions:
+ * /api/run runs one of the package's read-only gates and returns its log (never
+ * writes, signs or accepts); /api/guard flips guard.enabled in
+ * workflow.config.json (logged to guard.log); /api/deploy runs the bundled
+ * spec's init.mjs in the selected root — the panel's second explicit write, and
+ * it happens only with confirm: true.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,6 +22,7 @@ import {
 import { compatView, PLUGIN_VERSION } from './compat.js';
 import { buildCheck, runCheck, CHECK_IDS, CHECK_TITLES } from './checks.js';
 import { writeGuardEnabled, readGuard, GUARD_CONFIG_REL } from './guard.js';
+import { deployWorkflow, availableSpecRoot } from './deploy.js';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
@@ -233,7 +236,7 @@ export function createWebHandler(runtime) {
         return;
       }
       const rel = pathname.slice(API_PREFIX.length) || '/';
-      const postRoutes = rel === '/api/run' || rel === '/api/guard';
+      const postRoutes = rel === '/api/run' || rel === '/api/guard' || rel === '/api/deploy';
       if (postRoutes ? method !== 'POST' : method !== 'GET') {
         res.setHeader('Allow', postRoutes ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
@@ -377,6 +380,42 @@ export function createWebHandler(runtime) {
           logPath: report.logPath,
           note: 'записан только guard.enabled; включение и выключение отмечены в guard.log',
         });
+        return;
+      }
+
+      if (rel === '/api/deploy') {
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        /*
+         * Развёртывание — вторая запись панели, и она возможна только по явной
+         * команде: без confirm: true ничего не пишется. Корень проходит через
+         * selectRoot, поэтому «разверни в C:\чужой-проект» из тела запроса не
+         * проходит: источник корня — открытое пространство, а не клиент.
+         */
+        if (body.confirm !== true) {
+          sendJson(res, 400, { error: 'развёртывание требует confirm: true' });
+          return;
+        }
+        const target = selectRoot(runtime, body.root);
+        if (!target.root) {
+          sendJson(res, 400, { error: target.error });
+          return;
+        }
+        if (!fs.existsSync(target.root)) {
+          sendJson(res, 404, { error: 'корень не найден: ' + target.root });
+          return;
+        }
+        /*
+         * Спека — из tarball (vendor/spec), в dev-копии плагина — соседняя spec/
+         * пакета. Ни сети, ни скачивания: версия движка равна версии сборки.
+         */
+        const report = deployWorkflow(target.root, { specRoot: availableSpecRoot() });
+        sendJson(res, report.ok ? 200 : 400, { plugin: runtime.plugin, root: target.root, ...report });
         return;
       }
 

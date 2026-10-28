@@ -1,9 +1,42 @@
 # dsh-workflow-console
 
 Web panel for [subagent-workflow](../README.md) repositories inside DeepSeek
-Harness. It reads task artifacts and `workflow.config.json`; the only write is
-the commit-and-push guard flag (below) — it never runs a gate, never changes
-`policy` and never signs or accepts anything.
+Harness. It reads task artifacts and `workflow.config.json`; there are exactly
+two writes, both behind a confirmation: the commit-and-push guard flag and one
+explicit deployment of the engine into the open workspace (0.7.0). It never
+changes `policy`, never runs a gate, never signs and never accepts anything.
+
+## 0.7.0 — кнопка «Развернуть workflow здесь»
+
+Пространство без движка больше не упирается в терминал: пустое состояние и
+вкладка «Совместимость» показывают кнопку **«Развернуть workflow здесь»**.
+
+- **Одна явная запись.** `POST /workflow/api/deploy` с `{confirm: true, root}`
+  запускает `init.mjs --force` из вложенной спеки и отвечает
+  `{ok, version, log}`; без `confirm: true` — 400 и ничего не пишется. Повтор в
+  уже развёрнутом пространстве — 400 `already-deployed`: кнопкой движок не
+  обновляется, это отдельное задание.
+- **Корень — только из workspace.** `root` проходит через `selectRoot`
+  (`runtime.roots` и зарегистрированные workspace), поэтому «разверни в
+  C:\чужой-проект» из тела запроса не проходит. Несуществующий каталог — 404,
+  не-git — 400 `not-a-repo`, нет движка в сборке, init упал или не уложился в
+  таймаут — 400 `init-failed` с хвостом вывода.
+- **Подтверждение перечисляет изменения.** `docs/subagent-workflow/` (движок,
+  ворота, хуки, публичный ключ приёмщика), `docs/tasks/`, строки журналов в
+  `.gitignore`, локальный `git config core.hooksPath =
+  docs/subagent-workflow/hooks`. Пока идёт запись, кнопка говорит
+  «Разворачиваю…»; успех — с версией, отказ — с кодом и последними строками
+  вывода init; после успеха панель перечитывает состояние и открывает доску.
+- **Офлайн.** `tools/pack-plugin.mjs` кладёт `spec/` в `plugin/vendor/spec`, а
+  `VERSION` — в `plugin/vendor/VERSION` перед `npm pack` и убирает после (даже
+  при ошибке); `--plan` не пишет ничего. Сборка проверяет, что в tarball есть
+  `vendor/spec/scripts/init.mjs` и `vendor/VERSION`, поэтому «панель без
+  движка» не выпускается молча. Версия движка после развёртывания — версия
+  сборки.
+- Версия плагина 0.7.0, тестов 84: маршрут `/api/deploy` (успех в чистом
+  репозитории, отказ без confirm, повтор, не-git, чужой корень, 404, 405),
+  кнопка в пустом состоянии и на вкладке «Совместимость» (подтверждение,
+  «Разворачиваю…», успех с версией, отказ с кодом) и `vendor` в манифесте.
 
 ## 0.6.0 — установка из tarball, схема записи 2.6.0
 
@@ -168,6 +201,9 @@ stable asset name; the versioned copy `dsh-workflow-console-<version>.tgz` and
 both `.sha256` files sit next to it). The package requires DSH
 `>=0.2.0-0 <0.3.0` — declared in `engines.dsh`. To build the tarball locally,
 run `npm run pack:plugin` from the repository root; the asset lands in `dist/`.
+The tarball carries the spec as `vendor/spec` plus `vendor/VERSION` (staged for
+the `npm pack` run and removed afterwards), so the panel deploys the engine
+offline and the deployed version is the tarball's version.
 
 1. Put this `plugin/` directory where the DSH profile can link it, for example
    `~/.dsh/plugins/dsh-workflow-console`.
@@ -205,7 +241,7 @@ with empty `roots`. `roots` must be absolute paths; relative paths are ignored.
 If `roots` is empty, the plugin falls back to the workspace registry (read-only)
 when that service is available.
 
-## HTTP API (loopback only, GET only)
+## HTTP API (loopback only)
 
 | Route | Answer |
 | --- | --- |
@@ -214,9 +250,15 @@ when that service is available.
 | `GET /workflow/api/task/:id` | one task card, including `git log` |
 | `GET /workflow/api/policy` | effective policy, models, roles, warnings |
 | `GET /workflow/api/compat` | version compatibility checks and manual recommendations |
+| `GET /workflow/api/checks` | the three read-only gates and what they cover |
+| `POST /workflow/api/run` | runs one gate, returns `{exitCode, ok, log, command, durationMs, logPath}` — no writes |
+| `POST /workflow/api/guard` | flips `guard.enabled` (one config key) and appends `guard.log` |
+| `POST /workflow/api/deploy` | deploys the bundled engine into the selected root; `confirm: true` is required |
 
-All routes accept `?root=<configured root or registered workspace>`. Non-GET
-methods answer 405; a path outside both lists answers 400.
+All routes accept `?root=<configured root or registered workspace>`. The three
+POST routes are the explicit writes described above; every other route is GET.
+A wrong method answers 405 with `Allow`; a path outside both root lists answers
+400.
 
 ## Version compatibility and the current workspace
 
@@ -234,7 +276,7 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.6.0, supports workflow
+The **Совместимость** tab compares the plugin (0.7.0, supports workflow
 2.0.0 – 2.6.x, включая `effect`, регресс-долг, guard и запись 2.6.0) with the deployed copy: VERSION/SPEC,
 required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
@@ -282,11 +324,21 @@ DSH module loader from `lib/client.js`.
 
 Product ideas and deferred UX work live in [BACKLOG.md](BACKLOG.md).
 
-## Read-only guarantee
+## Write guarantee
 
 The plugin opens files for reading and runs only `git rev-parse`, `git log` and
-`git ls-files`; the three diagnostics above are the only other commands it
-starts, and they read too. There is exactly one POST route (`/api/run`), no
-write API, no signing and no acceptance path. `test/api.test.mjs` snapshots the
-fixture's `git status --porcelain` and tracked-file hashes before and after a
-full request sweep and after a diagnostics run, and requires equality.
+`git ls-files`; the three diagnostics above are the only other read-only commands
+it starts. There are exactly two write paths, and both need a human confirmation:
+
+- `POST /workflow/api/guard` — one key `guard.enabled` plus a line in
+  `docs/subagent-workflow/guard.log`;
+- `POST /workflow/api/deploy` — the bundled `init.mjs --force` in the selected
+  root, only with `confirm: true`. It creates the engine, `docs/tasks`,
+  `.gitignore` lines and the local `core.hooksPath`; it does not change
+  `policy`, tasks, locks or acceptance records, never signs, commits or accepts.
+
+Nothing else writes. `test/api.test.mjs` snapshots the fixture's
+`git status --porcelain` and tracked-file hashes before and after a full request
+sweep and after a diagnostics run, and requires equality; the deploy tests check
+that every refusal (no `confirm`, not a repository, foreign root) creates no
+files at all.
