@@ -1,0 +1,126 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0006",
+  "title": "проверка обхода workflow в CI",
+  "risk": "medium",
+  "taskFileSha256": "76dc4257a3579a28d0cfaf107934d218d8a6978e581942fe7e2601d334b2ae42",
+  "criteriaSha256": "ea79e535c98a02f30491f48ce6235a5a3bbfba78739818753a275f283a13e501",
+  "criteriaJsonSha256": "2459ea032541533f01450102cfe73d0383aba8ca14244dba6ce45d6710d0aa3c",
+  "contractCommit": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+  "baseCommit": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+  "candidateCommit": "4590f93979151e3a90e96cb9bbca858d18c20c68",
+  "tree": "69272beee64dae2ad8310cd6a1eaebffb4c614e3",
+  "worktreeDigest": "5812e4badd0101f6e0454ba48c48bce276bbdb3b026ae8c371a664abc9676991",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-2287b54f-ee61-4539-b719-67d6fe5f823e",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "0722a76e-924b-4ca7-be0c-53aa61fece07",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env"
+  },
+  "independence": {
+    "level": "separate-session",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "897c9cec137f595ea7f5a6270eace9ed",
+    "runKind": "accept",
+    "startedAt": "2026-10-28T11:57:38.558Z",
+    "finishedAt": "2026-10-28T11:59:37.762Z",
+    "durationMs": 119215,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "76a4bd963c7463a4331ef148fb6479848d8222783d81905f47fa5268f70174f8",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+    "contractCommit": "6548c846f3f2b5b5e797aaf1b872640ee72eeec0",
+    "criteriaJsonSha256": "2459ea032541533f01450102cfe73d0383aba8ca14244dba6ce45d6710d0aa3c",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C3"
+      ],
+      "mustPass": [
+        "C2"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/ci-guard-step.mjs",
+      "exitCode": 0,
+      "durationMs": 265,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 110640,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 362,
+      "passed": true
+    }
+  ],
+  "acceptor": "subagent:judge",
+  "acceptedAt": "2026-10-28T11:59:38.210Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 1,
+    "digest": "92a90b149ecfe893b343dd4963a06d2c650fb6993681c75fa774b2e7c623b11d",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "независимая приёмка 0006: шаг CI и chmod для linux проверены, WSL-репро до/после (без chmod 6/8, с chmod 8/8); остаточное ограничение: spec/hooks в git 100644 — локальный прогон на linux без chmod красный, root-cause отдельным заданием",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "0fbcURy7huYOyTK4PUZqas4PTz8cH01OebEAYmHRfmpaWDaTjYfbtueLxxlbwnw9ZhJhbFFWnAB1a9nBpBSGCQ=="
+}
