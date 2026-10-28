@@ -226,6 +226,18 @@ const CASES = {
       git(repo, ['push', '-q', '-u', 'origin', 'HEAD:refs/heads/main']);
       /* Включаем guard в рабочем дереве, не коммитя: конфиг читается хуком. */
       write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(true), null, 2) + '\n');
+      /*
+       * Контроль: без покрытия коммит обязан быть отклонён. Без этого шага кейс
+       * «проходит» и при полностью отсутствующих хуках — проверка была бы вакуумной.
+       */
+      write(path.join(repo, 'notes.txt'), 'вне задания\n');
+      git(repo, ['add', 'notes.txt']);
+      const control = git(repo, ['commit', '-q', '-m', 'контроль: вне задания']);
+      if (control.code === 0) {
+        return { ok: false, detail: 'хуки не активны: коммит вне задания прошёл без отказа' };
+      }
+      git(repo, ['reset', '-q', 'HEAD', 'notes.txt']);
+      try { fs.unlinkSync(path.join(repo, 'notes.txt')); } catch { /* ignore */ }
       write(path.join(repo, 'src', 'a.js'), 'export const a = 1;\n');
       git(repo, ['add', 'src/a.js']);
       const commit = git(repo, ['commit', '-q', '-m', 'работа по заданию']);
@@ -261,6 +273,15 @@ const CASES = {
       git(repo, ['remote', 'add', 'origin', bare]);
       git(repo, ['push', '-q', '-u', 'origin', 'HEAD:refs/heads/main']);
       write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(true), null, 2) + '\n');
+      /* Контроль: без метки коммит вне задания отклоняется — иначе хуки не активны. */
+      write(path.join(repo, 'other.txt'), 'вне задания\n');
+      git(repo, ['add', 'other.txt']);
+      const control = git(repo, ['commit', '-q', '-m', 'контроль: вне задания']);
+      if (control.code === 0) {
+        return { ok: false, detail: 'хуки не активны: коммит вне задания прошёл без отказа' };
+      }
+      git(repo, ['reset', '-q', 'HEAD', 'other.txt']);
+      try { fs.unlinkSync(path.join(repo, 'other.txt')); } catch { /* ignore */ }
       write(path.join(repo, 'hotfix.txt'), 'срочно\n');
       git(repo, ['add', 'hotfix.txt']);
       const commit = git(repo, ['commit', '-q', '-m', 'hotfix [workflow-bypass: срочно]']);
