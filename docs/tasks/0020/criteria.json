@@ -1,0 +1,117 @@
+{
+  "task": "0020",
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "VERSION DRIFT FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Нет литералов версий в проверках",
+      "command": "node spec/checks/version-drift.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION DRIFT OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сквозной цикл пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Правила ворот",
+      "command": "node spec/checks/gate-rules.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Безопасность развёртывания",
+      "command": "node spec/checks/deploy-safety.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Версия 2.6.4",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json",
+        "spec/SPEC.md",
+        "CHANGELOG.md"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.4"
+      }
+    }
+  ]
+}
