@@ -18,7 +18,10 @@
   "base": "HEAD",
   "criteria": "criteria.json",
   "allowedPaths": [
-    "spec/checks/**",
+    "spec/checks/acceptance-schema.mjs",
+    "spec/checks/deploy-safety.mjs",
+    "spec/checks/panel-deploy.mjs",
+    "spec/checks/gate-rules.mjs",
     "spec/scripts/lib/common.mjs",
     "spec/SPEC.md",
     "CHANGELOG.md",

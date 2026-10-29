@@ -2,17 +2,18 @@
   "task": "0020",
   "redExpect": {
     "mustFail": [
-      "C1"
+      "C1",
+      "C5"
     ],
     "mustPass": [
       "C2",
       "C3",
       "C4",
-      "C5",
       "C6"
     ],
     "reasons": {
-      "C1": "VERSION DRIFT FAIL"
+      "C1": "VERSION DRIFT FAIL",
+      "C5": "FAIL"
     }
   },
   "criteria": [

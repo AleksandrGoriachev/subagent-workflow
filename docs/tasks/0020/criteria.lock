@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "task": "0020",
+  "taskFileSha256": "aa8eff13632aa4eb6df19de7da01af3730bd2fc476925f6907b965d7de609596",
+  "criteriaSha256": "710e3166461b4c3c3e1b2dd5d39da609c4121594abb0a3dbd095a4fc72994cd4",
+  "criteriaJsonSha256": "80df4d0d271662d07c4dd291ab7e7ccd86f6f50466574f048b42aa3bfbaf1f63",
+  "attackSha256": null,
+  "contractCommit": "96066509a729968c8fbc2a37b4d96bedf7d5b454",
+  "protected": [
+    {
+      "path": "spec/checks/version-drift.mjs",
+      "sha256": "f145096c182dd255dbcae0db074d1020e92256790d4b72490ec2f0aabdb295e6"
+    }
+  ],
+  "createdAt": "2026-10-29T05:52:44.116Z",
+  "tool": "subagent-workflow/2.6.4"
+}
