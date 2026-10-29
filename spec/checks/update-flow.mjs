@@ -110,7 +110,9 @@ try {
 /* Манифест и LICENSE. */
 try {
   const pkg = JSON.parse(fs.readFileSync(path.join(PKG, 'plugin', 'package.json'), 'utf8'));
-  if (pkg.version === '0.8.0') pass('плагин 0.8.0'); else fail('плагин 0.8.0', 'сейчас ' + pkg.version);
+  const compatMod = await import(pathToFileURL(path.join(PKG, 'plugin', 'lib', 'compat.js')).href);
+  if (/^\d+\.\d+\.\d+$/.test(pkg.version) && pkg.version === compatMod.PLUGIN_VERSION) pass('плагин: версия совпадает с compat.PLUGIN_VERSION');
+  else fail('плагин: версия совпадает с compat.PLUGIN_VERSION', pkg.version + ' vs ' + compatMod.PLUGIN_VERSION);
   if (Array.isArray(pkg.files) && pkg.files.includes('LICENSE')) pass('LICENSE в files'); else fail('LICENSE в files');
   if (fs.existsSync(path.join(PKG, 'plugin', 'LICENSE'))) pass('LICENSE существует'); else fail('LICENSE существует');
 } catch (error) { fail('манифест плагина', String(error.message).slice(0, 120)); }
