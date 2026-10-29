@@ -1,0 +1,124 @@
+{
+  "task": "0026",
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C6"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "reasons": {
+      "C1": "UPDATE FLOW FAIL",
+      "C6": "VERSION OK: 2.6.4"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Обновление движка из панели",
+      "command": "node spec/checks/update-flow.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/**",
+        "spec/checks/**",
+        "tools/pack-plugin.mjs",
+        ".github/workflows/ci.yml",
+        "RELEASE-CHECKLIST.md"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "UPDATE FLOW OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сквозной цикл пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Тесты панели",
+      "command": "node plugin/tools/test.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Схема записи",
+      "command": "node spec/checks/acceptance-schema.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Версия 2.6.5",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json",
+        "README.md",
+        "CHANGELOG.md",
+        "spec/SPEC.md",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.5"
+      }
+    }
+  ]
+}
