@@ -18,6 +18,12 @@ const repo = path.resolve(argv.repo || repoRoot(taskDir));
 /* Ключ приёмщика не должен попадать в код задачи, который мы запускаем. */
 delete process.env.TASK_ACCEPT_KEY;
 
+function firstLines(text, max = 5) {
+  const lines = String(text).replaceAll(String.fromCharCode(13), '').split(NL);
+  if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+  return { head: lines.slice(0, max), rest: Math.max(0, lines.length - max) };
+}
+
 function printSummary(title, rows) {
   console.log(title);
   for (const r of rows) {
@@ -139,6 +145,30 @@ try {
     redExpectation.errors.push('нет redExpect: для risk=' + meta.risk + ' объявите mustFail/mustPass');
     redExpectation.ok = false;
   }
+  /*
+   * F-6 (2.6.4): причина красного — дословная подстрока stdout+stderr. Одного
+   * «упал не по ожидаемой причине» мало: непонятно, что пришло на самом деле,
+   * и разбирательство идёт по red.log вручную. Печатаем ожидаемую причину,
+   * первые строки stdout+stderr критерия и путь к red.log. Случай «критерий
+   * зелёный» печатается тоже: задание ждало падения, и вывод — единственное
+   * доказательство того, чего оно не дождалось.
+   */
+  const declaredReasons = criteria.redExpect && typeof criteria.redExpect.reasons === 'object' && criteria.redExpect.reasons !== null
+    ? criteria.redExpect.reasons
+    : {};
+  const declaredMustFail = criteria.redExpect && Array.isArray(criteria.redExpect.mustFail)
+    ? criteria.redExpect.mustFail.map(String)
+    : [];
+  const reasonDiagnostics = [];
+  for (const id of declaredMustFail) {
+    const reason = declaredReasons[id];
+    if (typeof reason !== 'string' || reason === '') continue;
+    const result = results.find((r) => r.id === id);
+    if (!result) continue;
+    const text = String(result.stdout || '') + NL + String(result.stderr || '');
+    if (!result.passed && text.includes(reason)) continue;
+    reasonDiagnostics.push({ id, reason, passed: result.passed, stdout: firstLines(result.stdout), stderr: firstLines(result.stderr) });
+  }
   const redProven = redExpectation.ok;
 
   const output = {
@@ -177,6 +207,21 @@ try {
       for (const error of redExpectation.errors) console.log('  ' + error);
     } else if (executed === 0) console.log('Красный НЕ доказан: нет исполняемых проверок (все manual?).');
     else console.log('Красный НЕ доказан: все ' + executed + ' проверок уже зелёные. Задача или проверка сформулированы неверно.');
+    if (reasonDiagnostics.length) {
+      console.log('');
+      console.log('Причины красного (дословная подстрока stdout+stderr):');
+      for (const item of reasonDiagnostics) {
+        console.log('  ' + item.id + ': ожидаемая причина не найдена в выводе: "' + item.reason + '"');
+        console.log('  ' + item.id + ': ' + (item.passed ? 'критерий зелёный — падения не было' : 'критерий упал, но по другой причине'));
+        for (const [stream, part] of [['stdout', item.stdout], ['stderr', item.stderr]]) {
+          if (part.head.length === 0) continue;
+          console.log('  ' + item.id + ': первые строки ' + stream + ':');
+          for (const line of part.head) console.log('    ' + line);
+          if (part.rest > 0) console.log('    …[' + part.rest + ' строк]');
+        }
+      }
+      console.log('  Полный вывод критериев: ' + files.redLog);
+    }
     console.log('Артефакты: ' + files.red + ', ' + files.redLog);
   }
   process.exit(redProven ? 0 : 1);

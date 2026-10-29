@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "task": "0019",
+  "taskFileSha256": "a37513eea214daf66bce5836cfa0b15c4a1834293ee4d697eecb681648918b77",
+  "criteriaSha256": "921bf46d4abd2c619c73e26fcc26fccf9f619c8611691b5e44368807e4e07f32",
+  "criteriaJsonSha256": "55a8d92ca7c2b8392b3b0e53fa721df31ecba20eb6108f50d6da58d144ab341a",
+  "attackSha256": null,
+  "contractCommit": "45eb76b86e3e39a5ced77ce8a4a08cbf1a358cda",
+  "protected": [
+    {
+      "path": "spec/checks/gate-rules.mjs",
+      "sha256": "6c2eebbc911325edc652e3a263483ede36dfd3253f6172cefce33e696e8a585b"
+    }
+  ],
+  "createdAt": "2026-10-29T04:54:34.049Z",
+  "tool": "subagent-workflow/2.6.3"
+}

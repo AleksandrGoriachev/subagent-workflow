@@ -36,6 +36,29 @@ if (argv.help) {
 const taskDir = path.resolve(argv.task || argv._[0] || '.');
 const repo = path.resolve(argv.repo || repoRoot(taskDir));
 const config = loadConfig(repo);
+
+/*
+ * F-8 (2.6.4): verify.json исполнителя не теряется. Свежий прогон приёмщика
+ * перезаписывает verify.json, поэтому прежний результат сохраняется рядом как
+ * verify.executor.json — ДО preflight и до нового прогона. Отказ приёмки (нет
+ * --note у обхода, нет ключа, чужой замок) не должен стирать доказательство
+ * работы исполнителя: он единственный, кто видел зелёный прогон под своим
+ * деревом. Нет verify.json — копию не создаём (пустой копии не существует).
+ * Повторная приёмка копию обновляет: рядом всегда лежит то, что было до
+ * текущего прогона.
+ */
+{
+  const executorVerify = path.join(taskDir, 'verify.json');
+  const savedExecutorVerify = path.join(taskDir, 'verify.executor.json');
+  if (exists(executorVerify)) {
+    try {
+      fs.copyFileSync(executorVerify, savedExecutorVerify);
+    } catch (err) {
+      fail('не удалось сохранить verify.executor.json: ' + err.message);
+    }
+  }
+}
+
 const logsCommitted = config.logs === 'commit';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const VERIFY_SCRIPT = path.join(SCRIPT_DIR, 'task-verify.mjs');

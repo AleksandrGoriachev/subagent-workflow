@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.6.3';
+export const TOOL = 'subagent-workflow/2.6.4';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -281,6 +281,71 @@ export function globToRegExp(pattern) {
 export function matchesAny(file, patterns) {
   const p = toPosix(file);
   return (patterns || []).some((pattern) => globToRegExp(pattern).test(p));
+}
+
+/*
+ * Пересечение двух шаблонов путей (2.6.4, F-7): существует ли путь, который
+ * попадает и под один, и под другой. Нужно lint, чтобы увидеть, что путь из
+ * allowedPaths защищён protectedPaths: `src/**` и `src/app.js` пересекаются,
+ * `src/**` и `checks/**` — нет.
+ *
+ * Отдельная функция, а не `globToRegExp(q).test(p)`: проверка одного шаблона
+ * регуляркой другого не симметрична и пропускает ровно наш самый частый дефект
+ * контракта — «разрешён каталог, защищён файл внутри него» (0012, 0014, 0017).
+ */
+function hasWildcard(segment) { return /[*?[]/.test(segment); }
+function literalPrefix(segment) {
+  const match = segment.match(/^[^*?[]*/);
+  return match ? match[0] : '';
+}
+function literalSuffix(segment) {
+  const match = segment.match(/[^*?[]*$/);
+  return match ? match[0] : '';
+}
+function segmentsOverlap(left, right) {
+  const leftFixed = !hasWildcard(left);
+  const rightFixed = !hasWildcard(right);
+  if (leftFixed && rightFixed) return left === right;
+  if (leftFixed) return globToRegExp(right).test(left);
+  if (rightFixed) return globToRegExp(left).test(right);
+  /*
+   * Оба сегмента с шаблоном: точного пересечения регулярных языков здесь не
+   * строим. Совместимы, если литеральные префикс и суффикс одного продолжают
+   * (или содержатся в) другом — этого хватает, чтобы `*.md` и `*.json` не
+   * считались пересечением, а `*.js` и `a*.js` — считались.
+   */
+  const leftPrefix = literalPrefix(left);
+  const rightPrefix = literalPrefix(right);
+  const leftSuffix = literalSuffix(left);
+  const rightSuffix = literalSuffix(right);
+  const prefixOk = leftPrefix.startsWith(rightPrefix) || rightPrefix.startsWith(leftPrefix);
+  const suffixOk = leftSuffix.endsWith(rightSuffix) || rightSuffix.endsWith(leftSuffix);
+  return prefixOk && suffixOk;
+}
+
+export function patternsIntersect(patternA, patternB) {
+  const split = (pattern) => {
+    const posix = toPosix(pattern);
+    return (posix.startsWith('./') ? posix.slice(2) : posix).split('/').filter((part) => part !== '');
+  };
+  const left = split(patternA);
+  const right = split(patternB);
+  const memo = new Map();
+  const walk = (i, j) => {
+    const key = i + ':' + j;
+    if (memo.has(key)) return memo.get(key);
+    let result;
+    if (i === left.length && j === right.length) result = true;
+    else if (i === left.length) result = right.slice(j).every((part) => part === '**');
+    else if (j === right.length) result = left.slice(i).every((part) => part === '**');
+    else if (left[i] === '**' && right[j] === '**') result = walk(i + 1, j) || walk(i, j + 1);
+    else if (left[i] === '**') result = walk(i + 1, j) || walk(i, j + 1);
+    else if (right[j] === '**') result = walk(i, j + 1) || walk(i + 1, j);
+    else result = segmentsOverlap(left[i], right[j]) && walk(i + 1, j + 1);
+    memo.set(key, result);
+    return result;
+  };
+  return walk(0, 0);
 }
 
 export function walkFiles(root, opts = {}) {

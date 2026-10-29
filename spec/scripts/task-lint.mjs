@@ -4,6 +4,7 @@ import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
   DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects, hasAcceptedRecord,
+  patternsIntersect,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -107,6 +108,42 @@ try {
       warn('protectedPaths включает сам пакет: ' + covering + ' — обновление пакета (init --force) изменит эти файлы, замок станет красным, а перезамок после красного запрещён (I-3). Защищайте свои проверки (checks/**, tests/**) и артефакты задания: движок защищён версией пакета (поле tool в criteria.lock).');
     }
   }
+  /*
+   * F-7 (2.6.4): путь из allowedPaths, защищённый protectedPaths, делает задание
+   * невыполнимым — правка защищённого файла краснит criteria.lock, а перезамок
+   * после красного запрещён (I-3). Именно так аннулировали 0012 (весь
+   * spec/checks/** в защищённых) и почти 0014/0017: ошибка была видна только на
+   * task-verify, уже после работы исполнителя. Уровень печати — тот же, что у
+   * расхождений замка (2.6.2): открытое задание — ERROR, принятое — WARN, иначе
+   * проверка пакета «принятое lint не валит» (spec/checks/deployed-copy.mjs)
+   * краснеет на исторических контрактах, которые уже не переписать.
+   *
+   * Исключение — собственные контрактные артефакты задания. task.md и
+   * criteria.json уже защищены замком (taskFileSha256/criteriaJsonSha256), а
+   * хеширование protectedPaths каталог задания исключает: дубль в
+   * protectedPaths ничего не добавляет. При этом docs/tasks/<id>/** обязан быть
+   * в allowedPaths — по нему идут untracked-артефакты (criteria.lock, red.json,
+   * red/verify.log). Без исключения правило валило бы каждый собственный
+   * контракт; впервые это видно на 0019. Игнорируются только точные пути
+   * <задание>/task.md и <задание>/criteria.json: шаблон, накрывающий их вместе
+   * с чем-то ещё, остаётся пересечением.
+   */
+  const taskRel = path.relative(repo, taskDir).split(path.sep).join('/');
+  const contractArtifacts = new Set([taskRel + '/task.md', taskRel + '/criteria.json']);
+  const normalizePattern = (value) => {
+    const posix = String(value).split(path.sep).join('/');
+    return posix.startsWith('./') ? posix.slice(2) : posix;
+  };
+  const boundaryConflicts = [];
+  for (const allowedPath of allowed) {
+    if (typeof allowedPath !== 'string' || allowedPath.trim() === '') continue;
+    for (const protectedPath of protectedPaths) {
+      if (typeof protectedPath !== 'string' || protectedPath.trim() === '') continue;
+      if (contractArtifacts.has(normalizePattern(protectedPath))) continue;
+      if (patternsIntersect(allowedPath, protectedPath)) boundaryConflicts.push([allowedPath, protectedPath]);
+    }
+  }
+
   const redAllow = Array.isArray(meta.redAllowDirty) ? meta.redAllowDirty : [];
   for (const p of redAllow) {
     if (typeof p !== 'string' || path.isAbsolute(p) || p.split('/').includes('..')) error('redAllowDirty: недопустимый путь: ' + p);
@@ -180,6 +217,27 @@ try {
     errors.push(...appliedCovers.errors);
     warnings.push(...appliedCovers.warnings);
   }
+  /*
+   * 2.6.4: WARN о пути allowedPaths, не покрытом ни одним covers, — самый частый
+   * дефект контракта (0014, 0017): файл разрешён к правке, но ни один критерий
+   * его не покрывает, и проверять изменение нечем. Шаблоны каталога (`/**`)
+   * пропускаются: covers обычно объявляет как раз каталог, а перечислять каждый
+   * файл будущей правки в контракте невозможно. Уровень — WARN, не ERROR: это
+   * дыра покрытия, а не невыполнимое задание, и её видит task-verify.
+   */
+  const coverPatterns = [];
+  for (const criterion of criteria.criteria) {
+    for (const pattern of (Array.isArray(criterion.covers) ? criterion.covers : [])) {
+      if (typeof pattern === 'string' && pattern.trim() !== '') coverPatterns.push(pattern);
+    }
+  }
+  for (const allowedPath of allowed) {
+    if (typeof allowedPath !== 'string' || allowedPath.trim() === '') continue;
+    if (allowedPath === '**' || allowedPath === '**/*' || /\/\*\*$/.test(allowedPath)) continue;
+    if (!coverPatterns.some((pattern) => patternsIntersect(allowedPath, pattern))) {
+      warn('covers: путь из allowedPaths не покрыт ни одним критерием: ' + allowedPath + ' — добавьте его в covers, иначе изменение проверяется только глазами');
+    }
+  }
   for (const key of ['setup', 'teardown']) {
     if (criteria.parsed[key] !== undefined && !Array.isArray(criteria.parsed[key])) error('criteria.json: ' + key + ' должен быть массивом');
   }
@@ -192,7 +250,22 @@ try {
       const mustFail = Array.isArray(redExpect.mustFail) ? redExpect.mustFail.map(String) : null;
       const mustPass = Array.isArray(redExpect.mustPass) ? redExpect.mustPass.map(String) : [];
       if (mustFail === null) error('criteria.json: redExpect.mustFail должен быть массивом ID');
-      if (mustFail !== null && mustFail.length === 0 && meta.risk !== 'low') error('criteria.json: redExpect.mustFail пуст');
+      /*
+       * F-5 (2.6.4): пустой mustFail у low больше не «тихое исключение». Красный
+       * обязателен и для low; отсутствие красного — заявление, а не молчание,
+       * поэтому разрешено только явным redExpect.noRed.reason. Иначе задание
+       * проходит ворота, не доказав ничего: ровно так ослабляли low раньше.
+       */
+      if (mustFail !== null && mustFail.length === 0) {
+        const noRed = redExpect.noRed;
+        const noRedReason = noRed && typeof noRed === 'object' && !Array.isArray(noRed) ? noRed.reason : undefined;
+        if (meta.risk !== 'low') {
+          error('criteria.json: redExpect.mustFail пуст');
+        } else if (typeof noRedReason !== 'string' || noRedReason.trim() === '') {
+          error('criteria.json: redExpect.mustFail пуст для risk=low без redExpect.noRed.reason'
+            + ' — объявите { "noRed": { "reason": "почему красного нет" } } или перечислите критерии, которые обязаны упасть');
+        }
+      }
       for (const id of [...(mustFail || []), ...mustPass]) {
         if (!jsonIds.includes(id)) error('criteria.json: redExpect ссылается на неизвестный критерий ' + id);
         const criterion = criteria.criteria.find((c) => String(c.id) === id);
@@ -211,11 +284,19 @@ try {
           }
         }
       }
+      if (redExpect.noRed !== undefined) {
+        const noRed = redExpect.noRed;
+        if (!noRed || typeof noRed !== 'object' || Array.isArray(noRed)) {
+          error('criteria.json: redExpect.noRed должен быть объектом { reason: "почему красного нет" }');
+        } else if (typeof noRed.reason !== 'string' || noRed.reason.trim() === '') {
+          error('criteria.json: redExpect.noRed.reason пуст — причина отсутствия красного обязательна (2.6.4, F-5)');
+        }
+      }
       if (meta.risk !== 'low') {
         for (const id of (mustFail || [])) {
           const reason = (redExpect.reasons || {})[id];
           if (typeof reason !== 'string' || reason.trim() === '') {
-            error('criteria.json: для risk=' + meta.risk + ' нужна причина падения redExpect.reasons[' + id + ']');
+            error('criteria.json: для risk=' + meta.risk + ' нужна причина падения redExpect.reasons[' + id + '] — дословная подстрока stdout+stderr критерия');
           }
         }
       }
@@ -308,6 +389,11 @@ try {
    */
   const acceptedRecord = hasAcceptedRecord(files.acceptance);
   const quality = (message) => (acceptedRecord ? warn : error)(message);
+
+  for (const [allowedPath, protectedPath] of boundaryConflicts) {
+    quality('allowedPaths: путь ' + allowedPath + ' пересекается с protectedPaths: ' + protectedPath
+      + ' — правка защищённого файла краснит criteria.lock, а перезамок после красного запрещён (I-3); уберите путь из одного из списков');
+  }
 
   const decisionsApplied = applyLevel(policy.decisions, decisionIssues);
   for (const message of decisionsApplied.errors) quality(message);
