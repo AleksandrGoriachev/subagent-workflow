@@ -1,0 +1,153 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0020",
+  "title": "проверки не хардкодят версии; фикстуры узости F-7 и covers",
+  "risk": "medium",
+  "taskFileSha256": "c8c327f2f702412abe102319ae86f8fbbafd589b996c0d0446fc0d827275a84f",
+  "criteriaSha256": "710e3166461b4c3c3e1b2dd5d39da609c4121594abb0a3dbd095a4fc72994cd4",
+  "criteriaJsonSha256": "b6882659f37e41ba330cd86f114f4138ebee4fae7be757f474c7e1739d9c890e",
+  "contractCommit": "7df624d9a9718477ae4d6db26af74c263df7b5dd",
+  "baseCommit": "7df624d9a9718477ae4d6db26af74c263df7b5dd",
+  "candidateCommit": "3e794b5211dfe8ca3739f99c22948d077a9b8494",
+  "tree": "c0c7647bf532175e986576dd65938b6303efe0bf",
+  "worktreeDigest": "f133b6247af9a79dadba5da4f2ed5562d5065a13ae2a226db4ee8d46f9032c85",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-b8721a2a-456c-48a2-94cd-8030d895a8e8",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "204e4941-cf75-4e17-96cc-94316fe3c616",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "74abd8b6c76ff2a57a018814d0b8d1c1",
+    "runKind": "accept",
+    "startedAt": "2026-10-29T06:33:48.664Z",
+    "finishedAt": "2026-10-29T06:37:11.765Z",
+    "durationMs": 203115,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "e460376884c14c32e2462e2c130e325e136db12b52e5aae4221d5019511d34aa",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "7df624d9a9718477ae4d6db26af74c263df7b5dd",
+    "contractCommit": "7df624d9a9718477ae4d6db26af74c263df7b5dd",
+    "criteriaJsonSha256": "b6882659f37e41ba330cd86f114f4138ebee4fae7be757f474c7e1739d9c890e",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C5"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C6"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/version-drift.mjs",
+      "exitCode": 0,
+      "durationMs": 253,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 32800,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 102570,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 55072,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/deploy-safety.mjs",
+      "exitCode": 0,
+      "durationMs": 5612,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 209,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-10-29T06:37:12.198Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 1,
+    "digest": "22a2936f1455c86205b560d4272e55c95f254634981c4f0a1ab6847539461b2c",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "UXunfXj38MrSIk7UWLngqttbWm2uaZC48GLxOuQ8UaR7GbXxSiTzwEeKAvAPrNg/XseXrPyBvC19eIqeFYO4BA=="
+}
