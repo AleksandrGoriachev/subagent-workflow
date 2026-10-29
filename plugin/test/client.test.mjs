@@ -843,3 +843,58 @@ test('package manifest declares the DSH bundle and client halves', () => {
   assert.match(patch, /id: dsh-workflow-console/);
   assert.match(patch, /roots: \[\]/);
 });
+
+/*
+ * 0.8.0: на развёрнутом пространстве панель показывает установленную и
+ * доступную версии движка, предлагает «Обновить движок», а при незавершённых
+ * заданиях перечисляет их и требует галочку «понимаю риск» до подтверждения.
+ */
+test('deployed engine shows versions and guards update with unfinished tasks (0.8.0)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    /* Задание без записи приёмки: обновление должно быть заблокировано. */
+    fs.rmSync(path.join(fixture.taskDir, 'acceptance.json'));
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(80);
+    tree = hooks.render(slot.component);
+    let rendered = textOf(tree);
+    const repoVersion = fs.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim();
+    assert.match(rendered, /Версия движка/u);
+    assert.match(rendered, /Установлено: v2\.2\.1/u);
+    assert.ok(rendered.includes('доступна v' + repoVersion), 'доступная версия из сборки панели');
+    assert.match(rendered, /доступна v/u);
+
+    const update = findButton(tree, 'Обновить движок');
+    assert.ok(update, 'кнопка обновления на развёрнутом пространстве');
+    assert.ok(!findButton(tree, 'Развернуть workflow здесь'), 'пустая кнопка остаётся только для пустого состояния');
+
+    update.props.onClick();
+    tree = hooks.render(slot.component);
+    rendered = textOf(tree);
+    assert.match(rendered, /Незавершённые задания: 0001/u, 'диалог называет ID задания');
+    assert.match(rendered, /понимаю риск/u, 'галочка подтверждения риска');
+    assert.match(rendered, /смешанные версии скриптов/u, 'объяснение, чем рискует незавершённое задание');
+
+    const confirm = findButton(tree, 'Подтвердить обновление');
+    assert.ok(confirm, 'кнопка подтверждения в диалоге');
+    assert.equal(confirm.props.disabled, true, 'без галочки подтверждение недоступно');
+
+    const checkbox = elements(tree).find(
+      (element) => element.type === 'input' && element.props && element.props.type === 'checkbox',
+    );
+    assert.ok(checkbox, 'чекбокс «понимаю риск»');
+    checkbox.props.onChange({ target: { checked: true } });
+    tree = hooks.render(slot.component);
+    const enabled = findButton(tree, 'Подтвердить обновление');
+    assert.equal(enabled.props.disabled, false, 'с галочкой подтверждение доступно');
+  } finally {
+    fixture.cleanup();
+  }
+});

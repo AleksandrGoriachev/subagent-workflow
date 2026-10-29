@@ -125,6 +125,9 @@ try {
   else fail('плагин: версия из манифеста', 'сейчас ' + JSON.stringify(pkg.version));
   if (Array.isArray(pkg.files) && pkg.files.includes('vendor')) pass('сборка: vendor в files');
   else fail('сборка: vendor в files');
+  /* 0.8.0: лицензия едет в tarball вместе с манифестом. */
+  if (Array.isArray(pkg.files) && pkg.files.includes('LICENSE')) pass('сборка: LICENSE в files');
+  else fail('сборка: LICENSE в files');
   const pack = fs.readFileSync(path.join(PKG, 'tools', 'pack-plugin.mjs'), 'utf8');
   if (/vendor/.test(pack)) pass('сборка: pack-plugin готовит vendor');
   else fail('сборка: pack-plugin готовит vendor');

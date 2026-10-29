@@ -8,9 +8,12 @@
  * writes, signs or accepts); /api/guard flips guard.enabled in
  * workflow.config.json (logged to guard.log); /api/deploy runs the bundled
  * spec's init.mjs in the selected root — the panel's second explicit write, and
- * it happens only with confirm: true.
+ * it happens only with confirm: true; /api/update (0.8.0) re-runs init --force
+ * to move a deployed copy to the bundled version, blocked by tasks without an
+ * acceptance record unless allowInProgress is set.
  *
- * 2.6.3 (B4): both writing POST routes (/api/guard, /api/deploy) require
+ * 2.6.3 (B4): the writing POST routes (/api/guard, /api/deploy, /api/update)
+ * require
  * `Content-Type: application/json` (415 otherwise) and an Origin of this host or
  * no Origin at all (403 otherwise). The checks run before the body is read and
  * before anything is written: a cross-site `text/plain` request — a browser
@@ -28,7 +31,13 @@ import {
 import { compatView, PLUGIN_VERSION } from './compat.js';
 import { buildCheck, runCheck, CHECK_IDS, CHECK_TITLES } from './checks.js';
 import { writeGuardEnabled, readGuard, GUARD_CONFIG_REL } from './guard.js';
-import { deployWorkflow, availableSpecRoot } from './deploy.js';
+import {
+  deployWorkflow,
+  updateWorkflowAsync,
+  availableSpecRoot,
+  availableVersion,
+  tasksInProgress,
+} from './deploy.js';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
@@ -252,6 +261,9 @@ function repoInfoPayload(info) {
   const policy = policyView(info.config, { root: info.root, configPath: info.configPath });
   return {
     root: info.root,
+    /* 0.8.0: обновление движка — версия сборки и задания без приёмки. */
+    availableVersion: availableVersion(),
+    tasksInProgress: tasksInProgress(info.root),
     tasksDir: info.tasksDir,
     configPath: info.configPath,
     configLoaded: info.configLoaded,
@@ -292,7 +304,8 @@ export function createWebHandler(runtime) {
         return;
       }
       const rel = pathname.slice(API_PREFIX.length) || '/';
-      const postRoutes = rel === '/api/run' || rel === '/api/guard' || rel === '/api/deploy';
+      const postRoutes = rel === '/api/run' || rel === '/api/guard'
+        || rel === '/api/deploy' || rel === '/api/update';
       if (postRoutes ? method !== 'POST' : method !== 'GET') {
         res.setHeader('Allow', postRoutes ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
@@ -310,6 +323,7 @@ export function createWebHandler(runtime) {
             roots,
             root: null,
             rootConfigured: false,
+            availableVersion: availableVersion(),
             repo: null,
             error: selection.error,
           });
@@ -321,6 +335,7 @@ export function createWebHandler(runtime) {
             roots,
             root: selection.root,
             rootConfigured,
+            availableVersion: availableVersion(),
             repo: null,
             error: 'корень не найден: ' + selection.root,
           });
@@ -332,6 +347,7 @@ export function createWebHandler(runtime) {
           roots,
           root: selection.root,
           rootConfigured,
+          availableVersion: availableVersion(),
           /* Проекты внутри пространства, где workflow развёрнут. */
           projects: discoverNestedProjects(allowedRoots(runtime)),
           repo: repoInfoPayload(info),
@@ -484,6 +500,56 @@ export function createWebHandler(runtime) {
          */
         const report = deployWorkflow(target.root, { specRoot: availableSpecRoot() });
         sendJson(res, report.ok ? 200 : 400, { plugin: runtime.plugin, root: target.root, ...report });
+        return;
+      }
+
+      if (rel === '/api/update') {
+        /* 2.6.5: тип и Origin — до тела и до записи; confirm обязателен. */
+        const problem = writeRequestProblem(req);
+        if (problem) {
+          sendJson(res, problem.status, { error: problem.error });
+          return;
+        }
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        if (body.confirm !== true) {
+          sendJson(res, 400, { error: 'обновление требует confirm: true' });
+          return;
+        }
+        const target = selectRoot(runtime, body.root);
+        if (!target.root) {
+          sendJson(res, 400, { error: target.error });
+          return;
+        }
+        if (!fs.existsSync(target.root)) {
+          sendJson(res, 404, { error: 'корень не найден: ' + target.root });
+          return;
+        }
+        /*
+         * Обновление выполняет асинхронный init (updateWorkflowAsync): пока он
+         * идёт, event loop свободен и остальные маршруты панели отвечают.
+         * allowInProgress — отдельное поле, а не часть confirm: «понимаю риск»
+         * пользователь ставит только после списка незавершённых заданий.
+         */
+        const report = await updateWorkflowAsync(target.root, {
+          specRoot: availableSpecRoot(),
+          allowInProgress: body.allowInProgress === true,
+        });
+        const status = report.ok
+          ? 200
+          : report.code === 'tasks-in-progress'
+            ? 409
+            : report.code === 'up-to-date'
+              ? 409
+              : report.code === 'not-found'
+                ? 404
+                : 400;
+        sendJson(res, status, { plugin: runtime.plugin, root: target.root, ...report });
         return;
       }
 

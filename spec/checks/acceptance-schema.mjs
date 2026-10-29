@@ -141,6 +141,9 @@ if (pkg) {
   else pass('files плагина: пути на диске (кроме vendor — его создаёт сборщик)');
   if (!files.includes('vendor')) fail('vendor в files', 'вложенная спека не попадёт в tarball');
   else pass('vendor в files: вложенная спека');
+  /* 0.8.0: LICENSE — обязательный файл пакета, а не только строка в манифесте. */
+  if (!files.includes('LICENSE')) fail('LICENSE в files', 'лицензия не попадёт в tarball');
+  else pass('LICENSE в files: лицензия в архиве');
   if (pkg.private !== true) fail('private: true в tarball', String(pkg.private));
   else pass('private: true в tarball');
 }

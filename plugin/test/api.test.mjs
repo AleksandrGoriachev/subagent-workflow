@@ -713,3 +713,71 @@ test('deploy создаёт ключ проекта и не трогает гл�
     removeDir(b);
   }
 });
+
+/*
+ * 0.8.0: обновление движка из панели. confirm обязателен, тип и Origin — как у
+ * остальных POST, незавершённые задания дают 409 со списком, allowInProgress
+ * разрешает, повтор — up-to-date.
+ */
+test('POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0)', async () => {
+  const fsMod = await import('node:fs');
+  const pathMod = await import('node:path');
+  const { deployWorkflow, availableSpecRoot } = await import('../lib/deploy.js');
+  const repo = fsMod.mkdtempSync(pathMod.join(os.tmpdir(), 'wf-update-api-'));
+  git(repo, ['init', '-q']);
+  git(repo, ['config', 'user.email', 'update@local']);
+  git(repo, ['config', 'user.name', 'update']);
+  try {
+    const repoVersion = fsMod.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim();
+    const deployed = deployWorkflow(repo, { specRoot: availableSpecRoot() });
+    assert.equal(deployed.ok, true, 'движок развёрнут для теста обновления');
+    /* Возвращаем версию назад: /api/update должен увидеть, что есть куда обновлять. */
+    fsMod.writeFileSync(pathMod.join(repo, 'docs', 'subagent-workflow', 'VERSION'), '2.6.0\n');
+
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [repo] }));
+    const noConfirm = await call(handler, '/workflow/api/update', { method: 'POST', body: { root: repo } });
+    assert.equal(noConfirm.status, 400, 'без confirm обновления нет');
+    assert.match(noConfirm.json.error, /confirm/u);
+
+    const plain = await call(handler, '/workflow/api/update', {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: { root: repo, confirm: true },
+    });
+    assert.equal(plain.status, 415);
+
+    const foreign = await call(handler, '/workflow/api/update', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: 'http://evil.example' },
+      body: { root: repo, confirm: true },
+    });
+    assert.equal(foreign.status, 403);
+
+    /* Незавершённое задание: task.md и criteria.lock без acceptance.json. */
+    const taskDir = pathMod.join(repo, 'docs', 'tasks', '0001');
+    fsMod.mkdirSync(taskDir, { recursive: true });
+    fsMod.writeFileSync(pathMod.join(taskDir, 'task.md'), '# T\n');
+    fsMod.writeFileSync(pathMod.join(taskDir, 'criteria.lock'), '{}\n');
+
+    const blocked = await call(handler, '/workflow/api/update', { method: 'POST', body: { root: repo, confirm: true } });
+    assert.equal(blocked.status, 409);
+    assert.equal(blocked.json.code, 'tasks-in-progress');
+    assert.deepEqual(blocked.json.tasks, ['0001'], 'список незавершённых заданий виден клиенту');
+
+    const forced = await call(handler, '/workflow/api/update', {
+      method: 'POST',
+      body: { root: repo, confirm: true, allowInProgress: true },
+    });
+    assert.equal(forced.status, 200);
+    assert.equal(forced.json.ok, true);
+    assert.equal(forced.json.version, repoVersion, 'обновление до версии вложенной спеки');
+    assert.equal(fsMod.readFileSync(pathMod.join(repo, 'docs', 'subagent-workflow', 'VERSION'), 'utf8').trim(), repoVersion);
+
+    const again = await call(handler, '/workflow/api/update', { method: 'POST', body: { root: repo, confirm: true } });
+    assert.equal(again.status, 409);
+    assert.equal(again.json.code, 'up-to-date');
+    assert.equal(again.json.version, repoVersion);
+  } finally {
+    try { fsMod.rmSync(repo, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 }); } catch {}
+  }
+});

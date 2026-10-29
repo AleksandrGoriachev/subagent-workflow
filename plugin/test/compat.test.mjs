@@ -190,11 +190,12 @@ test('unknown version is a warning, not a hard failure', () => {
   assert.ok(view.checks.some((item) => item.id === 'version-unknown'));
 });
 
-test('манифест сохраняет files, dsh и engines.dsh после 0.7.0', async () => {
+test('манифест сохраняет files, dsh и engines.dsh после 0.8.0', async () => {
   const fs = await import('node:fs');
   const manifest = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  /* 0.7.0: vendor — вложенная спека, панель разворачивает движок офлайн. */
-  assert.deepEqual(manifest.files, ['lib', 'cordis.patch.yml', 'README.md', 'vendor'], 'в tarball должны попасть lib, cordis.patch.yml, README.md и vendor');
+  /* 0.7.0: vendor — вложенная спека, панель разворачивает движок офлайн.
+   * 0.8.0: LICENSE — обязательный файл пакета. */
+  assert.deepEqual(manifest.files, ['lib', 'cordis.patch.yml', 'README.md', 'LICENSE', 'vendor'], 'в tarball должны попасть lib, cordis.patch.yml, README.md, LICENSE и vendor');
   assert.deepEqual(manifest.dsh, { bundle: { patch: './cordis.patch.yml' }, client: { platform: 'web' } });
   assert.equal(manifest.engines.dsh, '>=0.2.0-0 <0.3.0');
   assert.equal(manifest.private, true);

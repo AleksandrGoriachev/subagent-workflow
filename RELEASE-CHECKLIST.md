@@ -31,9 +31,16 @@
 - [ ] схема записи: `node spec/checks/acceptance-schema.mjs` →
       `ACCEPTANCE SCHEMA OK` (она же проверяется в CI, джоба `test`)
 - [ ] развёртывание из панели: `node spec/checks/panel-deploy.mjs` →
-      `PANEL DEPLOY OK` (модуль, маршрут, кнопка, версия плагина 0.7.1, ключ
-      проекта в `.wf-keys/` и vendor в files; в CI — джоба `test`, сразу после
-      приёмочных проверок; задания 0015, 0017)
+      `PANEL DEPLOY OK` (модуль, маршрут, кнопка, версия плагина 0.8.0, ключ
+      проекта в `.wf-keys/`, vendor и LICENSE в files; в CI — джоба `test`,
+      сразу после приёмочных проверок; задания 0015, 0017)
+- [ ] **обновление движка из панели** (2.6.5 / 0.8.0):
+      `node spec/checks/update-flow.mjs` → `UPDATE FLOW OK` (старая копия
+      2.6.0 обновляется до версии сборки; ключи `acceptors.json` и
+      `<repo>/.wf-keys/` байт в байт; незавершённое задание даёт
+      `tasks-in-progress`, `allowInProgress` продолжает; повтор —
+      `up-to-date`; строка в `deploy.log`; 400/415/403 на
+      `POST /api/update`; плагин 0.8.0 и LICENSE; в CI — шаг в джобе `test`)
 - [ ] источники актора: `node spec/checks/actor-sources.mjs` → `ACTOR SOURCES OK`
       (runner/harness дают `separate-session`, ci/manual — `declared`, пустое
       окружение и неизвестный вид источника закрывают ворота; legacy-конфиг без
@@ -51,10 +58,11 @@
       `.gitignore` проекта, а развёртывание второго проекта не меняет ключ
       первого (`node spec/checks/deploy-safety.mjs` → `DEPLOY SAFETY OK`; в CI —
       джоба `test`, тот же шаг)
-- [ ] **POST-маршруты панели защищены** (2.6.3 / 0.7.1): `POST
-      /workflow/api/guard` и `/api/deploy` с `Content-Type: text/plain` → 415,
-      с чужим `Origin` → 403, без `Origin` (curl) работают; оба отказа приходят
-      до чтения тела и ничего не пишут
+- [ ] **POST-маршруты панели защищены** (2.6.3 / 0.8.0): `POST
+      /workflow/api/guard`, `/api/deploy` и `/api/update` с
+      `Content-Type: text/plain` → 415, с чужим `Origin` → 403, без `Origin`
+      (curl) работают; отказы приходят до чтения тела и ничего не пишут;
+      `/api/update` без `confirm: true` — 400
 - [ ] режим хуков в индексе: `git ls-files -s spec/hooks` — все три `100755`,
       `node spec/checks/hooks-mode.mjs` → `HOOKS MODE OK`. На Windows режим
       выставляется только git-ом (`git update-index --chmod=+x`): файловая
@@ -77,8 +85,9 @@
       копию и оба `.sha256`. Tarball собирается из `plugin/` без копирования и
       без правки манифеста; `node tools/pack-plugin.mjs --plan` печатает имена,
       а `tar -tzf dist/dsh-workflow-console.tgz` содержит `package/package.json`,
-      `package/lib/`, `package/cordis.patch.yml` и `package/README.md`
-- [ ] **в tarball вложена спека** (0.7.1): `tar -tzf dist/dsh-workflow-console.tgz`
+      `package/lib/`, `package/cordis.patch.yml`, `package/README.md` и
+      `package/LICENSE` (0.8.0: лицензия обязательна, сборщик её проверяет)
+- [ ] **в tarball вложена спека** (0.8.0): `tar -tzf dist/dsh-workflow-console.tgz`
       содержит `package/vendor/spec/scripts/init.mjs` и `package/vendor/VERSION`;
       панель разворачивает движок из них офлайн, версия движка = версия tarball.
       `tools/pack-plugin.mjs` кладёт спеку перед `npm pack` и убирает после (в том
@@ -118,7 +127,8 @@
 - [ ] в джобе `test` после приёмочных проверок идёт шаг
       `node spec/checks/panel-deploy.mjs` и зелёный на ubuntu и windows: кнопка
       развёртывания, ключ проекта и сборка vendor проверяются на каждом пуше, а
-      не только в задании (0.7.1)
+      не только в задании (0.8.0); рядом шаг `node spec/checks/update-flow.mjs`
+      — обновление, guard незавершённых заданий и LICENSE
 - [ ] в джобе `test` есть шаги `node spec/checks/acceptance-p0.mjs`,
       `node spec/checks/deployed-copy.mjs` и `node spec/checks/actor-sources.mjs`
       и они зелёные на ubuntu и windows: приёмочные проверки заданий 0011 и 0013

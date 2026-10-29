@@ -2,10 +2,29 @@
 
 Web panel for [subagent-workflow](../README.md) repositories inside DeepSeek
 Harness. It reads task artifacts and `workflow.config.json`; there are exactly
-two writes, both behind a confirmation: the commit-and-push guard flag and one
-explicit deployment of the engine into the open workspace (0.7.0 → 0.7.1). It
-never changes `policy`, never runs a gate, never signs and never accepts
-anything.
+three writes, all behind a confirmation: the commit-and-push guard flag, one
+explicit deployment of the engine into the open workspace (0.7.0 → 0.7.1) and
+one explicit engine update with a guard for unfinished tasks (0.8.0). It never
+changes `policy`, never runs a gate, never signs and never accepts anything.
+
+## 0.8.0 — версии движка и обновление с защитой от незавершённых заданий
+
+- **Версии в панели.** `GET /api/status` отдаёт установленную версию
+  (`repo.packageVersion`) и доступную (`availableVersion` из вложенной спеки);
+  шапка и раздел «Версия движка» показывают обе.
+- **Кнопка «Обновить движок»** на развёрнутом пространстве (в пустом остаётся
+  «Развернуть workflow здесь»). `POST /api/update` требует `confirm: true`,
+  `application/json` (415) и свой `Origin` (403), корень — через `selectRoot`.
+- **Незавершённые задания — стоп.** Задание без `acceptance.json` со
+  `status: accepted` даёт 409 `tasks-in-progress` со списком ID; диалог
+  перечисляет их и требует галочку «понимаю риск», которая уходит отдельным
+  полем `allowInProgress`. Повтор — `up-to-date`; каждое обновление пишет
+  строку в `docs/subagent-workflow/deploy.log` (время, from → to, актор,
+  результат).
+- **Event loop свободен.** HTTP-маршрут запускает init асинхронным `spawn`
+  (`updateWorkflowAsync`), поэтому DSH отвечает, пока идёт обновление.
+- **LICENSE.** `plugin/LICENSE` (MIT) в `files`; сборщик проверяет его наличие
+  в tarball. Версия плагина 0.8.0, тестов 89.
 
 ## 0.7.1 — ключ проекта и защита POST-маршрутов
 

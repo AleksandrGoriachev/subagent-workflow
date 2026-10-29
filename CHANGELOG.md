@@ -1,5 +1,41 @@
 # Изменения
 
+## 2.6.5 — 2026-10-29
+
+- **Панель показывает установленную и доступную версию движка.** `GET
+  /api/status` отдаёт `repo.packageVersion` (из `docs/subagent-workflow/
+  VERSION`) и `availableVersion` (из вложенной в tarball спеки); шапка панели
+  называет обе, на доске появился раздел «Версия движка».
+- **Обновление движка с защитой от незавершённых заданий.** `POST
+  /api/update` (только `confirm: true`, `application/json`, свой `Origin`)
+  запускает `init.mjs --force` из сборки панели и возвращает `up-to-date`,
+  `tasks-in-progress` (+ `tasks[]`), `not-deployed`, `not-a-repo`,
+  `not-found` или `init-failed`. Задание без `acceptance.json` со
+  `status: accepted` останавливает обновление (409): оно меняет ворота и
+  `workflow.config.json`, и перепроверка задания может прочитать смешанные
+  версии скриптов. Продолжение — отдельным полем `allowInProgress: true`
+  после галочки «понимаю риск» со списком ID. Ключи `acceptors.json` и
+  `<repo>/.wf-keys/` не меняются, глобальный `~/.wf-keys` не создаётся.
+- **Журнал развёртывания и обновления.** Каждое развёртывание и обновление
+  пишет строку в `docs/subagent-workflow/deploy.log`: время, from → to, актор
+  и результат, включая отказ init. Файл добавляется в `.gitignore` проекта.
+- **Event loop не блокируется.** HTTP-маршрут выполняет init асинхронным
+  `spawn` (`updateWorkflowAsync`): обновление до 180 с не замораживает DSH и
+  остальные маршруты панели отвечают; синхронная `updateWorkflow` остаётся для
+  скриптов и проверок.
+- **Плагин 0.8.0: LICENSE в tarball.** `plugin/LICENSE` (MIT) добавлен в
+  `files`; `tools/pack-plugin.mjs` отказывается собирать архив без LICENSE и
+  проверяет его наличие в tarball; `acceptance-schema` и `panel-deploy` ждут
+  LICENSE в files, номер плагина читают из манифеста.
+- **Проверки.** `spec/checks/update-flow.mjs` — 15 PASS (`UPDATE FLOW OK`),
+  шаг добавлен в CI; тесты плагина — 89, включая `/api/update` (400 без
+  confirm, 415, 403, 409 `tasks-in-progress`, `allowInProgress` 200,
+  `up-to-date` 409) и клиент (обе кнопки, версии, список заданий и галочка
+  «понимаю риск»). selftest 65, e2e 60 — без изменений.
+- **Версия 2.6.5** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
+  абзац «Версия 2.6.5:» в SPEC и эта секция. CHANGELOG/RELEASE-CHECKLIST
+  называют обновление и LICENSE.
+
 ## 2.6.4 — 2026-10-29
 
 - **Пересечение границ контракта — ошибка lint, а не сюрприз на verify (F-7).**

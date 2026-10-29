@@ -39,6 +39,8 @@ jobs:
         run: node spec/checks/guard-acceptance.mjs --all
       - name: panel-deploy — развёртывание движка из панели (0015)
         run: node spec/checks/panel-deploy.mjs
+      - name: update-flow — обновление движка из панели (0026)
+        run: node spec/checks/update-flow.mjs
       - name: deploy-safety — ключ проекта и POST-маршруты (0018)
         run: node spec/checks/deploy-safety.mjs
 

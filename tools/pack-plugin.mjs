@@ -125,6 +125,10 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) {
 if (!Array.isArray(pkg.files) || !pkg.files.includes('vendor')) {
   die('в ' + MANIFEST + ' нет "vendor" в files: спека не попадёт в tarball');
 }
+/* Лицензия — обязательный файл пакета (0.8.0): без неё tarball не выпускается. */
+if (!pkg.files.includes('LICENSE')) {
+  die('в ' + MANIFEST + ' нет "LICENSE" в files: лицензия не попадёт в tarball');
+}
 
 const versioned = name + '-' + version + '.tgz';
 const stable = name + '.tgz';
@@ -189,6 +193,9 @@ try {
   }
   if (!tarballHas(data, 'vendor/VERSION')) {
     fail('в tarball нет vendor/VERSION: init не увидит версию движка');
+  }
+  if (!tarballHas(data, 'LICENSE')) {
+    fail('в tarball нет LICENSE: манифест обещает файл, а архив его не содержит');
   }
 
   fs.writeFileSync(stablePath, data);

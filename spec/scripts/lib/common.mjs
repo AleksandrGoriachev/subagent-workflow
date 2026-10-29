@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.6.4';
+export const TOOL = 'subagent-workflow/2.6.5';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.executor.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',

@@ -35,6 +35,15 @@ window.__ModuleLoader__.load({
      */
     const DEPLOY_LABEL = "Развернуть workflow здесь";
     const DEPLOY_ROUTE = "/api/deploy";
+    /*
+     * 0.8.0: обновление развёрнутого движка. Кнопка показывает установленную и
+     * доступную (вложенную в сборку) версии; при незавершённых заданиях диалог
+     * перечисляет их и требует галочку «понимаю риск» — обновление меняет
+     * ворота, и проверка незавершённого задания может сломаться.
+     */
+    const UPDATE_LABEL = "Обновить движок";
+    const UPDATE_ROUTE = "/api/update";
+    const UPDATE_RISK_LABEL = "понимаю риск";
     /* Что именно появится в проекте: этот список показывает подтверждение. */
     const DEPLOY_CHANGES = [
       "docs/subagent-workflow/ — движок, ворота, шаблоны, хуки и публичный ключ приёмщика;",
@@ -814,6 +823,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         const [guardNote, setGuardNote] = React.useState(null);
         const [deployBusy, setDeployBusy] = React.useState(false);
         const [deployNote, setDeployNote] = React.useState(null);
+        const [updateOpen, setUpdateOpen] = React.useState(false);
+        const [updateRisk, setUpdateRisk] = React.useState(false);
+        const [updateBusy, setUpdateBusy] = React.useState(false);
+        const [updateNote, setUpdateNote] = React.useState(null);
 
         async function load(selectedRoot, explicit = false) {
           setBusy(true);
@@ -1059,6 +1072,269 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           }
         }
 
+        /* ------------------------------------------------------------------ *
+         * 0.8.0: версии движка и обновление
+         * ------------------------------------------------------------------ */
+
+        function engineInstalled() {
+          return status && status.repo && status.repo.packageVersion
+            ? String(status.repo.packageVersion)
+            : null;
+        }
+
+        function engineAvailable() {
+          return status && status.availableVersion ? String(status.availableVersion) : null;
+        }
+
+        /* Незавершённые задания приходят из /api/status (repo.tasksInProgress). */
+        function enginePending() {
+          const list = status && status.repo && status.repo.tasksInProgress;
+          return Array.isArray(list) ? list.map(String) : [];
+        }
+
+        function openUpdate() {
+          setUpdateOpen(true);
+          setUpdateRisk(false);
+          setUpdateNote(null);
+        }
+
+        function closeUpdate() {
+          setUpdateOpen(false);
+          setUpdateRisk(false);
+        }
+
+        async function runUpdate() {
+          const target = deployTarget();
+          if (!target || updateBusy) return;
+          const pending = enginePending();
+          if (pending.length > 0 && !updateRisk) return;
+          setUpdateBusy(true);
+          setUpdateNote(null);
+          setError(null);
+          try {
+            const response = await fetch(BASE + UPDATE_ROUTE, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({
+                root: target,
+                confirm: true,
+                allowInProgress: updateRisk === true,
+              }),
+            });
+            /*
+             * Тело читаем сами: у 409 tasks-in-progress в нём список заданий, а
+             * readJson превратил бы его в одну строку ошибки.
+             */
+            const text = await response.text();
+            let data = {};
+            try {
+              data = text.length > 0 ? JSON.parse(text) : {};
+            } catch {
+              data = { error: "ответ не JSON: HTTP " + response.status };
+            }
+            if (data.code === "up-to-date") {
+              setUpdateNote({
+                kind: "ok",
+                code: null,
+                text: "Обновление не нужно: уже установлена версия " + fmt(data.version) + ".",
+                log: data.log || "",
+              });
+              return;
+            }
+            if (data.code === "tasks-in-progress") {
+              const list = Array.isArray(data.tasks) && data.tasks.length > 0
+                ? data.tasks.join(", ")
+                : "есть";
+              setUpdateNote({
+                kind: "error",
+                code: data.code,
+                text: "Обновление остановлено: незавершённые задания " + list
+                  + ". Поставьте галочку «" + UPDATE_RISK_LABEL + "», если готовы продолжить.",
+                log: data.log || "",
+              });
+              setUpdateRisk(false);
+              return;
+            }
+            if (!response.ok || data.ok !== true) {
+              setUpdateNote({
+                kind: "error",
+                code: data.code || "http-" + response.status,
+                text: data.error || "обновление не выполнено: HTTP " + response.status,
+                log: data.log || "",
+              });
+              return;
+            }
+            setUpdateNote({
+              kind: "ok",
+              code: null,
+              text: "Движок обновлён: " + fmt(data.from) + " → " + fmt(data.version)
+                + ". Панель перечитала состояние.",
+              log: data.log || "",
+            });
+            closeUpdate();
+            /* Перечитываем состояние: версии, журнал и список заданий обновились. */
+            await load(target, true);
+          } catch (failure) {
+            setUpdateNote({ kind: "error", code: "network", text: errorText(failure), log: "" });
+          } finally {
+            setUpdateBusy(false);
+          }
+        }
+
+        function renderUpdateNote() {
+          if (!updateNote) return null;
+          const ok = updateNote.kind === "ok";
+          const color = ok ? T.success : T.danger;
+          const logText = tailText(updateNote.log, 3000);
+          return h(
+            "div",
+            { style: Object.assign({}, S.runBox, { borderColor: color, marginTop: "8px" }) },
+            h(
+              "div",
+              { style: S.runHead },
+              h(
+                "span",
+                { style: Object.assign({}, S.runStatus, { color, borderColor: color }) },
+                ok ? "ок" : updateNote.code || "отказ",
+              ),
+              h("span", { style: S.runTitle }, ok ? "Обновление движка" : "Обновить не удалось"),
+              h("span", { style: S.spacer }),
+              h(
+                "button",
+                { type: "button", style: S.button, onClick: () => setUpdateNote(null), title: "Скрыть сообщение" },
+                "×",
+              ),
+            ),
+            h("div", { style: { fontSize: "12px", whiteSpace: "pre-wrap" } }, updateNote.text),
+            logText.length > 0 ? h("pre", { style: S.runLog }, logText) : null,
+          );
+        }
+
+        function renderUpdateDialog(pending) {
+          const installed = engineInstalled();
+          const available = engineAvailable();
+          const blocked = updateBusy || (pending.length > 0 && !updateRisk);
+          return h(
+            "div",
+            { style: Object.assign({}, S.stageBox, { borderLeftColor: pending.length > 0 ? T.warn : T.business }) },
+            h("div", { style: S.stageBoxTitle }, "Обновление движка: подтверждение"),
+            h(
+              "div",
+              { style: S.stageText },
+              "Установлена версия " + fmt(installed) + ", будет установлена " + fmt(available)
+                + ". Обновление перезапишет файлы движка и workflow.config.json (policy/roles/models "
+                + "сохраняются), задачи и записи приёмки не меняются. Ключи .wf-keys/ и acceptors.json "
+                + "не трогаются, глобальный ~/.wf-keys не создаётся.",
+            ),
+            pending.length > 0
+              ? h(
+                  "div",
+                  { style: { marginTop: "8px", borderTop: "1px solid " + T.border1, paddingTop: "8px" } },
+                  h(
+                    "div",
+                    { style: { color: T.warn, fontSize: "12px", fontWeight: "600", whiteSpace: "pre-wrap" } },
+                    "Незавершённые задания: " + pending.join(", "),
+                  ),
+                  h(
+                    "div",
+                    { style: Object.assign({}, S.stageText, { marginTop: "4px" }) },
+                    "Обновление меняет ворота и workflow.config.json; проверка незавершённого задания "
+                      + "может прочитать смешанные версии скриптов и сломаться на перепроверке. "
+                      + "Перед обновлением не должно быть запущенных задач.",
+                  ),
+                  h(
+                    "label",
+                    { style: S.toggle },
+                    h("input", {
+                      type: "checkbox",
+                      checked: updateRisk,
+                      onChange: (event) => setUpdateRisk(Boolean(event.target.checked)),
+                      "aria-label": UPDATE_RISK_LABEL,
+                    }),
+                    UPDATE_RISK_LABEL,
+                  ),
+                )
+              : h(
+                  "div",
+                  { style: Object.assign({}, S.stageText, { marginTop: "6px" }) },
+                  "Незавершённых заданий нет: обновление ничего не сломает.",
+                ),
+            h(
+              "div",
+              { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
+              h(
+                "button",
+                {
+                  type: "button",
+                  style: blocked ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: blocked,
+                  onClick: () => void runUpdate(),
+                  title: pending.length > 0 && !updateRisk
+                    ? "Сначала подтвердите риск: есть незавершённые задания"
+                    : "Обновить движок до версии сборки панели",
+                },
+                updateBusy ? "Обновляю…" : "Подтвердить обновление",
+              ),
+              h(
+                "button",
+                { type: "button", style: S.button, disabled: updateBusy, onClick: closeUpdate },
+                "Отмена",
+              ),
+            ),
+          );
+        }
+
+        function renderEngine() {
+          if (!root) return null;
+          const installed = engineInstalled();
+          const available = engineAvailable();
+          const pending = enginePending();
+          const upToDate = Boolean(installed && available && installed === available);
+          return h(
+            "section",
+            { style: S.section },
+            h("h3", { style: S.sectionTitle }, "Версия движка"),
+            h(
+              "div",
+              { style: S.stageText },
+              "Установлено: " + (installed ? "v" + installed : "не развёрнут")
+                + ". Доступно в этой сборке панели: " + (available ? "v" + available : "неизвестно") + ".",
+            ),
+            upToDate
+              ? h(
+                  "div",
+                  { style: Object.assign({}, S.stageText, { marginTop: "2px" }) },
+                  "Версия совпадает со сборкой панели — обновление не требуется.",
+                )
+              : null,
+            h(
+              "div",
+              { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
+              h(
+                "button",
+                {
+                  type: "button",
+                  style: updateBusy || busy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: updateBusy || busy,
+                  onClick: () => (updateOpen ? closeUpdate() : openUpdate()),
+                  title: "Обновить движок subagent-workflow до версии " + fmt(available),
+                  "aria-label": UPDATE_LABEL,
+                },
+                updateBusy ? "Обновляю…" : UPDATE_LABEL,
+              ),
+            ),
+            updateOpen ? renderUpdateDialog(pending) : null,
+            updateNote ? renderUpdateNote() : null,
+            h(
+              "div",
+              { style: S.hint },
+              "Обновление выполняет init --force из вложенной спеки: версия движка берётся из сборки, "
+                + "без сети. Ключи проекта не меняются; каждое обновление пишет строку в "
+                + "docs/subagent-workflow/deploy.log. Пока идёт обновление, остальные запросы панели живы.",
+            ),
+          );
+        }
+
         function runButton(id, taskId) {
           const active = running === id;
           return h(
@@ -1158,6 +1434,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             { style: S.header },
             h("h1", { style: S.title }, "Workflow"),
             h("span", { style: S.subtitle }, title),
+            h(
+              "span",
+              { style: S.subtitle },
+              "движок: " + (engineInstalled() ? "v" + engineInstalled() : "не развёрнут")
+                + (engineAvailable() ? " · доступна v" + engineAvailable() : ""),
+            ),
             h("span", { style: S.spacer }),
             rootOptions.length > 1
               ? h(
@@ -1395,6 +1677,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return h(
             "div",
             null,
+            renderEngine(),
             h(
               "div",
               { style: S.summary },
