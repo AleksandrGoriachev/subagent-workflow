@@ -2,13 +2,13 @@
   "version": 4,
   "kind": "red",
   "task": "0020",
-  "createdAt": "2026-10-29T05:55:54.633Z",
+  "createdAt": "2026-10-29T05:59:18.596Z",
   "base": "HEAD",
-  "baseSha": "96066509a729968c8fbc2a37b4d96bedf7d5b454",
-  "headSha": "96066509a729968c8fbc2a37b4d96bedf7d5b454",
-  "contractCommit": "96066509a729968c8fbc2a37b4d96bedf7d5b454",
+  "baseSha": "7df624d9a9718477ae4d6db26af74c263df7b5dd",
+  "headSha": "7df624d9a9718477ae4d6db26af74c263df7b5dd",
+  "contractCommit": "7df624d9a9718477ae4d6db26af74c263df7b5dd",
   "criteriaSha256": "710e3166461b4c3c3e1b2dd5d39da609c4121594abb0a3dbd095a4fc72994cd4",
-  "criteriaJsonSha256": "80df4d0d271662d07c4dd291ab7e7ccd86f6f50466574f048b42aa3bfbaf1f63",
+  "criteriaJsonSha256": "b6882659f37e41ba330cd86f114f4138ebee4fae7be757f474c7e1739d9c890e",
   "dirtyPaths": [
     "docs/tasks/0020/criteria.lock"
   ],
@@ -17,7 +17,7 @@
       "id": "C1",
       "command": "node spec/checks/version-drift.mjs",
       "exitCode": 1,
-      "durationMs": 238,
+      "durationMs": 342,
       "passed": false,
       "timedOut": false,
       "reasons": [
@@ -33,7 +33,7 @@
       "id": "C2",
       "command": "node spec/selftest.mjs",
       "exitCode": 0,
-      "durationMs": 32600,
+      "durationMs": 31888,
       "passed": true,
       "timedOut": false,
       "reasons": [],
@@ -46,7 +46,7 @@
       "id": "C3",
       "command": "node spec/e2e.mjs",
       "exitCode": 0,
-      "durationMs": 107108,
+      "durationMs": 105707,
       "passed": true,
       "timedOut": false,
       "reasons": [],
@@ -59,7 +59,7 @@
       "id": "C4",
       "command": "node spec/checks/gate-rules.mjs",
       "exitCode": 0,
-      "durationMs": 37460,
+      "durationMs": 38072,
       "passed": true,
       "timedOut": false,
       "reasons": [],
@@ -72,7 +72,7 @@
       "id": "C5",
       "command": "node spec/checks/deploy-safety.mjs",
       "exitCode": 1,
-      "durationMs": 5609,
+      "durationMs": 7036,
       "passed": false,
       "timedOut": false,
       "reasons": [
@@ -87,7 +87,7 @@
       "id": "C6",
       "command": "node tools/check-version.mjs",
       "exitCode": 0,
-      "durationMs": 210,
+      "durationMs": 368,
       "passed": true,
       "timedOut": false,
       "reasons": [],
@@ -104,21 +104,19 @@
     "C5"
   ],
   "allGreen": false,
-  "redProven": false,
+  "redProven": true,
   "redExpectation": {
     "configured": true,
-    "ok": false,
-    "errors": [
-      "redExpect: критерий C5 обязан быть зелёным на базе"
-    ],
+    "ok": true,
+    "errors": [],
     "mustFail": [
-      "C1"
+      "C1",
+      "C5"
     ],
     "mustPass": [
       "C2",
       "C3",
       "C4",
-      "C5",
       "C6"
     ]
   },

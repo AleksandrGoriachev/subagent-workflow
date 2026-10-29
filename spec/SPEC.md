@@ -475,6 +475,11 @@
    проверки (дефекты 0014, 0017).
 6. **Версия 2.6.4** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
    эта секция и секция `## 2.6.4` в CHANGELOG. Плагин не менялся — 0.7.1.
+7. **Номера версий — только в `tools/check-version.mjs`.** Проверки
+   `spec/checks/*.mjs` читают версию из `VERSION` и `plugin/package.json`, а
+   `deploy-safety` сверяет плагин с `compat.PLUGIN_VERSION`: релиз больше не
+   краснит проверки, как `deploy-safety` после выпуска 2.6.4.
+   `version-drift` держит правило: литерал текущей версии в проверке — ошибка.
 
 ## 0.1. Быстрый старт с нуля
 

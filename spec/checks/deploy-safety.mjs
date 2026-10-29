@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-/* Задание 0016: безопасность развёртывания из панели (2.6.3).
+/* Задание 0016: безопасность развёртывания из панели.
  * 1) deploy не трогает глобальный ключ: ключ проекта — в корне проекта;
  * 2) повторное развёртывание другого проекта не уничтожает ключ первого;
  * 3) init не оставляет VERSION при падении (нет ложного already-deployed);
  * 4) POST /api/guard и /api/deploy: только application/json и только свой Origin;
- * 5) версия спеки 2.6.3 и плагина 0.7.1 отражены в документах. */
+ * 5) версии читаются из VERSION, package.json спеки, plugin/package.json и
+ *    compat.PLUGIN_VERSION; SPEC обязан содержать абзац «Версия <VERSION>:».
+ *    Конкретные номера не утверждаются: их сверяет tools/check-version.mjs. */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -85,15 +87,21 @@ try {
   }
 } catch (error) { fail('api: маршруты guard/deploy', String(error.message).slice(0, 160)); }
 
-/* 5. Версии и документы. */
+/* 5. Версии и документы. Номера не утверждаются: их знает только check-version. */
 try {
-  const spec = fs.readFileSync(path.join(PKG, 'VERSION'), 'utf8').trim();
-  if (spec === '2.6.3') pass('спека 2.6.3'); else fail('спека 2.6.3', 'сейчас ' + spec);
+  const version = fs.readFileSync(path.join(PKG, 'VERSION'), 'utf8').trim();
+  if (version !== '') pass('VERSION: версия читается');
+  else fail('VERSION: версия читается', 'файл пуст');
+  const specPkg = JSON.parse(fs.readFileSync(path.join(PKG, 'package.json'), 'utf8')).version;
+  if (version !== '' && version === specPkg) pass('VERSION совпадает с package.json спеки');
+  else fail('VERSION совпадает с package.json спеки', 'VERSION=' + version + ', package.json=' + specPkg);
   const plugin = JSON.parse(fs.readFileSync(path.join(PKG, 'plugin', 'package.json'), 'utf8')).version;
-  if (plugin === '0.7.1') pass('плагин 0.7.1'); else fail('плагин 0.7.1', 'сейчас ' + plugin);
+  const { PLUGIN_VERSION } = await import(pathToFileURL(path.join(PKG, 'plugin', 'lib', 'compat.js')).href);
+  if (plugin === PLUGIN_VERSION) pass('плагин: package.json совпадает с compat.PLUGIN_VERSION');
+  else fail('плагин: package.json совпадает с compat.PLUGIN_VERSION', 'package.json=' + plugin + ', compat=' + PLUGIN_VERSION);
   const specMd = fs.readFileSync(path.join(PKG, 'spec', 'SPEC.md'), 'utf8');
-  if (/2\.6\.3/.test(specMd) && /втора[яую] запись|две записи/i.test(specMd)) pass('SPEC: 2.6.3 и две записи панели');
-  else fail('SPEC: 2.6.3 и две записи панели');
+  if (version !== '' && specMd.includes('Версия ' + version + ':')) pass('SPEC: абзац «Версия ' + version + ':»');
+  else fail('SPEC: абзац «Версия ' + version + ':»');
 } catch (error) { fail('версии и документы', String(error.message).slice(0, 160)); }
 
 try { fs.rmSync(a, { recursive: true, force: true }); fs.rmSync(b, { recursive: true, force: true }); fs.rmSync(c, { recursive: true, force: true }); } catch {}

@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 /* Задание 0019: правила ворот (2.6.4).
  * F-7: пересечение allowedPaths и protectedPaths — ошибка lint.
+ * F-7 узость: свои task.md/criteria.json в protectedPaths — не пересечение,
+ * а шаблон docs/tasks/<id>/*.md, накрывающий их, — по-прежнему ошибка.
  * F-5: low без красного — только явный redExpect.noRed { reason }.
  * F-6: причины красного — дословная подстрока; при несовпадении task-red печатает вывод.
- * F-8: verify.json исполнителя сохраняется как verify.executor.json даже при отказе приёмки. */
+ * F-8: verify.json исполнителя сохраняется как verify.executor.json даже при отказе приёмки.
+ * covers: путь из allowedPaths без covers — WARN и exit 0. */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -66,6 +69,42 @@ try {
   if (r.code === 0) pass('F-7 контроль: без пересечения — ок');
   else fail('F-7 контроль: без пересечения — ок', r.out.trim().slice(0, 200));
 } finally { fs.rmSync(f7c.repo, { recursive: true, force: true }); }
+
+/*
+ * F-7 узость: исключение действует только для точных собственных артефактов.
+ * Свои task.md/criteria.json в protectedPaths не валят lint: их защищает замок,
+ * и docs/tasks/<id>/** всё равно нужен в allowedPaths ради untracked-файлов.
+ */
+const f7own = repoWithTask({
+  allowed: ['src/**', 'docs/tasks/0001/**'],
+  protectedPaths: ['docs/tasks/0001/task.md', 'docs/tasks/0001/criteria.json'],
+});
+try {
+  const r = lint(f7own.repo);
+  if (r.code === 0 && !/ERROR/.test(r.out)) pass('F-7 узость: свои task.md/criteria.json — ок');
+  else fail('F-7 узость: свои task.md/criteria.json — ок', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
+} finally { fs.rmSync(f7own.repo, { recursive: true, force: true }); }
+
+/* Контроль: шаблон docs/tasks/0001/*.md накрывает и task.md, и лишнее — пересечение. */
+const f7narrow = repoWithTask({
+  allowed: ['docs/tasks/0001/**'],
+  protectedPaths: ['docs/tasks/0001/*.md'],
+});
+try {
+  const r = lint(f7narrow.repo);
+  if (r.code !== 0 && /ERROR/.test(r.out) && /protectedPaths/.test(r.out) && /docs\/tasks\/0001\/\*\.md/.test(r.out)) {
+    pass('F-7 узость: шаблон docs/tasks/0001/*.md — ошибка');
+  } else fail('F-7 узость: шаблон docs/tasks/0001/*.md — ошибка', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
+} finally { fs.rmSync(f7narrow.repo, { recursive: true, force: true }); }
+
+/* covers: разрешённый файл без покрытия — WARN, но не ERROR: exit 0. */
+const cov = repoWithTask({ allowed: ['src/app.js'] });
+try {
+  const r = lint(cov.repo);
+  if (r.code === 0 && /WARN/.test(r.out) && /covers/.test(r.out) && /src\/app\.js/.test(r.out)) {
+    pass('covers: путь из allowedPaths без covers — WARN и exit 0');
+  } else fail('covers: путь из allowedPaths без covers — WARN и exit 0', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
+} finally { fs.rmSync(cov.repo, { recursive: true, force: true }); }
 
 /* F-5: low без красного — только noRed. */
 const f5 = repoWithTask({ allowed: ['src/**'], criteria: { redExpect: { mustFail: [], mustPass: ['C1'], reasons: {} } } });

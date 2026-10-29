@@ -5,8 +5,8 @@
  * 1. Схема приёмки знает новые поля записи (actor.source, actor.sourceKind,
  *    independence.basis), по-прежнему принимает записи без них и отклоняет
  *    незнакомое поле (контроль: иначе «дописали в схему» ничего не доказывает).
- * 2. Манифест плагина готов к установке из tarball: версия 0.7.1, engines.dsh,
- *    dsh.bundle, dsh.client, состав files.
+ * 2. Манифест плагина готов к установке из tarball: имя и версия читаются из
+ *    самого манифеста, engines.dsh, dsh.bundle, dsh.client, состав files.
  * 3. Сборщик tools/pack-plugin.mjs умеет --plan и печатает стабильное и
  *    версионированное имена ассетов.
  */
@@ -22,7 +22,8 @@ if (!fs.existsSync(path.join(ROOT, 'spec', 'SPEC.md'))) {
   process.exit(0);
 }
 const SCHEMA = path.join(ROOT, 'spec', 'templates', 'acceptance.schema.json');
-const PLUGIN_PKG = path.join(ROOT, 'plugin', 'package.json');
+const PLUGIN_DIR = path.join(ROOT, 'plugin');
+const PLUGIN_PKG = path.join(PLUGIN_DIR, 'package.json');
 const PACK_TOOL = path.join(ROOT, 'tools', 'pack-plugin.mjs');
 let failed = 0;
 
@@ -101,10 +102,13 @@ if (schema) {
 let pkg = null;
 try { pkg = readJson(PLUGIN_PKG); } catch (error) { fail('манифест плагина читается', error.message); }
 if (pkg) {
+  /* Имя и версия — из манифеста: конкретный номер сверяет tools/check-version.mjs. */
   const v = String(pkg.version || '');
-  if (pkg.name !== 'dsh-workflow-console') fail('имя плагина', String(pkg.name));
-  else pass('имя плагина dsh-workflow-console');
-  if (v !== '0.7.1') fail('версия плагина 0.7.1', v); else pass('версия плагина 0.7.1');
+  const name = String(pkg.name || '');
+  if (name === '') fail('имя плагина из манифеста', JSON.stringify(pkg.name));
+  else pass('имя плагина из манифеста: ' + name);
+  if (!/^\d+\.\d+\.\d+$/.test(v)) fail('версия плагина из манифеста', JSON.stringify(pkg.version));
+  else pass('версия плагина из манифеста: ' + v);
   const engines = pkg.engines || {};
   if (engines.dsh !== '>=0.2.0-0 <0.3.0') fail('engines.dsh', JSON.stringify(engines.dsh));
   else pass('engines.dsh объявлен');
@@ -113,12 +117,30 @@ if (pkg) {
   else pass('dsh.bundle.patch объявлен');
   if (!dsh.client || dsh.client.platform !== 'web') fail('dsh.client.platform', JSON.stringify(dsh.client));
   else pass('dsh.client.platform web');
-  const files = Array.isArray(pkg.files) ? pkg.files : [];
-  /* 0.7.0: vendor — вложенная спека, без неё кнопка развернуть движок не может (0.7.1). */
-  const needed = ['lib', 'cordis.patch.yml', 'README.md', 'vendor'];
-  const missing = needed.filter((item) => !files.includes(item));
-  if (missing.length) fail('files плагина', 'нет ' + missing.join(', '));
-  else pass('files плагина полный');
+  const files = (Array.isArray(pkg.files) ? pkg.files : []).filter((item) => typeof item === 'string' && item.trim() !== '');
+  /*
+   * Состав архива — из манифеста: каждая точка входа (main, exports, patch)
+   * должна попадать в files. README — обязательный сосед tarball по конвенции
+   * npm, vendor — вложенная спека для офлайн-развёртывания.
+   */
+  const entryPaths = [
+    'README.md',
+    pkg.main,
+    ...Object.values(pkg.exports || {}),
+    pkg.dsh && pkg.dsh.bundle && pkg.dsh.bundle.patch,
+  ].filter((item) => typeof item === 'string' && item !== '').map((item) => item.replace(/^\.\//, ''));
+  const filed = (target) => files.some((entry) => {
+    const base = entry.replace(/^\.\//, '').replace(/\/+$/, '');
+    return target === base || target.startsWith(base + '/');
+  });
+  const notFiled = [...new Set(entryPaths)].filter((target) => !filed(target));
+  if (notFiled.length) fail('files плагина: точки входа в архиве', 'нет ' + notFiled.join(', '));
+  else pass('files плагина: точки входа в архиве');
+  const missingOnDisk = files.filter((entry) => entry !== 'vendor' && !fs.existsSync(path.join(PLUGIN_DIR, entry)));
+  if (missingOnDisk.length) fail('files плагина: пути на диске', 'нет ' + missingOnDisk.join(', '));
+  else pass('files плагина: пути на диске (кроме vendor — его создаёт сборщик)');
+  if (!files.includes('vendor')) fail('vendor в files', 'вложенная спека не попадёт в tarball');
+  else pass('vendor в files: вложенная спека');
   if (pkg.private !== true) fail('private: true в tarball', String(pkg.private));
   else pass('private: true в tarball');
 }
@@ -129,11 +151,14 @@ if (!fs.existsSync(PACK_TOOL)) {
 } else {
   const result = spawnSync(process.execPath, [PACK_TOOL, '--plan'], { cwd: ROOT, encoding: 'utf8' });
   const out = String(result.stdout || '') + String(result.stderr || '');
-  const stableOk = /\bdsh-workflow-console\.tgz\b/.test(out);
-  const versionedOk = /dsh-workflow-console-\d+\.\d+\.\d+\.tgz/.test(out);
+  /* Имена ассетов строятся из манифеста: сборщик обязан взять имя и версию оттуда. */
+  const assetName = String((pkg && pkg.name) || '');
+  const assetVersion = String((pkg && pkg.version) || '');
+  const stableOk = assetName !== '' && out.includes(assetName + '.tgz');
+  const versionedOk = assetName !== '' && assetVersion !== '' && out.includes(assetName + '-' + assetVersion + '.tgz');
   const ok = result.status === 0 && stableOk && versionedOk;
-  if (!ok) fail('сборщик печатает имена ассетов', 'exit=' + result.status + ' ' + out.trim().slice(0, 200));
-  else pass('сборщик печатает стабильное и версионированное имена');
+  if (!ok) fail('сборщик печатает имена ассетов из манифеста', 'exit=' + result.status + ' ' + out.trim().slice(0, 200));
+  else pass('сборщик печатает стабильное и версионированное имена из манифеста');
 }
 
 /* 4. Схема проверяется в CI, а не только руками. */

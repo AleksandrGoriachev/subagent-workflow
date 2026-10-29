@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /*
- * Приёмочные проверки задания 0014 (панель 0.7.0) с контрактом 0.7.1:
+ * Приёмочные проверки задания 0014 (панель):
  * 1) модуль развёртывания есть и работает: успех в чистом git-репозитории, повтор — already-deployed,
  *    не-git — not-a-repo; ключ приёмщика — в проекте (<repo>/.wf-keys) и в .gitignore;
  * 2) POST /workflow/api/deploy (application/json) требует confirm и разворачивает движок
  *    в корень workspace;
- * 3) кнопка в клиенте и сборка tarball: спека вкладывается (vendor), версия плагина 0.7.1,
- *    подтверждение называет ключ проекта.
+ * 3) кнопка в клиенте и сборка tarball: спека вкладывается (vendor), версия плагина
+ *    читается из plugin/package.json, подтверждение называет ключ проекта.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -62,7 +62,7 @@ try {
   else fail('deploy: выставлен core.hooksPath', 'получено: ' + (hooksPath || '(пусто)'));
   if (fs.existsSync(path.join(repoOk, 'docs', 'tasks'))) pass('deploy: создан docs/tasks');
   else fail('deploy: создан docs/tasks');
-  /* 0.7.1: ключ приёмщика создаётся в проекте, а не в домашнем каталоге. */
+  /* Ключ приёмщика создаётся в проекте, а не в домашнем каталоге. */
   const keyFile = path.join(repoOk, '.wf-keys', 'agent-judge.key.pem');
   if (fs.existsSync(keyFile)) pass('deploy: ключ проекта в .wf-keys/');
   else fail('deploy: ключ проекта в .wf-keys/', keyFile + ' нет');
@@ -93,7 +93,7 @@ try {
   const call = async (body) => {
     const res = { statusCode: 200, headers: {}, body: '', setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = b === undefined ? '' : String(b); } };
     const listeners = { data: [], end: [], error: [] };
-    /* 0.7.1: маршрут требует application/json и свой Origin; заголовки как у клиента. */
+    /* Маршрут требует application/json и свой Origin; заголовки как у клиента. */
     const req = { method: 'POST', url: '/workflow/api/deploy', socket: { remoteAddress: '127.0.0.1' },
       headers: { 'content-type': 'application/json' },
       on(ev, fn) { (listeners[ev] || listeners.data).push(fn); return req; } };
@@ -115,12 +115,14 @@ try {
   const client = fs.readFileSync(path.join(PKG, 'plugin', 'lib', 'client.js'), 'utf8');
   if (/Развернуть workflow здесь/.test(client) && /api\/deploy/.test(client)) pass('клиент: кнопка и вызов /api/deploy');
   else fail('клиент: кнопка и вызов /api/deploy');
-  /* 0.7.1: подтверждение обещает .wf-keys/ проекта и неприкосновенность глобального. */
+  /* Подтверждение обещает .wf-keys/ проекта и неприкосновенность глобального. */
   if (/\.wf-keys\//.test(client) && /not|не трогается/i.test(client)) pass('клиент: ключ проекта в подтверждении');
   else fail('клиент: ключ проекта в подтверждении');
+  /* Версия — только из манифеста: номер релиза сверяет tools/check-version.mjs. */
   const pkg = JSON.parse(fs.readFileSync(path.join(PKG, 'plugin', 'package.json'), 'utf8'));
-  if (pkg.version === '0.7.1') pass('плагин: версия 0.7.1');
-  else fail('плагин: версия 0.7.1', 'сейчас ' + pkg.version);
+  const pluginVersion = String(pkg.version || '');
+  if (/^\d+\.\d+\.\d+$/.test(pluginVersion)) pass('плагин: версия из манифеста ' + pluginVersion);
+  else fail('плагин: версия из манифеста', 'сейчас ' + JSON.stringify(pkg.version));
   if (Array.isArray(pkg.files) && pkg.files.includes('vendor')) pass('сборка: vendor в files');
   else fail('сборка: vendor в files');
   const pack = fs.readFileSync(path.join(PKG, 'tools', 'pack-plugin.mjs'), 'utf8');

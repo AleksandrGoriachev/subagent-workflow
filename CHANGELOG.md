@@ -38,7 +38,15 @@
   обновляет.
 - **Версия 2.6.4** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
   абзац «Версия 2.6.4:» в SPEC и эта секция. Плагин не менялся — 0.7.1.
-- **Проверки.** `spec/checks/gate-rules.mjs` — 6 PASS (`GATE RULES OK`),
+- **Проверки не запоминают номера версий.** `deploy-safety`, `panel-deploy` и
+  `acceptance-schema` читают версию из `VERSION` и `plugin/package.json`, а
+  `deploy-safety` сверяет плагин с `compat.PLUGIN_VERSION`; номер по-прежнему
+  сверяет только `tools/check-version.mjs`. После выпуска 2.6.4
+  `deploy-safety` больше не падает с «FAIL спека 2.6.3». `gate-rules` получил
+  фикстуры узости F-7 (свои `task.md`/`criteria.json` — ок, шаблон
+  `docs/tasks/<id>/*.md` — `ERROR`) и `WARN` по `covers`;
+  `verify.executor.json` внесён в `TASK_ARTIFACTS`.
+- **Проверки.** `spec/checks/gate-rules.mjs` — 9 PASS (`GATE RULES OK`),
   `deployed-copy` — 4 PASS (`DEPLOYED COPY OK`), `acceptance-p0` и
   `guard-acceptance` не менялись; пакет: selftest 65, e2e 60.
 

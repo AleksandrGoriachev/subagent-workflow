@@ -7,7 +7,7 @@ import { spawn, spawnSync } from 'node:child_process';
 export const TOOL = 'subagent-workflow/2.6.4';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
-  'verify.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
+  'verify.json', 'verify.executor.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
 ]);
 
 export function fail(message, exitCode = 1) {
