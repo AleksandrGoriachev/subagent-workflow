@@ -1,0 +1,104 @@
+{
+  "task": "0031",
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C5"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "reasons": {
+      "C1": "CI BEHAVIOR FAIL",
+      "C5": "VERSION OK: 2.6.7"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Поведение хуков",
+      "command": "node spec/checks/ci-behavior.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CI BEHAVIOR OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сквозной цикл пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Правила ворот",
+      "command": "node spec/checks/gate-rules.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Версия 2.6.8",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json",
+        "README.md",
+        "CHANGELOG.md",
+        "spec/SPEC.md",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.8"
+      }
+    }
+  ]
+}
