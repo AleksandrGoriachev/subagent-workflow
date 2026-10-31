@@ -31,6 +31,43 @@ function headingTitle(line) {
   return s;
 }
 
+/*
+ * 2.6.6 (D1): путь, названный в разделе «Что сделать», — требование к работе, а
+ * не фон. Если путь в бэктиках не покрыт allowedPaths, задание невыполнимо:
+ * исполнитель либо нарушит границу, либо не сделает названное. Проверяются
+ * только repo-пути: токен с `/`, не абсолютный, без шаблонных и служебных
+ * символов; команды (с пробелом внутри бэктиков) и URL сюда не попадают.
+ */
+const PROHIBITION = /(?:не\s+трога|не\s+меня|запрещ|не\s+коммит)/i;
+function isRepoPathToken(token) {
+  if (!token.includes('/')) return false;
+  if (token.startsWith('/')) return false;
+  if (/^[A-Za-z]:[\\/]/.test(token)) return false;
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(token)) return false;
+  if (/[%~*<>\s\\]/.test(token)) return false;
+  if (token.split('/').includes('..')) return false;
+  return true;
+}
+function stepSectionPaths(taskMd) {
+  const lines = taskMd.split(NL);
+  const start = lines.findIndex((line) => line.startsWith('## ') && headingTitle(line) === 'Что сделать');
+  if (start === -1) return [];
+  const out = [];
+  for (let i = start + 1; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (line.startsWith('## ')) break;
+    const re = /`([^`\n]+)`/g;
+    let match;
+    while ((match = re.exec(line)) !== null) {
+      const token = match[1].trim();
+      if (PROHIBITION.test(line.slice(0, match.index))) continue;
+      if (!isRepoPathToken(token)) continue;
+      if (!out.includes(token)) out.push(token);
+    }
+  }
+  return out;
+}
+
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
   const config = loadConfig(repo);
@@ -211,6 +248,18 @@ try {
       }
     }
   }
+  /*
+   * 2.6.2: по ПРИНЯТОМУ заданию диагностика не валит прогон. Обновление пакета
+   * штатно меняет защищённые файлы (замок краснеет), а правила решений и
+   * эффекта могли появиться позже приёмки — на исторической задаче это десятки
+   * ERROR, хотя задание уже закрыто и перезамок после красного запрещён (I-3).
+   * Основание — валидная запись приёмки, тот же предикат, что в verifyLock:
+   * пустой, битый файл или чужой статус строгости не снимают. Для открытого
+   * задания всё остаётся ERROR: lint не ворота исполнения, но и не разрешение.
+   */
+  const acceptedRecord = hasAcceptedRecord(files.acceptance);
+  const quality = (message) => (acceptedRecord ? warn : error)(message);
+
   const coversDeclared = criteria.criteria.some((c) => Array.isArray(c.covers) && c.covers.length > 0);
   if (meta.risk !== 'low' && !coversDeclared) {
     const appliedCovers = applyLevel(policy.coverage, ['criteria.json: для risk=' + meta.risk + ' нужен хотя бы один критерий с covers: без него изменённый код может остаться без проверки']);
@@ -218,12 +267,13 @@ try {
     warnings.push(...appliedCovers.warnings);
   }
   /*
-   * 2.6.4: WARN о пути allowedPaths, не покрытом ни одним covers, — самый частый
-   * дефект контракта (0014, 0017): файл разрешён к правке, но ни один критерий
-   * его не покрывает, и проверять изменение нечем. Шаблоны каталога (`/**`)
-   * пропускаются: covers обычно объявляет как раз каталог, а перечислять каждый
-   * файл будущей правки в контракте невозможно. Уровень — WARN, не ERROR: это
-   * дыра покрытия, а не невыполнимое задание, и её видит task-verify.
+   * 2.6.4: путь allowedPaths, не покрытый ни одним covers, — самый частый дефект
+   * контракта (0014, 0017): файл разрешён к правке, но ни один критерий его не
+   * покрывает, и проверять изменение нечем. 2.6.6 (D2): для конкретного файла
+   * это ERROR, а не WARN — именно так 0014 и 0017 дошли до verify; шаблоны
+   * (`/**`, `*`) остаются WARN, потому что перечислить будущие файлы каталога
+   * в контракте невозможно. Свои артефакты задания (`docs/tasks/<id>/**`) и
+   * markdown не считаются: у них нет поведения (computeCoverage их исключает).
    */
   const coverPatterns = [];
   for (const criterion of criteria.criteria) {
@@ -234,9 +284,24 @@ try {
   for (const allowedPath of allowed) {
     if (typeof allowedPath !== 'string' || allowedPath.trim() === '') continue;
     if (allowedPath === '**' || allowedPath === '**/*' || /\/\*\*$/.test(allowedPath)) continue;
-    if (!coverPatterns.some((pattern) => patternsIntersect(allowedPath, pattern))) {
-      warn('covers: путь из allowedPaths не покрыт ни одним критерием: ' + allowedPath + ' — добавьте его в covers, иначе изменение проверяется только глазами');
-    }
+    if (coverPatterns.some((pattern) => patternsIntersect(allowedPath, pattern))) continue;
+    const concreteFile = !/[*?[]/.test(allowedPath)
+      && !/\.md$/i.test(allowedPath)
+      && !(taskRel !== '' && (allowedPath === taskRel || allowedPath.startsWith(taskRel + '/')));
+    quality((concreteFile
+      ? 'covers: файл из allowedPaths не покрыт ни одним критерием: '
+      : 'covers: путь из allowedPaths не покрыт ни одним критерием: ')
+      + allowedPath + ' — добавьте его в covers, иначе изменение проверяется только глазами');
+  }
+  /*
+   * 2.6.6 (D1): путь из «Что сделать» обязан быть разрешён. Строки с запретом
+   * («не трогай», «не меняй», «запрещено», «не коммить») — граница, а не
+   * требование: путь после запрета не проверяется. Без раздела правило молчит,
+   * поэтому исторические задания и фикстуры не краснеют.
+   */
+  for (const stepPath of stepSectionPaths(taskMd)) {
+    if (allowed.some((pattern) => typeof pattern === 'string' && patternsIntersect(pattern, stepPath))) continue;
+    quality('путь из «Что сделать» не разрешён: ' + stepPath + ' — добавьте его в allowedPaths или уберите из раздела «Что сделать»');
   }
   for (const key of ['setup', 'teardown']) {
     if (criteria.parsed[key] !== undefined && !Array.isArray(criteria.parsed[key])) error('criteria.json: ' + key + ' должен быть массивом');
@@ -378,18 +443,6 @@ try {
       }
     }
   }
-  /*
-   * 2.6.2: по ПРИНЯТОМУ заданию диагностика не валит прогон. Обновление пакета
-   * штатно меняет защищённые файлы (замок краснеет), а правила решений и
-   * эффекта могли появиться позже приёмки — на исторической задаче это десятки
-   * ERROR, хотя задание уже закрыто и перезамок после красного запрещён (I-3).
-   * Основание — валидная запись приёмки, тот же предикат, что в verifyLock:
-   * пустой, битый файл или чужой статус строгости не снимают. Для открытого
-   * задания всё остаётся ERROR: lint не ворота исполнения, но и не разрешение.
-   */
-  const acceptedRecord = hasAcceptedRecord(files.acceptance);
-  const quality = (message) => (acceptedRecord ? warn : error)(message);
-
   for (const [allowedPath, protectedPath] of boundaryConflicts) {
     quality('allowedPaths: путь ' + allowedPath + ' пересекается с protectedPaths: ' + protectedPath
       + ' — правка защищённого файла краснит criteria.lock, а перезамок после красного запрещён (I-3); уберите путь из одного из списков');

@@ -31,6 +31,8 @@ jobs:
         run: node spec/checks/actor-sources.mjs
       - name: e2e
         run: node spec/e2e.mjs
+      - name: contract-selfcheck — самопроверка контракта (0027)
+        run: node spec/checks/contract-selfcheck.mjs
       - name: deployed-copy — проверки вне пакета и lint принятого (0013)
         run: node spec/checks/deployed-copy.mjs
       - name: режим хуков в индексе
