@@ -21,10 +21,12 @@
 - **Фикстура `gate-rules` догнала правило `covers`.** Конкретный файл из
   `allowedPaths` без покрытия теперь ждёт `ERROR` и exit 1, а не `WARN`:
   прежнее ожидание осталось от 2.6.4. Добавлен контроль — тот же файл под
-  шаблоном `covers` зелёный, поэтому проверка невакуумная; F-7/F-5/F-6/F-8
-  не менялись.
+  шаблоном `covers` зелёный, поэтому проверка невакуумная, — и фикстура
+  шаблона: `src/*.js` без покрытия — `WARN` и exit 0 (дефект 0027: строгость
+  шаблона не должна валить контракт, шаблон — декларация «могу менять»);
+  F-7/F-5/F-6/F-8 не менялись.
 - **Проверка.** `spec/checks/contract-selfcheck.mjs` — 5 PASS
-  (`CONTRACT SELFCHECK OK`), `spec/checks/gate-rules.mjs` — 10 PASS
+  (`CONTRACT SELFCHECK OK`), `spec/checks/gate-rules.mjs` — 11 PASS
   (`GATE RULES OK`), `spec/checks/release-hygiene.mjs` — 3 PASS
   (`RELEASE HYGIENE OK`), `tools/check-version.mjs` — 8 PASS и
   `VERSION OK: 2.6.6`; шаг `contract-selfcheck` в CI. selftest 65, e2e 60 —

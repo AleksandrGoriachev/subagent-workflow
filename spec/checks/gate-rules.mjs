@@ -6,8 +6,9 @@
  * F-5: low без красного — только явный redExpect.noRed { reason }.
  * F-6: причины красного — дословная подстрока; при несовпадении task-red печатает вывод.
  * F-8: verify.json исполнителя сохраняется как verify.executor.json даже при отказе приёмки.
- * covers (2.6.6, D2): конкретный файл из allowedPaths без covers — ERROR и
- * exit 1; контроль — тот же файл под шаблоном covers — зелёный. */
+ * covers (2.6.6, D1/D2): шаблон из allowedPaths без covers — WARN и exit 0,
+ * конкретный файл — ERROR и exit 1; контроль — тот же файл под шаблоном
+ * covers — зелёный. */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -97,6 +98,19 @@ try {
     pass('F-7 узость: шаблон docs/tasks/0001/*.md — ошибка');
   } else fail('F-7 узость: шаблон docs/tasks/0001/*.md — ошибка', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
 } finally { fs.rmSync(f7narrow.repo, { recursive: true, force: true }); }
+
+/*
+ * covers (2.6.6, D1): шаблон из allowedPaths без покрытия — WARN, exit 0.
+ * Дефект 0027: обе ветви шли через quality(), и `src/*.js` у открытого задания
+ * давал ERROR. Шаблон — декларация «могу менять», поэтому валить контракт им нельзя.
+ */
+const covGlob = repoWithTask({ allowed: ['src/*.js'] });
+try {
+  const r = lint(covGlob.repo);
+  if (r.code === 0 && /WARN/.test(r.out) && /covers/.test(r.out) && /src\/\*\.js/.test(r.out) && !/ERROR/.test(r.out)) {
+    pass('covers: шаблон из allowedPaths без covers — WARN и exit 0');
+  } else fail('covers: шаблон из allowedPaths без covers — WARN и exit 0', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
+} finally { fs.rmSync(covGlob.repo, { recursive: true, force: true }); }
 
 /* covers (2.6.6, D2): конкретный файл из allowedPaths без покрытия — ERROR, exit 1. */
 const cov = repoWithTask({ allowed: ['src/app.js'] });
