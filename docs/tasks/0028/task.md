@@ -88,7 +88,7 @@
 ## Что сделать
 
 1. **`spec/checks/gate-rules.mjs`** — фикстура `covers`: теперь ждать `ERROR` (exit 1) для конкретного файла из `allowedPaths` без покрытия; шаблоны каталогов — по-прежнему `WARN`.
-2. **`tools/check-version.mjs`** — добавить проверку версии плагина: читать `plugin/package.json` и `plugin/lib/compat.js` (`PLUGIN_VERSION`), требовать равенства и semver; печатать строку вида «плагин — <версия>»; при расхождении — FAIL и exit 1.
+2. **`tools/check-version.mjs`** — добавить проверку версии плагина: читать манифест плагина (package.json в каталоге plugin) и PLUGIN_VERSION из compat.js, требовать равенства и semver; печатать строку вида «плагин — <версия>»; при расхождении — FAIL и exit 1.
 3. **`spec/SPEC.md`** — строка в абзац «Версия 2.6.6:» про проверку версии плагина в `check-version` и про исправленную фикстуру.
 4. **`CHANGELOG.md`** — дополнить секцию 2.6.6.
 
