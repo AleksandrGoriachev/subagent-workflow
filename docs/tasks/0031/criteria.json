@@ -26,7 +26,9 @@
         "negative"
       ],
       "covers": [
-        "spec/checks/**"
+        "spec/checks/**",
+        "spec/scripts/**",
+        ".github/workflows/ci.yml"
       ],
       "expect": {
         "exitCode": 0,
