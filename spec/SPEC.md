@@ -522,7 +522,15 @@
    шаблона (`/**`, `*`), не под `docs/tasks/<id>/` и не `*.md`, не покрытый ни
    одним `covers`, — `ERROR`, а не `WARN`; шаблоны каталогов остаются `WARN`.
    У задания с валидной записью приёмки уровень остаётся `WARN` (правило 2.6.2).
-3. **Версия 2.6.6** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
+3. **Версия плагина сверяется машиной.** `tools/check-version.mjs` читает
+   `plugin/package.json` и `PLUGIN_VERSION` из `plugin/lib/compat.js`, требует
+   semver и равенства обоих и печатает «плагин — <версия>»; расхождение — `FAIL`
+   и exit 1. Согласованный откат обоих файлов больше не проходит незамеченным
+   (раньше его ловил только `update-flow`, то есть случайно). Фикстура
+   `spec/checks/gate-rules.mjs` догнала правило `covers`: конкретный файл из
+   `allowedPaths` без покрытия — `ERROR` и exit 1 (прежнее ожидание `WARN`
+   осталось от 2.6.4), а тот же файл под шаблоном `covers` — зелёный.
+4. **Версия 2.6.6** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
    эта секция и секция `## 2.6.6` в CHANGELOG. Шаг
    `node spec/checks/contract-selfcheck.mjs` добавлен в CI.
 

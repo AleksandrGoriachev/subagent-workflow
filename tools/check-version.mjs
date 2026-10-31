@@ -6,6 +6,10 @@
  * TOOL), а проверялась в одном (TOOL против VERSION), поэтому README и TOOL
  * отставали на две версии, и записи приёмки представлялись старым пакетом.
  *
+ * 2.6.6: сверяется и версия плагина — plugin/package.json против
+ * compat.PLUGIN_VERSION (равенство и semver). Согласованный откат обоих файлов
+ * раньше ловил только update-flow, то есть случайно.
+ *
  * Запускается в пакете (в развёрнутой копии нет ни package.json репозитория,
  * ни CHANGELOG): node tools/check-version.mjs
  */
@@ -64,9 +68,38 @@ expect('CHANGELOG.md', version !== null && firstSection.startsWith('## ' + versi
 const sectionOk = version !== null && spec !== null && spec.includes('Версия ' + version + ':');
 expect('spec/SPEC.md (раздел)', sectionOk, sectionOk ? 'есть абзац «Версия ' + version + ':»' : 'нет абзаца «Версия ' + (version || 'X.Y.Z') + ':»');
 
+/*
+ * Версия плагина (2.6.6): панель собирает её из compat.PLUGIN_VERSION, а
+ * tarball — из plugin/package.json. Согласованный откат обоих файлов проходил
+ * мимо update-flow, поэтому здесь одна точка: semver у обоих и равенство.
+ */
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+const pluginManifest = read('plugin/package.json');
+let pluginPkgVersion = null;
+try {
+  const parsed = pluginManifest === null ? null : JSON.parse(pluginManifest);
+  pluginPkgVersion = parsed && typeof parsed.version === 'string' ? parsed.version : null;
+} catch {
+  pluginPkgVersion = null;
+}
+const compatText = read('plugin/lib/compat.js');
+const compatMatch = compatText === null ? null : /export\s+const\s+PLUGIN_VERSION\s*=\s*'([^']*)'/.exec(compatText);
+const compatVersion = compatMatch === null ? null : compatMatch[1];
+const pluginIssues = [];
+if (pluginPkgVersion === null) pluginIssues.push('plugin/package.json: нет поля version');
+else if (!SEMVER.test(pluginPkgVersion)) pluginIssues.push('plugin/package.json: version не semver: ' + JSON.stringify(pluginPkgVersion));
+if (compatVersion === null) pluginIssues.push('plugin/lib/compat.js: нет PLUGIN_VERSION');
+else if (!SEMVER.test(compatVersion)) pluginIssues.push('plugin/lib/compat.js: PLUGIN_VERSION не semver: ' + JSON.stringify(compatVersion));
+if (pluginPkgVersion !== null && compatVersion !== null && pluginPkgVersion !== compatVersion) {
+  pluginIssues.push('версии расходятся: plugin/package.json ' + pluginPkgVersion + ' ≠ compat.PLUGIN_VERSION ' + compatVersion);
+}
+expect('plugin/package.json', pluginIssues.length === 0,
+  pluginIssues.length === 0 ? pluginPkgVersion : pluginIssues.join('; '));
+
 for (const row of rows) {
   console.log((row.ok ? 'PASS  ' : 'FAIL  ') + row.file.padEnd(28) + (row.shown ? '  — ' + String(row.shown).slice(0, 120) : ''));
 }
+console.log('плагин — ' + (pluginIssues.length === 0 ? pluginPkgVersion : 'FAIL (см. строку plugin/package.json)'));
 if (problems.length > 0) {
   console.log('\nVERSION MISMATCH: ' + problems.join(', '));
   process.exit(1);

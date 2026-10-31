@@ -6,7 +6,8 @@
  * F-5: low без красного — только явный redExpect.noRed { reason }.
  * F-6: причины красного — дословная подстрока; при несовпадении task-red печатает вывод.
  * F-8: verify.json исполнителя сохраняется как verify.executor.json даже при отказе приёмки.
- * covers: путь из allowedPaths без covers — WARN и exit 0. */
+ * covers (2.6.6, D2): конкретный файл из allowedPaths без covers — ERROR и
+ * exit 1; контроль — тот же файл под шаблоном covers — зелёный. */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -97,14 +98,25 @@ try {
   } else fail('F-7 узость: шаблон docs/tasks/0001/*.md — ошибка', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
 } finally { fs.rmSync(f7narrow.repo, { recursive: true, force: true }); }
 
-/* covers: разрешённый файл без покрытия — WARN, но не ERROR: exit 0. */
+/* covers (2.6.6, D2): конкретный файл из allowedPaths без покрытия — ERROR, exit 1. */
 const cov = repoWithTask({ allowed: ['src/app.js'] });
 try {
   const r = lint(cov.repo);
-  if (r.code === 0 && /WARN/.test(r.out) && /covers/.test(r.out) && /src\/app\.js/.test(r.out)) {
-    pass('covers: путь из allowedPaths без covers — WARN и exit 0');
-  } else fail('covers: путь из allowedPaths без covers — WARN и exit 0', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
+  if (r.code !== 0 && /ERROR/.test(r.out) && /covers/.test(r.out) && /src\/app\.js/.test(r.out)) {
+    pass('covers: конкретный файл из allowedPaths без covers — ERROR и exit 1');
+  } else fail('covers: конкретный файл из allowedPaths без covers — ERROR и exit 1', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
 } finally { fs.rmSync(cov.repo, { recursive: true, force: true }); }
+/* Контроль: тот же файл под шаблоном covers — зелёный: красный даёт отсутствие покрытия. */
+const covOk = repoWithTask({
+  allowed: ['src/app.js'],
+  criteria: { criteria: [{ id: 'C1', title: 't', command: 'node -e "console.log(1)"', covers: ['src/**'], expect: { exitCode: 0 }, tags: ['fast'] }] },
+});
+try {
+  const r = lint(covOk.repo);
+  if (r.code === 0 && !/ERROR/.test(r.out) && !/covers/.test(r.out)) {
+    pass('covers: файл из allowedPaths под шаблоном covers — ок, exit 0');
+  } else fail('covers: файл из allowedPaths под шаблоном covers — ок, exit 0', 'exit=' + r.code + ' ' + r.out.trim().slice(0, 240));
+} finally { fs.rmSync(covOk.repo, { recursive: true, force: true }); }
 
 /* F-5: low без красного — только noRed. */
 const f5 = repoWithTask({ allowed: ['src/**'], criteria: { redExpect: { mustFail: [], mustPass: ['C1'], reasons: {} } } });
