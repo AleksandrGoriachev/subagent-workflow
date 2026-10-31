@@ -25,6 +25,8 @@ jobs:
         run: node spec/selftest.mjs
       - name: схема записи приёмки
         run: node spec/checks/acceptance-schema.mjs
+      - name: acceptance-record — запись приёмки принадлежит заданию (0030)
+        run: node spec/checks/acceptance-record.mjs
       - name: acceptance-p0 — повторная приёмка и preflight (0011)
         run: node spec/checks/acceptance-p0.mjs
       - name: actor-sources — источники актора (0008)

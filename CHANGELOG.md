@@ -1,5 +1,21 @@
 # Изменения
 
+## 2.6.7 — 2026-11-01
+
+- **Запись приёмки принадлежит заданию.** `hasAcceptedRecord(file, expectedTask)`
+  в `spec/scripts/lib/common.mjs` требует `status === 'accepted'` и, если
+  `expectedTask` передан, совпадения `record.task` с id задания строкой. Запись
+  без `task` или с `task` другого задания основанием не является: копия
+  `acceptance.json` от соседнего задания больше не снимает `contractCommit` в
+  `verifyLock` и не переводит `ERROR` lint в `WARN`. Вызов без `expectedTask`
+  сохраняет прежнее поведение — обратная совместимость для старых потребителей;
+  `verifyLock` и `task-lint` передают id задания.
+- **Проверка.** `spec/checks/acceptance-record.mjs` — 6 PASS
+  (`ACCEPTANCE RECORD OK`): своя запись, чужая, без `task`, `pending`, битый
+  JSON и lint при чужой записи со сдвинутым HEAD. Шаг `acceptance-record` в CI.
+- **Версия 2.6.7** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
+  абзац «Версия 2.6.7:» в SPEC и эта секция.
+
 ## 2.6.6 — 2026-10-30
 
 - **Пути из «Что сделать» сверяются с `allowedPaths`.** `task-lint` извлекает

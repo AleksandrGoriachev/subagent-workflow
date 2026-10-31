@@ -254,10 +254,11 @@ try {
    * эффекта могли появиться позже приёмки — на исторической задаче это десятки
    * ERROR, хотя задание уже закрыто и перезамок после красного запрещён (I-3).
    * Основание — валидная запись приёмки, тот же предикат, что в verifyLock:
-   * пустой, битый файл или чужой статус строгости не снимают. Для открытого
-   * задания всё остаётся ERROR: lint не ворота исполнения, но и не разрешение.
+   * пустой, битый файл, чужой статус или чужая запись (2.6.7: record.task
+   * обязан совпасть с id задания) строгости не снимают. Для открытого задания
+   * всё остаётся ERROR: lint не ворота исполнения, но и не разрешение.
    */
-  const acceptedRecord = hasAcceptedRecord(files.acceptance);
+  const acceptedRecord = hasAcceptedRecord(files.acceptance, meta.id);
   const quality = (message) => (acceptedRecord ? warn : error)(message);
 
   const coversDeclared = criteria.criteria.some((c) => Array.isArray(c.covers) && c.covers.length > 0);

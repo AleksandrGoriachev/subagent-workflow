@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.6.6';
+export const TOOL = 'subagent-workflow/2.6.7';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.executor.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -434,17 +434,29 @@ export function computeLock(repo, taskDir, meta, taskMd, criteria, contractCommi
  * status === 'accepted'. Факт наличия файла основанием не является: пустой или
  * битый acceptance.json не должен снимать ни одну проверку (2.4.9).
  *
+ * Принадлежность (2.6.7): запись принадлежит заданию. Если передан expectedTask,
+ * record.task обязан совпасть с ним строкой; запись без task или с task другого
+ * задания основанием не является. Иначе копия acceptance.json от соседнего
+ * задания снимала contractCommit в verifyLock и переводила ERROR lint в WARN —
+ * задание выглядело принятым, не будучи проверенным. Вызов без expectedTask
+ * сохраняет прежнее поведение: старые потребители не ломаются, но все
+ * внутренние вызовы передают id задания.
+ *
  * Один предикат на двух потребителей (2.6.2): verifyLock ослабляет
  * contractCommit, а task-lint переводит диагностику принятого задания в WARN.
  * Копия правила в lint разошлась бы с воротами молча — ровно так ослабление
  * 2.4.8 и стало дырой.
  */
-export function hasAcceptedRecord(file) {
+export function hasAcceptedRecord(file, expectedTask) {
   if (!exists(file)) return false;
   let record;
   try { record = readJson(file); } catch { return false; }
   if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
-  return record.status === 'accepted';
+  if (record.status !== 'accepted') return false;
+  if (expectedTask !== undefined && expectedTask !== null) {
+    if (typeof record.task !== 'string' || record.task !== String(expectedTask)) return false;
+  }
+  return true;
 }
 
 export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) {
@@ -479,7 +491,7 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) 
    *    основание: иначе пустой acceptance.json снимал бы инвариант «HEAD не
    *    двигался после verify» одним касанием (находка ревью 2.4.9).
    */
-  const accepted = options.acceptedTolerant === true && hasAcceptedRecord(files.acceptance);
+  const accepted = options.acceptedTolerant === true && hasAcceptedRecord(files.acceptance, meta.id);
   for (const key of ['task', 'taskFileSha256', 'criteriaSha256', 'criteriaJsonSha256', 'attackSha256', 'contractCommit']) {
     if (lock[key] === actual[key]) continue;
     if (key === 'contractCommit' && accepted) {
