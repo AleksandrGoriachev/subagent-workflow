@@ -25,11 +25,15 @@ function copyPkg() {
   const t = spawnSync('tar', ['-x', '-C', path.join(dir, 'pkg')], { input: tar.stdout, maxBuffer: 1 << 28 });
   if (t.status !== 0) throw new Error('tar failed');
   const pkg = path.join(dir, 'pkg');
-  for (const f of ['spec/checks/acceptance-record.mjs']) {
-    const src = path.join(PKG, f); if (fs.existsSync(src)) { fs.mkdirSync(path.dirname(path.join(pkg, f)), { recursive: true }); fs.copyFileSync(src, path.join(pkg, f)); }
-  }
-  for (const f of ['spec/scripts/lib/common.mjs', 'spec/scripts/task-lint.mjs']) {
-    const src = path.join(PKG, f); if (fs.existsSync(src)) fs.copyFileSync(src, path.join(pkg, f));
+  /* Изменённые и новые файлы рабочего дерева поверх HEAD: иначе проверки из критериев
+   * гоняют старые версии и «красный» не воспроизводится в незакоммиченном дереве. */
+  const changed = run('git', ['-C', PKG, 'ls-files', '-m', '-o', '--exclude-standard', '-z'], PKG);
+  for (const rel of changed.out.split('\0')) {
+    if (!rel) continue;
+    const src = path.join(PKG, rel);
+    if (!fs.existsSync(src) || fs.statSync(src).isDirectory()) continue;
+    fs.mkdirSync(path.dirname(path.join(pkg, rel)), { recursive: true });
+    fs.copyFileSync(src, path.join(pkg, rel));
   }
   git(pkg, ['init', '-q']); git(pkg, ['config', 'user.email', 'p@l']); git(pkg, ['config', 'user.name', 'p']);
   git(pkg, ['add', '-A']);
