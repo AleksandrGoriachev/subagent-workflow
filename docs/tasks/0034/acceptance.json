@@ -1,0 +1,153 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0034",
+  "title": "внешний движок: воркспейс без спеки читает движок по карте, запись запрещена",
+  "risk": "medium",
+  "taskFileSha256": "751733013ee8801c66bd609206162d7b8b2481d2d7e48209cf13a283f7903d51",
+  "criteriaSha256": "6afefc129b94592bf537197b80cded543a9b3fb1532905585aa55ee36f36c1dd",
+  "criteriaJsonSha256": "85fe11ada06bfb8235c4165f63d7df61650db7d3cb35c83cda73e08160dffe8c",
+  "contractCommit": "3c0926db1dcd21fdec302fcd325ffe52e662dc64",
+  "baseCommit": "3c0926db1dcd21fdec302fcd325ffe52e662dc64",
+  "candidateCommit": "e55fd8c8d4085d388451f4e4938d8d88b9db81e6",
+  "tree": "3506d7f6fd13a7f0b690dd3d2cbcf0bdc3f7448d",
+  "worktreeDigest": "2e57c30288040e4bf8ec5a66c9e76580dd47b3a204eb67b9fbab0af7195004ff",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-b8721a2a-456c-48a2-94cd-8030d895a8e8",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "0d523b80-4e56-4156-a7f8-29ddcf683a75",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "ed7ebc270b669ec2f300afa186beba43",
+    "runKind": "accept",
+    "startedAt": "2026-11-01T01:26:45.917Z",
+    "finishedAt": "2026-11-01T01:30:48.117Z",
+    "durationMs": 242200,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "631957d7b9ebb03025152f70bbcd784a80c80ea29b0b47ef98d494d562c8cf1d",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "3c0926db1dcd21fdec302fcd325ffe52e662dc64",
+    "contractCommit": "3c0926db1dcd21fdec302fcd325ffe52e662dc64",
+    "criteriaJsonSha256": "85fe11ada06bfb8235c4165f63d7df61650db7d3cb35c83cda73e08160dffe8c",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C5"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C6"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/engine-root.mjs",
+      "exitCode": 0,
+      "durationMs": 2400,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 33965,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 104391,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 90371,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 216,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/panel-deploy.mjs",
+      "exitCode": 0,
+      "durationMs": 3595,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-01T01:30:48.910Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 1,
+    "digest": "24d82c83edb3d25cf2fd584f1298622a4f0e963bf70bf670c07a4c92e3f19451",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "v3ycPWrglkL5+a/gjPPatHhTciDAw/Y2fOALN2RnVicZYqB7q/nlPGsMPkPED0i3Y2IxrJVmpl+qBOoWsbrgCw=="
+}
