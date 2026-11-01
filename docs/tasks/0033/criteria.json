@@ -1,0 +1,124 @@
+{
+  "task": "0033",
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C5"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "ENGINE ROOT FAIL",
+      "C5": "VERSION OK: 2.6.8"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Внешний движок",
+      "command": "node spec/checks/engine-root.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/**",
+        "spec/checks/**",
+        ".github/workflows/ci.yml"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE ROOT OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Самопроверка правил записи",
+      "command": "node spec/selftest.mjs",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сквозной цикл пакета",
+      "command": "node spec/e2e.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Тесты панели",
+      "command": "node plugin/tools/test.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Версия 2.6.9",
+      "command": "node tools/check-version.mjs",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "VERSION",
+        "package.json",
+        "README.md",
+        "CHANGELOG.md",
+        "spec/SPEC.md",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.9"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Развёртывание из панели",
+      "command": "node spec/checks/panel-deploy.mjs",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/**",
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL DEPLOY OK"
+      }
+    }
+  ]
+}
