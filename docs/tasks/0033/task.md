@@ -41,7 +41,7 @@
     {
       "id": "D1",
       "class": "semantic",
-      "impact": "user-visible",
+      "impact": "internal",
       "question": "Как воркспейс без движка получает панель, не меняя себя",
       "chosen": "карта workspace→engine в ~/.dsh/workflow/engine-roots.json (env WF_ENGINE_ROOTS); чтение из внешнего движка, запись (guard/deploy/update) запрещена кодом engine-external",
       "options": [
