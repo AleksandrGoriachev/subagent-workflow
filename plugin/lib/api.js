@@ -18,6 +18,14 @@
  * no Origin at all (403 otherwise). The checks run before the body is read and
  * before anything is written: a cross-site `text/plain` request — a browser
  * "simple request" with no preflight — cannot flip the guard or start a deploy.
+ *
+ * 2.6.9 (0034): a workspace without an engine (split-optimizer) may read one
+ * from outside by mapping in ~/.dsh/workflow/engine-roots.json (env
+ * WF_ENGINE_ROOTS). GET routes then read the mapped repository and /api/status
+ * reports engine {installed, root, source}. The three writing POST routes answer
+ * 409 engine-external for source 'mapping' — before the body is read when the
+ * panel has a single root, and right after it otherwise — so such a workspace is
+ * never modified.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -38,6 +46,7 @@ import {
   availableVersion,
   tasksInProgress,
 } from './deploy.js';
+import { resolveEngine, engineView } from './engine-root.js';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
@@ -245,6 +254,54 @@ function sendJson(res, status, value) {
   res.end(body);
 }
 
+/*
+ * 2.6.9 (0034): внешний движок.
+ *
+ * Воркспейс без движка (split-optimizer: только .dsh и structure) читает движок
+ * по карте %USERPROFILE%\.dsh\workflow\engine-roots.json (env WF_ENGINE_ROOTS).
+ * Чтение идёт из резолвнутого движка, а запись в такой воркспейс запрещена
+ * кодом engine-external: сам воркспейс не меняется. Обычный случай — движок в
+ * воркспейсе (source 'workspace') или его нет вовсе (source 'none') — работает
+ * как раньше.
+ */
+function engineReadRoot(selectionRoot, engine) {
+  return engine && engine.source === 'mapping' && engine.root ? engine.root : selectionRoot;
+}
+
+/**
+ * 409 engine-external для POST-маршрутов, если движок подключён снаружи.
+ * @returns {boolean} true, если ответ уже отправлен
+ */
+function refuseExternalWrite(runtime, res, rootValue) {
+  const target = selectRoot(runtime, rootValue);
+  if (!target.root) return false;
+  const engine = resolveEngine(target.root);
+  if (engine.source !== 'mapping') return false;
+  sendJson(res, 409, {
+    error: 'движок внешний: этот воркспейс не меняется',
+    code: 'engine-external',
+    hint: 'Движок подключён картой из ' + engine.root + '. Развёртывание, обновление и guard '
+      + 'выполняются в репозитории движка, а не здесь. Карта: ' + engine.rootsFile + '.',
+    root: target.root,
+    engine: engineView(engine),
+  });
+  return true;
+}
+
+/**
+ * Отказ до чтения тела. У панели с единственным разрешённым корнем цель
+ * запроса — этот корень: ни query, ни тело не могут назвать другой, поэтому
+ * 409 можно отдать, не разбирая тело и ничего не сделав. В многокорневой
+ * панели корень приходит в теле, и там решение принимает
+ * {@link refuseExternalWrite} после чтения.
+ *
+ * @returns {boolean} true, если ответ уже отправлен
+ */
+function refuseExternalWriteBeforeBody(runtime, res, queryRoot) {
+  if (allowedRoots(runtime).length !== 1) return false;
+  return refuseExternalWrite(runtime, res, queryRoot);
+}
+
 function selectRoot(runtime, value) {
   const wanted = typeof value === 'string' ? value.trim() : '';
   if (wanted.length === 0) {
@@ -317,6 +374,11 @@ export function createWebHandler(runtime) {
         const roots = runtime.roots.map((root) => ({ path: root, exists: fs.existsSync(root) }));
         const rootConfigured = selection.root !== null
           && runtime.roots.some((root) => samePath(root, selection.root));
+        /*
+         * 2.6.9: движок резолвится до чтения. source 'mapping' значит, что
+         * воркспейс не меняется: файлы читаются из внешнего репозитория.
+         */
+        const engine = resolveEngine(selection.root);
         if (!selection.root) {
           sendJson(res, 200, {
             plugin: runtime.plugin,
@@ -324,6 +386,7 @@ export function createWebHandler(runtime) {
             root: null,
             rootConfigured: false,
             availableVersion: availableVersion(),
+            engine: engineView(engine),
             repo: null,
             error: selection.error,
           });
@@ -336,18 +399,21 @@ export function createWebHandler(runtime) {
             root: selection.root,
             rootConfigured,
             availableVersion: availableVersion(),
+            engine: engineView(engine),
             repo: null,
             error: 'корень не найден: ' + selection.root,
           });
           return;
         }
-        const info = readRepoInfo(selection.root);
+        const info = readRepoInfo(engineReadRoot(selection.root, engine));
         sendJson(res, 200, {
           plugin: runtime.plugin,
           roots,
           root: selection.root,
           rootConfigured,
           availableVersion: availableVersion(),
+          /* 2.6.9: движок в воркспейсе, снаружи (карта) или его нет. */
+          engine: engineView(engine),
           /* Проекты внутри пространства, где workflow развёрнут. */
           projects: discoverNestedProjects(allowedRoots(runtime)),
           repo: repoInfoPayload(info),
@@ -386,7 +452,8 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + target.root });
           return;
         }
-        const info = readRepoInfo(target.root);
+        const engine = resolveEngine(target.root);
+        const info = readRepoInfo(engineReadRoot(target.root, engine));
         let spec;
         try {
           spec = buildCheck(body.check, {
@@ -416,6 +483,8 @@ export function createWebHandler(runtime) {
           sendJson(res, problem.status, { error: problem.error });
           return;
         }
+        /* 2.6.9: внешний движок — отказ до чтения тела. */
+        if (refuseExternalWriteBeforeBody(runtime, res, url.searchParams.get('root'))) return;
         let body;
         try {
           body = await readJsonBody(req);
@@ -423,6 +492,8 @@ export function createWebHandler(runtime) {
           sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
           return;
         }
+        /* 2.6.9: внешний движок — запись запрещена до любых действий. */
+        if (refuseExternalWrite(runtime, res, body.root)) return;
         /*
          * Единственная запись панели: флаг guard.enabled для выбранного
          * пространства плюс строка в guard.log. Ничего другого здесь не
@@ -468,6 +539,8 @@ export function createWebHandler(runtime) {
           sendJson(res, problem.status, { error: problem.error });
           return;
         }
+        /* 2.6.9: внешний движок — отказ до чтения тела. */
+        if (refuseExternalWriteBeforeBody(runtime, res, url.searchParams.get('root'))) return;
         let body;
         try {
           body = await readJsonBody(req);
@@ -475,6 +548,12 @@ export function createWebHandler(runtime) {
           sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
           return;
         }
+        /*
+         * 2.6.9: воркспейс с внешним движком не разворачивается — он не
+         * меняется. Отказ приходит раньше confirm: это свойство воркспейса, а
+         * не отсутствие подтверждения.
+         */
+        if (refuseExternalWrite(runtime, res, body.root)) return;
         /*
          * Развёртывание — вторая запись панели, и она возможна только по явной
          * команде: без confirm: true ничего не пишется. Корень проходит через
@@ -510,6 +589,8 @@ export function createWebHandler(runtime) {
           sendJson(res, problem.status, { error: problem.error });
           return;
         }
+        /* 2.6.9: внешний движок — отказ до чтения тела. */
+        if (refuseExternalWriteBeforeBody(runtime, res, url.searchParams.get('root'))) return;
         let body;
         try {
           body = await readJsonBody(req);
@@ -517,6 +598,8 @@ export function createWebHandler(runtime) {
           sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
           return;
         }
+        /* 2.6.9: внешний движок — обновление в этом воркспейсе запрещено. */
+        if (refuseExternalWrite(runtime, res, body.root)) return;
         if (body.confirm !== true) {
           sendJson(res, 400, { error: 'обновление требует confirm: true' });
           return;
@@ -562,8 +645,9 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + selection.root });
           return;
         }
-        const board = readRepository(selection.root);
-        sendJson(res, 200, { plugin: runtime.plugin, ...board });
+        const engine = resolveEngine(selection.root);
+        const board = readRepository(engineReadRoot(selection.root, engine));
+        sendJson(res, 200, { plugin: runtime.plugin, engine: engineView(engine), ...board });
         return;
       }
 
@@ -576,8 +660,10 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + selection.root });
           return;
         }
-        const info = readRepoInfo(selection.root);
-        const guard = readGuard(selection.root);
+        const engine = resolveEngine(selection.root);
+        const readRoot = engineReadRoot(selection.root, engine);
+        const info = readRepoInfo(readRoot);
+        const guard = readGuard(readRoot);
         sendJson(res, 200, {
           plugin: runtime.plugin,
           root: info.root,
@@ -604,7 +690,8 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + selection.root });
           return;
         }
-        const board = readRepository(selection.root);
+        const engine = resolveEngine(selection.root);
+        const board = readRepository(engineReadRoot(selection.root, engine));
         const compat = compatView({
           pluginVersion: PLUGIN_VERSION,
           packageVersion: board.packageVersion,
@@ -618,6 +705,7 @@ export function createWebHandler(runtime) {
           plugin: runtime.plugin,
           root: board.root,
           configPath: board.configPath,
+          engine: engineView(engine),
           ...compat,
         });
         return;
@@ -643,12 +731,18 @@ export function createWebHandler(runtime) {
           sendJson(res, 400, { error: 'некорректный id задачи' });
           return;
         }
-        const card = readTask(selection.root, id);
+        const engine = resolveEngine(selection.root);
+        const card = readTask(engineReadRoot(selection.root, engine), id);
         if (card && card.error) {
           sendJson(res, card.status || 404, { error: card.error });
           return;
         }
-        sendJson(res, 200, { plugin: runtime.plugin, root: selection.root, task: card });
+        sendJson(res, 200, {
+          plugin: runtime.plugin,
+          root: selection.root,
+          engine: engineView(engine),
+          task: card,
+        });
         return;
       }
 

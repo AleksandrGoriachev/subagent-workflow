@@ -4,8 +4,47 @@ Web panel for [subagent-workflow](../README.md) repositories inside DeepSeek
 Harness. It reads task artifacts and `workflow.config.json`; there are exactly
 three writes, all behind a confirmation: the commit-and-push guard flag, one
 explicit deployment of the engine into the open workspace (0.7.0 → 0.7.1) and
-one explicit engine update with a guard for unfinished tasks (0.8.0). It never
-changes `policy`, never runs a gate, never signs and never accepts anything.
+one explicit engine update with a guard for unfinished tasks (0.8.0). Since
+0.9.0 a workspace without an engine can read one from outside by mapping
+(`~/.dsh/workflow/engine-roots.json`, env `WF_ENGINE_ROOTS`) — reads come from
+the mapped repository and all three writes answer `409 engine-external`, so
+such a workspace is never modified. It never changes `policy`, never runs a
+gate, never signs and never accepts anything.
+
+## 0.9.0 — внешний движок: чтение снаружи, запись запрещена
+
+Воркспейс без движка (например split-optimizer: только `.dsh` и `structure`)
+больше не требует разворачивать движок внутрь себя — панель читает движок
+снаружи по карте и ничего в такой воркспейс не пишет.
+
+- **Карта воркспейс → движок.** `plugin/lib/engine-root.js`:
+  `readEngineRoots()` читает `~/.dsh/workflow/engine-roots.json` (объект
+  `{ "<abs workspace>": "<abs engine repo>" }`), путь переопределяет env
+  `WF_ENGINE_ROOTS`. `resolveEngine(root)` возвращает
+  `{ installed, root, source: 'workspace' | 'mapping' | 'none' }`: `VERSION`
+  в воркспейсе → `workspace`, запись карты с существующим движком →
+  `mapping`, иначе `installed: false`. Пути сравниваются без учёта регистра
+  и хвостового слэша; относительные записи пропускаются; битый JSON — это
+  «движка нет», а не падение панели. Карту панель не создаёт и не правит.
+- **Чтение — из движка, запись — нет.** `GET /api/status`, `/api/tasks`,
+  `/api/task/:id`, `/api/policy` (и `/api/compat`) читаются из резолвнутого
+  движка; `/api/status` отдаёт `engine: {installed, root, source}`.
+  `POST /api/guard`, `/api/deploy`, `/api/update` при `source: 'mapping'`
+  отвечают `409` с кодом `engine-external` и подсказкой **до любых
+  действий**: `docs/` в воркспейсе не появляется, `.gitignore` не трогается.
+  Для движка в воркспейсе (`workspace`) и для пространства без движка
+  (`none`) маршруты отвечают как прежде.
+- **Интерфейс называет режим.** Шапка показывает
+  «движок: внешний · <путь>»; кнопки «Развернуть workflow здесь»,
+  «Обновить движок» и переключатель guard неактивны с объяснением, что
+  движок живёт в своём репозитории. Раздел «Версия движка» показывает путь
+  внешнего движка.
+- **Тесты.** `plugin/test/engine-root.test.mjs`: карта (нет файла, битый JSON,
+  массив вместо объекта, относительные записи, регистр и хвостовой слэш, env
+  `WF_ENGINE_ROOTS`, домашний путь по умолчанию), резолв (`workspace`,
+  `mapping`, битая запись, `none`), `engine` в `/api/status`, чтение доски
+  из движка и `409 engine-external` на guard/deploy/update с проверкой, что
+  воркспейс не изменился. Тестов 104.
 
 ## 0.8.0 — версии движка и обновление с защитой от незавершённых заданий
 
@@ -296,6 +335,8 @@ when that service is available.
 | `POST /workflow/api/run` | runs one gate, returns `{exitCode, ok, log, command, durationMs, logPath}` — no writes |
 | `POST /workflow/api/guard` | flips `guard.enabled` (one config key) and appends `guard.log` |
 | `POST /workflow/api/deploy` | deploys the bundled engine into the selected root; `confirm: true` is required |
+| `POST /workflow/api/update` | re-runs `init --force` to move the deployed copy to the bundled version |
+| `POST /workflow/api/guard`, `/deploy`, `/update` on a mapped workspace | `409` `engine-external`: the external engine is never written through this workspace |
 
 All routes accept `?root=<configured root or registered workspace>`. The three
 POST routes are the explicit writes described above; every other route is GET.
@@ -318,7 +359,7 @@ distinction visible:
   policy values and flag codes. Hints use the native tooltip; badges inside a
   card button are not focusable — that button's `aria-label` carries the summary.
 
-The **Совместимость** tab compares the plugin (0.7.1, supports workflow
+The **Совместимость** tab compares the plugin (0.9.0, supports workflow
 2.0.0 – 2.6.x, включая `effect`, регресс-долг, guard и запись 2.6.0) with the deployed copy: VERSION/SPEC,
 required scripts, lock and record versions. Checks carry a recommendation, but nothing is executed
 automatically — commands are for a human. A limited compatibility state adds a
@@ -378,6 +419,10 @@ it starts. There are exactly two write paths, and both need a human confirmation
   root, only with `confirm: true`. It creates the engine, `docs/tasks`,
   `.gitignore` lines and the local `core.hooksPath`; it does not change
   `policy`, tasks, locks or acceptance records, never signs, commits or accepts.
+
+On a workspace whose engine is external (`source: 'mapping'`) all three writes
+answer `409 engine-external` before doing anything: the panel reads that engine
+but never writes through that workspace.
 
 Nothing else writes. `test/api.test.mjs` snapshots the fixture's
 `git status --porcelain` and tracked-file hashes before and after a full request

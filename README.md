@@ -1,4 +1,4 @@
-# subagent-workflow 2.6.8 — полный пакет делегирования и приёмки
+# subagent-workflow 2.6.9 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 
@@ -67,7 +67,10 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 `workflow.config.json` и строку в `guard.log` (оба перехода, с временем и
 сессией), а кнопка «Развернуть workflow здесь» ставит движок в открытое
 пространство и создаёт ключ приёмщика **проекта** в `<repo>/.wf-keys/`
-(глобальный `~/.wf-keys` не трогается). `POST /api/guard` и `/api/deploy`
+(глобальный `~/.wf-keys` не трогается). С 0.9.0 пространство без движка читает
+движок по карте `~/.dsh/workflow/engine-roots.json` (env `WF_ENGINE_ROOTS`), а
+запись в него запрещена: `POST /api/guard`, `/api/deploy`, `/api/update`
+отвечают 409 `engine-external`. `POST /api/guard` и `/api/deploy`
 принимают только `application/json` и только свой `Origin`. В релизный архив не
 входит, а `init` копирует только `spec/`, поэтому в развёрнутое пространство
 плагин не попадает: это хост-пакет, а не часть переносимой спецификации.

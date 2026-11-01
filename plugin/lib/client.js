@@ -36,7 +36,12 @@ window.__ModuleLoader__.load({
     const DEPLOY_LABEL = "Развернуть workflow здесь";
     const DEPLOY_ROUTE = "/api/deploy";
     /*
-     * 0.8.0: обновление развёрнутого движка. Кнопка показывает установленную и
+     * 0.9.0: воркспейс без движка может читать движок снаружи по карте
+ * (~/.dsh/workflow/engine-roots.json). Чтение разрешено, запись запрещена
+ * сервером (409 engine-external), поэтому кнопки записи в таком пространстве
+ * неактивны с объяснением.
+ *
+ * 0.8.0: обновление развёрнутого движка. Кнопка показывает установленную и
      * доступную (вложенную в сборку) версии; при незавершённых заданиях диалог
      * перечисляет их и требует галочку «понимаю риск» — обновление меняет
      * ворота, и проверка незавершённого задания может сломаться.
@@ -44,6 +49,14 @@ window.__ModuleLoader__.load({
     const UPDATE_LABEL = "Обновить движок";
     const UPDATE_ROUTE = "/api/update";
     const UPDATE_RISK_LABEL = "понимаю риск";
+    /*
+     * 0.9.0: воркспейс без движка читает внешний движок по карте
+     * (~/.dsh/workflow/engine-roots.json, env WF_ENGINE_ROOTS). Чтение
+     * разрешено, запись запрещена сервером (409 engine-external), поэтому
+     * развёртывание, обновление и guard в таком пространстве неактивны с
+     * объяснением — панель не обещает то, что сервер отклонит.
+     */
+    const EXTERNAL_ENGINE_CODE = "engine-external";
     /* Что именно появится в проекте: этот список показывает подтверждение. */
     const DEPLOY_CHANGES = [
       "docs/subagent-workflow/ — движок, ворота, шаблоны, хуки и публичный ключ приёмщика;",
@@ -1048,6 +1061,16 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             } catch {
               data = { error: "ответ не JSON: HTTP " + response.status };
             }
+            /* 0.9.0: внешний движок — 409 engine-external с подсказкой карты. */
+            if (data.code === EXTERNAL_ENGINE_CODE) {
+              setDeployNote({
+                kind: "error",
+                code: data.code,
+                text: data.hint || data.error || "движок внешний: этот воркспейс не меняется",
+                log: data.log || "",
+              });
+              return;
+            }
             if (!response.ok || data.ok !== true) {
               setDeployNote({
                 kind: "error",
@@ -1084,6 +1107,24 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
 
         function engineAvailable() {
           return status && status.availableVersion ? String(status.availableVersion) : null;
+        }
+
+        /*
+         * 0.9.0: движок снаружи. source 'mapping' — воркспейс не меняется:
+         * файлы прочитаны из репозитория движка по карте.
+         */
+        function externalEngine() {
+          return status && status.engine && status.engine.source === "mapping" ? status.engine : null;
+        }
+
+        function externalEngineText(engine) {
+          return "движок: внешний · " + (engine && engine.root ? engine.root : "путь неизвестен");
+        }
+
+        function externalEngineHint(engine) {
+          return "Движок внешний: " + (engine && engine.root ? engine.root : "путь неизвестен")
+            + ". Этот воркспейс не меняется: развёртывание, обновление и guard выполняются "
+            + "в репозитории движка (карта ~/.dsh/workflow/engine-roots.json), а не здесь.";
         }
 
         /* Незавершённые задания приходят из /api/status (repo.tasksInProgress). */
@@ -1153,6 +1194,20 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 log: data.log || "",
               });
               setUpdateRisk(false);
+              return;
+            }
+            /*
+             * 0.9.0: внешний движок — 409 engine-external. Кнопка в таком
+             * пространстве неактивна, но подсказка сервера понятнее общего
+             * текста, если отказ всё же пришёл.
+             */
+            if (data.code === EXTERNAL_ENGINE_CODE) {
+              setUpdateNote({
+                kind: "error",
+                code: data.code,
+                text: data.hint || data.error || "движок внешний: этот воркспейс не меняется",
+                log: data.log || "",
+              });
               return;
             }
             if (!response.ok || data.ok !== true) {
@@ -1289,7 +1344,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           const installed = engineInstalled();
           const available = engineAvailable();
           const pending = enginePending();
-          const upToDate = Boolean(installed && available && installed === available);
+          const external = externalEngine();
+          const upToDate = Boolean(!external && installed && available && installed === available);
           return h(
             "section",
             { style: S.section },
@@ -1298,6 +1354,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               "div",
               { style: S.stageText },
               "Установлено: " + (installed ? "v" + installed : "не развёрнут")
+                + (external ? " (внешний движок: " + external.root + ")" : "")
                 + ". Доступно в этой сборке панели: " + (available ? "v" + available : "неизвестно") + ".",
             ),
             upToDate
@@ -1307,6 +1364,17 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   "Версия совпадает со сборкой панели — обновление не требуется.",
                 )
               : null,
+            /*
+             * 0.9.0: внешний движок обновляется в своём репозитории. Кнопка
+             * остаётся на месте, но неактивна и говорит почему.
+             */
+            external
+              ? h(
+                  "div",
+                  { style: Object.assign({}, S.hint, { marginTop: "4px" }) },
+                  externalEngineHint(external),
+                )
+              : null,
             h(
               "div",
               { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
@@ -1314,10 +1382,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 "button",
                 {
                   type: "button",
-                  style: updateBusy || busy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
-                  disabled: updateBusy || busy,
+                  style: external || updateBusy || busy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: Boolean(external) || updateBusy || busy,
                   onClick: () => (updateOpen ? closeUpdate() : openUpdate()),
-                  title: "Обновить движок subagent-workflow до версии " + fmt(available),
+                  title: external
+                    ? externalEngineHint(external)
+                    : "Обновить движок subagent-workflow до версии " + fmt(available),
                   "aria-label": UPDATE_LABEL,
                 },
                 updateBusy ? "Обновляю…" : UPDATE_LABEL,
@@ -1437,8 +1507,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             h(
               "span",
               { style: S.subtitle },
-              "движок: " + (engineInstalled() ? "v" + engineInstalled() : "не развёрнут")
-                + (engineAvailable() ? " · доступна v" + engineAvailable() : ""),
+              externalEngine()
+                ? externalEngineText(externalEngine())
+                : "движок: " + (engineInstalled() ? "v" + engineInstalled() : "не развёрнут")
+                  + (engineAvailable() ? " · доступна v" + engineAvailable() : ""),
             ),
             h("span", { style: S.spacer }),
             rootOptions.length > 1
@@ -2169,7 +2241,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           if (!root) return h("div", { style: S.empty }, "Корень не настроен.");
           const guard = (policy && policy.guard) || {};
           const on = guard.enabled === true;
-          const disabled = Boolean(guardBusy) || Boolean(busy) || !root;
+          const external = externalEngine();
+          const disabled = Boolean(guardBusy) || Boolean(busy) || !root || Boolean(external);
           return h(
             "div",
             null,
@@ -2194,11 +2267,14 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   style: disabled ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
                   disabled: disabled,
                   onClick: () => void setGuard(!on),
-                  title: on ? "Выключить проверку коммитов" : "Включить проверку коммитов",
+                  title: external
+                    ? externalEngineHint(external)
+                    : on ? "Выключить проверку коммитов" : "Включить проверку коммитов",
                 },
                 guardBusy ? "Запись…" : (on ? "Выключить проверку коммитов" : "Включить проверку коммитов"),
               ),
             ),
+            external ? h("div", { style: S.hint }, externalEngineHint(external)) : null,
             guardNote ? h("div", { style: S.hint }, guardNote) : null,
             h(
               "div",
@@ -2219,7 +2295,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         function renderDeploy() {
           const target = deployTarget();
           if (!target) return null;
-          const disabled = Boolean(deployBusy) || Boolean(busy);
+          const external = externalEngine();
+          const disabled = Boolean(deployBusy) || Boolean(busy) || Boolean(external);
           return h(
             "section",
             { style: S.section },
@@ -2232,7 +2309,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 + "(глобальный не трогается). Развёртывание идёт только по подтверждению и не меняет "
                 + "policy, задачи и записи приёмки: второй запуск вернёт already-deployed.",
             ),
-            h("ul", { style: S.list }, DEPLOY_CHANGES.map((line, index) => h("li", { key: index }, line))),
+            /* 0.9.0: в воркспейс с внешним движком развёртывание запрещено. */
+            external
+              ? h("div", { style: S.hint }, externalEngineHint(external))
+              : h("ul", { style: S.list }, DEPLOY_CHANGES.map((line, index) => h("li", { key: index }, line))),
             h(
               "div",
               { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
@@ -2243,7 +2323,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   style: disabled ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
                   disabled: disabled,
                   onClick: () => void deployWorkflowHere(),
-                  title: "Развернуть движок subagent-workflow в " + target + ", спросив подтверждение",
+                  title: external
+                    ? externalEngineHint(external)
+                    : "Развернуть движок subagent-workflow в " + target + ", спросив подтверждение",
                   "aria-label": DEPLOY_LABEL + ": " + target,
                 },
                 deployBusy ? "Разворачиваю…" : DEPLOY_LABEL,

@@ -898,3 +898,61 @@ test('deployed engine shows versions and guards update with unfinished tasks (0.
     fixture.cleanup();
   }
 });
+
+/*
+ * 0.9.0: воркспейс без движка читает движок снаружи по карте. Шапка называет
+ * режим и путь, кнопки развёртывания и обновления неактивны с объяснением, а
+ * сервер отвечает 409 engine-external — панель не обещает запись.
+ */
+test('mapped workspace reads the external engine and disables writes (0.9.0)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-external-'));
+  const ws = path.join(dir, 'ws');
+  fs.mkdirSync(ws, { recursive: true });
+  const rootsFile = path.join(dir, 'engine-roots.json');
+  fs.writeFileSync(rootsFile, JSON.stringify({ [ws]: fixture.repo }, null, 2));
+  const engineRoot = path.resolve(fixture.repo);
+  const savedRoots = process.env.WF_ENGINE_ROOTS;
+  process.env.WF_ENGINE_ROOTS = rootsFile;
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [ws] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(80);
+    tree = hooks.render(slot.component);
+    const rendered = textOf(tree);
+    assert.ok(rendered.includes('движок: внешний · ' + engineRoot), 'шапка называет путь внешнего движка');
+    assert.match(rendered, /Сложение возвращает сумму/u, 'доска прочитана из внешнего движка');
+    assert.match(rendered, /внешний движок:/u, 'раздел версии называет внешний движок');
+    assert.ok(!findButton(tree, 'Развернуть workflow здесь'), 'развёртывание не предлагается');
+
+    const update = findButton(tree, 'Обновить движок');
+    assert.ok(update, 'кнопка обновления остаётся на месте');
+    assert.equal(update.props.disabled, true, 'обновление внешнего движка недоступно');
+    assert.match(update.props.title, /внешн/iu);
+    assert.equal(fs.existsSync(path.join(ws, 'docs')), false, 'воркспейс не изменён');
+
+    /* Сервер подтверждает: запись в это пространство — 409, а не 200. */
+    const response = await globalThis.fetch('http://localhost/workflow/api/guard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ root: ws, enabled: true }),
+    });
+    assert.equal(response.status, 409);
+    assert.equal(JSON.parse(await response.text()).code, 'engine-external');
+  } finally {
+    if (savedRoots === undefined) delete process.env.WF_ENGINE_ROOTS;
+    else process.env.WF_ENGINE_ROOTS = savedRoots;
+    fixture.cleanup();
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+    } catch {
+      /* утечка временного каталога не отменяет проверенное поведение */
+    }
+  }
+});

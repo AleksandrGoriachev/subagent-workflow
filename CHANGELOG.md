@@ -1,5 +1,32 @@
 # Изменения
 
+## 2.6.9 — 2026-11-01
+
+- **Внешний движок: воркспейс без спеки читает движок по карте.**
+  `plugin/lib/engine-root.js` — `readEngineRoots()` и `resolveEngine()`:
+  карта `~/.dsh/workflow/engine-roots.json` (env `WF_ENGINE_ROOTS`), пути
+  сравниваются без учёта регистра и хвостового слэша, относительные записи
+  пропускаются, битый JSON не роняет панель. Резолв: `VERSION` в воркспейсе →
+  `workspace`, запись карты с существующим движком → `mapping`, иначе
+  `installed: false`. Панель карту не создаёт: её пишет человек или установщик.
+- **Чтение снаружи, запись запрещена.** `/api/status`, `/api/tasks`,
+  `/api/task/:id`, `/api/policy`, `/api/checks` читаются из резолвнутого
+  движка; `/api/status` отдаёт `engine: {installed, root, source}`.
+  `POST /api/guard`, `/api/deploy`, `/api/update` при `source: 'mapping'`
+  отвечают `409` `engine-external` с подсказкой до любых действий: в
+  воркспейсе не появляется `docs/`, `.gitignore` не трогается. Обычный
+  случай (движок в воркспейсе или его нет) не меняется.
+- **Панель 0.9.0.** Шапка показывает «движок: внешний · <путь>»; кнопки
+  развёртывания, обновления и guard в таком пространстве неактивны с
+  объяснением. Тесты карты, резолва и 409 — `plugin/test/engine-root.test.mjs`;
+  `plugin/tools/test.mjs` изолирует `WF_ENGINE_ROOTS`, чтобы карта машины не
+  влияла на прогон.
+- **Проверка.** `spec/checks/engine-root.mjs` — карта ws→engine по
+  `WF_ENGINE_ROOTS`, `status.engine.source = 'mapping'`, `POST /api/guard`
+  → 409, в воркспейсе нет `docs/`, внешний движок на месте; шаг в CI.
+- **Версия 2.6.9** в пяти местах (VERSION, package.json, README, SPEC, TOOL),
+  абзац «Версия 2.6.9:» в SPEC и эта секция.
+
 ## 2.6.8 — 2026-11-01
 
 - **hooks-mode проверяет поведение хуков, а не только режим в индексе.**

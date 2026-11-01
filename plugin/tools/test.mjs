@@ -5,6 +5,7 @@
  * Поэтому список собирает сам Node-скрипт — одинаково на Windows, Ubuntu и в CI.
  */
 import { readdirSync } from 'node:fs';
+import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,5 +22,13 @@ if (files.length === 0) {
   process.exit(1);
 }
 console.log('plugin test: ' + files.length + ' файл(ов)');
-const run = spawnSync(process.execPath, ['--test', ...files], { cwd: root, stdio: 'inherit' });
+/*
+ * 0.9.0 (0034): карта внешнего движка не должна влиять на прогон. Наследованный
+ * WF_ENGINE_ROOTS уводим в несуществующий файл: тесты карты задают свой путь
+ * сами и возвращают прежнее значение. Домашняя карта машины тестовыми
+ * воркспейсами не используется, а переменная из оболочки — использовалась бы.
+ */
+const env = { ...process.env };
+env.WF_ENGINE_ROOTS = path.join(os.tmpdir(), 'wf-plugin-test-engine-roots-' + process.pid + '-' + Date.now() + '.json');
+const run = spawnSync(process.execPath, ['--test', ...files], { cwd: root, stdio: 'inherit', env });
 process.exit(run.status === null ? 1 : run.status);
