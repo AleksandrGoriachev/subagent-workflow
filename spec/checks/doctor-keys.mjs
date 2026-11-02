@@ -7,6 +7,8 @@
  *   A. один пин без приватного, другой с приватным -> WARN с id и списком доступных, exit 0
  *   B. у всех пинов есть приватные -> предупреждения нет, exit 0
  *   C. ни у одного пина нет приватного -> FAIL, exit 1
+ *   D. нужного отпечатка нет, но в штатном каталоге лежит чужой ключ -> WARN без «никаким»,
+ *      exit 0: ключ можно передать явно в --key.
  *
  * --no-signable: только сценарий C (негативный контроль критерия C2).
  */
@@ -20,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
 const MODE_C = process.argv.includes('--no-signable');
+const MODE_D = process.argv.includes('--wrong-fingerprint');
 
 /* 0035: вне пакета каталога spec нет — развёрнутая копия печатает SKIP и выходит 0. */
 if (!fs.existsSync(path.join(PKG, 'spec'))) {
@@ -28,7 +31,7 @@ if (!fs.existsSync(path.join(PKG, 'spec'))) {
 }
 
 const fail = (message) => {
-  console.log((MODE_C ? 'NO-SIGNABLE FAIL: ' : 'DOCTOR KEYS FAIL: ') + message);
+  console.log((MODE_C ? 'NO-SIGNABLE FAIL: ' : MODE_D ? 'WRONG-FP FAIL: ' : 'DOCTOR KEYS FAIL: ') + message);
   process.exit(1);
 };
 
@@ -50,7 +53,7 @@ function makeKey() {
 }
 
 /* withPrivate — какие keyId получают приватный ключ в подменённом HOME. */
-function makeRepo(withPrivate) {
+function makeRepo(withPrivate, stray) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-doc-keys-'));
   const repoDir = path.join(root, 'repo');
   const home = path.join(root, 'home');
@@ -70,6 +73,11 @@ function makeRepo(withPrivate) {
   fs.writeFileSync(path.join(engine, 'acceptors.json'), JSON.stringify({ acceptors }, null, 2), 'utf8');
   for (const keyId of withPrivate) {
     fs.writeFileSync(path.join(home, '.wf-keys', keyId + '.key.pem'), keys[keyId].privateKeyPem, 'utf8');
+  }
+  /* stray: под именем пина лежит ключ с другим отпечатком (ротация/чужой ключ). */
+  if (stray) {
+    const other = makeKey();
+    fs.writeFileSync(path.join(home, '.wf-keys', stray + '.key.pem'), other.privateKeyPem, 'utf8');
   }
   return { root, repoDir, home, engine, keys };
 }
@@ -115,6 +123,16 @@ try {
     const got = runDoctor(ctx);
     if (got.code !== 0) fail('сценарий B: doctor вышел ' + got.code + ' вместо 0');
     if (/без приватного ключа/iu.test(got.out)) fail('сценарий B: ложное предупреждение, хотя все ключи на месте');
+  }
+
+  /* D: нужного ключа нет, но под именем пина лежит чужой — WARN, а не «никаким». */
+  {
+    const ctx = makeRepo([], 'agent-judge');
+    cleanup.push(ctx.root);
+    const got = runDoctor(ctx);
+    if (got.code !== 0) fail('сценарий D: doctor вышел ' + got.code + ' вместо 0 (чужой ключ — повод сказать, а не отказать)');
+    if (/никаким/iu.test(got.out)) fail('сценарий D: противоречивое «подписывать можно: никаким»');
+    if (!/подписывать нечем/iu.test(got.out)) fail('сценарий D: нет честного сообщения, что закреплённым ключом подписывать нечем');
   }
 
   console.log('DOCTOR KEYS OK: предупреждение о ключе без приватного, тишина когда ключи есть');

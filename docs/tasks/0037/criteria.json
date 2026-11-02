@@ -1,0 +1,72 @@
+{
+  "task": "0037",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C3"
+    ],
+    "mustPass": [
+      "C2"
+    ],
+    "reasons": {
+      "C1": "DOCTOR KEYS FAIL",
+      "C3": "SPEC I-37 FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Чужой отпечаток: честный WARN без «никаким»",
+      "command": "node spec/checks/doctor-keys.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/doctor.mjs"
+      ],
+      "timeoutMs": 600000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DOCTOR KEYS OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Негативный: без ключей вообще — FAIL",
+      "command": "node spec/checks/doctor-keys.mjs --no-signable",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/doctor.mjs"
+      ],
+      "timeoutMs": 300000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "NO-SIGNABLE OK"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Спецификация фиксирует правило I-37",
+      "command": "node -e \"const fs=require('fs');const t=fs.readFileSync('spec/SPEC.md','utf8');if(!/I-37/.test(t)){console.error('SPEC I-37 FAIL');process.exit(1)}console.log('SPEC I-37 OK')\"",
+      "cwd": ".",
+      "covers": [
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 60000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SPEC I-37 OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
