@@ -1,0 +1,178 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "49911d519097f40cb1a8dc8bb1745001",
+  "runKind": "accept",
+  "task": "0035",
+  "createdAt": "2026-11-02T15:08:26.208Z",
+  "headSha": "d974385a0ef7d6f4feb882628418bb7f8a94e090",
+  "contractCommit": "d974385a0ef7d6f4feb882628418bb7f8a94e090",
+  "criteriaSha256": "56e038ad33e3804da86ead02e20ebed0cccce798aa28e08e5b596e9d8cf081da",
+  "criteriaJsonSha256": "0fe8d7cc83aa743d31365b383c34c90e4f13c28c0505d621bd1a19faaeb33a46",
+  "taskFileSha256": "322904bf66d478069c36a68c87b74d60135183080396aeeefa23892c341888f7",
+  "changedPaths": [
+    "docs/tasks/0035/criteria.lock",
+    "docs/tasks/0035/red.json",
+    "docs/tasks/0035/verify.executor.json",
+    "docs/tasks/0035/verify.json",
+    "spec/checks/acceptance-record.mjs",
+    "spec/checks/ci-behavior.mjs",
+    "spec/checks/contract-selfcheck.mjs",
+    "spec/checks/covers-severity.mjs",
+    "spec/checks/deploy-safety.mjs",
+    "spec/checks/deployed-copy.mjs",
+    "spec/checks/engine-root.mjs",
+    "spec/checks/gate-rules.mjs",
+    "spec/checks/outside-package.mjs",
+    "spec/checks/panel-deploy.mjs",
+    "spec/checks/release-hygiene.mjs",
+    "spec/checks/update-flow.mjs",
+    "spec/checks/version-drift.mjs"
+  ],
+  "coverage": {
+    "declared": 3,
+    "covered": [
+      {
+        "path": "spec/checks/acceptance-record.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/ci-behavior.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/contract-selfcheck.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/covers-severity.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/deploy-safety.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/deployed-copy.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/engine-root.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/gate-rules.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/outside-package.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/panel-deploy.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/release-hygiene.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/update-flow.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/version-drift.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/outside-package.mjs",
+      "exitCode": 0,
+      "durationMs": 6236,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "e380c825fa0921e5c11e6b7755a0e79e233f9f4ac42fee23d108fa3532e348d5",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "OUTSIDE-PACKAGE OK: 18 проверок печатают SKIP вне пакета\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/outside-package.mjs --negative",
+      "exitCode": 0,
+      "durationMs": 1480,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "51e4c570ee03050f068a2410e79b8ac3ac3aae3ca5870c28e4befa0afb99d833",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NEGATIVE OK: сломанная проверка отличена от SKIP (exit 3)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "exitCode": 0,
+      "durationMs": 24745,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "1e1240f46a62aba3042bb6080021fcc48cc437c1b1112741b43fdfaa99339ed6",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS вне пакета: acceptance-p0.mjs печатает SKIP\nPASS вне пакета: acceptance-record.mjs печатает SKIP\nPASS вне пакета: acceptance-schema.mjs печатает SKIP\nPASS вне пакета: actor-sources.mjs печатает SKIP\nPASS вне пакета: ci-behavior.mjs печатает SKIP\nPASS вне пакета: ci-guard-step.mjs печатает SKIP\nPASS вне пакета: contract-selfcheck.mjs печатает SKIP\nPASS вне пакета: covers-severity.mjs печатает SKIP\nPASS вне пакета: deploy-safety.mjs печатает SKIP\nPASS вне пакета: engine-root.mjs печатает SKIP\nPASS вне пакета: gate-rules.mjs печатает SKIP\nPASS вне пакета: guard-acceptance.mjs печатает SKIP\nPASS вне пакета: hooks-mode.mjs печатает SKIP\nPASS вне пакета: outside-package.mjs печатает SKIP\nPASS вне пакета: panel-deploy.mjs печатает SKIP\nPASS вне пакета: release-hygiene.mjs печатает SKIP\nPASS вне пакета: update-flow.mjs печатает SKIP\nPASS вне пакета: version-drift.mjs печатает SKIP\nPASS принятое: lint даёт WARN и exit 0\nPASS контроль: открытое: lint остаётся ERROR и exit 1\n\nDEPLOYED COPY OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "d974385a0ef7d6f4feb882628418bb7f8a94e090",
+    "contractCommit": "d974385a0ef7d6f4feb882628418bb7f8a94e090",
+    "criteriaJsonSha256": "0fe8d7cc83aa743d31365b383c34c90e4f13c28c0505d621bd1a19faaeb33a46",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "666a94d6b8cc0db5efdf48bbc43b254b2a165d49ec73c87dec129b78c47adcd1",
+  "log": "verify.log"
+}

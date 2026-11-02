@@ -14,6 +14,11 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
+/* Задание 0035: вне пакета каталога spec нет — развёрнутая копия печатает SKIP и выходит 0. */
+if (!fs.existsSync(path.join(PKG, 'spec'))) {
+  console.log('SKIP: проверка пакета вне пакета');
+  process.exit(0);
+}
 let failed = 0;
 const pass = (n) => console.log('PASS ' + n);
 const fail = (n, d) => { failed += 1; console.log('FAIL ' + n + (d ? ' — ' + d : '')); };
@@ -32,13 +37,19 @@ function copyTree(from, to) {
   }
 }
 
-/* 1. Проверка пакета вне пакета: SKIP, не падение. */
+/* 1. Все проверки пакета вне пакета: SKIP, не падение (задание 0035).
+ * Развёрнутая копия: docs/subagent-workflow/{scripts,checks}; spec/ пакета рядом нет,
+ * поэтому каждая проверка обязана сказать SKIP и выйти 0 — весь список, а не две. */
 const fake = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-skip-'));
+const SELF = path.basename(fileURLToPath(import.meta.url));
 try {
-  copyTree(path.join(PKG, 'spec', 'scripts'), path.join(fake, 'docs', 'subagent-workflow', 'scripts'));
-  const checks = ['acceptance-schema.mjs', 'actor-sources.mjs'];
+  const copyRoot = path.join(fake, 'docs', 'subagent-workflow');
+  copyTree(path.join(PKG, 'spec', 'scripts'), path.join(copyRoot, 'scripts'));
+  const checks = fs.readdirSync(path.join(PKG, 'spec', 'checks'))
+    .filter((name) => name.endsWith('.mjs') && name !== SELF)
+    .sort();
   for (const name of checks) {
-    const dst = path.join(fake, 'docs', 'subagent-workflow', 'checks', name);
+    const dst = path.join(copyRoot, 'checks', name);
     write(dst, fs.readFileSync(path.join(PKG, 'spec', 'checks', name), 'utf8'));
     const r = run(process.execPath, [dst], fake);
     if (r.code === 0 && /SKIP/.test(r.out)) pass('вне пакета: ' + name + ' печатает SKIP');

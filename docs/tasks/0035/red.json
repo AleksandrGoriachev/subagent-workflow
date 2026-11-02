@@ -1,0 +1,83 @@
+{
+  "version": 4,
+  "kind": "red",
+  "task": "0035",
+  "createdAt": "2026-11-02T14:43:18.913Z",
+  "base": "HEAD",
+  "baseSha": "d974385a0ef7d6f4feb882628418bb7f8a94e090",
+  "headSha": "d974385a0ef7d6f4feb882628418bb7f8a94e090",
+  "contractCommit": "d974385a0ef7d6f4feb882628418bb7f8a94e090",
+  "criteriaSha256": "56e038ad33e3804da86ead02e20ebed0cccce798aa28e08e5b596e9d8cf081da",
+  "criteriaJsonSha256": "0fe8d7cc83aa743d31365b383c34c90e4f13c28c0505d621bd1a19faaeb33a46",
+  "dirtyPaths": [
+    "docs/tasks/0035/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/outside-package.mjs",
+      "exitCode": 1,
+      "durationMs": 8562,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: OUTSIDE-PACKAGE OK"
+      ],
+      "stdoutSha256": "3ebf30f2037bf89c9030d41e0718d6df5c99b5f803f10bc134d51fa16f44a0bf",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "OUTSIDE-PACKAGE FAIL: 11 из 18 не печатают SKIP\n  acceptance-record.mjs (exit 1: \r / Node.js v25.4.0)\n  ci-behavior.mjs (exit 1: \r / Node.js v25.4.0)\n  contract-selfcheck.mjs (exit 1: \r / Node.js v25.4.0)\n  covers-severity.mjs (exit 1: \r / Node.js v25.4.0)\n  deploy-safety.mjs (exit 1:  / DEPLOY SAFETY FAIL: 1)\n  deployed-copy.mjs (exit 1: \r / Node.js v25.4.0)\n  gate-rules.mjs (exit 1: \r / Node.js v25.4.0)\n  panel-deploy.mjs (exit 1: \r / Node.js v25.4.0)\n  release-hygiene.mjs (exit 1: \r / Node.js v25.4.0)\n  update-flow.mjs (exit 1:  / UPDATE FLOW FAIL: 1)\n  version-drift.mjs (exit 1: \r / Node.js v25.4.0)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/outside-package.mjs --negative",
+      "exitCode": 0,
+      "durationMs": 1082,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "51e4c570ee03050f068a2410e79b8ac3ac3aae3ca5870c28e4befa0afb99d833",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NEGATIVE OK: сломанная проверка отличена от SKIP (exit 3)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "exitCode": 0,
+      "durationMs": 18210,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "05ba454912b37685360062b43477ca9e6d91e71385135e885c01fa683c017eca",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS вне пакета: acceptance-schema.mjs печатает SKIP\nPASS вне пакета: actor-sources.mjs печатает SKIP\nPASS принятое: lint даёт WARN и exit 0\nPASS контроль: открытое: lint остаётся ERROR и exit 1\n\nDEPLOYED COPY OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 1,
+  "failedIds": [
+    "C1"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3"
+    ]
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

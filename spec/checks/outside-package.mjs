@@ -15,6 +15,12 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
 const SELF = path.basename(fileURLToPath(import.meta.url));
+/* Задание 0035: вне пакета каталога spec нет — развёрнутая копия печатает SKIP и выходит 0.
+ * Meta-проверка не исключение: deployed-copy прогоняет её наравне с остальными. */
+if (!fs.existsSync(path.join(PKG, 'spec'))) {
+  console.log('SKIP: проверка пакета вне пакета');
+  process.exit(0);
+}
 const NEGATIVE = process.argv.includes('--negative');
 
 function copyTree(from, to) {

@@ -9,6 +9,11 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
+/* Задание 0035: вне пакета каталога spec нет — развёрнутая копия печатает SKIP и выходит 0. */
+if (!fs.existsSync(path.join(PKG, 'spec'))) {
+  console.log('SKIP: проверка пакета вне пакета');
+  process.exit(0);
+}
 let failed = 0;
 const pass = (n) => console.log('PASS ' + n);
 const fail = (n, d) => { failed += 1; console.log('FAIL ' + n + (d ? ' — ' + d : '')); };
