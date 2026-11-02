@@ -2,13 +2,13 @@
   "version": 4,
   "kind": "red",
   "task": "0038",
-  "createdAt": "2026-11-02T20:03:41.499Z",
+  "createdAt": "2026-11-02T20:06:19.156Z",
   "base": "HEAD",
-  "baseSha": "54a19a2c9ca4af860ef28d6e9a6ccfea04c750b3",
-  "headSha": "54a19a2c9ca4af860ef28d6e9a6ccfea04c750b3",
-  "contractCommit": "54a19a2c9ca4af860ef28d6e9a6ccfea04c750b3",
+  "baseSha": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+  "headSha": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+  "contractCommit": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
   "criteriaSha256": "459982669ac87871ecb5468004ff7ccdce3939384f70a2074384ce2e50581771",
-  "criteriaJsonSha256": "6605f183de71a0b66a2e121b0db29467d0cda75781489a6a4bddeab465a2e613",
+  "criteriaJsonSha256": "2c7b75937edc31b4fb3a218cf436a3aa61dd1c39f408fa9fe2d6b59f8854fb71",
   "dirtyPaths": [
     "docs/tasks/0038/criteria.lock"
   ],
@@ -17,22 +17,22 @@
       "id": "C1",
       "command": "node plugin/tools/test.mjs",
       "exitCode": 1,
-      "durationMs": 148974,
+      "durationMs": 138147,
       "passed": false,
       "timedOut": false,
       "reasons": [
         "exit code 1 != 0"
       ],
-      "stdoutSha256": "480f41e8c035f0d5b9d0068b0d473d6162b149a70d7d0a59f40ee29cf8d8bddc",
+      "stdoutSha256": "ada45b4415e5f45e3ccf8dfe750473a9d8a36bdf331d16869778e8220cf47be2",
       "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "stdoutPreview": "plugin test: 5 файл(ов)\n✔ GET /workflow/api/status reports the repository and policy (9258.0294ms)\n✔ GET /workflow/api/tasks returns the board with stages and skipped files (6684.6209ms)\n✔ GET /workflow/api/task/:id returns decisions, attack, coverage and record (7315.4656ms)\n✔ GET /workflow/api/policy matches the doctor policy line (5192.8924ms)\n✔ GET /workflow/api/compat reports versions and recommendations (5821.6417ms)\n✔ a registered workspace is readable even when it is not a configured root (6423.2658ms)\n✔ non-GET methods answer 405 with Allow: GET (4825.409ms)\n✔ unknown routes answer 404 and a foreign root answers 400 (4518.7108ms)\n✔ a non-loopback peer is rejected (4104.521ms)\n✔ a traversal-shaped task id is rejected (5412.423ms)\n✔ GET /workflow/api/checks lists the read-only checks (5471.2182ms)\n✔ POST /workflow/api/run returns the log of a passing check and writes nothing (7453.8849ms)\n✔ a failing check is a result, not an error (5654.1085ms)\n✔ run rejects unknown checks, missing tasks and absent scripts (5535.6932ms)\n✔ run is POST-only and other routes stay GET-only (5449.0291ms)\n✔ POST /workflow/api/guard flips only guard.enabled and logs it (5688.5579ms)\n✔ guard route is POST-only and validates its body and root (4647.3748ms)\n✔ a full request sweep does not change files or git status (8204.5924ms)\n✔ POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0) (5461.1558ms)\n✔ deploy без confirm ничего не пишет, POST-only и проверяет корень (1936.8801ms)\n✔ POST guard/deploy требуют application/json — иначе 415 и никакой записи (7728.4693ms)\n✔ POST guard/deploy отвергают чужой Origin — 403, до записи (6959.2577ms)\n✔ deploy создаёт ключ проекта и не трогает глобальный ключ (7299.3238ms)\n✔ POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0) (9877.6451ms)\n✔ client bundle registers the Workflow conversation view (25.103ms)\n✔ panel renders a real board, task card and policy page (12983.3167ms)\n✔ policy page toggles the guard flag with confirmation (0.5.0) (8623.3903ms)\n✔ panel follows the current workspace and opens compatibility (7991.085ms)\n✔ badges explain themselves: hints on hover and focus (WC-1) (8587.7348ms)\n✔ card aria-label carries effect and regress hints, card shows «Регресс» (0.4.1) (7428.9587ms)\n✔ badge «эффект» colored by policy severity, not by status (0.4.1) (19588.0485ms)\n✔ card says «не проверялось» when gates did not check the effect (0.4.1) (9800.9534ms)\n✔ diagnostics buttons run a read-only check and show the log (v2, step 1) (11845.4397ms)\n✔ panel does not substitute a foreign project: empty state first, configured roots on request (7647.2201ms)\n✔ empty state deploys the engine with confirmation (0.7.0) (10557.1723ms)\n✔ deploy failure shows the code and the init tail (0.7.0) (880.5864ms)\n✔ compatibility tab offers the same deploy button (0.7.0) (2016.2007ms)\n✔ package manifest declares the DSH bundle and client halves (1.9262ms)\n✔ deployed engine shows versions and guards update with unfinished tasks (0.8.0) (5720.6471ms)\n✔ mapped workspace reads the external engine and disables writes (0.9.0) (7519.8232ms)\n✖ external engine: update button is visibly disabled and says why (0.9.1) (6010.6466ms)\n✔ parse/compare versions (4.8049ms)\n✔ 2.2.x is compatible (1.6116ms)\n✔ 2.0.x reports limited functionality (0.9734ms)\n✔ 2.1.x reports missing attack and policy (0.5154ms)\n✔ missing workflow directory is an error (0.6709ms)\n✔ missing config is an error but missing VERSION is a warning (0.5777ms)\n✔ 2.4.5 — рабочее состояние: ни баннера, ни «мы это не показываем» (0.5474ms)\n✔ 2.6.0 — рабочее состояние: guard и запись 2.6.0 входят в диапазон, баннера нет (0.5251ms)\n✔ устаревший плагин: совет обновиться есть, баннера «ограничен» нет (0.7538ms)\n✔ устаревшая развёрнутая копия — по-прежнему ограничение с советом обновиться (2.2352ms)\n✔ a 2.2 deployment without the attack gate is limited (0.6049ms)\n✔ unknown version is a warning, not a hard failure (0.3609ms)\n✔ манифест сохр\n…[truncated 6564 chars]",
+      "stdoutPreview": "plugin test: 5 файл(ов)\n✔ GET /workflow/api/status reports the repository and policy (6232.0886ms)\n✔ GET /workflow/api/tasks returns the board with stages and skipped files (6909.5655ms)\n✔ GET /workflow/api/task/:id returns decisions, attack, coverage and record (6947.6187ms)\n✔ GET /workflow/api/policy matches the doctor policy line (5100.8406ms)\n✔ GET /workflow/api/compat reports versions and recommendations (5674.3066ms)\n✔ a registered workspace is readable even when it is not a configured root (6342.9551ms)\n✔ non-GET methods answer 405 with Allow: GET (5490.1179ms)\n✔ unknown routes answer 404 and a foreign root answers 400 (5217.1436ms)\n✔ a non-loopback peer is rejected (4683.6423ms)\n✔ a traversal-shaped task id is rejected (4842.2057ms)\n✔ GET /workflow/api/checks lists the read-only checks (4804.3791ms)\n✔ POST /workflow/api/run returns the log of a passing check and writes nothing (5819.0532ms)\n✔ a failing check is a result, not an error (5645.5872ms)\n✔ run rejects unknown checks, missing tasks and absent scripts (6116.7253ms)\n✔ run is POST-only and other routes stay GET-only (4793.6082ms)\n✔ POST /workflow/api/guard flips only guard.enabled and logs it (4549.8557ms)\n✔ guard route is POST-only and validates its body and root (4784.6128ms)\n✔ a full request sweep does not change files or git status (9709.3497ms)\n✔ POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0) (5120.1852ms)\n✔ deploy без confirm ничего не пишет, POST-only и проверяет корень (2008.8845ms)\n✔ POST guard/deploy требуют application/json — иначе 415 и никакой записи (7306.4968ms)\n✔ POST guard/deploy отвергают чужой Origin — 403, до записи (5168.4133ms)\n✔ deploy создаёт ключ проекта и не трогает глобальный ключ (7134.3692ms)\n✔ POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0) (5960.533ms)\n✔ client bundle registers the Workflow conversation view (25.9397ms)\n✔ panel renders a real board, task card and policy page (9852.5411ms)\n✔ policy page toggles the guard flag with confirmation (0.5.0) (8668.4024ms)\n✔ panel follows the current workspace and opens compatibility (6790.3955ms)\n✔ badges explain themselves: hints on hover and focus (WC-1) (7403.2543ms)\n✔ card aria-label carries effect and regress hints, card shows «Регресс» (0.4.1) (8708.8989ms)\n✔ badge «эффект» colored by policy severity, not by status (0.4.1) (19182.8099ms)\n✔ card says «не проверялось» when gates did not check the effect (0.4.1) (7870.581ms)\n✔ diagnostics buttons run a read-only check and show the log (v2, step 1) (11100.6347ms)\n✔ panel does not substitute a foreign project: empty state first, configured roots on request (6353.0331ms)\n✔ empty state deploys the engine with confirmation (0.7.0) (10944.7365ms)\n✔ deploy failure shows the code and the init tail (0.7.0) (904.6492ms)\n✔ compatibility tab offers the same deploy button (0.7.0) (2389.7696ms)\n✔ package manifest declares the DSH bundle and client halves (2.1543ms)\n✔ deployed engine shows versions and guards update with unfinished tasks (0.8.0) (6302.007ms)\n✔ mapped workspace reads the external engine and disables writes (0.9.0) (6393.1503ms)\n✖ external engine: update button is visibly disabled and says why (0.9.1) (5715.3096ms)\n✔ parse/compare versions (3.9252ms)\n✔ 2.2.x is compatible (1.4174ms)\n✔ 2.0.x reports limited functionality (0.9489ms)\n✔ 2.1.x reports missing attack and policy (0.4984ms)\n✔ missing workflow directory is an error (0.4016ms)\n✔ missing config is an error but missing VERSION is a warning (0.5672ms)\n✔ 2.4.5 — рабочее состояние: ни баннера, ни «мы это не показываем» (0.4732ms)\n✔ 2.6.0 — рабочее состояние: guard и запись 2.6.0 входят в диапазон, баннера нет (0.3673ms)\n✔ устаревший плагин: совет обновиться есть, баннера «ограничен» нет (0.4691ms)\n✔ устаревшая развёрнутая копия — по-прежнему ограничение с советом обновиться (0.6152ms)\n✔ a 2.2 deployment without the attack gate is limited (0.4157ms)\n✔ unknown version is a warning, not a hard failure (0.5436ms)\n✔ манифест сох\n…[truncated 6559 chars]",
       "stderrPreview": ""
     },
     {
       "id": "C2",
       "command": "node spec/checks/engine-root.mjs",
       "exitCode": 0,
-      "durationMs": 4605,
+      "durationMs": 4433,
       "passed": true,
       "timedOut": false,
       "reasons": [],
@@ -45,7 +45,7 @@
       "id": "C3",
       "command": "node -e \"const t=require('fs').readFileSync('plugin/lib/client.js','utf8');const need=['aria-disabled','not-allowed','opacity: 0.45','недоступно: движок внешний'];const miss=need.filter((m)=>!t.includes(m));if(miss.length){console.error('MISSING: '+miss.join(', '));process.exit(1);}console.log('CLIENT MARKS OK');\"",
       "exitCode": 1,
-      "durationMs": 420,
+      "durationMs": 288,
       "passed": false,
       "timedOut": false,
       "reasons": [
@@ -65,14 +65,11 @@
     "C3"
   ],
   "allGreen": false,
-  "redProven": false,
+  "redProven": true,
   "redExpectation": {
     "configured": true,
-    "ok": false,
-    "errors": [
-      "redExpect: критерий C1 упал не по ожидаемой причине (нет aria-disabled и подписи «недоступно»)",
-      "redExpect: критерий C3 упал не по ожидаемой причине (нет маркеров в client.js)"
-    ],
+    "ok": true,
+    "errors": [],
     "mustFail": [
       "C1",
       "C3"

@@ -1,0 +1,119 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "88d34902b460d0fb26bc219ec750f32a",
+  "runKind": "accept",
+  "task": "0038",
+  "createdAt": "2026-11-02T20:27:51.662Z",
+  "headSha": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+  "contractCommit": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+  "criteriaSha256": "459982669ac87871ecb5468004ff7ccdce3939384f70a2074384ce2e50581771",
+  "criteriaJsonSha256": "2c7b75937edc31b4fb3a218cf436a3aa61dd1c39f408fa9fe2d6b59f8854fb71",
+  "taskFileSha256": "3bde15b4f104ccf89456defc2333093c50f7ce64aede60d169192aa6f62b5ab9",
+  "changedPaths": [
+    "docs/tasks/0038/criteria.lock",
+    "docs/tasks/0038/red.json",
+    "docs/tasks/0038/verify.executor.json",
+    "docs/tasks/0038/verify.json",
+    "plugin/lib/client.js"
+  ],
+  "coverage": {
+    "declared": 3,
+    "covered": [
+      {
+        "path": "plugin/lib/client.js",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 158591,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "eb04b743954e001d1d556ace7b9bf52168ccc197d09b4dcf380fb1aa1494d741",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 5 файл(ов)\n✔ GET /workflow/api/status reports the repository and policy (7304.4396ms)\n✔ GET /workflow/api/tasks returns the board with stages and skipped files (7768.464ms)\n✔ GET /workflow/api/task/:id returns decisions, attack, coverage and record (8008.9542ms)\n✔ GET /workflow/api/policy matches the doctor policy line (5837.2917ms)\n✔ GET /workflow/api/compat reports versions and recommendations (6478.5535ms)\n✔ a registered workspace is readable even when it is not a configured root (6376.3104ms)\n✔ non-GET methods answer 405 with Allow: GET (5036.134ms)\n✔ unknown routes answer 404 and a foreign root answers 400 (5024.5966ms)\n✔ a non-loopback peer is rejected (5262.8516ms)\n✔ a traversal-shaped task id is rejected (5553.2125ms)\n✔ GET /workflow/api/checks lists the read-only checks (5411.0278ms)\n✔ POST /workflow/api/run returns the log of a passing check and writes nothing (6402.3912ms)\n✔ a failing check is a result, not an error (6152.9803ms)\n✔ run rejects unknown checks, missing tasks and absent scripts (6195.7736ms)\n✔ run is POST-only and other routes stay GET-only (5729.9127ms)\n✔ POST /workflow/api/guard flips only guard.enabled and logs it (5558.0004ms)\n✔ guard route is POST-only and validates its body and root (8013.8013ms)\n✔ a full request sweep does not change files or git status (9407.7428ms)\n✔ POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0) (6577.6126ms)\n✔ deploy без confirm ничего не пишет, POST-only и проверяет корень (1783.9966ms)\n✔ POST guard/deploy требуют application/json — иначе 415 и никакой записи (10525.9083ms)\n✔ POST guard/deploy отвергают чужой Origin — 403, до записи (8507.5581ms)\n✔ deploy создаёт ключ проекта и не трогает глобальный ключ (8889.6875ms)\n✔ POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0) (5348.7225ms)\n✔ client bundle registers the Workflow conversation view (29.7326ms)\n✔ panel renders a real board, task card and policy page (11151.3696ms)\n✔ policy page toggles the guard flag with confirmation (0.5.0) (10478.037ms)\n✔ panel follows the current workspace and opens compatibility (8335.9868ms)\n✔ badges explain themselves: hints on hover and focus (WC-1) (8648.6558ms)\n✔ card aria-label carries effect and regress hints, card shows «Регресс» (0.4.1) (8248.7493ms)\n✔ badge «эффект» colored by policy severity, not by status (0.4.1) (20696.7702ms)\n✔ card says «не проверялось» when gates did not check the effect (0.4.1) (8780.9853ms)\n✔ diagnostics buttons run a read-only check and show the log (v2, step 1) (12401.7255ms)\n✔ panel does not substitute a foreign project: empty state first, configured roots on request (7513.1593ms)\n✔ empty state deploys the engine with confirmation (0.7.0) (15709.1211ms)\n✔ deploy failure shows the code and the init tail (0.7.0) (859.3847ms)\n✔ compatibility tab offers the same deploy button (0.7.0) (2794.6049ms)\n✔ package manifest declares the DSH bundle and client halves (2.2606ms)\n✔ deployed engine shows versions and guards update with unfinished tasks (0.8.0) (7297.9726ms)\n✔ mapped workspace reads the external engine and disables writes (0.9.0) (9990.5333ms)\n✔ external engine: update button is visibly disabled and says why (0.9.1) (6720.0331ms)\n✔ parse/compare versions (5.133ms)\n✔ 2.2.x is compatible (1.6447ms)\n✔ 2.0.x reports limited functionality (0.9865ms)\n✔ 2.1.x reports missing attack and policy (0.4927ms)\n✔ missing workflow directory is an error (0.6225ms)\n✔ missing config is an error but missing VERSION is a warning (0.6166ms)\n✔ 2.4.5 — рабочее состояние: ни баннера, ни «мы это не показываем» (0.5096ms)\n✔ 2.6.0 — рабочее состояние: guard и запись 2.6.0 входят в диапазон, баннера нет (0.6114ms)\n✔ устаревший плагин: совет обновиться есть, баннера «ограничен» нет (0.7569ms)\n✔ устаревшая развёрнутая копия — по-прежнему ограничение с советом обновиться (0.8482ms)\n✔ a 2.2 deployment without the attack gate is limited (1.6139ms)\n✔ unknown version is a warning, not a hard failure (0.3809ms)\n✔ манифест с\n…[truncated 3326 chars]",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/engine-root.mjs",
+      "exitCode": 0,
+      "durationMs": 3566,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "3037d83537e733d6f79962331a0fc60a21ca1f5c659c04273d7fe299bfc79a49",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS A: статус видит внешний движок\nPASS B: запись в воркспейс без спеки запрещена\nPASS C: воркспейс не изменён\nPASS D: внешний движок на месте\n\nENGINE ROOT OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const t=require('fs').readFileSync('plugin/lib/client.js','utf8');const need=['aria-disabled','not-allowed','opacity: 0.45','недоступно: движок внешний'];const miss=need.filter((m)=>!t.includes(m));if(miss.length){console.error('MISSING: '+miss.join(', '));process.exit(1);}console.log('CLIENT MARKS OK');\"",
+      "exitCode": 0,
+      "durationMs": 252,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "3d9c8195909422a81fdc1479cd5bd59023d744a1216eb5946c06db1f00b1f669",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "CLIENT MARKS OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+    "contractCommit": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+    "criteriaJsonSha256": "2c7b75937edc31b4fb3a218cf436a3aa61dd1c39f408fa9fe2d6b59f8854fb71",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C3"
+      ],
+      "mustPass": [
+        "C2"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "d0e6814fe45a0de616689f9027ee35b2a4dc5cb9879fa49deee967319fcc9024",
+  "log": "verify.log"
+}

@@ -323,7 +323,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         cursor: "pointer",
         font: "inherit",
       },
-      buttonDisabled: { opacity: 0.55, cursor: "default" },
+      buttonDisabled: { opacity: 0.45, cursor: "not-allowed" },
       tabs: {
         display: "flex",
         gap: "2px",
@@ -1380,18 +1380,27 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
               h(
                 "button",
-                {
-                  type: "button",
-                  style: external || updateBusy || busy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
-                  disabled: Boolean(external) || updateBusy || busy,
-                  onClick: () => (updateOpen ? closeUpdate() : openUpdate()),
-                  title: external
-                    ? externalEngineHint(external)
-                    : "Обновить движок subagent-workflow до версии " + fmt(available),
-                  "aria-label": UPDATE_LABEL,
-                },
+                Object.assign(
+                  {
+                    type: "button",
+                    style: external || updateBusy || busy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                    disabled: Boolean(external) || updateBusy || busy,
+                    onClick: () => (updateOpen ? closeUpdate() : openUpdate()),
+                    title: external
+                      ? externalEngineHint(external)
+                      : "Обновить движок subagent-workflow до версии " + fmt(available),
+                    "aria-label": UPDATE_LABEL,
+                  },
+                  /* 0038: недоступность объявлена и для доступности, но только
+                     на внешнем движке — обычная кнопка атрибута не получает. */
+                  external ? { "aria-disabled": "true" } : {},
+                ),
                 updateBusy ? "Обновляю…" : UPDATE_LABEL,
               ),
+              /*
+               * 0038: причину видно на месте, а не только в tooltip.
+               */
+              external ? h("span", { style: S.hint }, "недоступно: движок внешний") : null,
             ),
             updateOpen ? renderUpdateDialog(pending) : null,
             updateNote ? renderUpdateNote() : null,
