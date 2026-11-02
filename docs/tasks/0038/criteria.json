@@ -1,0 +1,72 @@
+{
+  "task": "0038",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C3"
+    ],
+    "mustPass": [
+      "C2"
+    ],
+    "reasons": {
+      "C1": "нет aria-disabled и подписи «недоступно»",
+      "C3": "нет маркеров в client.js"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Тесты панели: внешний движок — visibly disabled",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/client.js"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "plugin test:"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Регресс: внешний движок и 409",
+      "command": "node spec/checks/engine-root.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/api.js"
+      ],
+      "timeoutMs": 600000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE ROOT OK"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Маркеры в client.js",
+      "command": "node -e \"const t=require('fs').readFileSync('plugin/lib/client.js','utf8');const need=['aria-disabled','not-allowed','opacity: 0.45','недоступно: движок внешний'];const miss=need.filter((m)=>!t.includes(m));if(miss.length){console.error('MISSING: '+miss.join(', '));process.exit(1);}console.log('CLIENT MARKS OK');\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/client.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CLIENT MARKS OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}

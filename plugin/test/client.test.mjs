@@ -956,3 +956,48 @@ test('mapped workspace reads the external engine and disables writes (0.9.0)', a
     }
   }
 });
+
+/*
+ * 0.9.1 / 0038: внешний движок — кнопки записи не только disabled, но и видимо
+ * недоступны: заметный стиль, aria-disabled и надпись «недоступно: движок внешний».
+ * Заказчик жаловался, что кнопка выглядит активной и клик ничего не объясняет.
+ */
+test('external engine: update button is visibly disabled and says why (0.9.1)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  const engineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-engine-'));
+  const mapFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wf-map-')), 'engine-roots.json');
+  const previous = process.env.WF_ENGINE_ROOTS;
+  try {
+    /* Движок выносим наружу: воркспейс остаётся без docs/subagent-workflow. */
+    const src = path.join(fixture.repo, 'docs', 'subagent-workflow');
+    const dst = path.join(engineDir, 'docs', 'subagent-workflow');
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.renameSync(src, dst);
+    fs.writeFileSync(mapFile, JSON.stringify({ [fixture.repo]: engineDir }) + '\n');
+    process.env.WF_ENGINE_ROOTS = mapFile;
+
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+    const rendered = textOf(tree);
+    assert.match(rendered, /внешний движок/u, 'панель знает, что движок внешний');
+    assert.match(rendered, /недоступно: движок внешний/u, 'кнопка объясняет, почему недоступна');
+
+    const update = elements(tree).find((element) => element.type === 'button'
+      && element.props && element.props['aria-label'] === 'Обновить движок');
+    assert.ok(update, 'кнопка «Обновить движок» отрисована');
+    assert.equal(update.props.disabled, true, 'кнопка действительно отключена');
+    assert.equal(update.props['aria-disabled'], 'true', 'состояние объявлено для доступности');
+    assert.equal(update.props.style.opacity, 0.45, 'стиль заметно отличается от активной кнопки');
+    assert.equal(update.props.style.cursor, 'not-allowed', 'курсор говорит о недоступности');
+  } finally {
+    if (previous === undefined) delete process.env.WF_ENGINE_ROOTS;
+    else process.env.WF_ENGINE_ROOTS = previous;
+  }
+});
