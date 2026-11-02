@@ -1,0 +1,129 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0036",
+  "title": "doctor: предупреждение о закреплённом ключе без приватного",
+  "risk": "medium",
+  "taskFileSha256": "58e886e53e50abc56f2251729c7b77f74dcb8f734f0d67eb6bf5a24c2efc31e3",
+  "criteriaSha256": "2c5a4a604958bec0453c129c6589782ce737bc1bd43e5381343f372697d1f477",
+  "criteriaJsonSha256": "2c58479a3b19918cebe2b7679822eb79e739aba696197600b8dded2a9db15364",
+  "contractCommit": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+  "baseCommit": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+  "candidateCommit": "a4fcf18083e0e23be3898ecde1ca529f5a4f38a7",
+  "tree": "75cb358e18a2408dd3b53b0c1d66bc0ee2f551f4",
+  "worktreeDigest": "4deaf7dada4bb4cc38cb0dc6b9e397efc5738806491296b64caf73f7ae7c3ffc",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-b8721a2a-456c-48a2-94cd-8030d895a8e8",
+    "model": "unknown"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "8bec5304-b152-42dc-a374-6295f629f3bc",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "641687a605f0f8a38aebdb624e5de1a6",
+    "runKind": "accept",
+    "startedAt": "2026-11-02T17:19:28.784Z",
+    "finishedAt": "2026-11-02T17:19:51.639Z",
+    "durationMs": 22866,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "521d00f08a6c5d94872889ccce9f632273a3670de4f79cdbc75d7ad308d1b420",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+    "contractCommit": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+    "criteriaJsonSha256": "2c58479a3b19918cebe2b7679822eb79e739aba696197600b8dded2a9db15364",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/doctor-keys.mjs",
+      "exitCode": 0,
+      "durationMs": 4247,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/doctor-keys.mjs --no-signable",
+      "exitCode": 0,
+      "durationMs": 2175,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/outside-package.mjs",
+      "exitCode": 0,
+      "durationMs": 6486,
+      "passed": true
+    }
+  ],
+  "acceptor": "subagent:judge",
+  "acceptedAt": "2026-11-02T17:19:52.392Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "yA1y2zBxLq9MII290o1bTRGfnBiMbNCqc/5cYbWMluY7+dcuaewbbedbxYxIDtDo3lgHDYecWYCGiTiSBh3rAQ=="
+}
