@@ -1,0 +1,118 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0037",
+  "createdAt": "2026-11-02T17:42:38.955Z",
+  "headSha": "aca6993a407f033b2e9261c1cd55439ae20fb236",
+  "contractCommit": "aca6993a407f033b2e9261c1cd55439ae20fb236",
+  "criteriaSha256": "53e6e65896cec36366789f66eb60cb7212b86a561723d770a168e524fe66f392",
+  "criteriaJsonSha256": "c453b3f6b5e691761aeb2dd7e1af9aff1808840d5d0d542b25a1df98d056bc3b",
+  "taskFileSha256": "545bf4ebe44cec1800ea7c36b5b277ed53778d7fd24d2e2f83f4cb443353eb4e",
+  "changedPaths": [
+    "docs/tasks/0037/criteria.lock",
+    "docs/tasks/0037/red.json",
+    "spec/SPEC.md",
+    "spec/scripts/doctor.mjs"
+  ],
+  "coverage": {
+    "declared": 3,
+    "covered": [
+      {
+        "path": "spec/scripts/doctor.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/doctor-keys.mjs",
+      "exitCode": 0,
+      "durationMs": 4192,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "f42d2b1cc7cd336adf0e31e667c1861b110b9d6d45e22a91219ff99a33114240",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "DOCTOR KEYS OK: предупреждение о ключе без приватного, тишина когда ключи есть\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/doctor-keys.mjs --no-signable",
+      "exitCode": 0,
+      "durationMs": 2015,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "0eb05bc5c3813b0a3003f14c239eb0c4ecc08ecb790baf52ca02a033d7d11b48",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NO-SIGNABLE OK: doctor падает, когда подписывать нечем\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const fs=require('fs');const t=fs.readFileSync('spec/SPEC.md','utf8');if(!/I-37/.test(t)){console.error('SPEC I-37 FAIL');process.exit(1)}console.log('SPEC I-37 OK')\"",
+      "exitCode": 0,
+      "durationMs": 338,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "a4eabd5f32c197812a2f67f5631da60cc221e5a93f40fae6c327e30c9b548531",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "SPEC I-37 OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "aca6993a407f033b2e9261c1cd55439ae20fb236",
+    "contractCommit": "aca6993a407f033b2e9261c1cd55439ae20fb236",
+    "criteriaJsonSha256": "c453b3f6b5e691761aeb2dd7e1af9aff1808840d5d0d542b25a1df98d056bc3b",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C3"
+      ],
+      "mustPass": [
+        "C2"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "0ba8f6b061be455416b06875fe7b8fd3c3cf82af562567e63b84ba6cbd7ab158",
+  "log": "verify.log"
+}

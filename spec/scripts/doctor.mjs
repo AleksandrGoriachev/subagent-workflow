@@ -176,14 +176,26 @@ if (root) {
           check('ключи: приватный для закреплённого', true,
             'штатных каталогов ключей нет (' + keyDirs.join(', ') + '): ключи могут лежать вне их — подпись проверит task-accept');
         } else {
-          const hint = signable.length > 0 ? signable.map((item) => item.pin.keyId).join(', ') : 'никаким из штатных каталогов';
+          /*
+           * 0037: «подписывать можно: никаким из штатных каталогов» — противоречие:
+           * список назван, но пуст. Если пригодного ключа нет, доктор говорит прямо,
+           * что закреплённым ключом подписывать нечем, и называет единственный
+           * рабочий путь — явную передачу ключа в --key. Три состояния различаются:
+           * есть пригодный (здесь ветка signable > 0), нет вовсе (FAIL выше),
+           * нужного отпечатка нет (WARN, exit 0).
+           */
+          const stillUnusable = unusable.map((item) => item.pin.keyId).join(', ');
           const wrongKey = mismatched.length > 0
             ? '; отпечаток ' + mismatched.map((item) => path.basename(item.key.file)).join(', ')
               + ' не совпадает с закреплённым — таким ключом подпись отклонят'
             : '';
-          check('ключи: приватный для закреплённого', false,
-            'без приватного ключа: ' + unusable.map((item) => item.pin.keyId).join(', ')
-              + ' — подписывать можно: ' + hint + wrongKey, 'warn');
+          const detail = signable.length > 0
+            ? 'без приватного ключа: ' + stillUnusable
+              + ' — подписывать можно: ' + signable.map((item) => item.pin.keyId).join(', ') + wrongKey
+            : 'без приватного ключа: ' + stillUnusable
+              + ' — закреплённым ключом подписывать нечем: приватного с нужным отпечатком нет;'
+              + ' ключ можно передать явно в --key' + wrongKey;
+          check('ключи: приватный для закреплённого', false, detail, 'warn');
         }
       }
       const usedFiles = new Set([...signable, ...mismatched].map((item) => item.key.file));
