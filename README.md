@@ -74,7 +74,14 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 принимают только `application/json` и только свой `Origin`. В релизный архив не
 входит, а `init` копирует только `spec/`, поэтому в развёрнутое пространство
 плагин не попадает: это хост-пакет, а не часть переносимой спецификации.
-Установка и границы — `plugin/README.md`.
+Ставится **только** tarball'ом из релиза:
+`https://github.com/AleksandrGoriachev/subagent-workflow/releases/latest/download/dsh-workflow-console.tgz`
+(URL репозитория — не пакет: в корне лежит движок без `dsh.bundle`). Порядок, ловушки
+(выйти из DSH до `pnpm install`, явные `roots`, воркспейс без движка по карте) и чек-лист
+после старта — `INSTALL.md` §7. Границы панели — `plugin/README.md`.
+
+С 0.9.1 недоступность видна: на внешнем движке кнопка «Обновить» отключена и это очевидно
+(`opacity: 0.45`, `cursor: not-allowed`, `aria-disabled`, подпись «недоступно: движок внешний»).
 
 ## Конфигурация
 
