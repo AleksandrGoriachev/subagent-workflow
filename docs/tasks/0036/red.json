@@ -1,0 +1,87 @@
+{
+  "version": 4,
+  "kind": "red",
+  "task": "0036",
+  "createdAt": "2026-11-02T17:01:18.042Z",
+  "base": "HEAD",
+  "baseSha": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+  "headSha": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+  "contractCommit": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+  "criteriaSha256": "2c5a4a604958bec0453c129c6589782ce737bc1bd43e5381343f372697d1f477",
+  "criteriaJsonSha256": "2c58479a3b19918cebe2b7679822eb79e739aba696197600b8dded2a9db15364",
+  "dirtyPaths": [
+    "docs/tasks/0036/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/doctor-keys.mjs",
+      "exitCode": 1,
+      "durationMs": 2414,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: DOCTOR KEYS OK"
+      ],
+      "stdoutSha256": "f0255fce2c1d9ff8951b2567a2e1978a3f18c3e2ae5af83ef57ed6a600ec9a5a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "DOCTOR KEYS FAIL: сценарий A: нет предупреждения «без приватного ключа»\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/doctor-keys.mjs --no-signable",
+      "exitCode": 1,
+      "durationMs": 2534,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: NO-SIGNABLE OK"
+      ],
+      "stdoutSha256": "a414f37ab727ff0f18241df7da26fe8b12c60dafafc53bbbdc1af4f415ad3539",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NO-SIGNABLE FAIL: doctor не упал, хотя ни один пин не имеет приватного ключа\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/outside-package.mjs",
+      "exitCode": 0,
+      "durationMs": 6581,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "5c1b2bcfba823517140e3d3a905ba5202ebf859cf45f1fb40582d7f1084c1d4d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "OUTSIDE-PACKAGE OK: 19 проверок печатают SKIP вне пакета\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 2,
+  "failedIds": [
+    "C1",
+    "C2"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3"
+    ]
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

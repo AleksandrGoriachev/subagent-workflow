@@ -1,0 +1,117 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0036",
+  "createdAt": "2026-11-02T17:15:52.069Z",
+  "headSha": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+  "contractCommit": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+  "criteriaSha256": "2c5a4a604958bec0453c129c6589782ce737bc1bd43e5381343f372697d1f477",
+  "criteriaJsonSha256": "2c58479a3b19918cebe2b7679822eb79e739aba696197600b8dded2a9db15364",
+  "taskFileSha256": "58e886e53e50abc56f2251729c7b77f74dcb8f734f0d67eb6bf5a24c2efc31e3",
+  "changedPaths": [
+    "docs/tasks/0036/criteria.lock",
+    "docs/tasks/0036/red.json",
+    "spec/scripts/doctor.mjs"
+  ],
+  "coverage": {
+    "declared": 3,
+    "covered": [
+      {
+        "path": "spec/scripts/doctor.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/doctor-keys.mjs",
+      "exitCode": 0,
+      "durationMs": 3966,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "f42d2b1cc7cd336adf0e31e667c1861b110b9d6d45e22a91219ff99a33114240",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "DOCTOR KEYS OK: предупреждение о ключе без приватного, тишина когда ключи есть\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/doctor-keys.mjs --no-signable",
+      "exitCode": 0,
+      "durationMs": 1724,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "0eb05bc5c3813b0a3003f14c239eb0c4ecc08ecb790baf52ca02a033d7d11b48",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NO-SIGNABLE OK: doctor падает, когда подписывать нечем\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/outside-package.mjs",
+      "exitCode": 0,
+      "durationMs": 5976,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "5c1b2bcfba823517140e3d3a905ba5202ebf859cf45f1fb40582d7f1084c1d4d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "OUTSIDE-PACKAGE OK: 19 проверок печатают SKIP вне пакета\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+    "contractCommit": "f12a04cb3d70a5323bfa2905c55906f0e16f314e",
+    "criteriaJsonSha256": "2c58479a3b19918cebe2b7679822eb79e739aba696197600b8dded2a9db15364",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "4deaf7dada4bb4cc38cb0dc6b9e397efc5738806491296b64caf73f7ae7c3ffc",
+  "log": "verify.log"
+}

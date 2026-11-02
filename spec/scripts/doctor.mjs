@@ -4,11 +4,13 @@
  * Ничего не меняет: только читает и запускает безопасные команды.
  */
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { findRepoRoot, loadConfig, exists, readJson } from './lib/common.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
-import { loadAcceptors } from './sign.mjs';
+import { loadAcceptors, publicKeyFingerprint } from './sign.mjs';
 import { policyOf, familyOf } from './lib/policy.mjs';
 
 function args(argv) {
@@ -55,6 +57,43 @@ function countHighRiskTasks(tasksDir) {
   return count;
 }
 
+/*
+ * 0036: заранее видно, каким закреплённым ключом приёмка невозможна. Приватный
+ * ключ живёт в двух штатных каталогах: <repo>/.wf-keys (ключ проекта,
+ * init --key-out .wf-keys) и ~/.wf-keys (ключ приёмщика по умолчанию, init без
+ * --key-out). Сравнение — по отпечатку SPKI, а не по имени файла: файл с нужным
+ * именем и чужим ключом даёт отказ уже на подписи, и обещать его как
+ * подписываемый было бы ложью.
+ */
+const PRIVATE_KEY_NAME = /\.key\.pem$/i;
+
+function readPrivateKeys(dirs) {
+  const keys = [];
+  const badFiles = [];
+  const seen = new Set();
+  for (const dir of dirs) {
+    const resolved = path.resolve(dir);
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    let entries;
+    try { entries = fs.readdirSync(resolved, { withFileTypes: true }); } catch { continue; }
+    for (const entry of entries) {
+      if (!entry.isFile() || !PRIVATE_KEY_NAME.test(entry.name)) continue;
+      const file = path.join(resolved, entry.name);
+      const keyId = entry.name.replace(PRIVATE_KEY_NAME, '');
+      try {
+        /* createPrivateKey первым: публичный PEM в файле *.key.pem — не ключ подписи. */
+        const publicKey = crypto.createPublicKey(crypto.createPrivateKey(fs.readFileSync(file, 'utf8')));
+        const publicKeyPem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
+        keys.push({ file, keyId, fingerprint: publicKeyFingerprint(publicKeyPem) });
+      } catch {
+        badFiles.push(file);
+      }
+    }
+  }
+  return { keys, badFiles };
+}
+
 const major = Number(String(process.versions.node).split('.')[0]);
 check('Node.js >= 20', major >= 20, 'сейчас ' + process.versions.node);
 
@@ -87,6 +126,77 @@ if (root) {
           ? 'задач risk: high: ' + highTasks + ' — без ключа human-* они не принимаются'
           : 'задач risk: high нет — ключ human-* не нужен',
         'warn');
+
+      /*
+       * 0036: доктор обязан заранее сказать, каким закреплённым ключом приёмка
+       * невозможна, — иначе это выясняется уже на подписи, после красного
+       * прогона. Приватный ключ ищется только там, где его кладёт сам пакет
+       * (init: <repo>/.wf-keys или ~/.wf-keys); путь --key в task-accept
+       * произвольный, поэтому «каталогов нет вовсе» — не повод поднимать
+       * тревогу: ключи могут лежать вне штатных мест.
+       * Сравнение — по отпечатку, а не по имени файла: ключ с нужным именем и
+       * чужим содержимым отклоняется на подписи, и обещать его как
+       * подписываемый нельзя.
+       */
+      const home = process.env.USERPROFILE || process.env.HOME || os.homedir();
+      const keyDirs = [];
+      for (const dir of [path.join(root, '.wf-keys'), path.join(home, '.wf-keys')]) {
+        if (!keyDirs.some((known) => path.resolve(known) === path.resolve(dir))) keyDirs.push(dir);
+      }
+      const keyDirsExist = keyDirs.some((dir) => { try { return fs.statSync(dir).isDirectory(); } catch { return false; } });
+      const { keys: privateKeys, badFiles } = readPrivateKeys(keyDirs);
+      const pins = list.filter((key) => !key.revokedAt);
+      const unreadablePins = [];
+      const signable = [];
+      const unusable = [];
+      for (const pin of pins) {
+        let fingerprint;
+        try { fingerprint = publicKeyFingerprint(pin.publicKeyPem); }
+        catch { unreadablePins.push(pin.keyId); continue; }
+        const byFingerprint = privateKeys.find((key) => key.fingerprint === fingerprint);
+        if (byFingerprint) { signable.push({ pin, key: byFingerprint }); continue; }
+        const byName = privateKeys.find((key) => key.keyId === pin.keyId);
+        unusable.push({ pin, key: byName || null });
+      }
+      const mismatched = unusable.filter((item) => item.key);
+      const absent = unusable.filter((item) => !item.key).map((item) => item.pin);
+      if (unreadablePins.length > 0) {
+        check('ключи: публичный ключ читается', false,
+          'не читается: ' + unreadablePins.join(', ') + ' — подпись по такому пину не проверить', 'warn');
+      }
+      if (signable.length + unusable.length > 0) {
+        if (unusable.length === 0) {
+          check('ключи: приватный для закреплённого', true,
+            'приватные ключи на месте: ' + signable.map((item) => item.pin.keyId).join(', '));
+        } else if (signable.length === 0 && absent.length === unusable.length && keyDirsExist) {
+          check('ключи: приватный для закреплённого', false,
+            'ни один закреплённый ключ не имеет приватного: искал ' + keyDirs.join(', ')
+              + ' — подписывать нечем, приёмка невозможна (закреплены: ' + absent.map((pin) => pin.keyId).join(', ') + ')');
+        } else if (signable.length === 0 && !keyDirsExist) {
+          check('ключи: приватный для закреплённого', true,
+            'штатных каталогов ключей нет (' + keyDirs.join(', ') + '): ключи могут лежать вне их — подпись проверит task-accept');
+        } else {
+          const hint = signable.length > 0 ? signable.map((item) => item.pin.keyId).join(', ') : 'никаким из штатных каталогов';
+          const wrongKey = mismatched.length > 0
+            ? '; отпечаток ' + mismatched.map((item) => path.basename(item.key.file)).join(', ')
+              + ' не совпадает с закреплённым — таким ключом подпись отклонят'
+            : '';
+          check('ключи: приватный для закреплённого', false,
+            'без приватного ключа: ' + unusable.map((item) => item.pin.keyId).join(', ')
+              + ' — подписывать можно: ' + hint + wrongKey, 'warn');
+        }
+      }
+      const usedFiles = new Set([...signable, ...mismatched].map((item) => item.key.file));
+      const orphanKeys = privateKeys.filter((key) => !usedFiles.has(key.file));
+      if (orphanKeys.length > 0) {
+        check('ключи: лишний приватный', false,
+          'приватный ключ не соответствует ни одному закреплённому: ' + orphanKeys.map((key) => path.basename(key.file)).join(', ')
+            + ' — подписывать им нечего', 'warn');
+      }
+      if (badFiles.length > 0) {
+        check('ключи: приватный ключ читается', false,
+          'файл не читается как приватный ключ: ' + badFiles.map((file) => path.basename(file)).join(', '), 'warn');
+      }
     } catch (err) {
       check('acceptors.json читается', false, err.message);
     }
