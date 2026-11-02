@@ -1,14 +1,14 @@
 # Установка пакета
 
-Пакет — это каталог `subagent-workflow-2.2.2/` (или zip с ним). Зависимостей нет:
+Пакет — это каталог `subagent-workflow-<версия>/` (или zip с ним). Версию задаёт файл `VERSION` в корне архива. Зависимостей нет:
 нужны Node.js 20+ и git. Сеть не требуется.
 
 ## 1. Проверить архив
 
 ~~~bash
-sha256sum -c subagent-workflow-2.2.2.zip.sha256
+sha256sum -c subagent-workflow-<версия>.zip.sha256
 # Windows PowerShell 7:
-Get-FileHash .\subagent-workflow-2.2.2.zip -Algorithm SHA256
+Get-FileHash .\subagent-workflow-<версия>.zip -Algorithm SHA256
 ~~~
 
 ## 1a. Или клонировать
@@ -21,13 +21,18 @@ cd subagent-workflow
 ## 2. Распаковать
 
 ~~~bash
-unzip subagent-workflow-2.2.2.zip
-cd subagent-workflow-2.2.2
+unzip subagent-workflow-<версия>.zip
+cd subagent-workflow-<версия>
 node tools/verify.mjs
 ~~~
 
 Внутри: `spec/` (спецификация, ворота, шаблоны), `adapters/` (харнессы),
 `deploy/` (runbook), `examples/` (пример задания), `tools/` (сборка пакета).
+
+**Важно: архив — это пакет, а не развёрнутая копия.** В проекте движок живёт в
+`docs/subagent-workflow/` и создаётся командой `init` из `spec/scripts/init.mjs`.
+Запускать `init` из распакованного в `docs/` архива нельзя: там нет `scripts/init.mjs`
+(есть только `spec/scripts/`).
 
 ## 3. Развернуть в проекте
 
@@ -82,3 +87,11 @@ node spec/scripts/init.mjs --repo ../my-project --force
 
 Удалите `docs/subagent-workflow/` и правила из `.gitignore`. Записи `acceptance.json`
 остаются историей репозитория; их не удаляют.
+
+## 6. Обновление уже развёрнутого проекта
+
+Коротко: новый архив → `init --force` с `--key-out` в каталог ключей проекта →
+`doctor` и `selftest` → проверить исторические `acceptance.json` → коммит деплоя.
+
+Полный порядок, ловушки и откат — `deploy/UPDATE.md`. Ключи при обновлении не меняются:
+`--force` обновляет файлы пакета и не трогает ключ.
