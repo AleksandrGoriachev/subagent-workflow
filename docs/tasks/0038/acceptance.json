@@ -1,0 +1,129 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0038",
+  "title": "Внешний движок: disabled-кнопки выглядят и объясняются как недоступные",
+  "risk": "medium",
+  "taskFileSha256": "3bde15b4f104ccf89456defc2333093c50f7ce64aede60d169192aa6f62b5ab9",
+  "criteriaSha256": "459982669ac87871ecb5468004ff7ccdce3939384f70a2074384ce2e50581771",
+  "criteriaJsonSha256": "2c7b75937edc31b4fb3a218cf436a3aa61dd1c39f408fa9fe2d6b59f8854fb71",
+  "contractCommit": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+  "baseCommit": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+  "candidateCommit": "6be42223a6a81bfae50d2b65bb26ec21e4b0a2ce",
+  "tree": "8b1e54abb13784313a80efca56ac96cc5d95fd0d",
+  "worktreeDigest": "d0e6814fe45a0de616689f9027ee35b2a4dc5cb9879fa49deee967319fcc9024",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-b8721a2a-456c-48a2-94cd-8030d895a8e8",
+    "model": "unknown"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "9daba0fa-bf4f-4a2f-bc5a-b9fb5765b85e",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "88d34902b460d0fb26bc219ec750f32a",
+    "runKind": "accept",
+    "startedAt": "2026-11-02T20:25:01.434Z",
+    "finishedAt": "2026-11-02T20:27:52.035Z",
+    "durationMs": 170614,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "a72e4a83a06e737d6e40d97c07c290c7d0716b19cbd8c9a5815388f6f20d1003",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+    "contractCommit": "011aa7dece7c8b26ae883f731de9d8080cdb56d8",
+    "criteriaJsonSha256": "2c7b75937edc31b4fb3a218cf436a3aa61dd1c39f408fa9fe2d6b59f8854fb71",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C3"
+      ],
+      "mustPass": [
+        "C2"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 158591,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/engine-root.mjs",
+      "exitCode": 0,
+      "durationMs": 3566,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const t=require('fs').readFileSync('plugin/lib/client.js','utf8');const need=['aria-disabled','not-allowed','opacity: 0.45','недоступно: движок внешний'];const miss=need.filter((m)=>!t.includes(m));if(miss.length){console.error('MISSING: '+miss.join(', '));process.exit(1);}console.log('CLIENT MARKS OK');\"",
+      "exitCode": 0,
+      "durationMs": 252,
+      "passed": true
+    }
+  ],
+  "acceptor": "subagent:judge",
+  "acceptedAt": "2026-11-02T20:27:52.601Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "dYelkEEy3u6ipJtkrkvXfaH4MV2X0dBTzk4JNaVSMERZEf1ypNPQW8AW+yCdHk5WLBU4VNsZ9raf05Uv0mCfDA=="
+}
