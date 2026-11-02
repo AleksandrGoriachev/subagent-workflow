@@ -1,0 +1,71 @@
+{
+  "task": "0035",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3"
+    ],
+    "reasons": {
+      "C1": "OUTSIDE-PACKAGE FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Все проверки печатают SKIP вне пакета",
+      "command": "node spec/checks/outside-package.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/**"
+      ],
+      "timeoutMs": 600000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "OUTSIDE-PACKAGE OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Негативный: сломанная проверка не считается SKIP",
+      "command": "node spec/checks/outside-package.mjs --negative",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/outside-package.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "NEGATIVE OK"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "deployed-copy проверяет все проверки",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/deployed-copy.mjs"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOYED COPY OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
