@@ -1,0 +1,72 @@
+{
+  "task": "0036",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3"
+    ],
+    "reasons": {
+      "C1": "DOCTOR KEYS FAIL",
+      "C2": "NO-SIGNABLE FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Предупреждение о недоступном ключе и подсказка доступного",
+      "command": "node spec/checks/doctor-keys.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/doctor.mjs"
+      ],
+      "timeoutMs": 600000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DOCTOR KEYS OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Негативный: без пригодного ключа doctor падает",
+      "command": "node spec/checks/doctor-keys.mjs --no-signable",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/doctor.mjs"
+      ],
+      "timeoutMs": 300000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "NO-SIGNABLE OK"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Новая проверка тоже SKIP вне пакета",
+      "command": "node spec/checks/outside-package.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/doctor-keys.mjs"
+      ],
+      "timeoutMs": 600000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "OUTSIDE-PACKAGE OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
