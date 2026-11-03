@@ -144,10 +144,18 @@ export function checkContractCommitted(repo, taskDir, meta) {
   const protectedPatterns = Array.isArray(meta.protectedPaths) ? meta.protectedPaths : [];
   const isArtifact = (file) => file.startsWith(taskRel + '/') && TASK_ARTIFACTS.has(file.split('/').pop());
   const files = new Set([taskRel + '/task.md', taskRel + '/criteria.json']);
-  for (const file of [...workFiles, ...headFiles]) {
-    if (isArtifact(file)) continue;
-    if (matchesAny(file, protectedPatterns)) files.add(file);
-  }
+  /*
+   * Тот же манифест, что попадёт в criteria.lock (2.6.18): движок
+   * (docs/subagent-workflow/**) контрактом задания не считается, если задание не
+   * объявило locksEngine. Иначе деплой пакета в чужом окне даёт «файл контракта
+   * изменён после коммита» — ровно та красная чужая правка, из-за которой re-lock
+   * и появился.
+   */
+  const protectedManifestFiles = protectedManifest(
+    [...workFiles, ...headFiles].filter((file) => !isArtifact(file) && matchesAny(file, protectedPatterns)),
+    { locksEngine: meta.locksEngine === true },
+  );
+  for (const file of protectedManifestFiles) files.add(file);
   const errors = [];
   const present = [];
   for (const file of [...files].sort()) {
@@ -394,11 +402,168 @@ export function listRepoFiles(repo, opts = {}) {
   return walkFiles(repo, { exclude });
 }
 
-export function hashProtectedFiles(repo, patterns, exclude = []) {
+/*
+ * Движок вне замка задания (2.6.18, 0050).
+ *
+ * `docs/subagent-workflow/**` — развёрнутая копия пакета, а не проверки задания:
+ * её меняет `init --force` и обычный деплой. Пока эти файлы попадали в
+ * protected-манифест, замок активной задачи краснел на чужой правке — за сутки
+ * пять прерываний цикла (письмо structure --127). Поэтому манифест по умолчанию
+ * движок не включает; задание, которое действительно держит его в хеше (редкий,
+ * осознанный случай), объявляет `locksEngine: true` в TASK-META.
+ */
+export const ENGINE_DIR_PATTERNS = ['docs/subagent-workflow/**'];
+
+export function protectedManifest(files, options = {}) {
+  const list = Array.isArray(files) ? files : [];
+  const locksEngine = options.locksEngine === true;
+  const enginePatterns = Array.isArray(options.enginePatterns) && options.enginePatterns.length > 0
+    ? options.enginePatterns.map(toPosix)
+    : ENGINE_DIR_PATTERNS;
+  const seen = new Set();
+  for (const file of list) {
+    if (typeof file !== 'string' || file.trim() === '') continue;
+    const rel = toPosix(file);
+    if (!locksEngine && matchesAny(rel, enginePatterns)) continue;
+    seen.add(rel);
+  }
+  return [...seen].sort();
+}
+
+/*
+ * Re-lock (2.6.18, 0050): правка контракта после доказанного красного без нового
+ * номера задания.
+ *
+ * Разрешено менять только границы — allowedPaths, protectedPaths, redAllowDirty в
+ * TASK-META — и покрытие критериев (covers, tags). Команда, ожидание, id, cwd,
+ * timeoutMs, число и порядок критериев — это смысл проверки: их правка после
+ * красного означает подгонку под результат, а не правку границ, и остаётся
+ * новым номером задания.
+ *
+ * Функция чистая: сравнивает нормализованные снимки контракта и ничего не
+ * читает с диска. Игнорируемые поля в снимке не обязаны присутствовать —
+ * `task-hash --write` кладёт снимок в `criteria.lock` (`contract`).
+ */
+function stableJsonValue(value) {
+  if (Array.isArray(value)) return '[' + value.map(stableJsonValue).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value)
+      .sort()
+      .map((key) => JSON.stringify(key) + ':' + stableJsonValue(value[key]))
+      .join(',') + '}';
+  }
+  return JSON.stringify(value === undefined ? null : value);
+}
+
+function sortedStrings(value) {
+  if (!Array.isArray(value)) return null;
+  return value.map((item) => String(item)).sort();
+}
+
+function normalizeContractSnapshot(snapshot) {
+  const raw = snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot) ? snapshot : {};
+  const list = Array.isArray(raw.criteria) ? raw.criteria : [];
+  return {
+    allowedPaths: sortedStrings(raw.allowedPaths) || [],
+    protectedPaths: sortedStrings(raw.protectedPaths) || [],
+    redAllowDirty: sortedStrings(raw.redAllowDirty) || [],
+    criteria: list
+      .filter((criterion) => criterion && typeof criterion === 'object' && !Array.isArray(criterion))
+      .map((criterion) => ({
+        id: criterion.id === undefined || criterion.id === null ? null : String(criterion.id),
+        command: criterion.command === undefined ? null : criterion.command,
+        cwd: criterion.cwd === undefined ? null : criterion.cwd,
+        timeoutMs: criterion.timeoutMs === undefined ? null : criterion.timeoutMs,
+        expect: criterion.expect === undefined ? null : criterion.expect,
+        covers: sortedStrings(criterion.covers),
+        tags: sortedStrings(criterion.tags),
+      })),
+  };
+}
+
+export function relockAllowed(prev, next) {
+  const before = normalizeContractSnapshot(prev);
+  const after = normalizeContractSnapshot(next);
+  const changed = [];
+  const violations = [];
+  for (const key of ['allowedPaths', 'protectedPaths', 'redAllowDirty']) {
+    if (stableJsonValue(before[key]) !== stableJsonValue(after[key])) changed.push(key);
+  }
+  const left = before.criteria;
+  const right = after.criteria;
+  const leftIds = left.map((criterion) => criterion.id);
+  const rightIds = right.map((criterion) => criterion.id);
+  const sameSet = left.length === right.length
+    && stableJsonValue(leftIds.slice().sort()) === stableJsonValue(rightIds.slice().sort());
+  if (left.length !== right.length) {
+    violations.push('число критериев меняется: было ' + left.length + ', стало ' + right.length);
+  } else if (!sameSet) {
+    violations.push('набор критериев меняется: ' + (leftIds.join(', ') || '—') + ' → ' + (rightIds.join(', ') || '—'));
+  } else if (stableJsonValue(leftIds) !== stableJsonValue(rightIds)) {
+    violations.push('порядок критериев меняется: ' + leftIds.join(', ') + ' → ' + rightIds.join(', '));
+  }
+  if (sameSet) {
+    const rightById = new Map(right.map((criterion) => [criterion.id, criterion]));
+    for (const criterion of left) {
+      const nextCriterion = rightById.get(criterion.id);
+      if (!nextCriterion) continue;
+      const label = 'критерий ' + (criterion.id === null ? '?' : criterion.id) + ': ';
+      if (stableJsonValue(criterion.command) !== stableJsonValue(nextCriterion.command)) violations.push(label + 'меняется команда');
+      if (stableJsonValue(criterion.cwd) !== stableJsonValue(nextCriterion.cwd)) violations.push(label + 'меняется cwd');
+      if (stableJsonValue(criterion.timeoutMs) !== stableJsonValue(nextCriterion.timeoutMs)) violations.push(label + 'меняется timeoutMs');
+      if (stableJsonValue(criterion.expect) !== stableJsonValue(nextCriterion.expect)) violations.push(label + 'меняется ожидание (expect)');
+      if (stableJsonValue(criterion.covers) !== stableJsonValue(nextCriterion.covers)) changed.push(label + 'покрытие covers');
+      if (stableJsonValue(criterion.tags) !== stableJsonValue(nextCriterion.tags)) changed.push(label + 'теги tags');
+    }
+  }
+  if (violations.length > 0) {
+    return {
+      ok: false,
+      reason: 're-lock отклонён: ' + violations.join('; ')
+        + ' — это новый номер задания, а не re-lock (re-lock правит только allowedPaths/protectedPaths/redAllowDirty и covers/tags)',
+      changed: [...changed, ...violations],
+    };
+  }
+  return { ok: true, changed };
+}
+
+/**
+ * Нормализованный снимок контракта для criteria.lock: ровно те поля, которые
+ * re-lock обязан сравнивать (и covers/tags — чтобы отчёт назвал разрешённую
+ * правку). Заголовок, effect и прочие поля критерия в снимок не входят: их
+ * правка не меняет ни команды, ни ожидания.
+ */
+export function contractSnapshot(meta, criteriaList) {
+  const source = meta && typeof meta === 'object' ? meta : {};
+  const list = Array.isArray(criteriaList)
+    ? criteriaList
+    : (criteriaList && Array.isArray(criteriaList.criteria) ? criteriaList.criteria : []);
+  const patterns = (value) => (Array.isArray(value) ? value.map((item) => String(item)) : []);
+  return {
+    allowedPaths: patterns(source.allowedPaths),
+    protectedPaths: patterns(source.protectedPaths),
+    redAllowDirty: patterns(source.redAllowDirty),
+    criteria: list.map((criterion) => {
+      const item = criterion && typeof criterion === 'object' && !Array.isArray(criterion) ? criterion : {};
+      const snapshot = {
+        id: item.id === undefined || item.id === null ? null : String(item.id),
+        command: item.command === undefined ? null : item.command,
+        cwd: item.cwd === undefined ? null : item.cwd,
+        timeoutMs: item.timeoutMs === undefined ? null : item.timeoutMs,
+        expect: item.expect === undefined ? null : item.expect,
+      };
+      if (Array.isArray(item.covers)) snapshot.covers = sortedStrings(item.covers);
+      if (Array.isArray(item.tags)) snapshot.tags = sortedStrings(item.tags);
+      return snapshot;
+    }),
+  };
+}
+
+export function hashProtectedFiles(repo, patterns, exclude = [], options = {}) {
   if (!patterns || patterns.length === 0) return [];
   const files = listRepoFiles(repo, { includeUntracked: true, exclude });
-  const matched = files.filter((f) => matchesAny(f, patterns));
-  return matched.sort().map((f) => {
+  const manifest = protectedManifest(files.filter((f) => matchesAny(f, patterns)), options);
+  return manifest.map((f) => {
     const abs = path.join(repo, fromPosix(f));
     return { path: f, sha256: exists(abs) ? sha256File(abs) : null };
   });
@@ -414,7 +579,9 @@ export function computeLock(repo, taskDir, meta, taskMd, criteria, contractCommi
     taskRel + '/**',
     ...(Array.isArray(meta.hashExclude) ? meta.hashExclude : []),
   ];
-  const protectedFiles = hashProtectedFiles(repo, meta.protectedPaths || [], exclude);
+  const protectedFiles = hashProtectedFiles(repo, meta.protectedPaths || [], exclude, {
+    locksEngine: meta.locksEngine === true,
+  });
   return {
     version: 3,
     task: String(meta.id),
@@ -424,6 +591,7 @@ export function computeLock(repo, taskDir, meta, taskMd, criteria, contractCommi
     attackSha256,
     contractCommit: contractCommit || null,
     protected: protectedFiles,
+    contract: contractSnapshot(meta, criteria.criteria),
     createdAt: new Date().toISOString(),
     tool: TOOL,
   };
