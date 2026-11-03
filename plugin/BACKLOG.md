@@ -12,11 +12,12 @@
 | WC-5 | done | medium | Показ effect и регресса (workflow 2.3–2.4) |
 | WC-6 | done | high | Внешний движок: кнопки видимо недоступны и объясняют причину (0038; выпущено в 0.9.1, сейчас 0.9.5) |
 | WC-7 | done | high | INSTALL.md: раздел «Установка панели» и грабли установки в чужой DSH (нативный путь, EPERM, roots/participants) |
-| WC-8 | proposed | medium | `join` теряет `exchange.threads` в записи папки (воспроизведено 2026-11-02) |
+| WC-8 | done | medium | `join` теряет `exchange.threads` — закрыто их 0028 (`inheritFolderExchange` + регресс `invitation.test.mjs:286`); наш репрод был до 0028 |
 | WC-9 | proposed | low | Убрать стенд engineRoot (карта, .tmp\engine-2.6.11, корень split-optimizer) |
 | WC-14 | proposed | high | Структура: перейти на прямые провайдер+модель в узлах, убрать алиасы models{} (после задания structure 0046) |
 | WC-15 | proposed | high | Профиль: участники папки обязаны быть в roots и participants dsh-project-graph — иначе ящик читается как пустой (label='', letters=0) |
-| WC-16 | proposed | medium | Структура: WC-8 (join теряет exchange.threads) передать им как задание — сторож перестаёт видеть ветку |
+| WC-16 | done | medium | Передать structure WC-8 — письмо --119; они подтвердили 0028, край с несколькими ветками заводят как 0051 |
+| WC-17 | proposed | medium | Структура 0052 (WC-15): предупреждение о неразрешённом участнике папки — дождаться и проверить в панели |
 
 ## WC-5. Показ effect и регресса (workflow 2.3–2.4)
 
