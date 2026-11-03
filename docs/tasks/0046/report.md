@@ -120,11 +120,13 @@ node --check на common.mjs, task-red.mjs, task-verify.mjs, task-accept.mjs: в
 
 ## 6. git status --short
 
-    M spec/scripts/lib/common.mjs
-    M spec/scripts/task-accept.mjs
-    M spec/scripts/task-red.mjs
-    M spec/scripts/task-verify.mjs
-    ?? docs/tasks/0046/criteria.lock
-    ?? docs/tasks/0046/red.json
+Работа принята архитектором во время написания отчёта: кандидат cad9307 (те же 4 файла,
++135/−8 и артефакты 0046), metadata-коммит 02ca5fa. Свежий прогон приёмщика
+(verify.json, runKind=accept, acceptanceNonce=5deb3666…) — allPassed=true, C1..C4 зелёные.
+Поэтому изменённые файлы уже в HEAD, а не в рабочем дереве; на момент отчёта:
+
     ?? docs/tasks/0046/report.md
-    ?? docs/tasks/0046/verify.json
+
+(этот отчёт; git status --short до приёмки был: M spec/scripts/lib/common.mjs,
+M spec/scripts/task-accept.mjs, M spec/scripts/task-red.mjs, M spec/scripts/task-verify.mjs,
+?? docs/tasks/0046/{criteria.lock,red.json,verify.json}).
