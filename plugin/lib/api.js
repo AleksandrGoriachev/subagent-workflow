@@ -46,7 +46,14 @@ import {
   availableVersion,
   tasksInProgress,
 } from './deploy.js';
-import { resolveEngine, engineView } from './engine-root.js';
+import {
+  resolveEngine,
+  engineView,
+  cleanEnginePath,
+  engineVersion,
+  hasEngine,
+  writeEngineLink,
+} from './engine-root.js';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
@@ -100,8 +107,19 @@ export function createWorkflowRuntime(config = {}, options = {}) {
     : null;
   let roots = normalizeRoots(config || {});
   if (roots.length === 0) roots = rootsFromRegistry(getWorkspaceRegistry);
+  /*
+   * 2.6.14 (0039): декларативная связь «воркспейс → движок» из конфига
+   * профиля. Форма та же, что у карты: engines.roots = { "<воркспейс>": "<движок>" }.
+   * Резолвер получает её во всех местах чтения, поэтому источник связи виден
+   * и /api/status, и карточке панели.
+   */
+  const engines = config && typeof config === 'object'
+    && config.engines && typeof config.engines === 'object' && !Array.isArray(config.engines)
+    ? config.engines
+    : null;
   return {
     roots,
+    engines,
     getWorkspaceRegistry,
     defaultRoot: roots.length > 0 ? roots[0] : null,
     plugin: { name: PLUGIN_NAME, version: PLUGIN_VERSION, tool: TOOL },
@@ -265,7 +283,21 @@ function sendJson(res, status, value) {
  * как раньше.
  */
 function engineReadRoot(selectionRoot, engine) {
-  return engine && engine.source === 'mapping' && engine.root ? engine.root : selectionRoot;
+  /* Конфиг профиля и карта — оба внешние: читаем движок, а не воркспейс. */
+  return engine && (engine.source === 'mapping' || engine.source === 'config') && engine.root
+    ? engine.root
+    : selectionRoot;
+}
+
+/** Опции резолвера: декларативная связь из runtime.engines. */
+function engineOptions(runtime) {
+  const engines = runtime && runtime.engines ? runtime.engines : null;
+  return engines ? { config: { engines } } : {};
+}
+
+/** Резолв движка для воркспейса с учётом конфига профиля (2.6.14). */
+function resolveRuntimeEngine(runtime, root) {
+  return resolveEngine(root, engineOptions(runtime));
 }
 
 /**
@@ -275,13 +307,24 @@ function engineReadRoot(selectionRoot, engine) {
 function refuseExternalWrite(runtime, res, rootValue) {
   const target = selectRoot(runtime, rootValue);
   if (!target.root) return false;
-  const engine = resolveEngine(target.root);
-  if (engine.source !== 'mapping') return false;
+  const engine = resolveRuntimeEngine(runtime, target.root);
+  /*
+   * Внешний движок — тот, что реально подключён снаружи: карта (2.6.9) или
+   * конфиг профиля (2.6.14). Битая запись (каталог без движка) сюда не
+   * попадает: разворачивать есть куда, это прежнее поведение карты.
+   */
+  const external = engine.installed === true && (engine.source === 'mapping' || engine.source === 'config');
+  if (!external) return false;
+  const origin = engine.source === 'config'
+    ? 'Движок объявлен конфигом профиля (engines.roots): ' + engine.root
+      + '. Развёртывание, обновление и guard выполняются в репозитории движка, а не здесь. '
+      + 'Чтобы развернуть движок в этом воркспейсе, уберите engines.roots для него из конфига профиля.'
+    : 'Движок подключён картой из ' + engine.root + '. Развёртывание, обновление и guard '
+      + 'выполняются в репозитории движка, а не здесь. Карта: ' + engine.rootsFile + '.';
   sendJson(res, 409, {
     error: 'движок внешний: этот воркспейс не меняется',
     code: 'engine-external',
-    hint: 'Движок подключён картой из ' + engine.root + '. Развёртывание, обновление и guard '
-      + 'выполняются в репозитории движка, а не здесь. Карта: ' + engine.rootsFile + '.',
+    hint: origin,
     root: target.root,
     engine: engineView(engine),
   });
@@ -362,7 +405,7 @@ export function createWebHandler(runtime) {
       }
       const rel = pathname.slice(API_PREFIX.length) || '/';
       const postRoutes = rel === '/api/run' || rel === '/api/guard'
-        || rel === '/api/deploy' || rel === '/api/update';
+        || rel === '/api/deploy' || rel === '/api/update' || rel === '/api/engine-link';
       if (postRoutes ? method !== 'POST' : method !== 'GET') {
         res.setHeader('Allow', postRoutes ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
@@ -378,7 +421,7 @@ export function createWebHandler(runtime) {
          * 2.6.9: движок резолвится до чтения. source 'mapping' значит, что
          * воркспейс не меняется: файлы читаются из внешнего репозитория.
          */
-        const engine = resolveEngine(selection.root);
+        const engine = resolveRuntimeEngine(runtime, selection.root);
         if (!selection.root) {
           sendJson(res, 200, {
             plugin: runtime.plugin,
@@ -422,6 +465,108 @@ export function createWebHandler(runtime) {
         return;
       }
 
+      if (rel === '/api/engine/candidates') {
+        /*
+         * 2.6.14 (0039): воркспейсы, где движок реально есть, — список для
+         * «Подключить существующий». Воркспейс без движка и несуществующий
+         * путь не попадают: выбирать для связи нечего.
+         */
+        const currentRoot = selection.root;
+        const candidates = [];
+        for (const candidate of allowedRoots(runtime)) {
+          if (!fs.existsSync(candidate)) continue;
+          const engine = resolveRuntimeEngine(runtime, candidate);
+          if (engine.installed !== true) continue;
+          const version = engine.version || engineVersion(engine.root);
+          if (typeof version !== 'string' || version.trim().length === 0) continue;
+          candidates.push({
+            path: candidate,
+            engineRoot: engine.root,
+            version: version.trim(),
+            mode: engine.mode,
+            source: engine.source,
+            current: Boolean(currentRoot && samePath(candidate, currentRoot)),
+          });
+        }
+        sendJson(res, 200, { plugin: runtime.plugin, root: currentRoot, candidates });
+        return;
+      }
+
+      if (rel === '/api/engine-link') {
+        /*
+         * 2.6.14 (0039): третья запись панели — связь в карте движков. Те же
+         * проверки типа и Origin, что у /api/guard, и только по подтверждению.
+         * Конфиг профиля сильнее кнопки: связь из config.engines.roots не
+         * подменяется (409 engine-config), карта не меняется.
+         */
+        const problem = writeRequestProblem(req);
+        if (problem) {
+          sendJson(res, problem.status, { error: problem.error });
+          return;
+        }
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        if (body.confirm !== true) {
+          sendJson(res, 400, { error: 'связь с движком требует confirm: true', code: 'confirm-required' });
+          return;
+        }
+        const target = selectRoot(runtime, body.root);
+        if (!target.root) {
+          sendJson(res, 400, { error: target.error });
+          return;
+        }
+        if (!fs.existsSync(target.root)) {
+          sendJson(res, 404, { error: 'корень не найден: ' + target.root });
+          return;
+        }
+        const declared = resolveRuntimeEngine(runtime, target.root);
+        if (declared.source === 'config') {
+          sendJson(res, 409, {
+            error: 'связь задана конфигом профиля: кнопка её не подменяет',
+            code: 'engine-config',
+            hint: 'Движок для этого воркспейса объявлен в config.engines.roots ('
+              + (declared.root || declared.mapped || 'путь неизвестен') + '). '
+              + 'Уберите запись из конфига профиля, если движок должен выбираться в панели.',
+            root: target.root,
+            engine: engineView(declared),
+          });
+          return;
+        }
+        const engineRoot = cleanEnginePath(body.engine);
+        if (engineRoot === null) {
+          sendJson(res, 400, { error: 'движок должен быть абсолютным путём: ' + String(body.engine) });
+          return;
+        }
+        if (!hasEngine(engineRoot)) {
+          sendJson(res, 400, {
+            error: 'в каталоге нет движка: ' + engineRoot,
+            code: 'not-an-engine',
+            hint: 'Движок — это docs/subagent-workflow/VERSION. Разверните движок в том каталоге или выберите другой.',
+          });
+          return;
+        }
+        const written = writeEngineLink(target.root, engineRoot);
+        if (written.ok !== true) {
+          sendJson(res, 500, { error: written.error || 'не удалось записать карту движков', code: written.code || 'map-write-failed' });
+          return;
+        }
+        const linked = resolveRuntimeEngine(runtime, target.root);
+        sendJson(res, 200, {
+          ok: true,
+          plugin: runtime.plugin,
+          root: target.root,
+          engine: engineView(linked),
+          mapFile: written.file,
+          note: 'записана только карта движков: воркспейс не изменён',
+        });
+        return;
+      }
+
       if (rel === '/api/checks') {
         sendJson(res, 200, {
           plugin: runtime.plugin,
@@ -452,7 +597,7 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + target.root });
           return;
         }
-        const engine = resolveEngine(target.root);
+        const engine = resolveRuntimeEngine(runtime, target.root);
         const info = readRepoInfo(engineReadRoot(target.root, engine));
         let spec;
         try {
@@ -577,7 +722,15 @@ export function createWebHandler(runtime) {
          * Спека — из tarball (vendor/spec), в dev-копии плагина — соседняя spec/
          * пакета. Ни сети, ни скачивания: версия движка равна версии сборки.
          */
-        const report = deployWorkflow(target.root, { specRoot: availableSpecRoot() });
+        /*
+         * 2.6.14 (0039): «Развернуть здесь» на не-git воркспейсе сначала делает
+         * git init — иначе ворота не работают, а пользователь видит только
+         * отказ git. Без initGit: true поведение прежнее (not-a-repo).
+         */
+        const report = deployWorkflow(target.root, {
+          specRoot: availableSpecRoot(),
+          initGit: body.initGit === true,
+        });
         sendJson(res, report.ok ? 200 : 400, { plugin: runtime.plugin, root: target.root, ...report });
         return;
       }
@@ -645,7 +798,7 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + selection.root });
           return;
         }
-        const engine = resolveEngine(selection.root);
+        const engine = resolveRuntimeEngine(runtime, selection.root);
         const board = readRepository(engineReadRoot(selection.root, engine));
         sendJson(res, 200, { plugin: runtime.plugin, engine: engineView(engine), ...board });
         return;
@@ -660,7 +813,7 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + selection.root });
           return;
         }
-        const engine = resolveEngine(selection.root);
+        const engine = resolveRuntimeEngine(runtime, selection.root);
         const readRoot = engineReadRoot(selection.root, engine);
         const info = readRepoInfo(readRoot);
         const guard = readGuard(readRoot);
@@ -690,7 +843,7 @@ export function createWebHandler(runtime) {
           sendJson(res, 404, { error: 'корень не найден: ' + selection.root });
           return;
         }
-        const engine = resolveEngine(selection.root);
+        const engine = resolveRuntimeEngine(runtime, selection.root);
         const board = readRepository(engineReadRoot(selection.root, engine));
         const compat = compatView({
           pluginVersion: PLUGIN_VERSION,
@@ -731,7 +884,7 @@ export function createWebHandler(runtime) {
           sendJson(res, 400, { error: 'некорректный id задачи' });
           return;
         }
-        const engine = resolveEngine(selection.root);
+        const engine = resolveRuntimeEngine(runtime, selection.root);
         const card = readTask(engineReadRoot(selection.root, engine), id);
         if (card && card.error) {
           sendJson(res, card.status || 404, { error: card.error });

@@ -1,0 +1,198 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0039",
+  "createdAt": "2026-11-03T11:38:01.299Z",
+  "headSha": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+  "contractCommit": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+  "criteriaSha256": "aad6a630df514315d42f7e4cf062dcc11d0ad2a19489dedf607e82621f3350c3",
+  "criteriaJsonSha256": "726f339e7fb90f387843901f1f2843d0e78040d04e4978613dae47d6cba26eed",
+  "taskFileSha256": "4033c0e214bed0dee23b3b35586da6c264169b4390ce94c9ea9b1eb3280c57f7",
+  "changedPaths": [
+    "docs/tasks/0039/criteria.lock",
+    "docs/tasks/0039/red.json",
+    "plugin/lib/api.js",
+    "plugin/lib/client.js",
+    "plugin/lib/deploy.js",
+    "plugin/lib/engine-root.js",
+    "plugin/test/client.test.mjs",
+    "plugin/test/engine-link.test.mjs",
+    "plugin/test/engine-root.test.mjs",
+    "spec/SPEC.md",
+    "spec/scripts/init.mjs"
+  ],
+  "coverage": {
+    "declared": 13,
+    "covered": [
+      {
+        "path": "plugin/lib/api.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/client.js",
+        "criterion": "C4"
+      },
+      {
+        "path": "plugin/lib/deploy.js",
+        "criterion": "C5"
+      },
+      {
+        "path": "plugin/lib/engine-root.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.test.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "plugin/test/engine-link.test.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "plugin/test/engine-root.test.mjs",
+        "criterion": "C6"
+      },
+      {
+        "path": "spec/scripts/init.mjs",
+        "criterion": "C5"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/engine-link.mjs c1",
+      "exitCode": 0,
+      "durationMs": 398,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "67fd17f3e941b5e4bd03cfd1e4f0168e477e9e66fb64aa9bc34e55ca95ca7334",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ENGINE-LINK OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/engine-link.mjs c2",
+      "exitCode": 0,
+      "durationMs": 647,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "748f73f3b0bfb29840050fd969c33544f1036d5007c557ae226e7377ad9a3784",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ENGINE-LINK OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/engine-link.mjs c3",
+      "exitCode": 0,
+      "durationMs": 412,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "91952c8eaa308682848e0ac1bc5022684ec8f93b79451779537925f78fff5984",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ENGINE-LINK OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/engine-link.mjs c4",
+      "exitCode": 0,
+      "durationMs": 90586,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "18ea0befcf2400458b700edb09285153c400138372f82985458f2ddcd68ded09",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ENGINE-LINK OK c4\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/engine-link.mjs c5",
+      "exitCode": 0,
+      "durationMs": 1827,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "d41789844308a6a3e30766e476d36328bb44fe4ee65e2c7cce634fbfe00e0ede",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ENGINE-LINK OK c5\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/engine-link.mjs c6",
+      "exitCode": 0,
+      "durationMs": 175861,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "b9a28ed346eff5c61a17a78692d169699deb45d7fba92fdbb15c84e779a13db8",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ENGINE-LINK OK c6\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+    "contractCommit": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+    "criteriaJsonSha256": "726f339e7fb90f387843901f1f2843d0e78040d04e4978613dae47d6cba26eed",
+    "failed": 5,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "mustPass": [
+        "C6"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "ae8e834664cd484a44a0fc192aad7f5f99ff46e29530c0689c6af6c3bbde9194",
+  "log": "verify.log"
+}

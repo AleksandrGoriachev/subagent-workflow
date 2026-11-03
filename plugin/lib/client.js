@@ -57,12 +57,28 @@ window.__ModuleLoader__.load({
      * объяснением — панель не обещает то, что сервер отклонит.
      */
     const EXTERNAL_ENGINE_CODE = "engine-external";
+    /*
+     * 0.9.3 (0039): связь «воркспейс → движок» объявляется конфигом профиля или
+     * выбирается кнопкой. Порядок источников — local → config → карта → absent;
+     * карточка называет источник словами, а не кодом.
+     */
+    const ENGINE_ABSENT_TITLE = "движок не подключён";
+    const ENGINE_DEPLOY_LABEL = "Развернуть здесь";
+    const ENGINE_LINK_LABEL = "Подключить существующий";
+    const ENGINE_LINK_ROUTE = "/api/engine-link";
+    const ENGINE_CANDIDATES_ROUTE = "/api/engine/candidates";
+    const ENGINE_SOURCE_LABEL = {
+      workspace: "здесь",
+      config: "задано конфигом профиля",
+      mapping: "выбрано в панели",
+    };
     /* Что именно появится в проекте: этот список показывает подтверждение. */
     const DEPLOY_CHANGES = [
       "docs/subagent-workflow/ — движок, ворота, шаблоны, хуки и публичный ключ приёмщика;",
       "docs/tasks/ — каталог заданий (пустой, если его ещё нет);",
       ".wf-keys/ — приватный ключ приёмщика этого проекта (каталог в .gitignore);",
       ".gitignore — строки журналов прогонов, guard.log и .wf-keys/;",
+      "git init — если репозитория ещё нет (ворота и хуки требуют git);",
       "git config core.hooksPath = docs/subagent-workflow/hooks (локально, не глобально).",
     ];
 
@@ -840,6 +856,11 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         const [updateRisk, setUpdateRisk] = React.useState(false);
         const [updateBusy, setUpdateBusy] = React.useState(false);
         const [updateNote, setUpdateNote] = React.useState(null);
+        const [linkOpen, setLinkOpen] = React.useState(false);
+        const [candidates, setCandidates] = React.useState(null);
+        const [candidatesBusy, setCandidatesBusy] = React.useState(false);
+        const [linkBusy, setLinkBusy] = React.useState(false);
+        const [linkNote, setLinkNote] = React.useState(null);
 
         async function load(selectedRoot, explicit = false) {
           setBusy(true);
@@ -1032,6 +1053,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "",
             "Ключ приёмщика создаётся в .wf-keys/ этого проекта. Глобальный ~/.wf-keys не трогается и не перезаписывается.",
             "",
+            "Если это не git-репозиторий, сначала выполнится git init: ворота и хуки требуют git.",
+            "",
             "Это вторая из двух записей панели (первая — guard.enabled); отменить её из панели нельзя. Продолжить?",
           ].join("\n");
         }
@@ -1048,7 +1071,11 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             const response = await fetch(BASE + DEPLOY_ROUTE, {
               method: "POST",
               headers: { "Content-Type": "application/json", Accept: "application/json" },
-              body: JSON.stringify({ root: target, confirm: true }),
+              /*
+               * 2.6.14 (0039): initGit — шаг git init для не-git воркспейса.
+               * Сервер без флага по-прежнему отвечает not-a-repo.
+               */
+              body: JSON.stringify({ root: target, confirm: true, initGit: true }),
             });
             /*
              * Ответ читаем сами: у отказа (400) в теле code и хвост лога, а
@@ -1095,9 +1122,134 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           }
         }
 
+        /*
+         * 0.9.3 (0039): «Подключить существующий» — список зарегистрированных
+         * воркспейсов, где движок реально есть (сервер отдаёт path и version).
+         */
+        async function openCandidates() {
+          if (linkOpen) {
+            setLinkOpen(false);
+            setLinkNote(null);
+            return;
+          }
+          setLinkOpen(true);
+          setLinkNote(null);
+          const target = deployTarget();
+          if (!target || candidatesBusy) return;
+          setCandidatesBusy(true);
+          try {
+            const data = await apiGet(ENGINE_CANDIDATES_ROUTE, target);
+            setCandidates(Array.isArray(data && data.candidates) ? data.candidates : []);
+          } catch (failure) {
+            setCandidates([]);
+            setLinkNote({ kind: "error", text: errorText(failure) });
+          } finally {
+            setCandidatesBusy(false);
+          }
+        }
+
+        /*
+         * Связь — только по подтверждению: POST /api/engine-link с confirm: true.
+         * Конфиг профиля сильнее кнопки: 409 engine-config, карта не меняется.
+         */
+        async function linkEngine(candidate) {
+          const target = deployTarget();
+          if (!target || !candidate || !candidate.path || linkBusy) return;
+          const versionText = engineVersionText({ version: candidate.version });
+          const question = [
+            "Подключить движок из другого репозитория?",
+            "",
+            "Воркспейс: " + target,
+            "Движок: " + candidate.path + " (" + versionText + ")",
+            "",
+            "Это пространство не изменится: панель запишет только связь в карте движков.",
+            "Если движок объявлен конфигом профиля, кнопка его не подменяет — сервер ответит 409.",
+            "",
+            "Продолжить?",
+          ].join("\n");
+          if (typeof window !== "undefined" && typeof window.confirm === "function" && !window.confirm(question)) return;
+          setLinkBusy(true);
+          setLinkNote(null);
+          setError(null);
+          try {
+            const response = await fetch(BASE + ENGINE_LINK_ROUTE, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ root: target, engine: candidate.path, confirm: true }),
+            });
+            const bodyText = await response.text();
+            let data = {};
+            try {
+              data = bodyText.length > 0 ? JSON.parse(bodyText) : {};
+            } catch {
+              data = { error: "ответ не JSON: HTTP " + response.status };
+            }
+            if (data.code === "engine-config") {
+              setLinkNote({
+                kind: "error",
+                code: data.code,
+                text: data.hint || data.error || "связь задана конфигом профиля",
+              });
+              return;
+            }
+            if (!response.ok || data.ok !== true) {
+              setLinkNote({
+                kind: "error",
+                code: data.code || "http-" + response.status,
+                text: data.error || "связь не записана: HTTP " + response.status,
+              });
+              return;
+            }
+            setLinkNote({
+              kind: "ok",
+              code: null,
+              text: "Движок подключён: " + (data.engine && data.engine.root ? data.engine.root : candidate.path)
+                + ". Панель перечитала состояние.",
+            });
+            setLinkOpen(false);
+            /* Перечитываем состояние: карточка называет новый источник. */
+            await load(target, true);
+          } catch (failure) {
+            setLinkNote({ kind: "error", code: "network", text: errorText(failure) });
+          } finally {
+            setLinkBusy(false);
+          }
+        }
+
         /* ------------------------------------------------------------------ *
          * 0.8.0: версии движка и обновление
          * ------------------------------------------------------------------ */
+
+        /*
+         * 0.9.3 (0039): состояние связи из /api/status.engine. Сервер отдаёт
+         * {installed, mode: local|mapped|absent, root, version, source}; карточка
+         * не додумывает источник, а называет его.
+         */
+        function engineState() {
+          const value = status && status.engine && typeof status.engine === "object" ? status.engine : null;
+          const installed = Boolean(value && value.installed === true);
+          const source = value && ENGINE_SOURCE_LABEL[value.source]
+            ? value.source
+            : installed ? "workspace" : "none";
+          return {
+            installed: installed,
+            mode: value && value.mode
+              ? String(value.mode)
+              : installed ? (source === "workspace" ? "local" : "mapped") : "absent",
+            source: source,
+            root: value && value.root ? String(value.root) : null,
+            version: value && value.version ? String(value.version) : null,
+          };
+        }
+
+        function engineSourceText(source) {
+          return ENGINE_SOURCE_LABEL[source] || "—";
+        }
+
+        function engineVersionText(engine) {
+          const version = (engine && engine.version) || engineInstalled();
+          return version ? "v" + version : "версия неизвестна";
+        }
 
         function engineInstalled() {
           return status && status.repo && status.repo.packageVersion
@@ -1340,6 +1492,125 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 "Отмена",
               ),
             ),
+          );
+        }
+
+        /*
+         * 0.9.3 (0039): карточка движка. При absent это не сообщение об ошибке,
+         * а выбор из двух равноправных действий; при mapped — путь, версия и
+         * источник словами («задано конфигом профиля» / «выбрано в панели»);
+         * при local — «здесь». Тревожных цветов у карточки нет.
+         */
+        function renderEngineCard() {
+          const target = deployTarget();
+          if (!target) return null;
+          const engine = engineState();
+          if (!engine.installed) {
+            const deployDisabled = Boolean(deployBusy) || Boolean(busy);
+            return h(
+              "section",
+              { style: S.section },
+              h("h3", { style: S.sectionTitle }, ENGINE_ABSENT_TITLE),
+              h(
+                "div",
+                { style: S.stageText },
+                "В этом пространстве движка workflow нет. Два равноправных варианта: развернуть движок "
+                  + "здесь или подключить уже развёрнутый в другом репозитории — оба безопасны.",
+              ),
+              h(
+                "div",
+                { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    style: deployDisabled ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                    disabled: deployDisabled,
+                    onClick: () => void deployWorkflowHere(),
+                    title: "Развернуть движок subagent-workflow в " + target + ", спросив подтверждение",
+                    "aria-label": ENGINE_DEPLOY_LABEL,
+                  },
+                  deployBusy ? "Разворачиваю…" : ENGINE_DEPLOY_LABEL,
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    style: linkOpen ? Object.assign({}, S.button, { background: T.bg2, borderColor: T.border2 }) : S.button,
+                    onClick: () => void openCandidates(),
+                    title: "Выбрать зарегистрированный воркспейс, где движок уже развёрнут",
+                    "aria-label": ENGINE_LINK_LABEL,
+                    "aria-expanded": linkOpen ? "true" : "false",
+                  },
+                  candidatesBusy ? "Читаю список…" : ENGINE_LINK_LABEL,
+                ),
+              ),
+              linkOpen ? renderCandidates() : null,
+              linkNote ? h("div", { style: S.hint }, linkNote.text) : null,
+              h(
+                "div",
+                { style: S.hint },
+                "«" + ENGINE_DEPLOY_LABEL + "» ставит движок из этой сборки панели (офлайн, по подтверждению; "
+                  + "на не-git воркспейсе сначала выполняется git init). «" + ENGINE_LINK_LABEL + "» пространство "
+                  + "не меняет: связь записывается в карту движков и читается сразу после ответа.",
+              ),
+            );
+          }
+          const sourceText = engineSourceText(engine.source);
+          return h(
+            "section",
+            { style: S.section },
+            h("h3", { style: S.sectionTitle }, "Движок подключён"),
+            h(
+              "div",
+              { style: S.stageText },
+              "Источник: " + sourceText + ". " + (engine.source === "workspace"
+                ? "Движок развёрнут в этом пространстве — здесь."
+                : "Движок лежит в другом репозитории; это пространство только читает его."),
+            ),
+            kvGrid([
+              ["путь", h("span", { style: S.mono }, fmt(engine.root))],
+              ["версия", engineVersionText(engine)],
+              ["источник", sourceText],
+            ]),
+          );
+        }
+
+        /* Список для «Подключить существующий»: только воркспейсы с движком. */
+        function renderCandidates() {
+          const list = Array.isArray(candidates) ? candidates : [];
+          if (candidatesBusy) return h("div", { style: S.empty }, "Читаю список зарегистрированных воркспейсов…");
+          if (list.length === 0) {
+            return h(
+              "div",
+              { style: S.hint },
+              "Зарегистрированных воркспейсов с движком нет. Разверните движок здесь или в другом проекте — "
+                + "после этого он появится в списке.",
+            );
+          }
+          return h(
+            "div",
+            { style: { marginTop: "6px" } },
+            h("div", { style: S.stageText }, "Выберите репозиторий, где движок уже развёрнут:"),
+            list.map((item) => h(
+              "button",
+              {
+                key: item.path,
+                type: "button",
+                style: Object.assign({}, S.button, { display: "block", width: "100%", textAlign: "left", marginTop: "4px" }),
+                disabled: linkBusy,
+                onClick: () => void linkEngine(item),
+                title: item.path,
+                "aria-label": "Подключить движок из " + item.path,
+              },
+              h("span", { style: S.cardTitle }, rootLabel(item.path) + (item.current ? " · текущий" : "")),
+              h(
+                "span",
+                { style: S.cardMeta },
+                h("span", { style: S.mono }, item.path),
+                " · v" + fmt(item.version),
+              ),
+            )),
           );
         }
 
@@ -1739,8 +2010,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   )
                 : null,
             );
-            /* Тупик «workflow не развёрнут»: кнопка ставит движок здесь же. */
-            return h("div", null, empty, renderDeploy());
+            /* Тупик «workflow не развёрнут»: карточка движка предлагает два пути. */
+            return h("div", null, renderEngineCard(), empty, renderDeploy());
           }
           const tasks = board.tasks || [];
           const skipped = board.skipped || [];
@@ -1762,6 +2033,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return h(
             "div",
             null,
+            renderEngineCard(),
             renderEngine(),
             h(
               "div",
@@ -2337,7 +2609,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   { style: S.hint },
                   "Если движок уже развёрнут в другом репозитории, добавьте запись в карту "
                     + "~/.dsh/workflow/engine-roots.json — панель будет читать его оттуда, "
-                    + "а это пространство не изменится. Это альтернатива кнопке ниже, а не ошибка.",
+                    + "а это пространство не изменится. Это альтернатива кнопке ниже, а не сообщение о проблеме.",
                 )
               : null,
             h(
@@ -2412,6 +2684,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             return h(
               "div",
               null,
+              renderEngineCard(),
               h(
                 "div",
                 { style: S.empty },

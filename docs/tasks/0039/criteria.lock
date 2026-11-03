@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "task": "0039",
+  "taskFileSha256": "4033c0e214bed0dee23b3b35586da6c264169b4390ce94c9ea9b1eb3280c57f7",
+  "criteriaSha256": "aad6a630df514315d42f7e4cf062dcc11d0ad2a19489dedf607e82621f3350c3",
+  "criteriaJsonSha256": "726f339e7fb90f387843901f1f2843d0e78040d04e4978613dae47d6cba26eed",
+  "attackSha256": null,
+  "contractCommit": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+  "protected": [
+    {
+      "path": "spec/checks/engine-link.mjs",
+      "sha256": "0407a8cd3205f3edb1572d8e75d0ba4bea465a9d932ba90ae9fe5d16d355c9e3"
+    }
+  ],
+  "createdAt": "2026-11-03T11:30:10.176Z",
+  "tool": "subagent-workflow/2.6.13"
+}

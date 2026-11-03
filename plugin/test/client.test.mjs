@@ -739,7 +739,12 @@ test('empty state deploys the engine with confirmation (0.7.0)', async () => {
   }
 });
 
-test('deploy failure shows the code and the init tail (0.7.0)', async () => {
+/*
+ * 0.9.3 (0039): «Развернуть здесь» на не-git воркспейсе выполняет шаг git init,
+ * и только затем разворачивает движок. Раньше панель получала not-a-repo и
+ * показывала «Развернуть не удалось»: ворота без git всё равно не работают.
+ */
+test('empty non-git workspace: deploy performs git init, then installs the engine (0.9.3)', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-nogit-'));
   try {
     const handler = createWebHandler(createWorkflowRuntime({ roots: [dir] }));
@@ -752,25 +757,29 @@ test('deploy failure shows the code and the init tail (0.7.0)', async () => {
     hooks.drain();
     await delay(80);
     tree = hooks.render(slot.component);
+    assert.equal(fs.existsSync(path.join(dir, '.git')), false, 'репозитория ещё нет');
+
     const deploy = findButton(tree, 'Развернуть workflow здесь');
-    assert.ok(deploy, 'кнопка есть и в не-git пространстве: отказ объясняет сервер');
+    assert.ok(deploy, 'кнопка развёртывания есть и в не-git пространстве');
 
     globalThis.window.confirm = () => true;
     deploy.props.onClick();
-    let rendered = '';
-    for (let attempt = 0; attempt < 30; attempt += 1) {
-      await delay(100);
+
+    const versionFile = path.join(dir, 'docs', 'subagent-workflow', 'VERSION');
+    for (let attempt = 0; attempt < 120 && !fs.existsSync(versionFile); attempt += 1) {
+      await delay(200);
       hooks.drain();
-      rendered = textOf(hooks.render(slot.component));
-      if (/not-a-repo/u.test(rendered)) break;
+      hooks.render(slot.component);
     }
-    assert.match(rendered, /Развернуть не удалось/u);
-    assert.match(rendered, /not-a-repo/u, 'код отказа виден в плашке');
-    assert.match(rendered, /не git-репозиторий/u);
-    assert.equal(fs.existsSync(path.join(dir, 'docs')), false, 'отказ ничего не пишет');
+    assert.ok(fs.existsSync(path.join(dir, '.git')), 'шаг git init выполнен');
+    assert.ok(fs.existsSync(versionFile), 'движок развёрнут после git init');
+    assert.equal(
+      fs.readFileSync(versionFile, 'utf8').trim(),
+      fs.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim(),
+    );
   } finally {
     try {
-      fs.rmSync(dir, { recursive: true, force: true });
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
     } catch {
       /* best effort */
     }
@@ -999,5 +1008,163 @@ test('external engine: update button is visibly disabled and says why (0.9.1)', 
   } finally {
     if (previous === undefined) delete process.env.WF_ENGINE_ROOTS;
     else process.env.WF_ENGINE_ROOTS = previous;
+  }
+});
+
+/*
+ * 0.9.3 (0039): карточка «движок не подключён» — не сообщение об ошибке, а
+ * выбор из двух равноправных действий. Список кандидатов приходит с сервера:
+ * только воркспейсы, где движок реально есть, с версией.
+ */
+test('0.9.3 absent: два действия, без ошибки', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-absent-'));
+  const ws = path.join(dir, 'ws');
+  fs.mkdirSync(ws, { recursive: true });
+  const engineRepo = makeRepo({ stage: 'remarks' });
+  const mapFile = path.join(dir, 'map', 'engine-roots.json');
+  const previous = process.env.WF_ENGINE_ROOTS;
+  process.env.WF_ENGINE_ROOTS = mapFile;
+  try {
+    const registry = { list: () => [{ id: 'engine', path: engineRepo.repo }] };
+    const handler = createWebHandler(createWorkflowRuntime(
+      { roots: [ws] },
+      { getWorkspaceRegistry: () => registry },
+    ));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+    let rendered = textOf(tree);
+
+    assert.match(rendered, /движок не подключён/u);
+    const deploy = findButton(tree, 'Развернуть здесь');
+    const link = findButton(tree, 'Подключить существующий');
+    assert.ok(deploy, 'действие «Развернуть здесь»');
+    assert.ok(link, 'действие «Подключить существующий»');
+    assert.notEqual(deploy.props.disabled, true, 'развернуть можно сразу');
+    assert.notEqual(link.props.disabled, true, 'подключить можно сразу');
+    assert.ok(!/ошибк/iu.test(rendered), 'отсутствие движка не названо ошибкой');
+    assert.ok(!/не удалось|отказ/iu.test(rendered), 'карточка не показывает отказ');
+
+    const card = elements(tree).find(
+      (element) => element.type === 'section' && textOf(element).includes('движок не подключён'),
+    );
+    assert.ok(card, 'карточка движка на экране');
+    const alarming = elements(card).filter((element) => element.props
+      && typeof element.props.style === 'object'
+      && /#ec1313/u.test(String(element.props.style.color || element.props.style.borderColor || '')));
+    assert.equal(alarming.length, 0, 'в карточке нет тревожного цвета');
+
+    /* Список скрыт до нажатия и приходит с сервера по кнопке. */
+    assert.ok(!rendered.includes('Выберите репозиторий'), 'список кандидатов не показан заранее');
+    findButton(tree, 'Подключить существующий').props.onClick();
+    let listed = '';
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      await delay(100);
+      hooks.drain();
+      tree = hooks.render(slot.component);
+      listed = textOf(tree);
+      if (/Выберите репозиторий/u.test(listed)) break;
+    }
+    assert.match(listed, /Выберите репозиторий/u, 'список кандидатов раскрыт');
+    assert.ok(listed.includes(path.basename(engineRepo.repo)), 'кандидат назван по репозиторию');
+    assert.match(listed, /v2\.2\.1/u, 'у кандидата есть версия');
+  } finally {
+    if (previous === undefined) delete process.env.WF_ENGINE_ROOTS;
+    else process.env.WF_ENGINE_ROOTS = previous;
+    engineRepo.cleanup();
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+    } catch {
+      /* утечка временного каталога не отменяет проверенное поведение */
+    }
+  }
+});
+
+/*
+ * 0.9.3 (0039): при mapped карточка называет путь, версию и источник словами
+ * «выбрано в панели»; кнопок связи нет — связь уже есть.
+ */
+test('0.9.3 mapped: путь, версия, источник', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-linked-'));
+  const ws = path.join(dir, 'ws');
+  fs.mkdirSync(ws, { recursive: true });
+  const mapFile = path.join(dir, 'engine-roots.json');
+  fs.writeFileSync(mapFile, JSON.stringify({ [ws]: fixture.repo }, null, 2) + '\n');
+  const previous = process.env.WF_ENGINE_ROOTS;
+  process.env.WF_ENGINE_ROOTS = mapFile;
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [ws] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+    const rendered = textOf(tree);
+
+    assert.match(rendered, /Движок подключён/u);
+    assert.match(rendered, /выбрано в панели/u, 'источник назван словами панели');
+    assert.ok(rendered.includes(fixture.repo), 'путь движка показан');
+    assert.match(rendered, /v2\.2\.1/u, 'версия движка показана');
+    assert.ok(!findButton(tree, 'Развернуть здесь'), 'при связи кнопка развёртывания не предлагается');
+    assert.ok(!findButton(tree, 'Подключить существующий'), 'связь уже есть — второй выбор не нужен');
+  } finally {
+    if (previous === undefined) delete process.env.WF_ENGINE_ROOTS;
+    else process.env.WF_ENGINE_ROOTS = previous;
+    fixture.cleanup();
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+    } catch {
+      /* утечка временного каталога не отменяет проверенное поведение */
+    }
+  }
+});
+
+/*
+ * 0.9.3 (0039): декларативная связь из config.engines.roots сильнее карты —
+ * карточка говорит «задано конфигом профиля» и не предлагает подменить связь.
+ */
+test('0.9.3 config: связь задана конфигом профиля', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-config-'));
+  const ws = path.join(dir, 'ws');
+  fs.mkdirSync(ws, { recursive: true });
+  try {
+    const handler = createWebHandler(createWorkflowRuntime({
+      roots: [ws],
+      engines: { roots: { [ws]: fixture.repo } },
+    }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(120);
+    tree = hooks.render(slot.component);
+    const rendered = textOf(tree);
+
+    assert.match(rendered, /задано конфигом профиля/u, 'источник — конфиг профиля');
+    assert.ok(rendered.includes(fixture.repo), 'путь объявленного движка показан');
+    assert.match(rendered, /v2\.2\.1/u);
+    assert.ok(!findButton(tree, 'Подключить существующий'), 'декларативную связь кнопкой не подменяют');
+  } finally {
+    fixture.cleanup();
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 });
+    } catch {
+      /* утечка временного каталога не отменяет проверенное поведение */
+    }
   }
 });

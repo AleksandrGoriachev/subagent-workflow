@@ -134,7 +134,13 @@ test('resolveEngine: движок в воркспейсе — source workspace',
   const dir = tempDir('wf-engine-self-');
   const ws = engineAt(path.join(dir, 'ws'));
   const engine = resolveEngine(ws, { file: path.join(dir, 'absent.json') });
-  assert.deepEqual(engineView(engine), { installed: true, root: ws, source: 'workspace' });
+  assert.deepEqual(engineView(engine), {
+    installed: true,
+    mode: 'local',
+    root: ws,
+    version: '2.6.9',
+    source: 'workspace',
+  });
 });
 
 test('resolveEngine: карта даёт source mapping', () => {
@@ -143,7 +149,13 @@ test('resolveEngine: карта даёт source mapping', () => {
   const engineDir = engineAt(path.join(dir, 'engine'));
   const file = writeRoots(path.join(dir, 'engine-roots.json'), { [ws]: engineDir });
   const engine = resolveEngine(ws, { file });
-  assert.deepEqual(engineView(engine), { installed: true, root: engineDir, source: 'mapping' });
+  assert.deepEqual(engineView(engine), {
+    installed: true,
+    mode: 'mapped',
+    root: engineDir,
+    version: '2.6.9',
+    source: 'mapping',
+  });
   assert.equal(engine.workspace, ws);
   assert.equal(engine.mapped, engineDir);
 });
@@ -163,7 +175,13 @@ test('resolveEngine: нет карты — source none', () => {
   const dir = tempDir('wf-engine-none-');
   const ws = workspaceAt(path.join(dir, 'ws'));
   const engine = resolveEngine(ws, { file: path.join(dir, 'absent.json') });
-  assert.deepEqual(engineView(engine), { installed: false, root: null, source: 'none' });
+  assert.deepEqual(engineView(engine), {
+    installed: false,
+    mode: 'absent',
+    root: null,
+    version: null,
+    source: 'none',
+  });
 });
 
 test('resolveEngine: env WF_ENGINE_ROOTS подхватывается в момент вызова', () => {
@@ -179,6 +197,62 @@ test('resolveEngine: env WF_ENGINE_ROOTS подхватывается в мом�
     if (saved === undefined) delete process.env[ENGINE_ROOTS_ENV];
     else process.env[ENGINE_ROOTS_ENV] = saved;
   }
+});
+
+/*
+ * 2.6.14 (0039): декларативная связь из конфига профиля. Конфиг сильнее карты,
+ * локальный движок сильнее конфига, а битая/относительная запись связью не
+ * считается — источник всё равно назван.
+ */
+test('resolveEngine: конфиг профиля (engines.roots) сильнее карты (2.6.14)', () => {
+  const dir = tempDir('wf-engine-config-');
+  const ws = workspaceAt(path.join(dir, 'ws'));
+  const engineA = engineAt(path.join(dir, 'engine-a'), '2.6.14');
+  const engineB = engineAt(path.join(dir, 'engine-b'), '2.6.13');
+  const file = writeRoots(path.join(dir, 'engine-roots.json'), { [ws]: engineB });
+  const engine = resolveEngine(ws, { config: { engines: { roots: { [ws]: engineA } } }, file });
+  assert.deepEqual(engineView(engine), {
+    installed: true,
+    mode: 'mapped',
+    root: engineA,
+    version: '2.6.14',
+    source: 'config',
+  });
+  assert.equal(engine.mapped, engineA);
+  /* Без конфига связь берётся из карты — прежнее поведение 2.6.9. */
+  assert.equal(resolveEngine(ws, { file }).source, 'mapping');
+});
+
+test('resolveEngine: битая и относительная связь в конфиге (2.6.14)', () => {
+  const dir = tempDir('wf-engine-config-broken-');
+  const ws = workspaceAt(path.join(dir, 'ws'));
+  const engineB = engineAt(path.join(dir, 'engine-b'), '2.6.13');
+  const file = writeRoots(path.join(dir, 'engine-roots.json'), { [ws]: engineB });
+  const broken = resolveEngine(ws, {
+    config: { engines: { roots: { [ws]: path.join(dir, 'no-engine') } } },
+    file,
+  });
+  assert.equal(broken.installed, false);
+  assert.equal(broken.mode, 'absent');
+  assert.equal(broken.source, 'config', 'объявленная связь названа, даже если движка нет');
+  assert.equal(
+    resolveEngine(ws, { config: { engines: { roots: { [ws]: 'relative/engine' } } }, file }).source,
+    'mapping',
+    'относительный путь связью не считается — падаем на карту',
+  );
+  assert.equal(resolveEngine(ws, { config: {}, file }).source, 'mapping', 'пустой конфиг не ломает карту');
+  assert.equal(resolveEngine(ws, { config: { engines: { roots: [] } }, file }).source, 'mapping', 'мусор в конфиге не роняет резолв');
+});
+
+test('resolveEngine: локальный движок сильнее конфига (2.6.14)', () => {
+  const dir = tempDir('wf-engine-config-local-');
+  const ws = engineAt(path.join(dir, 'ws'), '2.6.12');
+  const engineA = engineAt(path.join(dir, 'engine-a'), '2.6.14');
+  const engine = resolveEngine(ws, { config: { engines: { roots: { [ws]: engineA } } }, file: path.join(dir, 'absent.json') });
+  assert.equal(engine.mode, 'local');
+  assert.equal(engine.source, 'workspace');
+  assert.equal(engine.root, ws);
+  assert.equal(engine.version, '2.6.12');
 });
 
 /* --- маршруты ------------------------------------------------------ */
@@ -252,7 +326,13 @@ test('API: /api/status отдаёт engine mapping, чтение идёт из �
     const status = await call(handler, { url: '/workflow/api/status?root=' + encodeURIComponent(ws) });
     const json = parse(status);
     assert.equal(status.statusCode, 200);
-    assert.deepEqual(json.engine, { installed: true, root: engineDir, source: 'mapping' });
+    assert.deepEqual(json.engine, {
+      installed: true,
+      mode: 'mapped',
+      root: engineDir,
+      version: '2.6.9',
+      source: 'mapping',
+    });
     assert.equal(json.root, ws, 'открыт воркспейс, а не движок');
     assert.equal(json.repo.root, engineDir, 'файлы прочитаны из движка');
     assert.equal(json.repo.configLoaded, true);
@@ -285,7 +365,13 @@ test('API: POST guard/deploy/update при mapping — 409 engine-external до 
     assert.equal(guardJson.code, 'engine-external');
     assert.match(guardJson.hint, /карт/u);
     assert.equal(guardJson.root, ws);
-    assert.deepEqual(guardJson.engine, { installed: true, root: engineDir, source: 'mapping' });
+    assert.deepEqual(guardJson.engine, {
+      installed: true,
+      mode: 'mapped',
+      root: engineDir,
+      version: '2.6.9',
+      source: 'mapping',
+    });
 
     const deploy = await call(handler, {
       method: 'POST',
@@ -335,7 +421,13 @@ test('API: битая карта не роняет панель', async () => {
     const status = await call(handler, { url: '/workflow/api/status?root=' + encodeURIComponent(ws) });
     assert.equal(status.statusCode, 200);
     const json = parse(status);
-    assert.deepEqual(json.engine, { installed: false, root: null, source: 'none' });
+    assert.deepEqual(json.engine, {
+      installed: false,
+      mode: 'absent',
+      root: null,
+      version: null,
+      source: 'none',
+    });
     assert.equal(json.repo.configLoaded, false);
   });
 });

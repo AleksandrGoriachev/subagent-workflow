@@ -87,12 +87,107 @@ function copyTree(src, dst, force) {
   }
 }
 
+/*
+ * 2.6.14 (0039): связь «воркспейс → движок» объявляется и установщиком.
+ * Формат карты тот же, что читает плагин:
+ *   <home>/.dsh/workflow/engine-roots.json (env WF_ENGINE_ROOTS),
+ *   { "<abs workspace>": "<abs engine repo>" }.
+ */
+const ENGINE_ROOTS_ENV = 'WF_ENGINE_ROOTS';
+const ENGINE_ROOTS_REL = path.join('.dsh', 'workflow', 'engine-roots.json');
+const ENGINE_VERSION_REL = path.join('docs', 'subagent-workflow', 'VERSION');
+
+/** Файл карты: env WF_ENGINE_ROOTS или <home>/.dsh/workflow/engine-roots.json. */
+function engineRootsFile(env = process.env) {
+  const override = env && typeof env[ENGINE_ROOTS_ENV] === 'string' ? env[ENGINE_ROOTS_ENV].trim() : '';
+  if (override.length > 0) return path.resolve(override);
+  const home = (env && (env.USERPROFILE || env.HOME)) || os.homedir();
+  return path.resolve(home, ENGINE_ROOTS_REL);
+}
+
+/** Абсолютный путь без хвостовых разделителей или null. */
+function cleanEnginePath(value) {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const raw = value.trim();
+  if (!path.isAbsolute(raw)) return null;
+  let resolved;
+  try {
+    resolved = path.resolve(raw);
+  } catch {
+    return null;
+  }
+  const root = path.parse(resolved).root || '';
+  while (resolved.length > root.length && /[\\/]$/u.test(resolved)) resolved = resolved.slice(0, -1);
+  return resolved.length > 0 ? resolved : null;
+}
+
+/** Версия движка в каталоге (маркер — VERSION развёрнутой копии) или null. */
+function engineVersionAt(dir) {
+  const resolved = cleanEnginePath(dir);
+  if (resolved === null) return null;
+  try {
+    const text = fs.readFileSync(path.join(resolved, ENGINE_VERSION_REL), 'utf8').trim();
+    return text.length > 0 ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Записать связь в карту атомарно: временный файл в том же каталоге и
+ * переименование. Битый файл карты не перезаписывается.
+ */
+function writeEngineRootsLink(workspace, engine) {
+  const file = engineRootsFile();
+  let map = {};
+  let text = null;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    text = null;
+  }
+  if (text !== null && text.trim().length > 0) {
+    try {
+      map = JSON.parse(text);
+    } catch (error) {
+      return { ok: false, error: 'карта ' + file + ' не JSON — ' + String(error && error.message ? error.message : error) };
+    }
+    if (!map || typeof map !== 'object' || Array.isArray(map)) {
+      return { ok: false, error: 'карта ' + file + ': ожидается объект { "<воркспейс>": "<движок>" }' };
+    }
+  }
+  map[workspace] = engine;
+  const body = JSON.stringify(map, null, 2) + '\n';
+  const dir = path.dirname(file);
+  let temp = null;
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    temp = path.join(dir, '.' + path.basename(file) + '.' + process.pid + '.' + Date.now().toString(36) + '.tmp');
+    fs.writeFileSync(temp, body, 'utf8');
+    fs.renameSync(temp, file);
+  } catch (error) {
+    return { ok: false, error: 'не удалось записать карту ' + file + ': ' + String(error && error.message ? error.message : error) };
+  } finally {
+    if (temp !== null) {
+      try {
+        if (fs.existsSync(temp)) fs.unlinkSync(temp);
+      } catch {
+        /* временный файл уже переименован или недоступен */
+      }
+    }
+  }
+  return { ok: true, file };
+}
+
 const argv = args(process.argv.slice(2));
 if (argv.help) {
   console.log('Usage: node init.mjs --repo <dir> [--tasks docs/tasks] [--logs local|commit]');
   console.log('       [--key-id agent-judge] [--key-out <dir>] [--owner <name>]');
   console.log('       [--force]        обновить файлы пакета (ключ не меняется)');
   console.log('       [--rotate-key]   явная ротация ключа: старые записи станут untrusted');
+  console.log('       [--external <dir>] записать связь воркспейса с внешним движком и выйти;');
+  console.log('                        ничего не разворачивается, карта: ~/.dsh/workflow/engine-roots.json');
+  console.log('       [--git-init]     git init, если репозитория ещё нет, и продолжить развёртывание');
   console.log('       Хуки (2.5.0): локальный git config core.hooksPath docs/subagent-workflow/hooks;');
   console.log('       проверка коммита включается флагом guard.enabled в workflow.config.json.');
   process.exit(0);
@@ -112,6 +207,53 @@ const workflowDir = 'docs/subagent-workflow';
 const logs = String(argv.logs || 'local');
 const force = Boolean(argv.force);
 if (!['local', 'commit'].includes(logs)) { console.error('init: --logs local|commit'); process.exit(1); }
+
+/*
+ * 2.6.14 (0039): init --external <путь> только объявляет связь и выходит.
+ * Ни файлов, ни конфига, ни ключа: воркспейс не трогается. Если движка в
+ * <путь> нет — ненулевой код, карта остаётся прежней.
+ */
+if (argv.external !== undefined) {
+  if (argv.external === true || String(argv.external).trim() === '') {
+    console.error('init: --external требует путь к репозиторию с движком');
+    process.exit(1);
+  }
+  const engineDir = cleanEnginePath(String(argv.external));
+  if (engineDir === null) {
+    console.error('init: --external: путь должен быть абсолютным: ' + String(argv.external));
+    process.exit(1);
+  }
+  const version = engineVersionAt(engineDir);
+  if (version === null) {
+    console.error('init: --external: в ' + engineDir + ' нет движка (' + ENGINE_VERSION_REL.split(path.sep).join('/') + ') — карта не изменена');
+    process.exit(1);
+  }
+  const written = writeEngineRootsLink(repo, engineDir);
+  if (written.ok !== true) {
+    console.error('init: --external: ' + written.error);
+    process.exit(1);
+  }
+  console.log('init: связь записана в карту движков');
+  console.log('  workspace   ' + repo);
+  console.log('  engine      ' + engineDir + ' (версия ' + version + ')');
+  console.log('  card        ' + written.file);
+  console.log('  deploy      не выполняется: воркспейс не изменён');
+  process.exit(0);
+}
+
+/*
+ * 2.6.14 (0039): init --git-init инициализирует репозиторий, если его ещё нет,
+ * и продолжает обычное развёртывание: ворота и хуки требуют git.
+ */
+if (argv['git-init'] === true && !fs.existsSync(path.join(repo, '.git'))) {
+  const started = spawnSync('git', ['init'], { cwd: repo, encoding: 'utf8' });
+  if (started.error || started.status !== 0) {
+    console.error('init: --git-init: git init не выполнился: '
+      + String((started.error && started.error.message) || started.stderr || '').trim());
+    process.exit(1);
+  }
+  console.log('init: git init выполнен — ворота и хуки требуют репозиторий');
+}
 
 if (!fs.existsSync(path.join(repo, '.git'))) {
   console.warn('init: ' + repo + ' не git-репозиторий — выполните git init, ворота требуют git');
