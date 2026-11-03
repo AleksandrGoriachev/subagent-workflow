@@ -152,7 +152,11 @@ async function c2() {
   const tests = fs.readFileSync(path.join(PKG, 'plugin', 'test', 'client.test.mjs'), 'utf8');
   truthy(tests.includes(CLIENT_TEST), 'client.test.mjs: нет теста «' + CLIENT_TEST + '»');
 
-  const run = spawnSync(process.execPath, [path.join(PKG, 'plugin', 'tools', 'test.mjs')], {
+  /* Узкий набор: только свой файл карточки, а не весь набор пакета (0048). */
+  const run = spawnSync(process.execPath, [
+    '--test',
+    path.join(PKG, 'plugin', 'test', 'client.test.mjs'),
+  ], {
     cwd: PKG, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 1800000,
   });
   if (run.status !== 0) throw new Error('тесты панели не зелёные: ' + String(run.stdout || '').slice(-1200) + String(run.stderr || '').slice(-600));
