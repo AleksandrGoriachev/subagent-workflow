@@ -1,0 +1,159 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0041",
+  "title": "сборка панели старше движка: обновление отказывает вместо понижения, панель говорит прямо",
+  "risk": "medium",
+  "taskFileSha256": "bbfa509d14d55c4754a610ecb38cc4669ee17e00e494a6245f3ae60f12596f3e",
+  "criteriaSha256": "add517fff9905992a2929a0f6b8c3f2a3a8103b029f2aab669548677429752e0",
+  "criteriaJsonSha256": "b294ee7db6e91be3cc5e6a0c6f669267564032731ce011374c87a8185bb10f9c",
+  "contractCommit": "d99d000a7a695ad49e2ff803426d8d4deceb1ed2",
+  "baseCommit": "d99d000a7a695ad49e2ff803426d8d4deceb1ed2",
+  "candidateCommit": "bbc70c581c371c9499ac0921ff3be8a0be75c1d7",
+  "tree": "5ed4d7495df7be563d44a1096ff56f5c101d8197",
+  "worktreeDigest": "8c3dfd9279f168550d5e8a9a2c458e19b3eac9817cbbecdbf3d28828933afc13",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-5c236846-8633-4428-b773-1f2ef0b814ed",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "9cbdb868-d196-47b6-a448-4c64d8810b8a",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "cd8c0a435a02094d0ef0b0cb3e27af84",
+    "runKind": "accept",
+    "startedAt": "2026-11-03T12:31:51.492Z",
+    "finishedAt": "2026-11-03T12:35:11.185Z",
+    "durationMs": 199706,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "1ac224a4185a042c2a3853938d931ab49c68cbd966ad3ffadaf3a457e73bfd45",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C2",
+      "observable": "панель при сборке старше движка пишет «сборка панели старше» и не предлагает понижение",
+      "threshold": "C2 зелёный: оба текста в client.js, тест «карточка panel-older: понижение не предлагается» в наборе, тесты панели fail 0",
+      "measuredBy": "C1"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C2",
+        "measuredBy": "C1"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "d99d000a7a695ad49e2ff803426d8d4deceb1ed2",
+    "contractCommit": "d99d000a7a695ad49e2ff803426d8d4deceb1ed2",
+    "criteriaJsonSha256": "b294ee7db6e91be3cc5e6a0c6f669267564032731ce011374c87a8185bb10f9c",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C5"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/panel-older.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1578,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/panel-older.mjs c2",
+      "exitCode": 0,
+      "durationMs": 115163,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/update-flow.mjs",
+      "exitCode": 0,
+      "durationMs": 3981,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 43619,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "exitCode": 0,
+      "durationMs": 24966,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-03T12:35:11.955Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 2,
+    "digest": "6523393320fb96dd37c205ecda0a09fec7d6763567b37ca5c87e684be2d3a35c",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "8cQi8KaBgo1bUb0TcJIVNF2QCstkNL8ojKrQGLE1m6xQWB9XL4Av15IJwygDnhfGEM5f4JttlfI6NTorbf8aBg=="
+}
