@@ -1,0 +1,56 @@
+{
+  "task": "0046",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2", "C3"],
+    "mustPass": ["C4"],
+    "reasons": {
+      "C1": "OVERLAP FAIL c1",
+      "C2": "OVERLAP FAIL c2",
+      "C3": "OVERLAP FAIL c3"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Интервалы критериев перекрываются, порядок сохранён",
+      "command": "node spec/checks/criteria-overlap.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/common.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "OVERLAP OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Падение одного критерия не отменяет остальные",
+      "command": "node spec/checks/criteria-overlap.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/common.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "OVERLAP OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Ворота используют пул и настройку параллелизма",
+      "command": "node spec/checks/criteria-overlap.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast"],
+      "covers": ["spec/scripts/task-red.mjs", "spec/scripts/task-verify.mjs", "spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "OVERLAP OK c3" }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
