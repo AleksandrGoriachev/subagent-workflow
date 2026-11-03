@@ -1,0 +1,44 @@
+{
+  "task": "0048",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1"],
+    "mustPass": ["C2", "C3"],
+    "reasons": {
+      "C1": "NARROW-EXT FAIL c1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "external-engine.mjs не зовёт полный набор",
+      "command": "node spec/checks/narrow-external.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/checks/external-engine.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "NARROW-EXT OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Узкий external-engine c2 зелёный",
+      "command": "node spec/checks/narrow-external.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": ["slow"],
+      "covers": ["spec/checks/external-engine.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "NARROW-EXT OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
