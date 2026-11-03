@@ -1,0 +1,56 @@
+{
+  "task": "0045",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2", "C3"],
+    "mustPass": ["C4"],
+    "reasons": {
+      "C1": "PARALLEL FAIL c1",
+      "C2": "PARALLEL FAIL c2",
+      "C3": "PARALLEL FAIL c3"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Пул критериев идёт параллельно и сохраняет порядок",
+      "command": "node spec/checks/parallel-criteria.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/common.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "PARALLEL OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Падение одного критерия не отменяет остальные",
+      "command": "node spec/checks/parallel-criteria.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/common.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "PARALLEL OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Ворота используют пул",
+      "command": "node spec/checks/parallel-criteria.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast"],
+      "covers": ["spec/scripts/task-red.mjs", "spec/scripts/task-verify.mjs", "spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "PARALLEL OK c3" }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
