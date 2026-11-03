@@ -1,0 +1,130 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0050",
+  "title": "re-lock после красного для границ и покрытия; движок вне замка задания",
+  "risk": "medium",
+  "taskFileSha256": "6ee49e84e73f39c653936ad798224f29f885f27a533b25847b076ea1451c02ee",
+  "criteriaSha256": "b99fd50f2d7bb694f3b2bad756552932b3ee08cfd2283d930728b2433addd719",
+  "criteriaJsonSha256": "31eb5bb1cc62f86ba8f1ee6ea48596c88eded0468a43628ced8e82623dd13c94",
+  "contractCommit": "64a7b35813deed327742c164f210b6bc2872192c",
+  "baseCommit": "64a7b35813deed327742c164f210b6bc2872192c",
+  "candidateCommit": "7dc8168ef1d4367b1d2485716c482d4a32864e06",
+  "tree": "7e5591b705e4103c80255a23766178054fab945d",
+  "worktreeDigest": "db67455b880173457c03b0583d8cb27c78690684c1d2d415ece08d6ffa779a6d",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-5c236846-8633-4428-b773-1f2ef0b814ed",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "473b588a-8717-4171-8be0-3b36fba228eb",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "e3d926dbc7bbb12d5dfacd60cc06b2cd",
+    "runKind": "accept",
+    "startedAt": "2026-11-03T23:00:22.943Z",
+    "finishedAt": "2026-11-03T23:01:10.133Z",
+    "durationMs": 47201,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "b0bef845de531bcf191129ba76604c4e45a2bae700a46d33580d267f78d2bd69",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "64a7b35813deed327742c164f210b6bc2872192c",
+    "contractCommit": "64a7b35813deed327742c164f210b6bc2872192c",
+    "criteriaJsonSha256": "31eb5bb1cc62f86ba8f1ee6ea48596c88eded0468a43628ced8e82623dd13c94",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/relock-policy.mjs c1",
+      "exitCode": 0,
+      "durationMs": 782,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/relock-policy.mjs c2",
+      "exitCode": 0,
+      "durationMs": 808,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 37219,
+      "passed": true
+    }
+  ],
+  "acceptor": "subagent:judge",
+  "acceptedAt": "2026-11-03T23:01:10.698Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "vPWyYlkhxUyDCctYy2fCGvhhNcoN9OJG99IC3/lTxPaxCe282crE4LJiDOe6cKfsEkSF1Utoo67YIfU23F/+CA=="
+}
