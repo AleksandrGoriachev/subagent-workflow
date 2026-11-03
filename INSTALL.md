@@ -149,7 +149,7 @@ Test-Path "$dest\lib\index.js"   # True
 ### 7.4. Проверка после старта
 
 1. В разговоре появилась вкладка **Workflow**.
-2. `GET /workflow/api/status` отдаёт `plugin.version` (ожидается 0.9.0) и `engine.installed`.
+2. `GET /workflow/api/status` отдаёт `plugin.version` (ожидается 0.9.4) и `engine.installed`.
 3. **Вернулись остальные бандлы** профиля (память, notify, message-gateway) — проверить списком,
    а не «по ощущению».
 4. Кнопка «Доктор» отрабатывает, панель не пустая.
