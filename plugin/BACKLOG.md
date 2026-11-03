@@ -25,7 +25,8 @@
 | WC-22 | proposed | low | Флейк C1 в 0046: runner-процесс раз в ~11 прогонов убивается своим 60-с таймаутом (exit 124), к наложению не относится — остаётся |
 | WC-26 | done | high | Re-lock границ после красного (0050): `task-hash --relock --reason`, запись `relock` в замке, `criteriaSha256` неизменен |
 | WC-27 | done | high | Движок вне замка задания (0050): `protectedManifest`, `docs/subagent-workflow/**` не краснит чужой замок без `locksEngine` |
-| WC-28 | proposed | high | Журнал вердиктов ворот (`gates.jsonl`): время, критерий, exit, длительность, причина — задание 0051 |
+| WC-28 | done | high | Журнал вердиктов ворот (0051): `docs/tasks/<id>/gates.jsonl`, append-only, `kind=red|verify|accept`, причины отказов; сбой журнала — WARN |
+| WC-30 | proposed | medium | `task-accept` пишет строку `accept` до сборки кандидата и подписи — при сбое сборки в журнале останется ложный `accepted` (замечание приёмщика 0051) |
 | WC-29 | proposed | medium | Границы до красного: правило в шаблоне «сверь файлы с allowedPaths до первой правки» + WARN линта на конкретный путь |
 | WC-23 | done | low | `external-engine.mjs c2` сужен (0048): 121 → 78 с, живых спавнов полного набора в `spec/checks` не осталось |
 | WC-24 | proposed | medium | Ворота печатают `id / exit / durationMs` по каждому критерию и итог — тогда приёмщику не нужны ручные прогоны (≈980 с дублей) |
