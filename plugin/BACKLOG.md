@@ -13,7 +13,7 @@
 | WC-6 | done | high | Внешний движок: кнопки видимо недоступны и объясняют причину (0038; выпущено в 0.9.1, сейчас 0.9.5) |
 | WC-7 | done | high | INSTALL.md: раздел «Установка панели» и грабли установки в чужой DSH (нативный путь, EPERM, roots/participants) |
 | WC-8 | done | medium | `join` теряет `exchange.threads` — закрыто их 0028 (`inheritFolderExchange` + регресс `invitation.test.mjs:286`); наш репрод был до 0028 |
-| WC-9 | proposed | low | Убрать стенд engineRoot (карта, .tmp\engine-2.6.11, корень split-optimizer) |
+| WC-9 | done | low | Стенд убран: split-optimizer на движке воркспейса (2.6.17, как reach-proxy), `.tmp\engine-2.6.11` удалён (63 файла, 760 КБ) |
 | WC-14 | proposed | high | Структура: перейти на прямые провайдер+модель в узлах, убрать алиасы models{} (после задания structure 0046) |
 | WC-15 | proposed | high | Профиль: участники папки обязаны быть в roots и participants dsh-project-graph — иначе ящик читается как пустой (label='', letters=0) |
 | WC-16 | done | medium | Передать structure WC-8 — письмо --119; они подтвердили 0028, край с несколькими ветками заводят как 0051 |
@@ -23,6 +23,10 @@
 | WC-20 | proposed | medium | Контракт до красного: пробный прогон mustPass на базе, дешёвые проверки первыми, дорогие — только при необходимости |
 | WC-21 | proposed | low | Уточнить C1 задания 0044: «ровно два файла» против транзитивного минимума |
 | WC-22 | proposed | low | Флейк C1 в 0046: runner-процесс раз в ~11 прогонов убивается своим 60-с таймаутом (exit 124), к наложению не относится — остаётся |
+| WC-26 | done | high | Re-lock границ после красного (0050): `task-hash --relock --reason`, запись `relock` в замке, `criteriaSha256` неизменен |
+| WC-27 | done | high | Движок вне замка задания (0050): `protectedManifest`, `docs/subagent-workflow/**` не краснит чужой замок без `locksEngine` |
+| WC-28 | proposed | high | Журнал вердиктов ворот (`gates.jsonl`): время, критерий, exit, длительность, причина — задание 0051 |
+| WC-29 | proposed | medium | Границы до красного: правило в шаблоне «сверь файлы с allowedPaths до первой правки» + WARN линта на конкретный путь |
 | WC-23 | done | low | `external-engine.mjs c2` сужен (0048): 121 → 78 с, живых спавнов полного набора в `spec/checks` не осталось |
 | WC-24 | proposed | medium | Ворота печатают `id / exit / durationMs` по каждому критерию и итог — тогда приёмщику не нужны ручные прогоны (≈980 с дублей) |
 | WC-25 | proposed | medium | `actor.model` у субагентов остаётся `unknown`: харнесс не передаёт `DSH_MODEL` спавну — просить/прокинуть в env |
