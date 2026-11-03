@@ -1125,7 +1125,7 @@ test('карточка external: обновление в репозитории 
  * выбор из двух равноправных действий. Список кандидатов приходит с сервера:
  * только воркспейсы, где движок реально есть, с версией.
  */
-test('0.9.3 absent: два действия, без ошибки', async () => {
+test('карточка absent: два действия, без ошибки', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-absent-'));
   const ws = path.join(dir, 'ws');
   fs.mkdirSync(ws, { recursive: true });
@@ -1199,7 +1199,7 @@ test('0.9.3 absent: два действия, без ошибки', async () => {
  * 0.9.3 (0039): при mapped карточка называет путь, версию и источник словами
  * «выбрано в панели»; кнопок связи нет — связь уже есть.
  */
-test('0.9.3 mapped: путь, версия, источник', async () => {
+test('карточка mapped: путь, версия, источник', async () => {
   const fixture = makeRepo({ stage: 'remarks' });
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-console-linked-'));
   const ws = path.join(dir, 'ws');

@@ -1,0 +1,65 @@
+{
+  "version": 3,
+  "task": "0047",
+  "taskFileSha256": "46d0f23d6add3e2b9569257dbf53efc3932556a3e1f5741dae5b24a2f3f97f22",
+  "criteriaSha256": "7ab3d782fef5ca4097613a8b1a6c0799bcd486119516e66e002b7ef8be88dea1",
+  "criteriaJsonSha256": "f3fa4ce297c67cd153a4575893a53f6c8c2e8143c41fd003c50641ac98d38124",
+  "attackSha256": null,
+  "contractCommit": "ba388db51d185baa1d42bfc0b2e85c6ec6521d30",
+  "protected": [
+    {
+      "path": "package.json",
+      "sha256": "9b56fa2575bc1297e32bfdd40b69decb3fb6f4a17a5e2a68f326d43d3c28fdb8"
+    },
+    {
+      "path": "plugin/lib/api.js",
+      "sha256": "12bd27b406e1d0e4dd7616d45ab007c102d234311e4e0933c3ecf7cba2b05c08"
+    },
+    {
+      "path": "plugin/lib/checks.js",
+      "sha256": "71e5a9642c8b39c09409ce16487c3c538c3a384e0440874df8f1008d5cfb6947"
+    },
+    {
+      "path": "plugin/lib/client.js",
+      "sha256": "f70e382d395891f4be606b799ddc2bec517ec7668025171f7b216fc1f3be22d1"
+    },
+    {
+      "path": "plugin/lib/compat.js",
+      "sha256": "4bdf9289f68136dd84d1ebc48e9b0421e810964c133081ca18b24704e1d4384f"
+    },
+    {
+      "path": "plugin/lib/deploy.js",
+      "sha256": "79383091d47c5625e15e48d3a20cc35e7ff237e650bb8ea7aaf7c0b096346fa6"
+    },
+    {
+      "path": "plugin/lib/engine-root.js",
+      "sha256": "f56baa2bce360db90b5e7f0d21d1e66d9fa6a10ec7e3e74a532b302fc1810c7f"
+    },
+    {
+      "path": "plugin/lib/guard.js",
+      "sha256": "0fce3ebbbe7dcc1713cfe0d795e5e8bd7af063bc44f7513b3a60bdaeda2a584c"
+    },
+    {
+      "path": "plugin/lib/index.js",
+      "sha256": "86570ecd5a7bfa31b44df30a9ed75738a1d525595f13b95db70d0481f8bde660"
+    },
+    {
+      "path": "plugin/lib/state.js",
+      "sha256": "03cb45af560411bb66f14258958d17596d5d1dcfd5afbd79d6cf6476f1d049e1"
+    },
+    {
+      "path": "plugin/tools/dev-server.mjs",
+      "sha256": "ed0be126adfc3a9da369333d85bc54671be2886796d689ab53fb80ef064ee15a"
+    },
+    {
+      "path": "plugin/tools/test.mjs",
+      "sha256": "8b176b652052b7ce22277c0fc8a7d163639fa80de65fced0f2f5e19588795ea4"
+    },
+    {
+      "path": "spec/checks/narrow-suite.mjs",
+      "sha256": "1d00c7d49593a6222ba3631d4e0fbce6d6ff10f04978aab06706084fc3723ed1"
+    }
+  ],
+  "createdAt": "2026-11-03T21:18:14.845Z",
+  "tool": "subagent-workflow/2.6.16"
+}

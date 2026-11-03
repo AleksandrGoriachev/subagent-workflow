@@ -41,8 +41,8 @@ const CARD_WORDS = [
 ];
 /* Поведенческие тесты карточки: исполнитель обязан их написать, проверка их ищет. */
 const CARD_TESTS = [
-  '0.9.3 absent: два действия, без ошибки',
-  '0.9.3 mapped: путь, версия, источник',
+  'карточка absent: два действия, без ошибки',
+  'карточка mapped: путь, версия, источник',
 ];
 
 function eq(actual, expected, label) {
@@ -185,9 +185,9 @@ async function c1() {
   const { resolveEngine, engineView } = await import(pathToFileURL(path.join(PKG, 'plugin', 'lib', 'engine-root.js')).href);
   const dir = tempDir('c1-');
   const ws = workspace(path.join(dir, 'ws'));
-  const local = engineAt(path.join(dir, 'local'), '2.6.12');
-  const engineA = engineAt(path.join(dir, 'engine-a'), '2.6.14');
-  const engineB = engineAt(path.join(dir, 'engine-b'), '2.6.13');
+  const local = engineAt(path.join(dir, 'local'), '1.7.0');
+  const engineA = engineAt(path.join(dir, 'engine-a'), '1.9.0');
+  const engineB = engineAt(path.join(dir, 'engine-b'), '1.8.0');
   const map = writeMap(path.join(dir, 'roots.json'), { [ws]: engineB });
   const config = { engines: { roots: { [ws]: engineA } } };
 
@@ -196,7 +196,7 @@ async function c1() {
   eq(found.mode, 'mapped', 'config: mode');
   eq(found.source, 'config', 'config: source');
   eq(found.root, engineA, 'config: root');
-  eq(found.version, '2.6.14', 'config: version');
+  eq(found.version, '1.9.0', 'config: version');
   eq(found.installed, true, 'config: installed');
 
   /* Карта — следующий источник: без конфига связь берётся из файла. */
@@ -204,7 +204,7 @@ async function c1() {
   eq(found.mode, 'mapped', 'карта: mode');
   eq(found.source, 'mapping', 'карта: source');
   eq(found.root, engineB, 'карта: root');
-  eq(found.version, '2.6.13', 'карта: version');
+  eq(found.version, '1.8.0', 'карта: version');
 
   /* Ни конфига, ни записи — absent: структура без движка, а не ошибка. */
   const empty = path.join(dir, 'no-such-map.json');
@@ -219,7 +219,7 @@ async function c1() {
   eq(found.mode, 'local', 'local: mode');
   eq(found.source, 'workspace', 'local: source');
   eq(found.root, local, 'local: root');
-  eq(found.version, '2.6.12', 'local: version');
+  eq(found.version, '1.7.0', 'local: version');
 
   /* Запись конфига без движка — объявленная, но битая связь: absent с source config. */
   found = resolveEngine(ws, { config: { engines: { roots: { [ws]: path.join(dir, 'missing-engine') } } }, file: map, env: {} });
@@ -234,7 +234,7 @@ async function c1() {
   /* Проекция для /api/status отдаёт mode, version и source, не только installed. */
   const view = engineView(resolveEngine(ws, { config, file: map, env: {} }));
   eq(view.mode, 'mapped', 'engineView: mode');
-  eq(view.version, '2.6.14', 'engineView: version');
+  eq(view.version, '1.9.0', 'engineView: version');
   eq(view.source, 'config', 'engineView: source');
   eq(view.root, engineA, 'engineView: root');
   eq(view.installed, true, 'engineView: installed');
@@ -247,8 +247,8 @@ async function c2() {
   const dir = tempDir('c2-');
   const ws = workspace(path.join(dir, 'ws'));
   const empty = workspace(path.join(dir, 'empty'));
-  const engineA = engineAt(path.join(dir, 'engine-a'), '2.6.14');
-  const engineC = engineAt(path.join(dir, 'engine-c'), '2.6.10');
+  const engineA = engineAt(path.join(dir, 'engine-a'), '1.9.0');
+  const engineC = engineAt(path.join(dir, 'engine-c'), '1.6.0');
   const mapDir = path.join(dir, 'map');
   const mapFile = path.join(mapDir, 'engine-roots.json');
   const previous = process.env[ENGINE_ROOTS_ENV];
@@ -279,7 +279,7 @@ async function c2() {
     eq(res.json.engine.mode, 'mapped', 'GET status после связи: mode');
     eq(res.json.engine.source, 'mapping', 'GET status после связи: source');
     eq(res.json.engine.root, engineA, 'GET status после связи: root');
-    eq(res.json.engine.version, '2.6.14', 'GET status после связи: version');
+    eq(res.json.engine.version, '1.9.0', 'GET status после связи: version');
 
     res = await call(handler, route, { method: 'POST', body: { root: ws, engine: 'relative/engine', confirm: true } });
     eq(res.status, 400, 'POST относительный движок: статус');
@@ -327,9 +327,9 @@ async function c2() {
 async function c3() {
   const { createWorkflowRuntime, createWebHandler } = await import(pathToFileURL(path.join(PKG, 'plugin', 'lib', 'api.js')).href);
   const dir = tempDir('c3-');
-  const withEngine = engineAt(path.join(dir, 'ws-with-engine'), '2.6.13');
+  const withEngine = engineAt(path.join(dir, 'ws-with-engine'), '1.8.0');
   const withoutEngine = workspace(path.join(dir, 'ws-without-engine'));
-  const current = engineAt(path.join(dir, 'ws-current'), '2.6.14');
+  const current = engineAt(path.join(dir, 'ws-current'), '1.9.0');
   const registry = {
     list: () => [
       { id: 'a', path: withEngine },
@@ -347,12 +347,12 @@ async function c3() {
 
   const first = byPath(withEngine);
   truthy(first, 'кандидаты: зарегистрированный воркспейс с движком присутствует');
-  eq(first.version, '2.6.13', 'кандидаты: версия из VERSION');
+  eq(first.version, '1.8.0', 'кандидаты: версия из VERSION');
   eq(first.current, false, 'кандидаты: не текущий');
 
   const self = byPath(current);
   truthy(self, 'кандидаты: текущий воркспейс присутствует');
-  eq(self.version, '2.6.14', 'кандидаты: версия текущего');
+  eq(self.version, '1.9.0', 'кандидаты: версия текущего');
   eq(self.current, true, 'кандидаты: current=true у выбранного корня');
 
   eq(byPath(withoutEngine), undefined, 'кандидаты: воркспейс без движка не попадает');
@@ -374,7 +374,11 @@ async function c4() {
   for (const title of CARD_TESTS) {
     truthy(tests.includes(title), 'client.test.mjs: нет теста «' + title + '»');
   }
-  const run = runCapture(process.execPath, [path.join(PKG, 'plugin', 'tools', 'test.mjs')], { timeout: 1800000 });
+  const run = runCapture(process.execPath, [
+    '--test',
+    path.join(PKG, 'plugin', 'test', 'client.test.mjs'),
+    path.join(PKG, 'plugin', 'test', 'engine-link.test.mjs'),
+  ], { timeout: 1800000 });
   if (run.status !== 0) {
     throw new Error('тесты панели не зелёные: exit ' + run.status
       + (run.error ? ' (' + run.error.message + ')' : '') + '; ' + tail(run.stdout, 600) + tail(run.stderr, 600));
@@ -393,7 +397,7 @@ function runInit(args, env) {
 
 async function c5() {
   const dir = tempDir('c5-');
-  const engineA = engineAt(path.join(dir, 'engine-a'), '2.6.14');
+  const engineA = engineAt(path.join(dir, 'engine-a'), '1.9.0');
   const mapFile = path.join(dir, 'map', 'engine-roots.json');
 
   const keyOut = path.join(dir, 'keys');
