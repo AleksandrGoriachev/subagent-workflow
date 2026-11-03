@@ -1,0 +1,180 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0042",
+  "title": "внешний движок: обновление в его репозитории; doctor из панели говорит правду о контексте",
+  "risk": "medium",
+  "taskFileSha256": "c85002e77ec1f343e6f0633aceee5be3c1c8aeed357d825854a8a0e858dd9016",
+  "criteriaSha256": "0dda8f5ab22497a5a41b5f072b93b5fe66f533fc56639e6b99b75042b781f956",
+  "criteriaJsonSha256": "48228e760d781b104e6967deccbc5e57dc815ceb1e613fa8655bc8bea2da9774",
+  "contractCommit": "8f49726a7d784d5468c9b75c69a7775dd58cfd93",
+  "baseCommit": "8f49726a7d784d5468c9b75c69a7775dd58cfd93",
+  "candidateCommit": "d3e5921d6cc884d7dea36b735272fa87835910cd",
+  "tree": "80deefd3a05006c349ceee845cac1006f1ccb00a",
+  "worktreeDigest": "a2d55949a738afb3c2f79eb4bf76970cf704b371a0c01c0e33487abb61c31e0f",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-5c236846-8633-4428-b773-1f2ef0b814ed",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "d2b278ee-ba70-4bd8-a23a-1a3ee0943098",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "c44d9ade70357049f154cef04db7dd14",
+    "runKind": "accept",
+    "startedAt": "2026-11-03T14:13:54.488Z",
+    "finishedAt": "2026-11-03T14:17:44.896Z",
+    "durationMs": 230424,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "bd8f2f0c014e7154c4ce0926846e9231dac462d947d9c1e29b333477b7564b3e",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C2",
+      "observable": "панель при внешнем движке пишет «обновляется в репозитории движка» и не обещает «доступно»",
+      "threshold": "C2 зелёный: текст есть, старого обещания нет, тест карточки в наборе, тесты панели fail 0",
+      "measuredBy": "C1"
+    },
+    {
+      "criterion": "C3",
+      "observable": "кнопка doctor в панели зелёная на здоровом воркспейсе и объясняет контекст",
+      "threshold": "C3 зелёный: exit 0, строка «проверка запущена из панели», без FAIL актора",
+      "measuredBy": "C5"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C2",
+        "measuredBy": "C1"
+      },
+      {
+        "decision": "D2",
+        "criterion": "C3",
+        "carrier": "C3",
+        "measuredBy": "C5"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "8f49726a7d784d5468c9b75c69a7775dd58cfd93",
+    "contractCommit": "8f49726a7d784d5468c9b75c69a7775dd58cfd93",
+    "criteriaJsonSha256": "48228e760d781b104e6967deccbc5e57dc815ceb1e613fa8655bc8bea2da9774",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4",
+        "C5",
+        "C6"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/external-engine.mjs c1",
+      "exitCode": 0,
+      "durationMs": 4962,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/external-engine.mjs c2",
+      "exitCode": 0,
+      "durationMs": 137897,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/panel-doctor.mjs c1",
+      "exitCode": 0,
+      "durationMs": 5024,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/update-flow.mjs",
+      "exitCode": 0,
+      "durationMs": 5962,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 42049,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "exitCode": 0,
+      "durationMs": 21358,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-03T14:17:45.470Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 2,
+    "digest": "e5cd2dc9c251ad43016768be2e11f6cc5b3f5240c79c5b7ce6c2ae94aebd808f",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "HyrMI9rwLpgoO7MYixn2e51EkTpROR+UfWWGqxAUd8g2JqQVJy8wLI5OvVDXq9Uof50O0gPGdtJrcEmTgrtxCg=="
+}
