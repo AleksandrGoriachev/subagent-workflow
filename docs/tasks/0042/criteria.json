@@ -1,0 +1,142 @@
+{
+  "task": "0042",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "EXTERNAL-ENGINE FAIL c1",
+      "C2": "EXTERNAL-ENGINE FAIL c2",
+      "C3": "PANEL-DOCTOR FAIL c1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Обновление внешнего движка в его репозитории",
+      "command": "node spec/checks/external-engine.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/api.js",
+        "plugin/lib/deploy.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "EXTERNAL-ENGINE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Панель говорит, где обновляется внешний движок",
+      "command": "node spec/checks/external-engine.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/lib/client.js",
+        "plugin/test/client.test.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "EXTERNAL-ENGINE OK c2"
+      },
+      "effect": {
+        "observable": "панель при внешнем движке пишет «обновляется в репозитории движка» и не обещает «доступно»",
+        "threshold": "C2 зелёный: текст есть, старого обещания нет, тест карточки в наборе, тесты панели fail 0",
+        "measuredBy": "C1"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "doctor из панели: WARN вместо FAIL, вне панели — прежний вердикт",
+      "command": "node spec/checks/panel-doctor.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/checks.js",
+        "spec/scripts/doctor.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-DOCTOR OK c1"
+      },
+      "effect": {
+        "observable": "кнопка doctor в панели зелёная на здоровом воркспейсе и объясняет контекст",
+        "threshold": "C3 зелёный: exit 0, строка «проверка запущена из панели», без FAIL актора",
+        "measuredBy": "C5"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс: прямое обновление движка",
+      "command": "node spec/checks/update-flow.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "plugin/lib/deploy.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "UPDATE FLOW OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Регресс развёрнутой копии",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**",
+        "plugin/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOYED COPY OK"
+      }
+    }
+  ]
+}
