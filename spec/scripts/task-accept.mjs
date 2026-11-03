@@ -62,6 +62,14 @@ const config = loadConfig(repo);
 const logsCommitted = config.logs === 'commit';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const VERIFY_SCRIPT = path.join(SCRIPT_DIR, 'task-verify.mjs');
+/*
+ * 0045 (WC-12): критерии гоняются пулом — runCriteria в lib/common.mjs, степень
+ * параллелизма WF_CRITERIA_PARALLEL (по умолчанию 4, 1 — последовательно).
+ * Приёмщик своего цикла по критериям не держит: свежий прогон — это task-verify,
+ * где критерии запускает runCriteria, и переменная окружения наследуется вместе
+ * с process.env. Второй цикл здесь означал бы второй формат вывода и второй
+ * вердикт — приёмка проверяет ровно тот прогон, который прошли ворота.
+ */
 
 function fail(message) { console.error('task-accept: ' + message); process.exit(1); }
 

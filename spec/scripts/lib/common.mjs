@@ -661,6 +661,108 @@ export function runCommand(command, opts = {}) {
   });
 }
 
+/*
+ * Пул критериев (0045, WC-12): независимые проверки ворот идут параллельно.
+ *
+ * 0041: три прогона ворот по 189 с при max(критерий) = 115 с — 74 с чистой
+ * суммы на каждом прогоне. Критерии не делят состояние (runCheck изолирует
+ * временные корни), поэтому прогон идёт по max, а не по сумме, а порядок строк
+ * остаётся прежним — по списку criteria.json, а не по порядку завершения.
+ *
+ * Степень параллелизма: options.concurrency → WF_CRITERIA_PARALLEL → 4.
+ * Значение 1 — строго последовательно, прежнее поведение. Нечисло или число
+ * меньше 1 не валит ворота: берётся следующее по приоритету значение.
+ */
+export function criteriaConcurrency(options = {}) {
+  const parse = (value) => {
+    if (value === undefined || value === null || value === '') return null;
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 1) return null;
+    return Math.floor(n);
+  };
+  const declared = parse(options.concurrency);
+  if (declared !== null) return declared;
+  const fromEnv = parse(process.env.WF_CRITERIA_PARALLEL);
+  return fromEnv === null ? 4 : fromEnv;
+}
+
+/**
+ * Запускает критерии пулом и возвращает строки в порядке входного списка.
+ *
+ * Каждый критерий идёт через runCommand с cwd из c.cwd (относительно
+ * options.cwd/options.repo), timeoutMs из c.timeoutMs (иначе options.timeoutMs,
+ * иначе 120000) и env из options/env. Падение одного критерия не отменяет и не
+ * обрывает остальные: исключение runCommand превращается в строку с
+ * exitCode !== 0 и текстом ошибки в output, а не в reject пула.
+ *
+ * Строка: { id, command, exitCode, output, durationMs } плюс stdout/stderr/
+ * timedOut — ворота пишут по ним лог и причины, не запуская критериев заново.
+ * Manual-критерии не исполняются и строк не дают.
+ */
+export async function runCriteria(criteria, options = {}) {
+  const list = Array.isArray(criteria) ? criteria.slice() : [];
+  const base = path.resolve(options.cwd || options.repo || process.cwd());
+  const env = options.env && typeof options.env === 'object' ? { ...options.env } : {};
+  const defaultTimeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 120000;
+  const multiplier = Number(options.timeoutMultiplier) > 0 ? Number(options.timeoutMultiplier) : 1;
+  const rows = new Array(list.length).fill(null);
+  let next = 0;
+
+  const runOne = async (index) => {
+    const criterion = list[index] && typeof list[index] === 'object' ? list[index] : {};
+    if (isManual(criterion) || criterion.command === undefined || criterion.command === null) return;
+    const id = String(criterion.id);
+    const command = String(criterion.command);
+    const cwd = criterion.cwd ? path.resolve(base, String(criterion.cwd)) : base;
+    const declaredTimeout = Number(criterion.timeoutMs) > 0 ? Number(criterion.timeoutMs) : defaultTimeoutMs;
+    const timeoutMs = Math.max(1, Math.round(declaredTimeout * multiplier));
+    const childEnv = {
+      ...env,
+      ...(criterion.env && typeof criterion.env === 'object' ? criterion.env : {}),
+    };
+    const started = Date.now();
+    let result;
+    try {
+      result = await runCommand(command, { cwd, env: childEnv, timeoutMs, maxOutput: options.maxOutput });
+    } catch (error) {
+      result = {
+        exitCode: 127,
+        stdout: '',
+        stderr: error && error.message ? String(error.message) : String(error),
+        timedOut: false,
+        durationMs: Date.now() - started,
+      };
+    }
+    const stdout = result && result.stdout !== undefined && result.stdout !== null ? String(result.stdout) : '';
+    const stderr = result && result.stderr !== undefined && result.stderr !== null ? String(result.stderr) : '';
+    rows[index] = {
+      id,
+      command,
+      exitCode: result && typeof result.exitCode === 'number' ? result.exitCode : 127,
+      output: stderr === '' ? stdout : stdout + String.fromCharCode(10) + stderr,
+      durationMs: result && typeof result.durationMs === 'number' ? result.durationMs : Date.now() - started,
+      stdout,
+      stderr,
+      timedOut: Boolean(result && result.timedOut),
+    };
+  };
+
+  const width = Math.max(1, Math.min(criteriaConcurrency(options), Math.max(1, list.length)));
+  const workers = [];
+  for (let i = 0; i < width; i += 1) {
+    workers.push((async () => {
+      for (;;) {
+        const index = next;
+        next += 1;
+        if (index >= list.length) return;
+        await runOne(index);
+      }
+    })());
+  }
+  await Promise.all(workers);
+  return rows.filter((row) => row !== null);
+}
+
 export function evaluateExpectation(expect, result) {
   const reasons = [];
   const e = expect && Object.keys(expect).length ? expect : { exitCode: 0 };

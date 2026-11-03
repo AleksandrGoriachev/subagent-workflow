@@ -2,7 +2,7 @@
 import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, repoRoot, diffPaths, matchesAny, relPosix,
-  runCommand, evaluateExpectation, isManual, stableResults, writeJson, writeText,
+  runCommand, runCriteria, evaluateExpectation, isManual, stableResults, writeJson, writeText,
   formatMs, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
   checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
 } from './lib/common.mjs';
@@ -99,13 +99,19 @@ try {
     process.exit(1);
   }
 
+  /*
+   * 0045 (WC-12): критерии идут пулом (runCriteria), а не суммой длительностей;
+   * порядок строк, лог, счёт manual и вердикт прежние. setup/teardown остаются
+   * последовательными и стоят вокруг пула.
+   */
+  const pooled = await runCriteria(criteria.criteria, { cwd: repo, env, timeoutMs: 120000 });
+  const pooledById = new Map(pooled.map((r) => [r.id, r]));
   let manualSkipped = 0;
   for (const c of criteria.criteria) {
     const id = String(c.id);
     if (isManual(c)) { manualSkipped += 1; logLine('## ' + id + ': MANUAL (пропущен)'); continue; }
-    const cwd = c.cwd ? path.resolve(repo, c.cwd) : repo;
-    const timeoutMs = c.timeoutMs || 120000;
-    const r = await runCommand(c.command, { cwd, env, timeoutMs });
+    const r = pooledById.get(id);
+    if (!r) continue;
     const ev = evaluateExpectation(c.expect, r);
     results.push({ id, command: c.command, exitCode: r.exitCode, durationMs: r.durationMs, passed: ev.passed, timedOut: r.timedOut, reasons: ev.reasons, stdout: r.stdout, stderr: r.stderr });
     logLine('## ' + id + ': ' + c.command);
