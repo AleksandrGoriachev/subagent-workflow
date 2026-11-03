@@ -1,5 +1,21 @@
 # Изменения
 
+## 2.6.18 — 2026-11-04
+
+- **Дешёвый re-lock после красного (задание 0050).** `task-hash --relock --reason "<почему>"` разрешает
+  после доказанного красного править границы и покрытие (`allowedPaths`, `protectedPaths`,
+  `redAllowDirty`, `covers`, `tags`) без нового номера задания. В `criteria.lock` пишется
+  `relock: { at, by, reason, before, after }`, а `criteriaSha256` (блок критериев) остаётся прежним:
+  подменить команды или ожидания по-прежнему нельзя — на это отказ с причиной.
+  Замер: переделки контракта стоили 49 мин 21 с за сутки, из них 20:45 (0031→0032) и 27:22 (0046→0054).
+- **Движок вне замка задания (0050).** `protectedManifest` исключает `docs/subagent-workflow/**` из
+  хеша защищённых файлов, если задание не объявило `locksEngine: true`: деплой движка больше не
+  краснит чужой замок (пять контрактов v2 из семи у structure).
+- **Журнал вердиктов ворот (0051).** `docs/tasks/<id>/gates.jsonl` — append-only JSONL: `at`, `kind`
+  (`red`/`verify`/`accept`), `head`, `criteria` с `exitCode`/`durationMs`/`reasons`, вердикт.
+  Ворота пишут строку на каждый прогон, сбой журнала — `WARN` и не меняет код возврата.
+- Проверки: `spec/checks/relock-policy.mjs`, `spec/checks/gates-journal.mjs`; регресс `selftest`,
+  `deployed-copy`, `e2e` — зелёные. Приёмки: 0050 `7dc8168`/`2817783`, 0051 `ccac686`/`d213934`.
 ## 2.6.17 — 2026-11-04
 
 - **Критерии ворот идут параллельно (задание 0046, WC-12).** `runCriteria` в `spec/scripts/lib/common.mjs`
