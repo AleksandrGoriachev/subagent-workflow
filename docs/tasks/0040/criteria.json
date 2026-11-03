@@ -1,0 +1,111 @@
+{
+  "task": "0040",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "reasons": {
+      "C1": "PANEL-OLDER FAIL c1",
+      "C2": "PANEL-OLDER FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Понижение движка отвергается, числовое сравнение версий",
+      "command": "node spec/checks/panel-older.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/deploy.js",
+        "plugin/lib/api.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-OLDER OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Панель говорит «сборка панели старше» и не предлагает понижение",
+      "command": "node spec/checks/panel-older.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/lib/client.js",
+        "plugin/test/client.test.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-OLDER OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс: прямое обновление движка",
+      "command": "node spec/checks/update-flow.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "plugin/lib/deploy.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "UPDATE FLOW OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс развёрнутой копии",
+      "command": "node spec/checks/deployed-copy.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**",
+        "plugin/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOYED COPY OK"
+      }
+    }
+  ]
+}
