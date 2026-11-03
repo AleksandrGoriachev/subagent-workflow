@@ -20,6 +20,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
 const ROOT = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-engine-link-'));
+/*
+ * Конвенция пакета (2.6.10): вне пакета — в развёрнутой копии docs/subagent-workflow —
+ * проверка печатает SKIP и выходит 0. Без этого deployed-copy видит ENOENT на
+ * plugin/lib и краснеет на любой реализации.
+ */
+if (!fs.existsSync(path.join(PKG, 'spec'))) {
+  console.log('SKIP: проверка пакета вне пакета');
+  process.exit(0);
+}
 const ENGINE_ROOTS_ENV = 'WF_ENGINE_ROOTS';
 
 /* Слова панели: их читает человек, поэтому они часть контракта, а не украшение. */
