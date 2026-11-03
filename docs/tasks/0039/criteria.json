@@ -1,0 +1,137 @@
+{
+  "task": "0039",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [
+      "C6"
+    ],
+    "reasons": {
+      "C1": "ENGINE-LINK FAIL c1",
+      "C2": "ENGINE-LINK FAIL c2",
+      "C3": "ENGINE-LINK FAIL c3",
+      "C4": "ENGINE-LINK FAIL c4",
+      "C5": "ENGINE-LINK FAIL c5"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Резолвер: local → config → карта → absent, источник и версия в ответе",
+      "command": "node spec/checks/engine-link.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/engine-root.js",
+        "plugin/lib/api.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE-LINK OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "POST /api/engine-link: confirm, Origin, атомарная карта, конфиг не подменяется",
+      "command": "node spec/checks/engine-link.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/api.js",
+        "plugin/lib/engine-root.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE-LINK OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Кандидаты: только воркспейсы с движком, с версиями и признаком current",
+      "command": "node spec/checks/engine-link.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/lib/api.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE-LINK OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Карточка движка: два равноправных действия при absent, путь/версия/источник при mapped",
+      "command": "node spec/checks/engine-link.mjs c4",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/lib/client.js",
+        "plugin/test/client.test.mjs",
+        "plugin/test/engine-link.test.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE-LINK OK c4"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "init --external пишет карту, init --git-init создаёт репозиторий",
+      "command": "node spec/checks/engine-link.mjs c5",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/init.mjs",
+        "plugin/lib/deploy.js",
+        "spec/SPEC.md"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE-LINK OK c5"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Регресс спеки: самопроверка, сквозной цикл, развёрнутая копия",
+      "command": "node spec/checks/engine-link.mjs c6",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "plugin/**",
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ENGINE-LINK OK c6"
+      }
+    }
+  ]
+}
