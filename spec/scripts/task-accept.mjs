@@ -18,6 +18,7 @@ import {
   summarizeDecisions, evaluateEffects,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
+import { reportReadGuard, actorModel } from './lib/acceptance-policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
 import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
@@ -28,7 +29,8 @@ if (argv.help) {
   console.log('Usage: node task-accept.mjs --task <dir> --key <private.pem> --key-id <keyId> [--repo <dir>]');
   console.log('       [--acceptor <name>] [--human <who>] [--expect-contract <sha>] [--note <text>]');
   console.log('       [--allow-missing-red] [--allow-manual] [--allow-declared-actor]');
-  console.log('       [--review <review.json>] [--reuse-verify] [--report-read] [--dry-run] [--force] [--json]');
+  console.log('       [--review <review.json>] [--reuse-verify] [--report-read] [--report-read-reason <text>]');
+  console.log('       [--dry-run] [--force] [--json]');
   console.log('Запись подписывается Ed25519; для high-risk нужен ключ human-* и --human <кто>.');
   process.exit(0);
 }
@@ -234,6 +236,32 @@ try {
   const humanSigner = typeof argv.human === 'string' && argv.human.trim() !== '' ? argv.human.trim() : null;
 
   /*
+   * 0049: независимость приёмки проверяется до прогона критериев и до подписи.
+   * При risk=medium/high чтение отчёта исполнителя — исключение, и оно должно
+   * быть названо: причина пустая — отказ с рецептом, а не молчаливое «прочитал».
+   */
+  const reportReadReason = typeof argv['report-read-reason'] === 'string' ? argv['report-read-reason'].trim() : '';
+  const reportReadDenied = reportReadGuard({
+    risk: meta.risk,
+    reportRead: Boolean(argv['report-read']),
+    reason: reportReadReason,
+  });
+  if (reportReadDenied) {
+    console.error('task-accept: ' + reportReadDenied.error);
+    console.error('  fix: ' + reportReadDenied.fix);
+    process.exit(1);
+  }
+
+  /*
+   * 0049: в записи — фактическая модель актора, а не «unknown» по умолчанию.
+   * Цепочка actorModel: DSH_MODEL → config.actor.model → unknown; последним
+   * шагом берётся модель, которую уже определил detectActor по actor.modelSources
+   * (обёртка проекта/legacy modelEnv) — известную модель запись не обедняет.
+   */
+  const factualActorModel = actorModel(config.actor || {}, process.env);
+  const recordActorModel = factualActorModel !== 'unknown' ? factualActorModel : actor.model;
+
+  /*
    * Решения (2.1.0). Приёмка не спорит с семантикой, но фиксирует её состояние:
    * unproven — решение о пользовательском контракте без критерия и без человека,
    * это отказ; assumed — решение без доказательства, принять можно (работа шла),
@@ -279,10 +307,10 @@ try {
   }
   for (const warning of [...attackApplied.warnings, ...attackFamilyApplied.warnings]) console.warn('task-accept: WARN ' + warning);
 
-  const actorModelLevel = issuedBy && issuedBy.model ? modelLevel(config, issuedBy.model, actor.model) : 'unknown';
+  const actorModelLevel = issuedBy && issuedBy.model ? modelLevel(config, issuedBy.model, recordActorModel) : 'unknown';
   const rolesApplied = applyLevel(
     gatePolicy.roles.modelFamily,
-    actorModelLevel === 'same-family' ? ['приёмщик той же модели/семейства, что постановщик (' + actor.model + ')'] : [],
+    actorModelLevel === 'same-family' ? ['приёмщик той же модели/семейства, что постановщик (' + recordActorModel + ')'] : [],
   );
   if (rolesApplied.errors.length) fail('роли: ' + rolesApplied.errors.join('; '));
   for (const warning of rolesApplied.warnings) console.warn('task-accept: WARN ' + warning);
@@ -298,14 +326,14 @@ try {
       dryRun: true,
       note: 'проверки не перезапускались',
       actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, source: actor.source, sourceKind: actor.sourceKind, keyId },
-      independence: { level: independence.level, basis: independence.basis, separateSession: independence.level !== 'same-session', reportWithheld: !argv['report-read'], keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key' },
+      independence: { level: independence.level, basis: independence.basis, separateSession: independence.level !== 'same-session', reportWithheld: !argv['report-read'], reportReadReason, keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key' },
       acceptance: {
         version: 6, status: 'accepted', task: String(meta.id), candidateCommit: null, tree: null, worktreeDigest: digest,
         decisions: { count: decisionSummary.count, digest: decisionSummary.digest, assumed: decisionSummary.assumed, confirmed: decisionSummary.confirmed },
         attack: attackCheck
           ? { present: true, sha256: sha256File(attackFile), session: attackCheck.critic.session || null, model: attackCheck.critic.model || null, family: attackCheck.family, level: attackCheck.level, findings: attackCheck.summary, attestation: 'declared' }
           : null,
-        actor: { model: actor.model, family: familyOf(config, actor.model) },
+        actor: { model: recordActorModel, family: familyOf(config, recordActorModel) },
         independence: { level: independence.level, modelLevel: actorModelLevel },
         releaseReady: decisionSummary.assumed.length === 0 && (!attackCheck || attackCheck.summary.unresolved === 0),
         acceptor, humanSignoff: Boolean(requiresHuman && humanSigner), signedBy: humanSigner,
@@ -443,8 +471,8 @@ try {
     actor: {
       kind: actor.kind,
       session: actor.session,
-      model: actor.model,
-      family: familyOf(config, actor.model),
+      model: recordActorModel,
+      family: familyOf(config, recordActorModel),
       host: actor.host,
       keyId,
       attestedBy: actor.attestedBy,
@@ -456,6 +484,7 @@ try {
       basis: independence.basis,
       separateSession: independence.level === 'separate-session' || independence.level === 'human',
       reportWithheld: !argv['report-read'],
+      reportReadReason,
       keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key',
       modelLevel: actorModelLevel,
     },
