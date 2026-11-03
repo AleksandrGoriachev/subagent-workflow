@@ -1,0 +1,156 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0039",
+  "title": "связь воркспейс → движок объявляется конфигом и кнопкой, а не ручной правкой карты",
+  "risk": "medium",
+  "taskFileSha256": "4033c0e214bed0dee23b3b35586da6c264169b4390ce94c9ea9b1eb3280c57f7",
+  "criteriaSha256": "aad6a630df514315d42f7e4cf062dcc11d0ad2a19489dedf607e82621f3350c3",
+  "criteriaJsonSha256": "726f339e7fb90f387843901f1f2843d0e78040d04e4978613dae47d6cba26eed",
+  "contractCommit": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+  "baseCommit": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+  "candidateCommit": "14a529b07517892b442282809bc90c55ad15006d",
+  "tree": "729699d18f45c298beced7adf446b3ee187541a2",
+  "worktreeDigest": "ae8e834664cd484a44a0fc192aad7f5f99ff46e29530c0689c6af6c3bbde9194",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-b8721a2a-456c-48a2-94cd-8030d895a8e8",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "6885b316-0a1a-421c-bffe-5580c00fda2c",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "444bfba467112832b02653ec39f64464",
+    "runKind": "accept",
+    "startedAt": "2026-11-03T11:41:20.067Z",
+    "finishedAt": "2026-11-03T11:46:06.295Z",
+    "durationMs": 286229,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "9d3c87315dec300cf6933ccfee576c0bbd732f43414abab1094a037fb6c67225",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+    "contractCommit": "9224fc53578adfe2f51adfd839955c578a0fa80a",
+    "criteriaJsonSha256": "726f339e7fb90f387843901f1f2843d0e78040d04e4978613dae47d6cba26eed",
+    "failed": 5,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "mustPass": [
+        "C6"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/engine-link.mjs c1",
+      "exitCode": 0,
+      "durationMs": 617,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/engine-link.mjs c2",
+      "exitCode": 0,
+      "durationMs": 803,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/engine-link.mjs c3",
+      "exitCode": 0,
+      "durationMs": 694,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/engine-link.mjs c4",
+      "exitCode": 0,
+      "durationMs": 98517,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/engine-link.mjs c5",
+      "exitCode": 0,
+      "durationMs": 1843,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/engine-link.mjs c6",
+      "exitCode": 0,
+      "durationMs": 174495,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-03T11:46:06.835Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 3,
+    "digest": "c8d08062e0c4670791a8a80c538709ab05fafb8f8082b8d25d21c94dc4d72ba9",
+    "assumed": [],
+    "confirmed": 3
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "cofmRczWCt+S2b8GFH7fa7Ubp6p57am4LcT0s01RyEF7X5ryNKWwswohBS/VxPTdpc4ChKSNhAl5IucwSOPTDw=="
+}
