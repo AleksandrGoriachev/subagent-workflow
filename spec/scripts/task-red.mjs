@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, repoRoot, git, dirtyPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, truncate, writeJson, writeText,
-  formatMs, evaluateRedExpectation,
+  formatMs, evaluateRedExpectation, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 
 const NL = String.fromCharCode(10);
@@ -206,6 +206,21 @@ try {
   };
   writeJson(files.red, output);
   writeText(files.redLog, log.join(NL));
+
+  /*
+   * 0051: журнал вердиктов — одна строка на прогон, с причинами отказа каждого
+   * критерия. Сбой журнала не валит ворота: WARN в stdout, код возврата прежний.
+   */
+  const journal = appendGateRecord(gateJournalFile(taskDir), gateRecord({
+    kind: 'red',
+    task: String(meta.id),
+    head: headSha,
+    criteria: gateCriteriaOf(results),
+    verdict: redProven ? 'red-proven' : 'red-not-proven',
+    bypasses,
+    exitSummary: 'exit=' + (redProven ? 0 : 1) + '; failed=' + failed.length + '/' + executed,
+  }));
+  if (!journal.ok) console.log('WARN журнал ворот: ' + journal.error);
 
   if (argv.json) {
     console.log(JSON.stringify(output, null, 2));

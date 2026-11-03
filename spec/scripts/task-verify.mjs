@@ -5,6 +5,7 @@ import {
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, writeJson, writeText,
   formatMs, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
   checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
+  gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 
@@ -230,6 +231,23 @@ try {
   };
   writeJson(files.verify, output);
   writeText(files.verifyLog, log.join(NL));
+
+  /*
+   * 0051: журнал вердиктов — одна строка на прогон, с причинами отказа каждого
+   * критерия. Digest дерева журнал не задевает: каталог задания исключён из
+   * computeWorktreeDigest. Сбой журнала не валит ворота: WARN, код возврата прежний.
+   */
+  const journal = appendGateRecord(gateJournalFile(taskDir), gateRecord({
+    kind: 'verify',
+    task: String(meta.id),
+    head: headSha,
+    criteria: gateCriteriaOf(results),
+    verdict: allPassed ? 'passed' : 'failed',
+    bypasses,
+    exitSummary: 'exit=' + (allPassed ? 0 : 1) + '; failed=' + failed.length + '/' + results.length
+      + (violations.length ? '; violations=' + violations.length : ''),
+  }));
+  if (!journal.ok) console.log('WARN журнал ворот: ' + journal.error);
 
   if (argv.json) {
     console.log(JSON.stringify(output, null, 2));

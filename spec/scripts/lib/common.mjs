@@ -255,6 +255,146 @@ export function taskFiles(taskDir) {
   };
 }
 
+/*
+ * Журнал вердиктов ворот (2.6.18, 0051): append-only docs/tasks/<id>/gates.jsonl.
+ *
+ * Замер structure (письмо --127): «сколько раз ворота отказали и сколько это
+ * стоило — сейчас неизмеримо; цена переделок считается косвенно, по git log».
+ * red.log/verify.log пишут только успешный прогон целиком, поэтому отказ и его
+ * причина исчезают: JSON-артефакт пишется один раз и перезаписывается, а
+ * журнал — дописывается. Одна строка на прогон ворот: время (+03:00, как в
+ * остальных артефактах), вид ворот, задание, HEAD, критерии с exit/ms/причинами,
+ * вердикт, обходы, сводка выхода.
+ *
+ * Запись не бросает: сбой журнала — WARN вызывающего, а не падение ворот
+ * (инвариант 3 задания). Порядок строк — порядок прогонов, прежние строки не
+ * переписываются (инвариант 2).
+ */
+export const GATE_JOURNAL = 'gates.jsonl';
+
+export function gateJournalFile(taskDir) {
+  return path.join(taskDir, GATE_JOURNAL);
+}
+
+/* Смещение журнала: +03:00, как в red.json/verify.json этого пакета. */
+const GATE_OFFSET_MINUTES = 180;
+
+function padGateTime(value, width = 2) {
+  return String(value).padStart(width, '0');
+}
+
+function formatGateTime(date) {
+  const shifted = new Date(date.getTime() + GATE_OFFSET_MINUTES * 60000);
+  return shifted.getUTCFullYear() + '-' + padGateTime(shifted.getUTCMonth() + 1) + '-' + padGateTime(shifted.getUTCDate())
+    + 'T' + padGateTime(shifted.getUTCHours()) + ':' + padGateTime(shifted.getUTCMinutes()) + ':' + padGateTime(shifted.getUTCSeconds())
+    + '.' + padGateTime(shifted.getUTCMilliseconds(), 3) + '+03:00';
+}
+
+/**
+ * Время записи журнала. Строка с явным смещением (Z или ±hh:mm) сохраняется
+ * дословно: её мог передать вызывающий, и переписывать чужие часы не наше дело.
+ * Всё остальное (Date, число, строка без смещения, мусор) приводится к ISO со
+ * смещением +03:00; отсутствие времени — «сейчас».
+ */
+export function gateAt(value) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (text !== '' && /(?:Z|[+-]\d{2}:\d{2})$/u.test(text) && !Number.isNaN(Date.parse(text))) return text;
+  if (text !== '') {
+    const parsed = Date.parse(text);
+    return Number.isNaN(parsed) ? text : formatGateTime(new Date(parsed));
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return formatGateTime(value);
+  if (typeof value === 'number' && Number.isFinite(value)) return formatGateTime(new Date(value));
+  return formatGateTime(new Date());
+}
+
+function gateNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Один критерий в записи: id, exitCode, durationMs, passed и причины отказа.
+ * Причины — то, что нельзя восстановить по git log; пустой список не пишется,
+ * чтобы успешный критерий не выглядел как «причина была, но потерялась».
+ */
+function normalizeGateCriterion(criterion) {
+  const source = criterion && typeof criterion === 'object' && !Array.isArray(criterion) ? criterion : {};
+  const out = {
+    id: source.id === undefined || source.id === null ? '' : String(source.id),
+    exitCode: gateNumber(source.exitCode),
+    durationMs: gateNumber(source.durationMs),
+    passed: source.passed === true,
+  };
+  const reasons = Array.isArray(source.reasons)
+    ? source.reasons.map((reason) => String(reason)).filter((reason) => reason !== '')
+    : [];
+  if (reasons.length > 0) out.reasons = reasons;
+  return out;
+}
+
+/** Строки результатов ворот ({ id, exitCode, durationMs, passed, reasons }) → критерии записи. */
+export function gateCriteriaOf(results) {
+  return (Array.isArray(results) ? results : []).map((result) => normalizeGateCriterion(result));
+}
+
+/**
+ * Нормализованная запись журнала вердиктов:
+ * { at, kind, task, head, criteria, verdict, bypasses?, exitSummary? }.
+ * Функция чистая: ничего не читает и не пишет, поэтому ею же пользуется проверка.
+ */
+export function gateRecord(record) {
+  const source = record && typeof record === 'object' && !Array.isArray(record) ? record : {};
+  const entry = {
+    at: gateAt(source.at),
+    kind: source.kind === undefined || source.kind === null ? '' : String(source.kind),
+    task: source.task === undefined || source.task === null ? '' : String(source.task),
+    head: source.head === undefined || source.head === null ? null : String(source.head),
+    criteria: Array.isArray(source.criteria) ? source.criteria.map((item) => normalizeGateCriterion(item)) : [],
+    verdict: source.verdict === undefined || source.verdict === null ? null : String(source.verdict),
+  };
+  if (source.bypasses && typeof source.bypasses === 'object' && !Array.isArray(source.bypasses)) entry.bypasses = source.bypasses;
+  if (source.exitSummary !== undefined && source.exitSummary !== null) entry.exitSummary = source.exitSummary;
+  return entry;
+}
+
+/**
+ * Append-only запись одной строки JSONL. Каталог и файл создаются при первом
+ * прогоне, прежние строки не читаются и не переписываются. Ошибка записи НЕ
+ * бросает: возвращается { ok: false, error }, чтобы ворота напечатали WARN и
+ * сохранили свой код возврата.
+ */
+export function appendGateRecord(file, record) {
+  try {
+    const target = path.resolve(String(file));
+    const entry = gateRecord(record);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    /*
+     * Файл, дописанный не нами и оборванный без перевода строки, склеил бы две
+     * записи в одну. Добавляем только разделитель — содержимое не трогаем.
+     */
+    let prefix = '';
+    if (exists(target)) {
+      const size = fs.statSync(target).size;
+      if (size > 0) {
+        const fd = fs.openSync(target, 'r');
+        try {
+          const last = Buffer.alloc(1);
+          fs.readSync(fd, last, 0, 1, size - 1);
+          if (last[0] !== 0x0a) prefix = String.fromCharCode(10);
+        } finally {
+          fs.closeSync(fd);
+        }
+      }
+    }
+    const line = prefix + JSON.stringify(entry) + String.fromCharCode(10);
+    fs.appendFileSync(target, line, 'utf8');
+    return { ok: true, file: target, kind: entry.kind, at: entry.at, bytes: Buffer.byteLength(line, 'utf8') };
+  } catch (error) {
+    return { ok: false, error: error && error.message ? String(error.message) : String(error) };
+  }
+}
+
 export function readTask(taskDir) {
   const files = taskFiles(taskDir);
   if (!exists(files.taskMd)) fail('Нет task.md в ' + taskDir);

@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, repoRoot, runSync, quoteArg, exists,
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
-  summarizeDecisions, evaluateEffects,
+  summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
 import { reportReadGuard, actorModel } from './lib/acceptance-policy.mjs';
@@ -549,6 +549,23 @@ try {
   ])].filter((file) => file !== acceptanceRel);
   const ignored = ignoredPaths(repo, candidatePaths);
   const candidateFiles = candidatePaths.filter((file) => !ignored.has(file));
+  /*
+   * 0051: строка журнала вердиктов — до сборки кандидата, чтобы запись журнала
+   * попала в кандидатное дерево вместе с остальными артефактами задания (иначе
+   * после reset --hard кандидата последняя строка терялась бы). Критерии — из
+   * свежего прогона приёмщика. Сбой журнала не валит приёмку: WARN, exit прежний.
+   */
+  const journal = appendGateRecord(gateJournalFile(taskDir), gateRecord({
+    kind: 'accept',
+    task: String(meta.id),
+    head: verify.headSha || contractCommit,
+    criteria: gateCriteriaOf(verify.results || []),
+    verdict: 'accepted',
+    bypasses,
+    exitSummary: 'exit=0; accepted; checks=' + ((verify.results || []).length) + '; releaseReady=' + releaseReady,
+  }));
+  if (!journal.ok) console.log('WARN журнал ворот: ' + journal.error);
+
   /*
    * 0011: запись текущего задания передаётся в кандидат явно — createCandidate
    * удаляет её из индекса после read-tree HEAD, чтобы metadata-коммит не
