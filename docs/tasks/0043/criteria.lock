@@ -1,0 +1,273 @@
+{
+  "version": 3,
+  "task": "0043",
+  "taskFileSha256": "0292e99adef97486b6cb3be4b7265b0381a3ebdbbc3a97d319eb77e02e560e07",
+  "criteriaSha256": "3ba504d9c00ce818525d07dccd7cc24f8a122126eec5b15589c552592561815c",
+  "criteriaJsonSha256": "e0838b648f55f25f0c282084f83b3c3df066f09f093c9d3572c4b15828754f8a",
+  "attackSha256": null,
+  "contractCommit": "5a64c4a03dd64867afbb025b6b87fa232ab84911",
+  "protected": [
+    {
+      "path": "package.json",
+      "sha256": "9b56fa2575bc1297e32bfdd40b69decb3fb6f4a17a5e2a68f326d43d3c28fdb8"
+    },
+    {
+      "path": "plugin/BACKLOG.md",
+      "sha256": "b5eb99b0da27c85451730f77b2581fab951bf661ed00ad12c7f4b28c67d80a2e"
+    },
+    {
+      "path": "plugin/LICENSE",
+      "sha256": "6faae4701bd1ae1f4d4a359a66a6a5d1bbcd4ce7917150fa5e824057a2f484c0"
+    },
+    {
+      "path": "plugin/PLUGIN-PLAN.md",
+      "sha256": "bc3bee3a7fc0f0cc1a3b805813554de8608bb26556b849e29c2dbeb34e3ae227"
+    },
+    {
+      "path": "plugin/README.md",
+      "sha256": "c2a78f146c4abae532163f2dff19503c4105874f7ce55c1d91ae239b6a2ef5c8"
+    },
+    {
+      "path": "plugin/cordis.patch.yml",
+      "sha256": "9217cb4524dcd8cada1d840f5a03ee36501bca989f21fd331acdccaf113d50bd"
+    },
+    {
+      "path": "plugin/lib/api.js",
+      "sha256": "12bd27b406e1d0e4dd7616d45ab007c102d234311e4e0933c3ecf7cba2b05c08"
+    },
+    {
+      "path": "plugin/lib/checks.js",
+      "sha256": "71e5a9642c8b39c09409ce16487c3c538c3a384e0440874df8f1008d5cfb6947"
+    },
+    {
+      "path": "plugin/lib/client.js",
+      "sha256": "f70e382d395891f4be606b799ddc2bec517ec7668025171f7b216fc1f3be22d1"
+    },
+    {
+      "path": "plugin/lib/compat.js",
+      "sha256": "4bdf9289f68136dd84d1ebc48e9b0421e810964c133081ca18b24704e1d4384f"
+    },
+    {
+      "path": "plugin/lib/deploy.js",
+      "sha256": "79383091d47c5625e15e48d3a20cc35e7ff237e650bb8ea7aaf7c0b096346fa6"
+    },
+    {
+      "path": "plugin/lib/engine-root.js",
+      "sha256": "f56baa2bce360db90b5e7f0d21d1e66d9fa6a10ec7e3e74a532b302fc1810c7f"
+    },
+    {
+      "path": "plugin/lib/guard.js",
+      "sha256": "0fce3ebbbe7dcc1713cfe0d795e5e8bd7af063bc44f7513b3a60bdaeda2a584c"
+    },
+    {
+      "path": "plugin/lib/index.js",
+      "sha256": "86570ecd5a7bfa31b44df30a9ed75738a1d525595f13b95db70d0481f8bde660"
+    },
+    {
+      "path": "plugin/lib/state.js",
+      "sha256": "03cb45af560411bb66f14258958d17596d5d1dcfd5afbd79d6cf6476f1d049e1"
+    },
+    {
+      "path": "plugin/package.json",
+      "sha256": "49c34ba76d3017ea7a003fb3c2475372007a4824ca4e975254087af474c2b184"
+    },
+    {
+      "path": "plugin/test/api.test.mjs",
+      "sha256": "314ec3f4304800299311c39dc47553df97e402c8abe3262391b8995d1b17420a"
+    },
+    {
+      "path": "plugin/test/client.test.mjs",
+      "sha256": "227632f1e9e0b30b6294975dd9a1d414527589f66870e465a74b19034091385d"
+    },
+    {
+      "path": "plugin/test/compat.test.mjs",
+      "sha256": "01492bfb642f03e82a050ab8fe7a6da325e78c393a8342f2a5e75ff13d8664a1"
+    },
+    {
+      "path": "plugin/test/engine-link.test.mjs",
+      "sha256": "80f305aeec4924f6846a682d5244a6842d26e1da6ff03d38cc052ae7a87daf54"
+    },
+    {
+      "path": "plugin/test/engine-root.test.mjs",
+      "sha256": "aae067b900621e3aa904988dafd306f489465aa918f30817baeb410317bf1429"
+    },
+    {
+      "path": "plugin/test/fixture.mjs",
+      "sha256": "82fb47486f11c5f247b8aa29a86f4444ed7d8faf973aaf85c64bcf652c14bd8a"
+    },
+    {
+      "path": "plugin/test/panel-older.test.mjs",
+      "sha256": "81ef75901e1b1df0eefe32fc86bb980a4986085948ca9e99a4ea487eff645963"
+    },
+    {
+      "path": "plugin/test/state.test.mjs",
+      "sha256": "8a6ad564f9cf31af2c22238f630aa86b2e7baffe80adcfb1eceed020b4abbdb3"
+    },
+    {
+      "path": "plugin/tools/dev-server.mjs",
+      "sha256": "ed0be126adfc3a9da369333d85bc54671be2886796d689ab53fb80ef064ee15a"
+    },
+    {
+      "path": "plugin/tools/test.mjs",
+      "sha256": "8b176b652052b7ce22277c0fc8a7d163639fa80de65fced0f2f5e19588795ea4"
+    },
+    {
+      "path": "spec/checks/acceptance-p0.mjs",
+      "sha256": "436b8ffd5c688851a999edec71eddffb3496f546eb844e308d26d23a1a507ac1"
+    },
+    {
+      "path": "spec/checks/acceptance-record.mjs",
+      "sha256": "9e5b5d4a21bc7a27ea045129581b2ed0e26622380c76e09ce64e17808a270221"
+    },
+    {
+      "path": "spec/checks/acceptance-schema.mjs",
+      "sha256": "9c8f1b4abda2847d4fb3abba66f5d75ddb7326f9961dee5618e62e9710712bf7"
+    },
+    {
+      "path": "spec/checks/actor-sources.mjs",
+      "sha256": "e4dc8705d8b3a171c900a9fa4e8d5420f8c5a59348df861dbb7680876906d327"
+    },
+    {
+      "path": "spec/checks/ci-behavior.mjs",
+      "sha256": "90f06040e1e393e202e08db1b7e104406b0778cdac4d129c04f85db94e9d6a49"
+    },
+    {
+      "path": "spec/checks/ci-guard-step.mjs",
+      "sha256": "30fdaa5104504bd5b03ba669a57676824366376a1811d80243aaf06c804aec59"
+    },
+    {
+      "path": "spec/checks/contract-selfcheck.mjs",
+      "sha256": "a04fdd64fb0d80fafcfe8c2dc92c6d645acc0ae41f51e22624d01bdb0db4fb0e"
+    },
+    {
+      "path": "spec/checks/covers-severity.mjs",
+      "sha256": "ff598eec67bd34bc210d68ba2381d6e16a791fc8f871e0d3958fcc68456b0dbd"
+    },
+    {
+      "path": "spec/checks/deploy-safety.mjs",
+      "sha256": "74a974c58445fe937ceadedb8c5b00d1d2fe888b999107b779a0c6a4ad0efadb"
+    },
+    {
+      "path": "spec/checks/deployed-copy.mjs",
+      "sha256": "0c4d069571d1c95c0ead6effdea77179ba4b53f37c6502d242b6a180a88f482d"
+    },
+    {
+      "path": "spec/checks/doctor-keys.mjs",
+      "sha256": "d05312966b3e759717015f767e79c5ec42ada36b61f535b21ab31594de4f2b65"
+    },
+    {
+      "path": "spec/checks/engine-link.mjs",
+      "sha256": "0407a8cd3205f3edb1572d8e75d0ba4bea465a9d932ba90ae9fe5d16d355c9e3"
+    },
+    {
+      "path": "spec/checks/engine-root.mjs",
+      "sha256": "70f04ec0e1354ef7b291fdec0441de75abe5ce0a3a23e70c3f39af3b4005bbcf"
+    },
+    {
+      "path": "spec/checks/external-engine.mjs",
+      "sha256": "db6be4a024ac4e8dafd8493d9f8930ce9d693d11da1d1f43aad8e5f874d073a4"
+    },
+    {
+      "path": "spec/checks/gate-rules.mjs",
+      "sha256": "d3039860c3cb57d84b011d6d8529635cb5a51d11ff941d453945d362f063dd07"
+    },
+    {
+      "path": "spec/checks/guard-acceptance.mjs",
+      "sha256": "0a5cbe6506c1d15abf47c64d8db1604d9036605c8c6a255749b929beeaf268bb"
+    },
+    {
+      "path": "spec/checks/hooks-mode.mjs",
+      "sha256": "a1303566a1d89aa349891da32071d241cc40e47590eb9029059f48a9e53ba707"
+    },
+    {
+      "path": "spec/checks/outside-package.mjs",
+      "sha256": "f463f5511fbf4c0d0157fb983d056e1335180834716f4312623bdd22bd9bfc0a"
+    },
+    {
+      "path": "spec/checks/panel-deploy.mjs",
+      "sha256": "5e27a6e528ba3b69ae42419c9014b907762d325951677878c9e7b2b828163edc"
+    },
+    {
+      "path": "spec/checks/panel-doctor.mjs",
+      "sha256": "d19d5542d6ef74fded5291d7da9f2b1ded5170eed167682261f02b9e0cf15330"
+    },
+    {
+      "path": "spec/checks/panel-older.mjs",
+      "sha256": "55342152a9e3be26dc9bc57205ae0a66968f1b52e260e27c244b0378ae96c408"
+    },
+    {
+      "path": "spec/checks/release-hygiene.mjs",
+      "sha256": "50cf7adfa0f5bf05f843263d117c895df5e216d7be18ac14fad0dfe7c47f05b5"
+    },
+    {
+      "path": "spec/checks/targeted-tests.mjs",
+      "sha256": "4dc1887296a0afe75792eb116fc6fda79f82b345bb46a83e7f1f83bd32f27e7a"
+    },
+    {
+      "path": "spec/checks/update-flow.mjs",
+      "sha256": "70c5150a1611c6af15da198351a83493d9ed9c68c03f0f8df8ee6c4b16efb7b0"
+    },
+    {
+      "path": "spec/checks/version-drift.mjs",
+      "sha256": "9dbcb541bdd82bea6917736254f06fba991b8e77f969c74a10295fd80360d4b6"
+    },
+    {
+      "path": "spec/scripts/lib/attack.mjs",
+      "sha256": "95ed1737ede602fc03ac8577c98f566bbd6e24991e9eb977069ff7ac6ada6a6e"
+    },
+    {
+      "path": "spec/scripts/lib/common.mjs",
+      "sha256": "ae65125521deb725e274246a962294e6768bc72b9601ead3c57f981b10de062c"
+    },
+    {
+      "path": "spec/scripts/lib/policy.mjs",
+      "sha256": "036701d685fca8da11caf935a87fb3b9e8ea59faf932b60bb9a65205b5aad918"
+    },
+    {
+      "path": "spec/scripts/lib/regress.mjs",
+      "sha256": "23c826b8d13a2ab1ef91c53bdece0ece7e66435e794d31cb726bd85dbb14ae2a"
+    },
+    {
+      "path": "spec/scripts/lib/review.mjs",
+      "sha256": "d387db287df453f04eca92281b11087ead555d576568746d81637e25e28d97cc"
+    },
+    {
+      "path": "spec/scripts/task-accept.mjs",
+      "sha256": "6221c84400c5074cd91fb5784872a6850864e08bb5e156b3ad1dec635beca3e5"
+    },
+    {
+      "path": "spec/scripts/task-attack.mjs",
+      "sha256": "745bbb7a84fa6e8957399f3f4a5686f5d02653b4b531c5378df94a978f6127d2"
+    },
+    {
+      "path": "spec/scripts/task-check-acceptance.mjs",
+      "sha256": "ba4f32e6214b6ae1dc548f58b3e778c43c6784c216c104f250e35bf67c65a663"
+    },
+    {
+      "path": "spec/scripts/task-guard.mjs",
+      "sha256": "f82a028e724c793e6fc7fb79827454a5ac50bf9c895adf77d11724a8ec0d8c15"
+    },
+    {
+      "path": "spec/scripts/task-hash.mjs",
+      "sha256": "252b7becadbaddf8e152dc645228e407e7997edf9b31388d1c1c573fb20fbbe8"
+    },
+    {
+      "path": "spec/scripts/task-lint.mjs",
+      "sha256": "00aade913a325f2c0a4d63bccf8face8f8a9026e13ce5ce3ffb3a306e61ac729"
+    },
+    {
+      "path": "spec/scripts/task-red.mjs",
+      "sha256": "c4f44bbdec7c7a857b699ed73bc672f98f384a8b5650d859d13f8c64f8a8b6b9"
+    },
+    {
+      "path": "spec/scripts/task-regress.mjs",
+      "sha256": "0cdf60ed925992a628fbed940281fa61702b178334dce5aca399159c6342f8eb"
+    },
+    {
+      "path": "spec/scripts/task-verify.mjs",
+      "sha256": "8023e919d7db28880aa619aa129abfc19815d84a0b1f2f887f85bf115e79511a"
+    }
+  ],
+  "createdAt": "2026-11-03T20:19:33.391Z",
+  "tool": "subagent-workflow/2.6.16"
+}
