@@ -1,0 +1,45 @@
+{
+  "task": "0051",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2"],
+    "mustPass": ["C3"],
+    "reasons": {
+      "C1": "GATES FAIL c1",
+      "C2": "GATES FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Запись журнала вердиктов",
+      "command": "node spec/checks/gates-journal.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/common.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "GATES OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Ворота пишут журнал",
+      "command": "node spec/checks/gates-journal.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast"],
+      "covers": ["spec/scripts/task-red.mjs", "spec/scripts/task-verify.mjs", "spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "GATES OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
