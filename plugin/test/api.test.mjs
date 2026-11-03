@@ -781,3 +781,78 @@ test('POST /workflow/api/update обновляет движок и защища�
     try { fsMod.rmSync(repo, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 }); } catch {}
   }
 });
+
+/*
+ * 2.6.16 (0042): обновление внешнего движка в ЕГО репозитории. Явный target
+ * отличает эту запись от запрещённой записи в воркспейс; без confirm — 400,
+ * у локального движка отдельного репозитория нет — 400 engine-not-external.
+ */
+test('POST /workflow/api/update target engine-repo обновляет репозиторий внешнего движка (0042)', async () => {
+  const fsMod = await import('node:fs');
+  const pathMod = await import('node:path');
+  const { deployWorkflow, availableSpecRoot } = await import('../lib/deploy.js');
+  const dir = fsMod.mkdtempSync(pathMod.join(os.tmpdir(), 'wf-engine-repo-'));
+  const ws = pathMod.join(dir, 'ws');
+  const engine = pathMod.join(dir, 'engine');
+  fsMod.mkdirSync(ws, { recursive: true });
+  fsMod.mkdirSync(engine, { recursive: true });
+  git(engine, ['init', '-q']);
+  const mapFile = pathMod.join(dir, 'engine-roots.json');
+  const previous = process.env.WF_ENGINE_ROOTS;
+  try {
+    const deployed = deployWorkflow(engine, { specRoot: availableSpecRoot() });
+    assert.equal(deployed.ok, true, 'движок развёрнут в отдельном репозитории');
+    fsMod.writeFileSync(pathMod.join(engine, 'docs', 'subagent-workflow', 'VERSION'), '1.9.0\n');
+    const target = fsMod.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim();
+    fsMod.writeFileSync(mapFile, JSON.stringify({ [ws]: engine }, null, 2) + '\n');
+    process.env.WF_ENGINE_ROOTS = mapFile;
+
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [ws] }));
+    let response = await call(handler, '/workflow/api/status?root=' + encodeURIComponent(ws));
+    assert.equal(response.json.engine.mode, 'mapped');
+    assert.equal(response.json.engine.version, '1.9.0');
+
+    /* Запись в сам воркспейс по-прежнему запрещена. */
+    response = await call(handler, '/workflow/api/update', { method: 'POST', body: { root: ws, confirm: true } });
+    assert.equal(response.status, 409);
+    assert.equal(response.json.code, 'engine-external');
+
+    /* Без подтверждения — 400 и ничего не пишется. */
+    response = await call(handler, '/workflow/api/update', { method: 'POST', body: { root: ws, target: 'engine-repo' } });
+    assert.equal(response.status, 400);
+    assert.equal(fsMod.readFileSync(pathMod.join(engine, 'docs', 'subagent-workflow', 'VERSION'), 'utf8').trim(), '1.9.0');
+
+    response = await call(handler, '/workflow/api/update', {
+      method: 'POST',
+      body: { root: ws, target: 'engine-repo', confirm: true },
+    });
+    assert.equal(response.status, 200, JSON.stringify(response.json).slice(0, 400));
+    assert.equal(response.json.ok, true);
+    assert.equal(response.json.engineRepo, engine);
+    assert.equal(response.json.version, target);
+    assert.equal(fsMod.readFileSync(pathMod.join(engine, 'docs', 'subagent-workflow', 'VERSION'), 'utf8').trim(), target);
+    assert.equal(fsMod.existsSync(pathMod.join(ws, 'docs')), false, 'воркспейс не изменён');
+
+    response = await call(handler, '/workflow/api/status?root=' + encodeURIComponent(ws));
+    assert.equal(response.json.engine.version, target, 'status отдаёт новую версию внешнего движка');
+
+    /* Локальный движок: отдельного репозитория нет — отказ, а не запись. */
+    const local = fsMod.mkdtempSync(pathMod.join(dir, 'local-'));
+    git(local, ['init', '-q']);
+    const localDeploy = deployWorkflow(local, { specRoot: availableSpecRoot() });
+    assert.equal(localDeploy.ok, true, 'локальный движок развёрнут');
+    fsMod.writeFileSync(pathMod.join(local, 'docs', 'subagent-workflow', 'VERSION'), '1.9.0\n');
+    const localHandler = createWebHandler(createWorkflowRuntime({ roots: [local] }));
+    response = await call(localHandler, '/workflow/api/update', {
+      method: 'POST',
+      body: { root: local, target: 'engine-repo', confirm: true },
+    });
+    assert.equal(response.status, 400);
+    assert.equal(response.json.code, 'engine-not-external');
+    assert.equal(fsMod.readFileSync(pathMod.join(local, 'docs', 'subagent-workflow', 'VERSION'), 'utf8').trim(), '1.9.0');
+  } finally {
+    if (previous === undefined) delete process.env.WF_ENGINE_ROOTS;
+    else process.env.WF_ENGINE_ROOTS = previous;
+    try { fsMod.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 }); } catch {}
+  }
+});

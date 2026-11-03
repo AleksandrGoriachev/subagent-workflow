@@ -155,6 +155,46 @@ export function deployedVersion(root) {
   return value === '' ? null : value;
 }
 
+/**
+ * 2.6.16 (0042): репозиторий внешнего движка, который можно обновить из панели.
+ *
+ * Чистая функция: принимает результат резолвера движка (engine-root.js) и
+ * ничего не читает с диска. Внешним считается только подключённый снаружи
+ * движок — картой (source 'mapping') или конфигом профиля (source 'config').
+ * У локального движка (source 'workspace') отдельного репозитория нет: обновлять
+ * его «в репозитории движка» значило бы записать в сам воркспейс, поэтому отказ,
+ * а не молчаливая запись.
+ *
+ * @param {{installed?: boolean, source?: string, root?: string}|null} engine
+ * @returns {{ok: true, repo: string}|{ok: false, code: 'engine-not-external', error: string, hint: string}}
+ */
+export function externalEngineRepo(engine) {
+  const value = engine && typeof engine === 'object' ? engine : {};
+  const external = value.installed === true
+    && (value.source === 'mapping' || value.source === 'config');
+  if (!external) {
+    return {
+      ok: false,
+      code: 'engine-not-external',
+      error: 'у движка в этом воркспейсе нет отдельного репозитория: он развёрнут здесь'
+        + (value.source ? ' (source ' + value.source + ')' : ''),
+      hint: 'Обновление в репозитории движка применимо только к внешнему движку — карта '
+        + '~/.dsh/workflow/engine-roots.json или config.engines.roots. Локальный движок '
+        + 'обновляется кнопкой «Обновить движок».',
+    };
+  }
+  const repo = typeof value.root === 'string' ? value.root.trim() : '';
+  if (repo === '') {
+    return {
+      ok: false,
+      code: 'engine-not-external',
+      error: 'внешний движок не называет путь своего репозитория',
+      hint: 'Проверьте запись карты или config.engines.roots: путь движка должен существовать.',
+    };
+  }
+  return { ok: true, repo: path.resolve(repo) };
+}
+
 function actorOf(options = {}) {
   const candidates = [
     options.actor,

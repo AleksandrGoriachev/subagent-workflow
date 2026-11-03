@@ -111,7 +111,12 @@ export async function runCheck(spec, options = {}) {
           cwd: spec.cwd,
           stdio: ['ignore', fd, fd],
           windowsHide: true,
-          env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' },
+          /*
+           * 2.6.16 (0042): проверка запущена панелью, а не сессией агента. В
+           * процессе DSH-хоста DSH_SESSION_ID нет, и doctor без маркера честно
+           * краснел бы на здоровом воркспейсе. Маркер — вход в его ветку WARN.
+           */
+          env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0', WF_CHECK_CONTEXT: 'panel' },
         });
       } catch (error) {
         spawnError = error;

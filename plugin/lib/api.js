@@ -42,6 +42,7 @@ import { writeGuardEnabled, readGuard, GUARD_CONFIG_REL } from './guard.js';
 import {
   deployWorkflow,
   updateWorkflowAsync,
+  externalEngineRepo,
   availableSpecRoot,
   availableVersion,
   tasksInProgress,
@@ -343,6 +344,19 @@ function refuseExternalWrite(runtime, res, rootValue) {
 function refuseExternalWriteBeforeBody(runtime, res, queryRoot) {
   if (allowedRoots(runtime).length !== 1) return false;
   return refuseExternalWrite(runtime, res, queryRoot);
+}
+
+/**
+ * 2.6.16 (0042): статус ответа /api/update по результату обновления.
+ * Общий для прямого обновления воркспейса и для явного обновления репозитория
+ * внешнего движка: коды отказа одни и те же (deploy.js), меняется только цель.
+ */
+function updateResponseStatus(report) {
+  if (report && report.ok === true) return 200;
+  const code = report && report.code;
+  if (code === 'tasks-in-progress' || code === 'up-to-date' || code === 'panel-older') return 409;
+  if (code === 'not-found') return 404;
+  return 400;
 }
 
 function selectRoot(runtime, value) {
@@ -742,13 +756,69 @@ export function createWebHandler(runtime) {
           sendJson(res, problem.status, { error: problem.error });
           return;
         }
-        /* 2.6.9: внешний движок — отказ до чтения тела. */
-        if (refuseExternalWriteBeforeBody(runtime, res, url.searchParams.get('root'))) return;
+        /*
+         * 2.6.16 (0042): тело читается до решения о внешнем движке. Явный
+         * target: 'engine-repo' отличает «обнови репозиторий движка» от
+         * «обнови этот воркспейс», и различить их до чтения тела нельзя.
+         * Отказ engine-external для воркспейса остаётся: он выдаётся ниже, как
+         * только видно, что target не engine-repo.
+         */
         let body;
         try {
           body = await readJsonBody(req);
         } catch (error) {
           sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        if (body.target === 'engine-repo') {
+          /*
+           * 0042: обновление РЕПОЗИТОРИЯ ДВИЖКА, а не воркспейса. Воркспейс не
+           * меняется, поэтому 409 engine-external здесь неуместен: запись идёт
+           * туда, откуда читается движок. Подтверждение и разрешённый корень
+           * проверяются как у остальных записей панели.
+           */
+          if (body.confirm !== true) {
+            sendJson(res, 400, {
+              error: 'обновление движка в репозитории требует confirm: true',
+              code: 'confirm-required',
+            });
+            return;
+          }
+          const selected = selectRoot(runtime, body.root);
+          if (!selected.root) {
+            sendJson(res, 400, { error: selected.error });
+            return;
+          }
+          if (!fs.existsSync(selected.root)) {
+            sendJson(res, 404, { error: 'корень не найден: ' + selected.root });
+            return;
+          }
+          const engine = resolveRuntimeEngine(runtime, selected.root);
+          const engineTarget = externalEngineRepo(engine);
+          if (engineTarget.ok !== true) {
+            sendJson(res, 400, {
+              error: engineTarget.error,
+              code: engineTarget.code || 'engine-not-external',
+              hint: engineTarget.hint,
+              root: selected.root,
+              engine: engineView(engine),
+            });
+            return;
+          }
+          /*
+           * Запись — тем же механизмом, что и прямое обновление: init --force
+           * из вложенной спеки в репозитории движка. Своей копии init здесь нет.
+           */
+          const report = await updateWorkflowAsync(engineTarget.repo, {
+            specRoot: availableSpecRoot(),
+            allowInProgress: body.allowInProgress === true,
+          });
+          sendJson(res, updateResponseStatus(report), {
+            plugin: runtime.plugin,
+            root: selected.root,
+            engineRepo: engineTarget.repo,
+            ...report,
+          });
           return;
         }
         /* 2.6.9: внешний движок — обновление в этом воркспейсе запрещено. */
@@ -776,18 +846,7 @@ export function createWebHandler(runtime) {
           specRoot: availableSpecRoot(),
           allowInProgress: body.allowInProgress === true,
         });
-        const status = report.ok
-          ? 200
-          : report.code === 'tasks-in-progress'
-            ? 409
-            : report.code === 'up-to-date'
-              ? 409
-              : report.code === 'panel-older'
-                ? 409
-                : report.code === 'not-found'
-                  ? 404
-                  : 400;
-        sendJson(res, status, { plugin: runtime.plugin, root: target.root, ...report });
+        sendJson(res, updateResponseStatus(report), { plugin: runtime.plugin, root: target.root, ...report });
         return;
       }
 

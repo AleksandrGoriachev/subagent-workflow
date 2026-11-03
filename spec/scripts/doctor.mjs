@@ -29,6 +29,12 @@ function args(argv) {
 const argv = args(process.argv.slice(2));
 const repo = path.resolve(String(argv.repo || process.cwd()));
 const checks = [];
+/*
+ * 2.6.16 (0042): панель спавнит проверки в процессе DSH-хоста, где нет
+ * DSH_SESSION_ID. Маркер контекста ставит plugin/lib/checks.js. Без него
+ * вердикт прежний: доктор, запущенный руками, по-прежнему честно краснеет.
+ */
+const PANEL_CONTEXT = String(process.env.WF_CHECK_CONTEXT || '').trim().toLowerCase() === 'panel';
 function check(name, ok, detail, severity = 'fail') { checks.push({ name, ok, detail: detail || '', severity }); }
 
 /*
@@ -239,8 +245,18 @@ if (root) {
  */
 const actor = detectActor(process.env, config ? config.actor : {});
 const independence = assessIndependence({ actor, issuedBy: null, executorSession: null, risk: 'medium' });
-check('актор виден окружению', actor.attestedBy === 'env',
-  (actor.source || 'нет источника') + ' (' + (actor.sourceKind || 'none') + ') / ' + (actor.session || 'нет сессии'));
+const actorVisible = actor.attestedBy === 'env';
+/*
+ * 2.6.16 (0042): в контексте панели отсутствие сессии — свойство процесса, а не
+ * дефект воркспейса. Та же проверка остаётся WARN с прямым объяснением и не
+ * валит выход; вне панели (маркера нет) это по-прежнему FAIL.
+ */
+check('актор виден окружению', actorVisible,
+  (actor.source || 'нет источника') + ' (' + (actor.sourceKind || 'none') + ') / ' + (actor.session || 'нет сессии')
+    + (PANEL_CONTEXT && !actorVisible
+      ? ' — проверка запущена из панели: в процессе панели сессии агента нет'
+      : ''),
+  PANEL_CONTEXT && !actorVisible ? 'warn' : 'fail');
 /*
  * 2.6.2: «актор не виден» без рецепта читается как поломка движка, хотя лечится
  * настройкой. Строка WARN только подсказывает и не меняет вердикт: FAIL выше и
@@ -255,7 +271,9 @@ if (actor.attestedBy !== 'env') {
       + 'проверьте плагин сессии ~/.config/opencode/plugins/wf-session.ts и перезапустите приложение',
     'warn');
 }
-check('medium возможен в этой сессии', independence.ok, independence.errors.join('; '));
+check('medium возможен в этой сессии', independence.ok,
+  (PANEL_CONTEXT && !independence.ok ? 'проверка запущена из панели: ' : '') + independence.errors.join('; '),
+  PANEL_CONTEXT && !independence.ok ? 'warn' : 'fail');
 
 if (argv.json) console.log(JSON.stringify({ repo, checks }, null, 2));
 else {

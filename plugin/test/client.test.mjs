@@ -1005,10 +1005,12 @@ test('mapped workspace reads the external engine and disables writes (0.9.0)', a
     assert.match(rendered, /внешний движок:/u, 'раздел версии называет внешний движок');
     assert.ok(!findButton(tree, 'Развернуть workflow здесь'), 'развёртывание не предлагается');
 
-    const update = findButton(tree, 'Обновить движок');
-    assert.ok(update, 'кнопка обновления остаётся на месте');
-    assert.equal(update.props.disabled, true, 'обновление внешнего движка недоступно');
-    assert.match(update.props.title, /внешн/iu);
+    /* 0042: обновление внешнего движка доступно — но идёт в его репозиторий. */
+    assert.match(rendered, /обновляется в репозитории движка/u, 'панель говорит, где обновляется движок');
+    const update = findButton(tree, 'Обновить движок в репозитории движка');
+    assert.ok(update, 'кнопка обновления в репозитории движка на месте');
+    assert.equal(update.props.disabled, false, 'обновление внешнего движка доступно');
+    assert.match(update.props.title, /репозитории движка/iu);
     assert.equal(fs.existsSync(path.join(ws, 'docs')), false, 'воркспейс не изменён');
 
     /* Сервер подтверждает: запись в это пространство — 409, а не 200. */
@@ -1032,26 +1034,48 @@ test('mapped workspace reads the external engine and disables writes (0.9.0)', a
 });
 
 /*
- * 0.9.1 / 0038: внешний движок — кнопки записи не только disabled, но и видимо
- * недоступны: заметный стиль, aria-disabled и надпись «недоступно: движок внешний».
- * Заказчик жаловался, что кнопка выглядит активной и клик ничего не объясняет.
+ * 2.6.16 (0042): обещание «доступно в этой сборке панели» для внешнего движка
+ * снято. Панель говорит, что движок обновляется в его репозитории, называет
+ * путь, а кнопка после подтверждения шлёт target: 'engine-repo' — тот же
+ * репозиторий, а не воркспейс. Развёртывание и guard для внешнего движка
+ * по-прежнему недоступны: это чужая территория.
  */
-test('external engine: update button is visibly disabled and says why (0.9.1)', async () => {
+test('карточка external: обновление в репозитории движка', async () => {
   const fixture = makeRepo({ stage: 'remarks' });
   const engineDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-engine-'));
-  const mapFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wf-map-')), 'engine-roots.json');
+  const mapDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-map-'));
+  const mapFile = path.join(mapDir, 'engine-roots.json');
   const previous = process.env.WF_ENGINE_ROOTS;
   try {
     /* Движок выносим наружу: воркспейс остаётся без docs/subagent-workflow. */
-    const src = path.join(fixture.repo, 'docs', 'subagent-workflow');
-    const dst = path.join(engineDir, 'docs', 'subagent-workflow');
-    fs.mkdirSync(path.dirname(dst), { recursive: true });
-    fs.renameSync(src, dst);
+    const engineSrc = path.join(fixture.repo, 'docs', 'subagent-workflow');
+    const engineDst = path.join(engineDir, 'docs', 'subagent-workflow');
+    fs.mkdirSync(path.dirname(engineDst), { recursive: true });
+    fs.renameSync(engineSrc, engineDst);
     fs.writeFileSync(mapFile, JSON.stringify({ [fixture.repo]: engineDir }) + '\n');
     process.env.WF_ENGINE_ROOTS = mapFile;
 
     const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
-    globalThis.fetch = apiFetch(handler);
+    const api = apiFetch(handler);
+    let sent = null;
+    globalThis.fetch = async (url, init = {}) => {
+      if (String(url).includes('/api/update')) {
+        sent = JSON.parse(String(init.body || '{}'));
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({
+            ok: true,
+            from: '2.2.1',
+            version: fs.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim(),
+            engineRepo: engineDir,
+            log: '',
+          }),
+        };
+      }
+      return api(url, init);
+    };
+
     const hooks = makeReact();
     const plugin = await loadBundle(hooks.React);
     const slot = mount(plugin);
@@ -1060,19 +1084,39 @@ test('external engine: update button is visibly disabled and says why (0.9.1)', 
     await delay(120);
     tree = hooks.render(slot.component);
     const rendered = textOf(tree);
-    assert.match(rendered, /внешний движок/u, 'панель знает, что движок внешний');
-    assert.match(rendered, /недоступно: движок внешний/u, 'кнопка объясняет, почему недоступна');
 
-    const update = elements(tree).find((element) => element.type === 'button'
-      && element.props && element.props['aria-label'] === 'Обновить движок');
-    assert.ok(update, 'кнопка «Обновить движок» отрисована');
-    assert.equal(update.props.disabled, true, 'кнопка действительно отключена');
-    assert.equal(update.props['aria-disabled'], 'true', 'состояние объявлено для доступности');
-    assert.equal(update.props.style.opacity, 0.45, 'стиль заметно отличается от активной кнопки');
-    assert.equal(update.props.style.cursor, 'not-allowed', 'курсор говорит о недоступности');
+    assert.match(rendered, /обновляется в репозитории движка/u,
+      'панель говорит, что обновление идёт в репозитории движка');
+    assert.ok(rendered.includes(engineDir), 'панель называет путь репозитория движка');
+    assert.ok(!rendered.includes('Доступно в этой сборке панели'), 'старое обещание снято');
+
+    const update = findButton(tree, 'Обновить движок в репозитории движка');
+    assert.ok(update, 'кнопка «Обновить движок в репозитории движка» отрисована');
+    assert.equal(update.props.disabled, false, 'кнопка активна: обновление возможно');
+    assert.match(update.props.title, /репозитории движка/iu, 'подсказка называет репозиторий движка');
+
+    update.props.onClick();
+    tree = hooks.render(slot.component);
+    const dialog = textOf(tree);
+    assert.match(dialog, /в репозитории движка/u, 'подтверждение называет репозиторий движка');
+    assert.ok(dialog.includes(engineDir), 'подтверждение называет путь');
+
+    const confirm = findButton(tree, 'Подтвердить обновление');
+    assert.ok(confirm, 'кнопка подтверждения в диалоге');
+    assert.equal(confirm.props.disabled, false, 'подтверждение доступно: незавершённых заданий нет');
+
+    confirm.props.onClick();
+    await delay(80);
+    assert.ok(sent, 'панель отправила запрос обновления');
+    assert.equal(sent.target, 'engine-repo', 'цель запроса — репозиторий движка');
+    assert.equal(sent.confirm, true, 'запрос только с подтверждением');
+    assert.equal(sent.root, fixture.repo, 'корень — открытый воркспейс');
   } finally {
     if (previous === undefined) delete process.env.WF_ENGINE_ROOTS;
     else process.env.WF_ENGINE_ROOTS = previous;
+    fixture.cleanup();
+    try { fs.rmSync(engineDir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 }); } catch {}
+    try { fs.rmSync(mapDir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 }); } catch {}
   }
 });
 

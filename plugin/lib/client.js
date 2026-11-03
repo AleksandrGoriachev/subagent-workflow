@@ -50,6 +50,13 @@ window.__ModuleLoader__.load({
     const UPDATE_ROUTE = "/api/update";
     const UPDATE_RISK_LABEL = "понимаю риск";
     /*
+     * 2.6.16 (0042): внешний движок обновляется в СВОЁМ репозитории. Явный
+     * target отличает этот запрос от обновления воркспейса, которое для
+     * внешнего движка по-прежнему запрещено (409 engine-external).
+     */
+    const EXTERNAL_UPDATE_TARGET = "engine-repo";
+    const EXTERNAL_UPDATE_LABEL = "Обновить движок в репозитории движка";
+    /*
      * 0.9.0: воркспейс без движка читает внешний движок по карте
      * (~/.dsh/workflow/engine-roots.json, env WF_ENGINE_ROOTS). Чтение
      * разрешено, запись запрещена сервером (409 engine-external), поэтому
@@ -1314,7 +1321,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
          * файлы прочитаны из репозитория движка по карте.
          */
         function externalEngine() {
-          return status && status.engine && status.engine.source === "mapping" ? status.engine : null;
+          const engine = status && status.engine;
+          return engine && (engine.source === "mapping" || engine.source === "config") ? engine : null;
         }
 
         function externalEngineText(engine) {
@@ -1323,10 +1331,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
 
         function externalEngineHint(engine) {
           const version = engineInstalled();
-          return "Движок внешний" + (version ? " v" + version : "") + ": "
-            + (engine && engine.root ? engine.root : "путь неизвестен")
-            + ". Этот воркспейс не меняется: развёртывание, обновление и guard выполняются "
+          const path = engine && engine.root ? engine.root : "путь неизвестен";
+          return "Движок внешний" + (version ? " v" + version : "") + ": " + path
+            + ". Этот воркспейс не меняется: развёртывание и guard выполняются "
             + "в репозитории движка (карта ~/.dsh/workflow/engine-roots.json), а не здесь."
+            + " Обновление движка идёт в репозиторий движка: " + path
+            + ", — и только по подтверждению."
             + " Если движка в том репозитории нет — уберите запись из карты, и панель снова "
             + "предложит развернуть движок здесь.";
         }
@@ -1350,6 +1360,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
 
         async function runUpdate() {
           const target = deployTarget();
+          /* 0042: внешний движок обновляется в своём репозитории — тем же запросом. */
+          const external = externalEngine();
           if (!target || updateBusy) return;
           const pending = enginePending();
           if (pending.length > 0 && !updateRisk) return;
@@ -1360,11 +1372,11 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             const response = await fetch(BASE + UPDATE_ROUTE, {
               method: "POST",
               headers: { "Content-Type": "application/json", Accept: "application/json" },
-              body: JSON.stringify({
+              body: JSON.stringify(Object.assign({
                 root: target,
                 confirm: true,
                 allowInProgress: updateRisk === true,
-              }),
+              }, external ? { target: EXTERNAL_UPDATE_TARGET } : {})),
             });
             /*
              * Тело читаем сами: у 409 tasks-in-progress в нём список заданий, а
@@ -1428,6 +1440,16 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               });
               return;
             }
+            /* 0042: у локального движка нет отдельного репозитория — отказ называет причину. */
+            if (data.code === "engine-not-external") {
+              setUpdateNote({
+                kind: "error",
+                code: data.code,
+                text: data.hint || data.error || "у локального движка нет отдельного репозитория",
+                log: data.log || "",
+              });
+              return;
+            }
             if (!response.ok || data.ok !== true) {
               setUpdateNote({
                 kind: "error",
@@ -1437,10 +1459,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               });
               return;
             }
+            const repo = data.engineRepo || (external && external.root ? external.root : null);
             setUpdateNote({
               kind: "ok",
               code: null,
-              text: "Движок обновлён: " + fmt(data.from) + " → " + fmt(data.version)
+              text: "Движок обновлён" + (repo ? " в репозитории движка " + repo : "")
+                + ": " + fmt(data.from) + " → " + fmt(data.version)
                 + ". Панель перечитала состояние.",
               log: data.log || "",
             });
@@ -1486,20 +1510,32 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         function renderUpdateDialog(pending) {
           /* 0041: подтверждение понижения не открывается даже из старого состояния. */
           if (panelOlder()) return null;
+          const external = externalEngine();
           const installed = engineInstalled();
           const available = engineAvailable();
           const blocked = updateBusy || (pending.length > 0 && !updateRisk);
           return h(
             "div",
             { style: Object.assign({}, S.stageBox, { borderLeftColor: pending.length > 0 ? T.warn : T.business }) },
-            h("div", { style: S.stageBoxTitle }, "Обновление движка: подтверждение"),
+            h(
+              "div",
+              { style: S.stageBoxTitle },
+              external
+                ? "Обновление движка в репозитории движка: подтверждение"
+                : "Обновление движка: подтверждение",
+            ),
             h(
               "div",
               { style: S.stageText },
               "Установлена версия " + fmt(installed) + ", будет установлена " + fmt(available)
-                + ". Обновление перезапишет файлы движка и workflow.config.json (policy/roles/models "
-                + "сохраняются), задачи и записи приёмки не меняются. Ключи .wf-keys/ и acceptors.json "
-                + "не трогаются, глобальный ~/.wf-keys не создаётся.",
+                + (external
+                  ? ". Запись идёт в репозиторий движка: " + (external.root || "путь неизвестен")
+                    + ". Сам воркспейс не меняется: его файлы, задачи и записи приёмки не трогаются. "
+                    + "Обновление выполняет init --force из вложенной спеки; ключи .wf-keys/ и "
+                    + "acceptors.json репозитория движка не перезаписываются."
+                  : ". Обновление перезапишет файлы движка и workflow.config.json (policy/roles/models "
+                    + "сохраняются), задачи и записи приёмки не меняются. Ключи .wf-keys/ и acceptors.json "
+                    + "не трогаются, глобальный ~/.wf-keys не создаётся."),
             ),
             pending.length > 0
               ? h(
@@ -1630,7 +1666,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               { style: S.stageText },
               "Источник: " + sourceText + ". " + (engine.source === "workspace"
                 ? "Движок развёрнут в этом пространстве — здесь."
-                : "Движок лежит в другом репозитории; это пространство только читает его."),
+                : "Движок лежит в другом репозитории; это пространство только читает его. "
+                  + "Обновление движка выполняется в репозитории движка; воркспейс не меняется."),
             ),
             kvGrid([
               ["путь", h("span", { style: S.mono }, fmt(engine.root))],
@@ -1686,6 +1723,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           const external = externalEngine();
           const upToDate = Boolean(!external && installed && available && installed === available);
           const older = panelOlder();
+          const externalRepo = external && external.root ? external.root : null;
           return h(
             "section",
             { style: S.section },
@@ -1694,10 +1732,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               "div",
               { style: S.stageText },
               "Установлено: " + (installed ? "v" + installed : "не развёрнут")
-                + (external ? " (внешний движок: " + external.root + ")" : "")
-                + (older
-                  ? ". В этой сборке панели: v" + fmt(available) + " — сборка панели старше движка."
-                  : ". Доступно в этой сборке панели: " + (available ? "v" + available : "неизвестно") + "."),
+                + (external ? " (внешний движок: " + (externalRepo || "путь неизвестен") + ")" : "")
+                + (external
+                  ? ". Движок обновляется в репозитории движка: " + (externalRepo || "путь неизвестен") + "."
+                  : older
+                    ? ". В этой сборке панели: v" + fmt(available) + " — сборка панели старше движка."
+                    : ". Версия сборки панели: " + (available ? "v" + available : "неизвестно") + "."),
             ),
             upToDate
               ? h(
@@ -1707,8 +1747,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 )
               : null,
             /*
-             * 0.9.0: внешний движок обновляется в своём репозитории. Кнопка
-             * остаётся на месте, но неактивна и говорит почему.
+             * 2.6.16 (0042): для внешнего движка кнопка не «недоступна» — она
+             * обновляет репозиторий движка. Недоступно только понижение (0041).
              */
             external
               ? h(
@@ -1733,34 +1773,35 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 Object.assign(
                   {
                     type: "button",
-                    style: external || older || updateBusy || busy
+                    style: older || updateBusy || busy
                       ? Object.assign({}, S.button, S.buttonDisabled)
                       : S.button,
-                    disabled: Boolean(external) || older || updateBusy || busy,
+                    disabled: Boolean(older) || updateBusy || busy,
                     onClick: () => {
                       /* 0041: подтверждение не открывается, если понижение запрещено. */
-                      if (external || older) return;
+                      if (older) return;
                       if (updateOpen) closeUpdate();
                       else openUpdate();
                     },
-                    title: external
-                      ? externalEngineHint(external)
-                      : older
-                        ? panelOlderHint()
+                    title: older
+                      ? panelOlderHint()
+                      : external
+                        ? EXTERNAL_UPDATE_LABEL + ": " + (externalRepo || "путь неизвестен")
                         : "Обновить движок subagent-workflow до версии " + fmt(available),
-                    "aria-label": UPDATE_LABEL,
+                    "aria-label": external ? EXTERNAL_UPDATE_LABEL : UPDATE_LABEL,
                   },
                   /* 0038: недоступность объявлена и для доступности; 0041 добавляет
                      сборку панели старше движка — обычная кнопка атрибута не получает. */
-                  external || older ? { "aria-disabled": "true" } : {},
+                  older ? { "aria-disabled": "true" } : {},
                 ),
-                updateBusy ? "Обновляю…" : UPDATE_LABEL,
+                updateBusy ? "Обновляю…" : external ? EXTERNAL_UPDATE_LABEL : UPDATE_LABEL,
               ),
               /*
                * 0038: причину видно на месте, а не только в tooltip.
+               * 0042: для внешнего движка причина изменилась — запись идёт в его репозиторий.
                */
-              external
-                ? h("span", { style: S.hint }, "недоступно: движок внешний")
+              external && !older
+                ? h("span", { style: S.hint }, "обновление в репозитории движка")
                 : older
                   ? h("span", { style: S.hint }, "недоступно: сборка панели старше — понижение движка запрещено")
                   : null,
@@ -1770,9 +1811,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             h(
               "div",
               { style: S.hint },
-              "Обновление выполняет init --force из вложенной спеки: версия движка берётся из сборки, "
-                + "без сети. Ключи проекта не меняются; каждое обновление пишет строку в "
-                + "docs/subagent-workflow/deploy.log. Пока идёт обновление, остальные запросы панели живы.",
+              external
+                ? "Обновление внешнего движка выполняется в его репозитории: " + (externalRepo || "путь неизвестен")
+                  + ". Воркспейс не меняется; ключи и задачи репозитория движка сохраняются."
+                : "Обновление выполняет init --force из вложенной спеки: версия движка берётся из сборки, "
+                  + "без сети. Ключи проекта не меняются; каждое обновление пишет строку в "
+                  + "docs/subagent-workflow/deploy.log. Пока идёт обновление, остальные запросы панели живы.",
             ),
           );
         }
