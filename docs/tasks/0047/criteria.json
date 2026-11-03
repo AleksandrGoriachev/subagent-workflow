@@ -1,0 +1,55 @@
+{
+  "task": "0047",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2"],
+    "mustPass": ["C3", "C4"],
+    "reasons": {
+      "C1": "NARROW FAIL c1",
+      "C2": "NARROW FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Проверки панели спавнят узкий набор, а не весь",
+      "command": "node spec/checks/narrow-suite.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/checks/panel-older.mjs", "spec/checks/engine-link.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "NARROW OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "В фикстурах нет версий-литералов",
+      "command": "node spec/checks/narrow-suite.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/checks/engine-link.mjs", "plugin/test/client.test.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "NARROW OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Узкие критерии панели зелёные",
+      "command": "node spec/checks/narrow-suite.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": ["slow"],
+      "covers": ["spec/checks/panel-older.mjs", "spec/checks/engine-link.mjs", "plugin/test/client.test.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "NARROW OK c3" }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
