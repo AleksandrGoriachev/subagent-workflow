@@ -1,0 +1,56 @@
+{
+  "task": "0044",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2", "C3"],
+    "mustPass": ["C4"],
+    "reasons": {
+      "C1": "TARGETED FAIL c1",
+      "C2": "TARGETED FAIL c2",
+      "C3": "TARGETED FAIL c3"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Минимальный набор: изменённые файлы → только их тесты",
+      "command": "node spec/checks/targeted-tests.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/tests-for.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "TARGETED OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Неизвестный путь — явная ошибка, а не пустой набор",
+      "command": "node spec/checks/targeted-tests.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/tests-for.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "TARGETED OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Шаблон задания требует точечные итерации и один полный прогон",
+      "command": "node spec/checks/targeted-tests.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast"],
+      "covers": ["spec/templates/task.md"],
+      "expect": { "exitCode": 0, "stdoutContains": "TARGETED OK c3" }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
