@@ -1,0 +1,56 @@
+{
+  "task": "0049",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2", "C3"],
+    "mustPass": ["C4"],
+    "reasons": {
+      "C1": "JUDGE FAIL c1",
+      "C2": "JUDGE FAIL c2",
+      "C3": "JUDGE FAIL c3"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Шаблон задания кодирует дисциплину оценщика",
+      "command": "node spec/checks/judge-discipline.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/templates/task.md"],
+      "expect": { "exitCode": 0, "stdoutContains": "JUDGE OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Политика чтения отчёта исполнителя",
+      "command": "node spec/checks/judge-discipline.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/acceptance-policy.mjs", "spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "JUDGE OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Фактическая модель актора",
+      "command": "node spec/checks/judge-discipline.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/acceptance-policy.mjs", "spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "JUDGE OK c3" }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
