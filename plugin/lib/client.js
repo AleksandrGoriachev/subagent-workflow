@@ -1122,9 +1122,13 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         }
 
         function externalEngineHint(engine) {
-          return "Движок внешний: " + (engine && engine.root ? engine.root : "путь неизвестен")
+          const version = engineInstalled();
+          return "Движок внешний" + (version ? " v" + version : "") + ": "
+            + (engine && engine.root ? engine.root : "путь неизвестен")
             + ". Этот воркспейс не меняется: развёртывание, обновление и guard выполняются "
-            + "в репозитории движка (карта ~/.dsh/workflow/engine-roots.json), а не здесь.";
+            + "в репозитории движка (карта ~/.dsh/workflow/engine-roots.json), а не здесь."
+            + " Если движка в том репозитории нет — уберите запись из карты, и панель снова "
+            + "предложит развернуть движок здесь.";
         }
 
         /* Незавершённые задания приходят из /api/status (repo.tasksInProgress). */
@@ -2322,6 +2326,20 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             external
               ? h("div", { style: S.hint }, externalEngineHint(external))
               : h("ul", { style: S.list }, DEPLOY_CHANGES.map((line, index) => h("li", { key: index }, line))),
+            /*
+             * Пустой карты — не ошибка: два равноправных варианта, и оба видны.
+             * Либо движка нет нигде (тогда кнопка ниже — правильный шаг), либо он
+             * уже развёрнут в другом репозитории (тогда нужна запись в карте).
+             */
+            !external && !engineInstalled()
+              ? h(
+                  "div",
+                  { style: S.hint },
+                  "Если движок уже развёрнут в другом репозитории, добавьте запись в карту "
+                    + "~/.dsh/workflow/engine-roots.json — панель будет читать его оттуда, "
+                    + "а это пространство не изменится. Это альтернатива кнопке ниже, а не ошибка.",
+                )
+              : null,
             h(
               "div",
               { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
