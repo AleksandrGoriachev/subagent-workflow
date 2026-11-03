@@ -89,7 +89,7 @@ $tgz = "$env:TEMP\dsh-workflow-console.tgz"
 Invoke-WebRequest \
   "https://github.com/AleksandrGoriachev/subagent-workflow/releases/latest/download/dsh-workflow-console.tgz" \
   -OutFile $tgz
-(Get-Item $tgz).Length            # ожидается ~261 КБ для 0.9.0
+(Get-Item $tgz).Length            # ожидается ~281 КБ для 0.9.4
 tar -tzf $tgz | Select-Object -First 6   # package/lib, package/vendor/spec, package/package.json
 tar -xzOf $tgz package/package.json | Select-String '"version"'
 ```
