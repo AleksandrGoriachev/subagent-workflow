@@ -909,6 +909,71 @@ test('deployed engine shows versions and guards update with unfinished tasks (0.
 });
 
 /*
+ * 0.9.4 (0041): сборка панели старше движка. Панель не предлагает «Обновить
+ * движок» до версии сборки (это было бы понижением): в шапке и в разделе
+ * версии она говорит «сборка панели старше» и «понижение движка запрещено»,
+ * кнопка неактивна с объяснением, подтверждение не открывается.
+ */
+test('карточка panel-older: понижение не предлагается', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  try {
+    /* Движок новее сборки панели: 99.0.0 > VERSION пакета. */
+    const engineVersionFile = path.join(fixture.repo, 'docs', 'subagent-workflow', 'VERSION');
+    fs.writeFileSync(engineVersionFile, '99.0.0\n');
+    const installed = '99.0.0';
+    const available = fs.readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim();
+    assert.ok(available !== installed, 'фикстура новее сборки панели');
+
+    const handler = createWebHandler(createWorkflowRuntime({ roots: [fixture.repo] }));
+    globalThis.fetch = apiFetch(handler);
+    const hooks = makeReact();
+    const plugin = await loadBundle(hooks.React);
+    const slot = mount(plugin);
+
+    let tree = hooks.render(slot.component);
+    hooks.drain();
+    await delay(80);
+    tree = hooks.render(slot.component);
+    let rendered = textOf(tree);
+
+    assert.ok(rendered.includes('сборка панели старше'), 'панель говорит «сборка панели старше»');
+    assert.ok(rendered.includes('понижение движка запрещено'), 'панель говорит «понижение движка запрещено»');
+    assert.ok(!rendered.includes('доступна v' + available), 'шапка не обещает версию сборки как доступное обновление');
+    assert.match(rendered, /Установлено: v99\.0\.0/u, 'установленная версия названа');
+    assert.ok(!/ошибк/iu.test(rendered), 'слово «ошибка» не используется');
+
+    const update = findButton(tree, 'Обновить движок');
+    assert.ok(update, 'кнопка обновления на месте');
+    assert.equal(update.props.disabled, true, 'кнопка неактивна: понижение не предлагается');
+    assert.equal(update.props['aria-disabled'], 'true', 'состояние объявлено для доступности');
+    assert.match(update.props.title, /сборка панели старше|понижение движка запрещено/u, 'подсказка объясняет причину');
+
+    /* Клик по неактивной кнопке не открывает подтверждение понижения. */
+    update.props.onClick();
+    tree = hooks.render(slot.component);
+    rendered = textOf(tree);
+    assert.ok(!rendered.includes('Обновление движка: подтверждение'), 'подтверждение не открылось');
+    assert.equal(findButton(tree, 'Подтвердить обновление'), undefined, 'кнопки подтверждения нет');
+
+    /* Сервер отказывает тем же кодом: 409 panel-older, движок не меняется. */
+    const response = await globalThis.fetch('http://localhost/workflow/api/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ root: fixture.repo, confirm: true }),
+    });
+    assert.equal(response.status, 409);
+    const body = JSON.parse(await response.text());
+    assert.equal(body.code, 'panel-older');
+    assert.equal(body.version, installed);
+    assert.equal(body.targetVersion, available);
+    assert.match(String(body.hint || ''), /понижение движка запрещено/u);
+    assert.equal(fs.readFileSync(engineVersionFile, 'utf8').trim(), installed, 'движок не понижен');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+/*
  * 0.9.0: воркспейс без движка читает движок снаружи по карте. Шапка называет
  * режим и путь, кнопки развёртывания и обновления неактивны с объяснением, а
  * сервер отвечает 409 engine-external — панель не обещает запись.

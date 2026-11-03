@@ -93,6 +93,41 @@ export function availableVersion() {
   return targetVersion(availableSpecRoot());
 }
 
+/**
+ * Числовое сравнение версий по сегментам (2.6.15, 0041).
+ *
+ * Строковое сравнение здесь неверно: "2.6.10" < "2.6.9". Сегменты сравниваются
+ * как числа, недостающие сегменты считаются нулями. Пустая или нечисловая
+ * строка не бросает исключение: пустая даёт 0 (сравнивать нечего), нечисловой
+ * сегмент читается как 0.
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {-1|0|1}
+ */
+export function compareVersions(a, b) {
+  const left = versionSegments(a);
+  const right = versionSegments(b);
+  if (left === null || right === null) return 0;
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const l = left[index] || 0;
+    const r = right[index] || 0;
+    if (l < r) return -1;
+    if (l > r) return 1;
+  }
+  return 0;
+}
+
+function versionSegments(value) {
+  const text = String(value === null || value === undefined ? '' : value).trim();
+  if (text === '') return null;
+  return text.replace(/^v/iu, '').split('.').map((part) => {
+    const numeric = Number.parseInt(part, 10);
+    return Number.isFinite(numeric) ? numeric : 0;
+  });
+}
+
 function tail(text, limit = LOG_LIMIT) {
   const value = String(text || '');
   return value.length > limit ? '…\n' + value.slice(value.length - limit) : value;
@@ -261,6 +296,22 @@ function prepareUpdate(root, options = {}) {
    */
   if (to === from) {
     return { ok: false, code: 'up-to-date', version: from, targetVersion: to };
+  }
+  /*
+   * 2.6.15 (0041): сборка панели старше движка. Обновление до версии сборки
+   * было бы понижением движка — отказ до списка незавершённых заданий и до
+   * любых записей: VERSION, deploy.log и workflow.config.json не меняются.
+   */
+  if (compareVersions(to, from) < 0) {
+    return {
+      ok: false,
+      code: 'panel-older',
+      version: from,
+      targetVersion: to,
+      hint: 'Сборка панели старше установленного движка: в сборке v' + to
+        + ', а установлено v' + from + '. Обновление было бы понижением: понижение движка запрещено —'
+        + ' обновите панель (tarball из latest release); движок и его файлы при этом не меняются.',
+    };
   }
   const tasks = tasksInProgress(repo);
   if (tasks.length > 0 && options.allowInProgress !== true) {
@@ -510,6 +561,7 @@ export function deployWorkflow(root, options = {}) {
  * Обновить развёрнутую копию до версии вложенной спеки (синхронно).
  *
  * Коды отказа: `not-found`, `not-a-repo`, `not-deployed`, `up-to-date`,
+ * `panel-older` (+ `hint`, когда сборка панели старше движка),
  * `tasks-in-progress` (+ `tasks`), `init-failed`. Успех:
  * `{ok:true, from, to, version, log, tasks}`.
  *

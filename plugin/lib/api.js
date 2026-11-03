@@ -782,9 +782,11 @@ export function createWebHandler(runtime) {
             ? 409
             : report.code === 'up-to-date'
               ? 409
-              : report.code === 'not-found'
-                ? 404
-                : 400;
+              : report.code === 'panel-older'
+                ? 409
+                : report.code === 'not-found'
+                  ? 404
+                  : 400;
         sendJson(res, status, { plugin: runtime.plugin, root: target.root, ...report });
         return;
       }

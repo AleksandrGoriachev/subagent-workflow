@@ -57,6 +57,8 @@ window.__ModuleLoader__.load({
      * объяснением — панель не обещает то, что сервер отклонит.
      */
     const EXTERNAL_ENGINE_CODE = "engine-external";
+    /* 0.9.4 (0041): отказ сервера, когда сборка панели старше движка. */
+    const PANEL_OLDER_CODE = "panel-older";
     /*
      * 0.9.3 (0039): связь «воркспейс → движок» объявляется конфигом профиля или
      * выбирается кнопкой. Порядок источников — local → config → карта → absent;
@@ -1262,6 +1264,52 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         }
 
         /*
+         * 0.9.4 (0041): числовое сравнение версий по сегментам — как
+         * deploy.compareVersions. Строковое сравнение неверно: 2.6.10 новее 2.6.9.
+         */
+        function compareVersions(a, b) {
+          const segments = (value) => {
+            const text = String(value === null || value === undefined ? "" : value).trim();
+            if (text === "") return null;
+            return text.replace(/^v/iu, "").split(".").map((part) => {
+              const numeric = Number.parseInt(part, 10);
+              return Number.isFinite(numeric) ? numeric : 0;
+            });
+          };
+          const left = segments(a);
+          const right = segments(b);
+          if (left === null || right === null) return 0;
+          const length = Math.max(left.length, right.length);
+          for (let index = 0; index < length; index += 1) {
+            const l = left[index] || 0;
+            const r = right[index] || 0;
+            if (l < r) return -1;
+            if (l > r) return 1;
+          }
+          return 0;
+        }
+
+        /*
+         * 0.9.4 (0041): сборка панели старше движка. Обновление до версии сборки
+         * понизило бы движок, поэтому кнопка обновления не предлагает понижение,
+         * а тексты панели говорят причину прямо.
+         */
+        function panelOlder() {
+          const installed = engineInstalled();
+          const available = engineAvailable();
+          return Boolean(installed && available && compareVersions(available, installed) < 0);
+        }
+
+        function panelOlderHint() {
+          const installed = engineInstalled();
+          const available = engineAvailable();
+          return "Эта сборка панели старше установленного движка: в сборке v" + fmt(available)
+            + ", установлено v" + fmt(installed) + ". Обновление до версии сборки было бы понижением: "
+            + "понижение движка запрещено. Обновите панель — возьмите tarball из latest release; "
+            + "движок и его файлы при этом не меняются.";
+        }
+
+        /*
          * 0.9.0: движок снаружи. source 'mapping' — воркспейс не меняется:
          * файлы прочитаны из репозитория движка по карте.
          */
@@ -1336,6 +1384,20 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 text: "Обновление не нужно: уже установлена версия " + fmt(data.version) + ".",
                 log: data.log || "",
               });
+              return;
+            }
+            /*
+             * 0041: сборка панели старше движка. Отказ сервера повторяет то же
+             * объяснение, что и карточка: обновлять нужно панель, не движок.
+             */
+            if (data.code === PANEL_OLDER_CODE) {
+              setUpdateNote({
+                kind: "error",
+                code: data.code,
+                text: data.hint || panelOlderHint(),
+                log: data.log || "",
+              });
+              closeUpdate();
               return;
             }
             if (data.code === "tasks-in-progress") {
@@ -1422,6 +1484,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         }
 
         function renderUpdateDialog(pending) {
+          /* 0041: подтверждение понижения не открывается даже из старого состояния. */
+          if (panelOlder()) return null;
           const installed = engineInstalled();
           const available = engineAvailable();
           const blocked = updateBusy || (pending.length > 0 && !updateRisk);
@@ -1621,6 +1685,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           const pending = enginePending();
           const external = externalEngine();
           const upToDate = Boolean(!external && installed && available && installed === available);
+          const older = panelOlder();
           return h(
             "section",
             { style: S.section },
@@ -1630,7 +1695,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               { style: S.stageText },
               "Установлено: " + (installed ? "v" + installed : "не развёрнут")
                 + (external ? " (внешний движок: " + external.root + ")" : "")
-                + ". Доступно в этой сборке панели: " + (available ? "v" + available : "неизвестно") + ".",
+                + (older
+                  ? ". В этой сборке панели: v" + fmt(available) + " — сборка панели старше движка."
+                  : ". Доступно в этой сборке панели: " + (available ? "v" + available : "неизвестно") + "."),
             ),
             upToDate
               ? h(
@@ -1650,6 +1717,14 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   externalEngineHint(external),
                 )
               : null,
+            /* 0041: причина отказа видна на месте, а не только в tooltip. */
+            older
+              ? h(
+                  "div",
+                  { style: Object.assign({}, S.hint, { marginTop: "4px" }) },
+                  panelOlderHint(),
+                )
+              : null,
             h(
               "div",
               { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
@@ -1658,26 +1733,39 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 Object.assign(
                   {
                     type: "button",
-                    style: external || updateBusy || busy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
-                    disabled: Boolean(external) || updateBusy || busy,
-                    onClick: () => (updateOpen ? closeUpdate() : openUpdate()),
+                    style: external || older || updateBusy || busy
+                      ? Object.assign({}, S.button, S.buttonDisabled)
+                      : S.button,
+                    disabled: Boolean(external) || older || updateBusy || busy,
+                    onClick: () => {
+                      /* 0041: подтверждение не открывается, если понижение запрещено. */
+                      if (external || older) return;
+                      if (updateOpen) closeUpdate();
+                      else openUpdate();
+                    },
                     title: external
                       ? externalEngineHint(external)
-                      : "Обновить движок subagent-workflow до версии " + fmt(available),
+                      : older
+                        ? panelOlderHint()
+                        : "Обновить движок subagent-workflow до версии " + fmt(available),
                     "aria-label": UPDATE_LABEL,
                   },
-                  /* 0038: недоступность объявлена и для доступности, но только
-                     на внешнем движке — обычная кнопка атрибута не получает. */
-                  external ? { "aria-disabled": "true" } : {},
+                  /* 0038: недоступность объявлена и для доступности; 0041 добавляет
+                     сборку панели старше движка — обычная кнопка атрибута не получает. */
+                  external || older ? { "aria-disabled": "true" } : {},
                 ),
                 updateBusy ? "Обновляю…" : UPDATE_LABEL,
               ),
               /*
                * 0038: причину видно на месте, а не только в tooltip.
                */
-              external ? h("span", { style: S.hint }, "недоступно: движок внешний") : null,
+              external
+                ? h("span", { style: S.hint }, "недоступно: движок внешний")
+                : older
+                  ? h("span", { style: S.hint }, "недоступно: сборка панели старше — понижение движка запрещено")
+                  : null,
             ),
-            updateOpen ? renderUpdateDialog(pending) : null,
+            updateOpen && !older ? renderUpdateDialog(pending) : null,
             updateNote ? renderUpdateNote() : null,
             h(
               "div",
@@ -1794,7 +1882,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               externalEngine()
                 ? externalEngineText(externalEngine())
                 : "движок: " + (engineInstalled() ? "v" + engineInstalled() : "не развёрнут")
-                  + (engineAvailable() ? " · доступна v" + engineAvailable() : ""),
+                  + (panelOlder()
+                    ? " · сборка панели старше"
+                    : engineAvailable() ? " · доступна v" + engineAvailable() : ""),
             ),
             h("span", { style: S.spacer }),
             rootOptions.length > 1
