@@ -550,23 +550,6 @@ try {
   const ignored = ignoredPaths(repo, candidatePaths);
   const candidateFiles = candidatePaths.filter((file) => !ignored.has(file));
   /*
-   * 0051: строка журнала вердиктов — до сборки кандидата, чтобы запись журнала
-   * попала в кандидатное дерево вместе с остальными артефактами задания (иначе
-   * после reset --hard кандидата последняя строка терялась бы). Критерии — из
-   * свежего прогона приёмщика. Сбой журнала не валит приёмку: WARN, exit прежний.
-   */
-  const journal = appendGateRecord(gateJournalFile(taskDir), gateRecord({
-    kind: 'accept',
-    task: String(meta.id),
-    head: verify.headSha || contractCommit,
-    criteria: gateCriteriaOf(verify.results || []),
-    verdict: 'accepted',
-    bypasses,
-    exitSummary: 'exit=0; accepted; checks=' + ((verify.results || []).length) + '; releaseReady=' + releaseReady,
-  }));
-  if (!journal.ok) console.log('WARN журнал ворот: ' + journal.error);
-
-  /*
    * 0011: запись текущего задания передаётся в кандидат явно — createCandidate
    * удаляет её из индекса после read-tree HEAD, чтобы metadata-коммит не
    * наследовался кандидатом. Записи других заданий не затрагиваются.
@@ -582,6 +565,26 @@ try {
 
   const record = signRecord(body, { privateKeyPem, keyId });
   writeJson(files.acceptance, record);
+
+  /*
+   * 0052 (WC-30, замечание приёмщика 0051): строка accept в gates.jsonl пишется
+   * ПОСЛЕ сборки кандидата и после подписи записи. Пока она писалась раньше,
+   * сбой createCandidate оставлял в журнале «принято» без кандидата — ложный
+   * accepted. Размен: после reset --hard кандидата последняя строка журнала не
+   * восстанавливается (файл попадает в индекс до записи); это принято — журнал
+   * не должен утверждать то, чего нет. Критерии — из свежего прогона приёмщика.
+   * Сбой журнала не валит приёмку: WARN, exit прежний.
+   */
+  const journal = appendGateRecord(gateJournalFile(taskDir), gateRecord({
+    kind: 'accept',
+    task: String(meta.id),
+    head: verify.headSha || contractCommit,
+    criteria: gateCriteriaOf(verify.results || []),
+    verdict: 'accepted',
+    bypasses,
+    exitSummary: 'exit=0; accepted; checks=' + ((verify.results || []).length) + '; releaseReady=' + releaseReady,
+  }));
+  if (!journal.ok) console.log('WARN журнал ворот: ' + journal.error);
 
   if (argv.json) {
     console.log(JSON.stringify(record, null, 2));
