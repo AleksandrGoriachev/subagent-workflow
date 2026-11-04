@@ -55,9 +55,31 @@ import {
   hasEngine,
   writeEngineLink,
 } from './engine-root.js';
+import { prepareEngineSpec } from './release-source.mjs';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
+
+/*
+ * 2.6.28 (0067): откуда панель берёт движок для обновления из релиза.
+ * apiBase/repo можно переопределить в runtime (конфиг профиля, тесты); значения
+ * по умолчанию — публичный GitHub и репозиторий движка.
+ */
+export const DEFAULT_UPDATE_SOURCE = {
+  apiBase: 'https://api.github.com',
+  repo: 'AleksandrGoriachev/subagent-workflow',
+};
+
+function normalizeUpdateSource(value) {
+  const raw = value && typeof value === 'object' ? value : {};
+  const apiBase = typeof raw.apiBase === 'string' && raw.apiBase.trim().length > 0
+    ? raw.apiBase.trim().replace(/\/+$/u, '')
+    : DEFAULT_UPDATE_SOURCE.apiBase;
+  const repo = typeof raw.repo === 'string' && raw.repo.trim().length > 0
+    ? raw.repo.trim().replace(/^\/+|\/+$/gu, '')
+    : DEFAULT_UPDATE_SOURCE.repo;
+  return { apiBase, repo };
+}
 
 function samePath(a, b) {
   const left = path.resolve(String(a)).replace(/[\\/]+$/u, '');
@@ -118,9 +140,16 @@ export function createWorkflowRuntime(config = {}, options = {}) {
     && config.engines && typeof config.engines === 'object' && !Array.isArray(config.engines)
     ? config.engines
     : null;
+  /* 2.6.28 (0067): источник релиза для /api/update с source: "release". */
+  const updateSource = normalizeUpdateSource(
+    config && typeof config === 'object' && config.updateSource !== undefined
+      ? config.updateSource
+      : options.updateSource,
+  );
   return {
     roots,
     engines,
+    updateSource,
     getWorkspaceRegistry,
     defaultRoot: roots.length > 0 ? roots[0] : null,
     plugin: { name: PLUGIN_NAME, version: PLUGIN_VERSION, tool: TOOL },
@@ -834,6 +863,47 @@ export function createWebHandler(runtime) {
         }
         if (!fs.existsSync(target.root)) {
           sendJson(res, 404, { error: 'корень не найден: ' + target.root });
+          return;
+        }
+        /*
+         * 2.6.28 (0067): body.source === "release" — движок скачивается из
+         * последнего релиза GitHub, а не из сборки панели. Скачивание и сверка
+         * sha256 идут до любых записей: сеть/подпись упали — 502
+         * release-unavailable, воркспейс не изменён. Временный каталог
+         * удаляется в finally и на успехе, и на отказе init.
+         */
+        if (body.source === 'release') {
+          const source = runtime.updateSource || DEFAULT_UPDATE_SOURCE;
+          let spec;
+          try {
+            spec = await prepareEngineSpec({ apiBase: source.apiBase, repo: source.repo });
+          } catch (error) {
+            sendJson(res, 502, {
+              code: 'release-unavailable',
+              error: 'не удалось получить движок из релиза: '
+                + (error && error.message ? error.message : String(error)),
+            });
+            return;
+          }
+          try {
+            const report = await updateWorkflowAsync(target.root, {
+              specRoot: spec.specRoot,
+              allowInProgress: body.allowInProgress === true,
+            });
+            sendJson(res, updateResponseStatus(report), {
+              plugin: runtime.plugin,
+              root: target.root,
+              ...report,
+              source: 'release',
+              targetVersion: spec.version,
+            });
+          } finally {
+            try {
+              await spec.cleanup();
+            } catch {
+              /* временный каталог уберёт ОС; обновление уже выполнено или отклонено */
+            }
+          }
           return;
         }
         /*

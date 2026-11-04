@@ -1,0 +1,138 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0067",
+  "createdAt": "2026-11-04T22:34:02.493Z",
+  "base": "HEAD",
+  "baseSha": "34af112dc042e322f52eaf9573574b622c3dadc5",
+  "headSha": "34af112dc042e322f52eaf9573574b622c3dadc5",
+  "contractCommit": "34af112dc042e322f52eaf9573574b622c3dadc5",
+  "criteriaSha256": "3f19935f9485bdbd764e7d5810e4f511c96c4630b4852a779f99d121e9c60c01",
+  "criteriaJsonSha256": "213b8d1ee50985f465a9cdd91813cb3d02c2001686b9295055cf86205a32d555",
+  "dirtyPaths": [
+    "docs/tasks/0067/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/release-update.mjs c1",
+      "exitCode": 1,
+      "durationMs": 784,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: RELEASEUPDATE OK c1"
+      ],
+      "stdoutSha256": "6c2859ba64ab1be45e1b2055974ca7d518091718b609430bc1d8b7058387c5be",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RELEASEUPDATE FAIL c1: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\plugin\\lib\\archive.mjs' imported from C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\release-update.mjs\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/release-update.mjs c2",
+      "exitCode": 1,
+      "durationMs": 17675,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: RELEASEUPDATE OK c2"
+      ],
+      "stdoutSha256": "a1bb86670b03999ce923efbb162862e1b68518de4203efc4181e294cffcc2ec2",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RELEASEUPDATE FAIL c2: targetVersion=undefined\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 229794,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "2f4dac9db825600fb9a3989bcf74fc5ca55ec521610471c61199142478256b08",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 7 файл(ов)\n✔ GET /workflow/api/status reports the repository and policy (11269.9846ms)\n✔ GET /workflow/api/tasks returns the board with stages and skipped files (9025.9609ms)\n✔ GET /workflow/api/task/:id returns decisions, attack, coverage and record (9578.9532ms)\n✔ GET /workflow/api/policy matches the doctor policy line (7394.4783ms)\n✔ GET /workflow/api/compat reports versions and recommendations (8453.4273ms)\n✔ a registered workspace is readable even when it is not a configured root (10288.5317ms)\n✔ non-GET methods answer 405 with Allow: GET (7542.3754ms)\n✔ unknown routes answer 404 and a foreign root answers 400 (6506.4735ms)\n✔ a non-loopback peer is rejected (7572.2006ms)\n✔ a traversal-shaped task id is rejected (8741.2392ms)\n✔ GET /workflow/api/checks lists the read-only checks (8426.8222ms)\n✔ POST /workflow/api/run returns the log of a passing check and writes nothing (8410.7968ms)\n✔ a failing check is a result, not an error (8245.2206ms)\n✔ run rejects unknown checks, missing tasks and absent scripts (9513.1751ms)\n✔ run is POST-only and other routes stay GET-only (7408.5297ms)\n✔ POST /workflow/api/guard flips only guard.enabled and logs it (8288.49ms)\n✔ guard route is POST-only and validates its body and root (7254.4706ms)\n✔ a full request sweep does not change files or git status (13384.558ms)\n✔ POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0) (7903.7792ms)\n✔ deploy без confirm ничего не пишет, POST-only и проверяет корень (2100.9944ms)\n✔ POST guard/deploy требуют application/json — иначе 415 и никакой записи (8396.1795ms)\n✔ POST guard/deploy отвергают чужой Origin — 403, до записи (9716.5232ms)\n✔ deploy создаёт ключ проекта и не трогает глобальный ключ (11049.1685ms)\n✔ POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0) (10029.2015ms)\n✔ POST /workflow/api/update target engine-repo обновляет репозиторий внешнего движка (0042) (14712.5486ms)\n✔ client bundle registers the Workflow conversation view (166.0004ms)\n✔ panel renders a real board, task card and policy page (16850.0916ms)\n✔ policy page toggles the guard flag with confirmation (0.5.0) (10601.5262ms)\n✔ panel follows the current workspace and opens compatibility (10840.698ms)\n✔ badges explain themselves: hints on hover and focus (WC-1) (12126.0565ms)\n✔ card aria-label carries effect and regress hints, card shows «Регресс» (0.4.1) (13465.8357ms)\n✔ badge «эффект» colored by policy severity, not by status (0.4.1) (33070.6188ms)\n✔ card says «не проверялось» when gates did not check the effect (0.4.1) (11333.9806ms)\n✔ diagnostics buttons run a read-only check and show the log (v2, step 1) (20943.7445ms)\n✔ panel does not substitute a foreign project: empty state first, configured roots on request (11148.3622ms)\n✔ empty state deploys the engine with confirmation (0.7.0) (19507.901ms)\n✔ empty non-git workspace: deploy performs git init, then installs the engine (0.9.3) (8076.6744ms)\n✔ compatibility tab offers the same deploy button (0.7.0) (3227.4379ms)\n✔ package manifest declares the DSH bundle and client halves (1.9369ms)\n✔ deployed engine shows versions and guards update with unfinished tasks (0.8.0) (9330.4471ms)\n✔ карточка panel-older: понижение не предлагается (7493.6035ms)\n✔ mapped workspace reads the external engine and disables writes (0.9.0) (7205.9078ms)\n✔ карточка external: обновление в репозитории движка (8771.4925ms)\n✔ карточка absent: два действия, без ошибки (7198.9567ms)\n✔ карточка mapped: путь, версия, источник (8257.8954ms)\n✔ 0.9.3 config: связь задана конфигом профиля (5441.1475ms)\n✔ parse/compare versions (5.8615ms)\n✔ 2.2.x is compatible (1.6053ms)\n✔ 2.0.x reports limited functionality (1.0914ms)\n✔ 2.1.x reports missing attack and policy (0.7329ms)\n✔ missing workflow directory is an error (0.6435ms)\n✔ missing config is an error but missing VERSION is a warning (0.6238ms)\n✔ 2.4.5 — рабочее состояние: ни баннера, ни «мы это не показываем» (0.5619ms)\n✔ 2.6.0 — рабочее состояние: guard и \n…[truncated 4744 chars]",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 160069,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "803fa48473d8731c0298a6ac9c67b128ef0143828ea91ffc91db56c671e06f38",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 268140,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7b8a148efb894bdd307359546a1b58bea2552c6428b0c9bb57ed7730e6d723ae",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS F-7: пересечение allowedPaths/protectedPaths — ошибка\nPASS F-7 контроль: без пересечения — ок\nPASS F-7 узость: свои task.md/criteria.json — ок\nPASS F-7 узость: шаблон docs/tasks/0001/*.md — ошибка\nPASS covers: шаблон из allowedPaths без covers — WARN и exit 0\nPASS covers: конкретный файл из allowedPaths без covers — ERROR и exit 1\nPASS covers: файл из allowedPaths под шаблоном covers — ок, exit 0\nPASS F-5: пустой mustFail без noRed — ошибка\nPASS F-5 контроль: noRed с причиной — ок\nPASS F-6: при несовпадении причина и вывод напечатаны\nPASS F-8: verify.json сохранён как verify.executor.json\n\nGATE RULES OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 5,
+  "failed": 2,
+  "failedIds": [
+    "C1",
+    "C2"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

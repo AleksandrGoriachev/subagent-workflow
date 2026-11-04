@@ -50,6 +50,15 @@ window.__ModuleLoader__.load({
     const UPDATE_ROUTE = "/api/update";
     const UPDATE_RISK_LABEL = "понимаю риск";
     /*
+     * 2.6.28 (0067): когда обновление из сборки ответило up-to-date или
+     * panel-older, панель предлагает скачать движок из последнего релиза GitHub.
+     * Это не обновление панели: tarball движка публикуется в релизе, поэтому
+     * версия приходит из сети, а не из vendor/spec установленного плагина.
+     */
+    const RELEASE_UPDATE_LABEL = "Обновить из релиза";
+    const RELEASE_UPDATE_SOURCE = "release";
+    const RELEASE_UPDATE_HINT = "Версия движка скачивается из релиза GitHub (tarball + sha256), а не из сборки панели.";
+    /*
      * 2.6.16 (0042): внешний движок обновляется в СВОЁМ репозитории. Явный
      * target отличает этот запрос от обновления воркспейса, которое для
      * внешнего движка по-прежнему запрещено (409 engine-external).
@@ -1395,6 +1404,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 code: null,
                 text: "Обновление не нужно: уже установлена версия " + fmt(data.version) + ".",
                 log: data.log || "",
+                /* 0067: в этой сборке новее нечего предложить — движок можно взять из релиза. */
+                release: true,
               });
               return;
             }
@@ -1408,6 +1419,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 code: data.code,
                 text: data.hint || panelOlderHint(),
                 log: data.log || "",
+                /* 0067: понижение из сборки запрещено, но релиз может быть новее движка. */
+                release: true,
               });
               closeUpdate();
               return;
@@ -1478,6 +1491,81 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           }
         }
 
+        /*
+         * 2.6.28 (0067): «Обновить из релиза». Тот же маршрут /api/update, но
+         * source: "release": сервер сам скачивает tarball движка из последнего
+         * релиза GitHub, сверяет sha256 и разворачивает его. Корень по-прежнему
+         * выбирает сервер, поэтому клиент не может назвать чужой проект.
+         */
+        async function runReleaseUpdate() {
+          const target = deployTarget();
+          if (!target || updateBusy) return;
+          setUpdateBusy(true);
+          setUpdateNote(null);
+          setError(null);
+          try {
+            const response = await fetch(BASE + UPDATE_ROUTE, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ root: target, confirm: true, source: RELEASE_UPDATE_SOURCE }),
+            });
+            const text = await response.text();
+            let data = {};
+            try {
+              data = text.length > 0 ? JSON.parse(text) : {};
+            } catch {
+              data = { error: "ответ не JSON: HTTP " + response.status };
+            }
+            if (!response.ok || data.ok !== true) {
+              const unavailable = data.code === "release-unavailable";
+              setUpdateNote({
+                kind: "error",
+                code: data.code || "http-" + response.status,
+                text: unavailable
+                  ? "Релиз недоступен: " + (data.error || "не удалось скачать движок из релиза GitHub")
+                    + ". Воркспейс не изменён."
+                  : (data.hint || data.error || "обновление из релиза не выполнено: HTTP " + response.status),
+                log: data.log || "",
+              });
+              return;
+            }
+            setUpdateNote({
+              kind: "ok",
+              code: null,
+              text: "Движок обновлён из релиза GitHub: " + fmt(data.from) + " → "
+                + fmt(data.targetVersion || data.version) + ". Панель перечитала состояние.",
+              log: data.log || "",
+            });
+            closeUpdate();
+            await load(target, true);
+          } catch (failure) {
+            setUpdateNote({ kind: "error", code: "network", text: errorText(failure), log: "" });
+          } finally {
+            setUpdateBusy(false);
+          }
+        }
+
+        /* 0067: действие «Обновить из релиза» с коротким объяснением источника версии. */
+        function renderReleaseAction() {
+          return h(
+            "div",
+            { style: Object.assign({}, S.actions, { marginTop: "6px" }) },
+            h(
+              "button",
+              {
+                type: "button",
+                style: updateBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                disabled: updateBusy,
+                onClick: () => void runReleaseUpdate(),
+                title: RELEASE_UPDATE_HINT,
+                "aria-label": RELEASE_UPDATE_LABEL,
+              },
+              updateBusy ? "Скачиваю релиз…" : RELEASE_UPDATE_LABEL,
+            ),
+            h("span", { style: S.hint }, RELEASE_UPDATE_HINT),
+          );
+        }
+
         function renderUpdateNote() {
           if (!updateNote) return null;
           const ok = updateNote.kind === "ok";
@@ -1503,6 +1591,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               ),
             ),
             h("div", { style: { fontSize: "12px", whiteSpace: "pre-wrap" } }, updateNote.text),
+            updateNote.release ? renderReleaseAction() : null,
             logText.length > 0 ? h("pre", { style: S.runLog }, logText) : null,
           );
         }
@@ -1746,6 +1835,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   "Версия совпадает со сборкой панели — обновление не требуется.",
                 )
               : null,
+            /* 0067: сборка не новее движка — свежий движок можно взять из релиза GitHub. */
+            upToDate || older ? renderReleaseAction() : null,
             /*
              * 2.6.16 (0042): для внешнего движка кнопка не «недоступна» — она
              * обновляет репозиторий движка. Недоступно только понижение (0041).
