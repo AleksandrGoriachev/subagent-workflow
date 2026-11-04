@@ -1,0 +1,89 @@
+{
+  "task": "0066",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "reasons": {
+      "C1": "GATEDIAG FAIL c3"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Linux-случай: SKIP вместо FAIL",
+      "command": "node spec/checks/gate-diagnostics.mjs c3 --with-node",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/checks/gate-diagnostics.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG SKIP c3"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Полный сценарий на Windows",
+      "command": "node spec/checks/gate-diagnostics.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/gate-diagnostics.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG OK c3"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Правила ворот не сломаны",
+      "command": "node spec/checks/gate-rules.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    }
+  ]
+}

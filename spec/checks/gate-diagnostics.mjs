@@ -185,7 +185,8 @@ function c3() {
     git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
     git(repo, ['add', '-A']);
     git(repo, ['commit', '-q', '-m', 'base']);
-    const env = { ...process.env, PATH: pathWithoutNode() };
+    /* --with-node: PATH не чистим — так выглядит среда, где node находится всегда (CI Linux). */
+    const env = { ...process.env, ...(process.argv.includes('--with-node') ? {} : { PATH: pathWithoutNode() }) };
     delete env.WF_NODE;
 
     /* 1) .node-path записан (как это делает init) — commit-msg обязан блокировать. */
@@ -254,7 +255,7 @@ function c5() {
 const table = { c1, c2, c3, c4, c5 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/gate-diagnostics.mjs c1|c2|c3|c4|c5');
+  console.log('usage: node spec/checks/gate-diagnostics.mjs c1|c2|c3|c4|c5 [--with-node]');
   process.exit(2);
 }
 try {
