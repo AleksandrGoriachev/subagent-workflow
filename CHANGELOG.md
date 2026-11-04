@@ -1,5 +1,20 @@
 # Изменения
 
+## 2.6.26 — 2026-11-05
+
+- **Инструкция внешнему оркестратору (задание 0065).** `docs/EXTERNAL-ORCHESTRATION.md`: кто что
+  делает (исполнитель / приёмщик / архитектор), порядок `task-hash` → `task-lint` → `task-red` →
+  `task-verify` → `task-accept`, три запрета (не коммитить код, не коммитить артефакты задания,
+  не писать `acceptance.json` вручную), признаки доказательства (`contractCommit`, `criteria.lock`,
+  `nonce`, `attestedBy`) и таблица типичных ошибок. Повод: сторонний оркестратор собирался
+  «закоммитить кандидата» сам.
+- **ADR 0001 «процесс и доказательства — отдельным слоем над DSH».** Что даёт нативный DSH, что даёт
+  наш слой, таблица границы и условие, при котором слой ужимается до подписи и проверки.
+- **CI догоняет проверки 2.6.23–2.6.25.** В `.github/workflows/ci.yml` добавлены шаги `gate-rules`,
+  `pipe-free`, `gate-diagnostics` (c1–c5), `doctor-legacy-key`, `orchestration-doc` — GitHub теперь
+  проверяет то же, что и мы. `.github/workflows/ci.yml` не ослаблен: без `continue-on-error`.
+- Проверки: `spec/checks/orchestration-doc.mjs c1`, `spec/checks/ci-config.mjs c1`.
+- Приёмка 0065: кандидат `e084c27`, metadata `9d8df21`.
 ## 2.6.25 — 2026-11-04
 
 - **Подсказка называет причину сдвига HEAD (задание 0064, WC-47).** Отказ замка `contractCommit:`
