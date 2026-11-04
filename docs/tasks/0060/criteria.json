@@ -1,0 +1,138 @@
+{
+  "task": "0060",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "GATEDIAG FAIL c1",
+      "C2": "GATEDIAG FAIL c2",
+      "C3": "GATEDIAG FAIL c3",
+      "C4": "GATEDIAG FAIL c4"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Подсказка порядка коммитов при lock-отказе",
+      "command": "node spec/checks/gate-diagnostics.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-red.mjs",
+        "spec/scripts/task-verify.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Фатальная причина видна в stdout",
+      "command": "node spec/checks/gate-diagnostics.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/task-red.mjs",
+        "spec/scripts/task-verify.mjs",
+        "spec/scripts/task-hash.mjs",
+        "spec/scripts/task-lint.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Хуки находят node без PATH",
+      "command": "node spec/checks/gate-diagnostics.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/hooks/pre-commit",
+        "spec/hooks/commit-msg",
+        "spec/hooks/pre-push"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "init пишет .node-path и .gitignore",
+      "command": "node spec/checks/gate-diagnostics.mjs c4",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/init.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG OK c4"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Правила ворот не сломаны",
+      "command": "node spec/checks/gate-rules.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    }
+  ]
+}
