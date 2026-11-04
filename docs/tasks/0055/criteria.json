@@ -1,0 +1,45 @@
+{
+  "task": "0055",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2"],
+    "mustPass": ["C3"],
+    "reasons": {
+      "C1": "GATEOUT FAIL c1",
+      "C2": "GATEOUT FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Формат строк и сводки ворот",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/common.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "GATEOUT OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Ворота печатают через общий формат",
+      "command": "node spec/checks/gate-output.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast"],
+      "covers": ["spec/scripts/task-red.mjs", "spec/scripts/task-verify.mjs", "spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "GATEOUT OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
