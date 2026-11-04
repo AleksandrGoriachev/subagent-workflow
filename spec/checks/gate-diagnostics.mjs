@@ -167,6 +167,15 @@ function c3() {
     git(repo, ['config', 'user.email', 'p@l']);
     git(repo, ['config', 'user.name', 'p']);
     copyTree(path.join(PKG, 'spec'), path.join(repo, 'docs', 'subagent-workflow'));
+    /*
+     * guard.enabled=false — осознанная настройка проекта (пакетный конфиг), а не предмет
+     * WC-42. Включаем guard в СВОЕЙ копии конфига: тогда блокировка коммита — следствие
+     * найденного node, а не настройки. Хуки сам конфиг не трогают (см. §Что не входит).
+     */
+    const cfgFile = path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json');
+    const cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+    cfg.guard = { ...(cfg.guard || {}), enabled: true };
+    fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2) + '\n');
     git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
     git(repo, ['add', '-A']);
     git(repo, ['commit', '-q', '-m', 'base']);
@@ -179,12 +188,17 @@ function c3() {
     git(repo, ['add', '-A'], env);
     const blocked = git(repo, ['commit', '-m', 'uncovered change'], env);
     truthy(blocked.code !== 0, 'хук не заблокировал коммит без активного задания: ' + blocked.out.trim().slice(-300));
-    truthy(/не покрыт|task-guard|workflow-bypass/iu.test(blocked.out), 'отказ есть, но без диагностики guard: ' + blocked.out.trim().slice(-300));
+    truthy(/не покрыт|task-guard/iu.test(blocked.out), 'отказ есть, но без диагностики guard: ' + blocked.out.trim().slice(-300));
 
-    /* 2) node нет нигде: предупреждение один раз, дальше молча. */
+    /* 2) node нет нигде: предупреждение, маркер, и guard не выполняется (коммит не блокируется). */
     fs.rmSync(path.join(repo, 'docs', 'subagent-workflow', '.node-path'), { force: true });
-    const first = git(repo, ['commit', '-m', 'uncovered change'], env);
-    truthy(/node/iu.test(first.out) && /не найден|не найден/iu.test(first.out), 'нет предупреждения о ненайденном node: ' + first.out.trim().slice(-300));
+    const first = git(repo, ['commit', '-m', 'uncovered change without node'], env);
+    truthy(first.code === 0, 'без node коммит не должен блокироваться (guard не выполнен): ' + first.out.trim().slice(-300));
+    truthy(/node/iu.test(first.out) && /не найден/iu.test(first.out), 'нет предупреждения о ненайденном node: ' + first.out.trim().slice(-300));
+    const marker = git(repo, ['rev-parse', '--git-path', 'workflow-node-missing']).stdout.trim();
+    truthy(marker !== '' && fs.existsSync(path.resolve(repo, marker)), 'нет маркера пропуска: ' + marker);
+
+    /* 3) маркер глушит повторное предупреждение. */
     write(path.join(repo, 'src', 'second.js'), 'export const y = 2;\n');
     git(repo, ['add', '-A'], env);
     const second = git(repo, ['commit', '-m', 'second uncovered change'], env);

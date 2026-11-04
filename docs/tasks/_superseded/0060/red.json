@@ -1,0 +1,175 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0060",
+  "createdAt": "2026-11-04T19:00:29.802Z",
+  "base": "HEAD",
+  "baseSha": "10ebd150e74dc0b1402d852025e869f02e3d4639",
+  "headSha": "10ebd150e74dc0b1402d852025e869f02e3d4639",
+  "contractCommit": "10ebd150e74dc0b1402d852025e869f02e3d4639",
+  "criteriaSha256": "a66bc4b646efe8cd86586cc0481e061f3be406f3abae5a6b3fb034e2ae07584e",
+  "criteriaJsonSha256": "b099d7819fd5b21508e35a272ffad1c2ddeaa81db09c749c6ae3e698e48a7a37",
+  "dirtyPaths": [
+    "docs/tasks/0060/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/gate-diagnostics.mjs c1",
+      "exitCode": 1,
+      "durationMs": 14440,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: GATEDIAG OK c1"
+      ],
+      "stdoutSha256": "71c10018a9ea8e45528a406693d3f998403250dc4ed3da4959b4bbc2a89c5ac6",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEDIAG FAIL c1: task-red.mjs: нет подсказки «не коммить»: task-red: lock: contractCommit: ожидалось 465aace7f526dc4900ffe6b1bdd168d830facb4f, сейчас 5c85335f5974a3c425d6870e5b029a0ad1b2e149\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/gate-diagnostics.mjs c2",
+      "exitCode": 1,
+      "durationMs": 13800,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: GATEDIAG OK c2"
+      ],
+      "stdoutSha256": "c5f464e52ece5415e6e971e22dad11ada887a2e95277ca422738d0c43c5f9408",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEDIAG FAIL c2: task-red.mjs: stdout пуст при фатальном отказе (stderr-only)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-diagnostics.mjs c3",
+      "exitCode": 1,
+      "durationMs": 13707,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: GATEDIAG OK c3"
+      ],
+      "stdoutSha256": "3f8da000db133726e4957e3be8ad7e22a5fe96d7e96b1c36284e37faea69c21d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEDIAG FAIL c3: хук не заблокировал коммит без активного задания: [master 325bf16] uncovered change\n 2 files changed, 2 insertions(+)\n create mode 100644 docs/subagent-workflow/.node-path\n create mode 100644 src/app.js\ntask-guard: node не найден — проверка покрытия пропущена\ntask-guard: node не найден — проверка покрытия пропущена\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-diagnostics.mjs c4",
+      "exitCode": 1,
+      "durationMs": 4297,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: GATEDIAG OK c4"
+      ],
+      "stdoutSha256": "a9e495cc3fda8232eac03994b0173b95d0faeab42f7d8f54e94151e17fb19753",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEDIAG FAIL c4: init не записал docs/subagent-workflow/.node-path\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 67159,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "803fa48473d8731c0298a6ac9c67b128ef0143828ea91ffc91db56c671e06f38",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 118637,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7b8a148efb894bdd307359546a1b58bea2552c6428b0c9bb57ed7730e6d723ae",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS F-7: пересечение allowedPaths/protectedPaths — ошибка\nPASS F-7 контроль: без пересечения — ок\nPASS F-7 узость: свои task.md/criteria.json — ок\nPASS F-7 узость: шаблон docs/tasks/0001/*.md — ошибка\nPASS covers: шаблон из allowedPaths без covers — WARN и exit 0\nPASS covers: конкретный файл из allowedPaths без covers — ERROR и exit 1\nPASS covers: файл из allowedPaths под шаблоном covers — ок, exit 0\nPASS F-5: пустой mustFail без noRed — ошибка\nPASS F-5 контроль: noRed с причиной — ок\nPASS F-6: при несовпадении причина и вывод напечатаны\nPASS F-8: verify.json сохранён как verify.executor.json\n\nGATE RULES OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 4,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3",
+    "C4"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5",
+      "C6"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 5,
+        "total": 6,
+        "window": 25
+      },
+      {
+        "id": "C4",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}
