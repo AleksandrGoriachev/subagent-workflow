@@ -10,6 +10,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -44,7 +45,6 @@ function c1() {
 }
 
 function c2() {
-  const { execFileSync } = require('node:child_process');
   for (const gate of ['task-red.mjs', 'task-verify.mjs', 'task-accept.mjs']) {
     const file = path.join(PKG, 'spec', 'scripts', gate);
     truthy(fs.existsSync(file), 'нет ' + gate);
