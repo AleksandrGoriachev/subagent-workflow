@@ -26,8 +26,10 @@
 | WC-26 | done | high | Re-lock границ после красного (0050): `task-hash --relock --reason`, запись `relock` в замке, `criteriaSha256` неизменен |
 | WC-27 | done | high | Движок вне замка задания (0050): `protectedManifest`, `docs/subagent-workflow/**` не краснит чужой замок без `locksEngine` |
 | WC-28 | done | high | Журнал вердиктов ворот (0051): `docs/tasks/<id>/gates.jsonl`, append-only, `kind=red|verify|accept`, причины отказов; сбой журнала — WARN |
-| WC-30 | proposed | medium | `task-accept` пишет строку `accept` до сборки кандидата и подписи — при сбое сборки в журнале останется ложный `accepted` (замечание приёмщика 0051) |
-| WC-29 | proposed | medium | Границы до красного: правило в шаблоне «сверь файлы с allowedPaths до первой правки» + WARN линта на конкретный путь |
+| WC-30 | done | medium | Строка `accept` теперь после сборки кандидата и подписи (0052) |
+| WC-31 | proposed | low | `contract-discipline.mjs c2` ищет подпись по имени `signAcceptance`, а функция — `signRecord`: guard подписи не срабатывает (приёмщик 0052) |
+| WC-32 | proposed | low | Строка `accept` не попадает в репозиторий: пишется после сборки кандидата, `reset --hard` её теряет — дописывать при metadata-коммите |
+| WC-29 | done | medium | Границы до красного (0052): правило в шаблоне §Среда «сверь файлы с allowedPaths до первой правки, иначе стоп» |
 | WC-23 | done | low | `external-engine.mjs c2` сужен (0048): 121 → 78 с, живых спавнов полного набора в `spec/checks` не осталось |
 | WC-24 | proposed | medium | Ворота печатают `id / exit / durationMs` по каждому критерию и итог — тогда приёмщику не нужны ручные прогоны (≈980 с дублей) |
 | WC-25 | proposed | medium | `actor.model` у субагентов остаётся `unknown`: харнесс не передаёт `DSH_MODEL` спавну — просить/прокинуть в env |
