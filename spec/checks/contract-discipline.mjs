@@ -41,8 +41,10 @@ function c1() {
 
 function c2() {
   const source = fs.readFileSync(path.join(PKG, 'spec', 'scripts', 'task-accept.mjs'), 'utf8');
-  const candidateAt = source.indexOf('createCandidate(');
-  truthy(candidateAt > 0, 'в task-accept нет createCandidate');
+  /* Ищем именно вызов, а не объявление функции: объявление стоит вверху файла. */
+  const callAt = source.indexOf('const candidate = createCandidate(');
+  const candidateAt = callAt > 0 ? callAt : source.lastIndexOf('createCandidate(');
+  truthy(candidateAt > 0, 'в task-accept нет вызова createCandidate');
   const acceptAt = source.search(/appendGateRecord\([\s\S]{0,400}?kind:\s*'accept'/u);
   truthy(acceptAt > 0, 'в task-accept нет записи журнала с kind=accept');
   truthy(acceptAt > candidateAt, 'строка accept пишется до сборки кандидата (индекс ' + acceptAt + ' < ' + candidateAt + ') — при сбое сборки в журнале останется ложный accepted');
