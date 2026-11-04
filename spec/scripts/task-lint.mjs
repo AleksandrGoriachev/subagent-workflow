@@ -365,11 +365,23 @@ try {
           error('criteria.json: redExpect.noRed.reason пуст — причина отсутствия красного обязательна (2.6.4, F-5)');
         }
       }
+      /*
+       * 0057 (WC-35): reasonWindow — осознанное расширение вердиктной зоны, а не
+       * «почти число». Строка "100", true, дробь, ноль и отрицательное значение
+       * молча подменились бы окном по умолчанию, и доказательство ослабло бы
+       * незаметно, поэтому это ERROR контракта, а не WARN.
+       */
+      if (redExpect.reasonWindow !== undefined) {
+        const window = redExpect.reasonWindow;
+        if (!Number.isInteger(window) || window < 1 || window > 10000) {
+          error('criteria.json: redExpect.reasonWindow должен быть целым числом 1..10000 (непустых строк вердиктной зоны), получено ' + JSON.stringify(window));
+        }
+      }
       if (meta.risk !== 'low') {
         for (const id of (mustFail || [])) {
           const reason = (redExpect.reasons || {})[id];
           if (typeof reason !== 'string' || reason.trim() === '') {
-            error('criteria.json: для risk=' + meta.risk + ' нужна причина падения redExpect.reasons[' + id + '] — дословная подстрока stdout+stderr критерия');
+            error('criteria.json: для risk=' + meta.risk + ' нужна причина падения redExpect.reasons[' + id + '] — подстрока stdout+stderr критерия в вердиктной зоне (последние reasonWindow непустых строк)');
           }
         }
       }

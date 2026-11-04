@@ -4,6 +4,7 @@ import {
   parseArgv, readTask, verifyLock, repoRoot, git, dirtyPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, truncate, writeJson, writeText,
   formatGateRow, formatGateSummary, evaluateRedExpectation, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
+  detectCheckDefect, matchRedReason, redReasonWindow,
 } from './lib/common.mjs';
 
 const NL = String.fromCharCode(10);
@@ -132,7 +133,9 @@ try {
     if (!r) continue;
     const ev = evaluateExpectation(c.expect, r);
     const passed = ev.passed;
-    results.push({ id, command: c.command, exitCode: r.exitCode, durationMs: r.durationMs, passed, timedOut: r.timedOut, reasons: ev.reasons, stdout: r.stdout, stderr: r.stderr });
+    /* 0057 (WC-35): дефект проверки фиксируется в results сразу — артефакт, а не догадка при печати. */
+    const checkDefect = detectCheckDefect({ passed, stdout: r.stdout, stderr: r.stderr });
+    results.push({ id, command: c.command, exitCode: r.exitCode, durationMs: r.durationMs, passed, timedOut: r.timedOut, reasons: ev.reasons, stdout: r.stdout, stderr: r.stderr, checkDefect });
     logLine('## ' + id + ': ' + c.command);
     logLine('exit=' + r.exitCode + ' duration=' + r.durationMs + 'ms timedOut=' + r.timedOut);
     logLine(r.stdout);
@@ -158,13 +161,17 @@ try {
     redExpectation.ok = false;
   }
   /*
-   * F-6 (2.6.4): причина красного — дословная подстрока stdout+stderr. Одного
-   * «упал не по ожидаемой причине» мало: непонятно, что пришло на самом деле,
-   * и разбирательство идёт по red.log вручную. Печатаем ожидаемую причину,
-   * первые строки stdout+stderr критерия и путь к red.log. Случай «критерий
-   * зелёный» печатается тоже: задание ждало падения, и вывод — единственное
-   * доказательство того, чего оно не дождалось.
+   * F-6 (2.6.4) + 0057 (WC-35): причина красного — подстрока stdout+stderr, но
+   * только в вердиктной зоне: последних redReasonWindow непустых строках вывода.
+   * 0052 от structure: причина печатается в конце, поэтому совпадение в начале
+   * вывода часто чужая, замаскированная причина. Одного «упал не по ожидаемой
+   * причине» мало: непонятно, что пришло на самом деле, и разбирательство идёт
+   * по red.log вручную. Печатаем ожидаемую причину, причину промаха окна, первые
+   * строки stdout+stderr критерия и путь к red.log. Случай «критерий зелёный»
+   * печатается тоже: задание ждало падения, и вывод — единственное доказательство
+   * того, чего оно не дождалось.
    */
+  const reasonWindow = redReasonWindow(criteria.redExpect);
   const declaredReasons = criteria.redExpect && typeof criteria.redExpect.reasons === 'object' && criteria.redExpect.reasons !== null
     ? criteria.redExpect.reasons
     : {};
@@ -178,13 +185,15 @@ try {
     const result = results.find((r) => r.id === id);
     if (!result) continue;
     const text = String(result.stdout || '') + NL + String(result.stderr || '');
-    if (!result.passed && text.includes(reason)) continue;
-    reasonDiagnostics.push({ id, reason, passed: result.passed, stdout: firstLines(result.stdout), stderr: firstLines(result.stderr) });
+    const match = matchRedReason(text, reason, reasonWindow);
+    if (!result.passed && match.ok) continue;
+    reasonDiagnostics.push({ id, reason, passed: result.passed, match, stdout: firstLines(result.stdout), stderr: firstLines(result.stderr) });
   }
   const redProven = redExpectation.ok;
 
   const output = {
-    version: 4,
+    /* 0057 (WC-35): версия 5 — results несут checkDefect, redExpectation — дефекты и окно. */
+    version: 5,
     kind: 'red',
     task: String(meta.id),
     createdAt: new Date().toISOString(),
@@ -234,12 +243,29 @@ try {
       for (const error of redExpectation.errors) console.log('  ' + error);
     } else if (executed === 0) console.log('Красный НЕ доказан: нет исполняемых проверок (все manual?).');
     else console.log('Красный НЕ доказан: все ' + executed + ' проверок уже зелёные. Задача или проверка сформулированы неверно.');
+    if (redExpectation.checkDefects.length) {
+      console.log('');
+      console.log('Дефекты проверки (отказ самой проверки, а не проверяемого кода):');
+      for (const defect of redExpectation.checkDefects) {
+        console.log('  ' + defect.id + ': ' + defect.name + ': ' + defect.line);
+      }
+      console.log('  Красный не доказан: устраните ошибку в проверке, а не в реализации.');
+    }
     if (reasonDiagnostics.length) {
       console.log('');
-      console.log('Причины красного (дословная подстрока stdout+stderr):');
+      console.log('Причины красного (вердиктная зона — последние ' + reasonWindow + ' непустых строк stdout+stderr):');
       for (const item of reasonDiagnostics) {
-        console.log('  ' + item.id + ': ожидаемая причина не найдена в выводе: "' + item.reason + '"');
-        console.log('  ' + item.id + ': ' + (item.passed ? 'критерий зелёный — падения не было' : 'критерий упал, но по другой причине'));
+        if (item.passed) {
+          console.log('  ' + item.id + ': ожидаемая причина не найдена в выводе: "' + item.reason + '"');
+          console.log('  ' + item.id + ': критерий зелёный — падения не было');
+        } else if (item.match.found) {
+          console.log('  ' + item.id + ': причина «' + item.reason + '» найдена в строке ' + item.match.line
+            + ' из ' + item.match.total + ' непустых — вне вердиктной зоны (окно ' + reasonWindow + ' непустых строк)');
+          console.log('  ' + item.id + ': критерий упал, но причина напечатана выше зоны; reasonWindow расширяют осознанно, а не «чтобы прошло»');
+        } else {
+          console.log('  ' + item.id + ': ожидаемая причина не найдена в выводе: "' + item.reason + '"');
+          console.log('  ' + item.id + ': критерий упал, но по другой причине');
+        }
         for (const [stream, part] of [['stdout', item.stdout], ['stderr', item.stderr]]) {
           if (part.head.length === 0) continue;
           console.log('  ' + item.id + ': первые строки ' + stream + ':');

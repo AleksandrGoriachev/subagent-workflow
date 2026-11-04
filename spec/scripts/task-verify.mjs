@@ -47,7 +47,10 @@ try {
 
   if (exists(files.red)) {
     red = readJson(files.red);
-    if (red.version !== 4) fail('red.json: версия ' + red.version + ' устарела, нужна 4 — перезапустите task-red');
+    /* 0058 (WC-35): task-red пишет текущий формат 5, исторические артефакты — 4; остальные номера отвергаем. */
+    if (red.version !== 4 && red.version !== 5) {
+      fail('red.json: версия ' + red.version + ' неизвестна — принимаются версии 4 (исторические записи) и 5 (текущий формат); перезапустите task-red');
+    }
     if (!red.redProven) fail('red.json: redProven=false — красный не доказан');
     if (red.redExpectation && red.redExpectation.ok !== true) fail('red.json: красный не совпал с redExpect');
     if (red.baseSha !== headSha) fail('HEAD изменился после красного прогона (' + red.baseSha + ' -> ' + headSha + '); коммит исполнителя запрещён, перезапустите task-red');

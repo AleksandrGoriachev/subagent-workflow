@@ -1,0 +1,205 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "c5a61079139ce07b28a738072c998126",
+  "runKind": "accept",
+  "task": "0058",
+  "createdAt": "2026-11-04T04:46:34.167Z",
+  "headSha": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+  "contractCommit": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+  "criteriaSha256": "9cb7264d555740e9b754e2e92e0b2decc8ef47ddc1072dc7b9fb6b4b1d87b48a",
+  "criteriaJsonSha256": "69022595550ac88ee204c300193623ce0be595b255968a381e1aeb3746ee08f5",
+  "taskFileSha256": "6c9596565d8f3e77342298778d958768bbeacf69b7ead1329afa2d2adfeae232",
+  "changedPaths": [
+    "docs/tasks/0058/criteria.lock",
+    "docs/tasks/0058/gates.jsonl",
+    "docs/tasks/0058/red.json",
+    "docs/tasks/0058/report.md",
+    "spec/scripts/lib/common.mjs",
+    "spec/scripts/task-lint.mjs",
+    "spec/scripts/task-red.mjs",
+    "spec/scripts/task-verify.mjs",
+    "spec/templates/criteria.json",
+    "spec/templates/task.md"
+  ],
+  "coverage": {
+    "declared": 11,
+    "covered": [
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-lint.mjs",
+        "criterion": "C5"
+      },
+      {
+        "path": "spec/scripts/task-red.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-verify.mjs",
+        "criterion": "C7"
+      },
+      {
+        "path": "spec/templates/criteria.json",
+        "criterion": "C2"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/red-reason.mjs c1",
+      "exitCode": 0,
+      "durationMs": 24539,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "841ff7fb78565dc88ca7d8f45572726926dfc90d920c2100bee19c31000636ea",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/red-reason.mjs c2",
+      "exitCode": 0,
+      "durationMs": 45265,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "77702759c6b8801c41e12397fc306c59a10ac412b9191f7ae8d9afc93efe8444",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/red-reason.mjs c3",
+      "exitCode": 0,
+      "durationMs": 24687,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7677981fc4c6368ac55132709e7e5f250f7a870de22359dd2be536a86a113820",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/red-reason.mjs c4",
+      "exitCode": 0,
+      "durationMs": 25371,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "05188c20e100aaa5e86805fc88e623612e552dbdfe96adb15857e6a4b34e4b06",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON OK c4\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/red-reason.mjs c5",
+      "exitCode": 0,
+      "durationMs": 79914,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c0066ee6bd49eaafef87dfb09d2355b38429394a0cffce5b9f3247440f8b4eca",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON OK c5\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "exitCode": 0,
+      "durationMs": 587,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "752658261266c9f7b951712f34e61eef571f53513ed5d91baabd5492fe831f4f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEOUT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/verify-red-version.mjs c1",
+      "exitCode": 0,
+      "durationMs": 57791,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "9463feae77bb04127ce0e320139537989da52e12832e502dd526f05cefb7237e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "VERVER OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 7,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+    "contractCommit": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+    "criteriaJsonSha256": "69022595550ac88ee204c300193623ce0be595b255968a381e1aeb3746ee08f5",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C5",
+      "C7"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C5",
+        "C7"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C6"
+      ]
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "7f8a9102b0844dac6f4cee94658f9c92b7c70f773d81615a973f4e2b059eeb95",
+  "log": "verify.log"
+}

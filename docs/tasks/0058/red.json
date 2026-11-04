@@ -1,0 +1,151 @@
+{
+  "version": 4,
+  "kind": "red",
+  "task": "0058",
+  "createdAt": "2026-11-04T04:32:08.250Z",
+  "base": "HEAD",
+  "baseSha": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+  "headSha": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+  "contractCommit": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+  "criteriaSha256": "9cb7264d555740e9b754e2e92e0b2decc8ef47ddc1072dc7b9fb6b4b1d87b48a",
+  "criteriaJsonSha256": "69022595550ac88ee204c300193623ce0be595b255968a381e1aeb3746ee08f5",
+  "dirtyPaths": [
+    "docs/tasks/0058/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/red-reason.mjs c1",
+      "exitCode": 1,
+      "durationMs": 29522,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: REDREASON OK c1"
+      ],
+      "stdoutSha256": "c528926e3487cd9172200f58f71bf02f2ee419062e34261e506e6e125f973063",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON FAIL c1: красный засчитан доказанным при дефекте проверки (exit 0)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/red-reason.mjs c2",
+      "exitCode": 1,
+      "durationMs": 29929,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: REDREASON OK c2"
+      ],
+      "stdoutSha256": "7527ae3063e34be998c49fddc913b7df984bc064eab01bafbf290d7239607146",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON FAIL c2: причина вне вердиктной зоны засчитана: exit 0\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/red-reason.mjs c3",
+      "exitCode": 0,
+      "durationMs": 30968,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "7677981fc4c6368ac55132709e7e5f250f7a870de22359dd2be536a86a113820",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/red-reason.mjs c4",
+      "exitCode": 0,
+      "durationMs": 30157,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "05188c20e100aaa5e86805fc88e623612e552dbdfe96adb15857e6a4b34e4b06",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON OK c4\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/red-reason.mjs c5",
+      "exitCode": 1,
+      "durationMs": 19176,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: REDREASON OK c5"
+      ],
+      "stdoutSha256": "d68abd54ecf085d52cbbf35691b130e4c3a6fecda95a4219f1cde44703c982df",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REDREASON FAIL c5: lint принял reasonWindow: 0 (task-lint: 0001 — ок)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "exitCode": 0,
+      "durationMs": 979,
+      "passed": true,
+      "timedOut": false,
+      "reasons": [],
+      "stdoutSha256": "752658261266c9f7b951712f34e61eef571f53513ed5d91baabd5492fe831f4f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEOUT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/verify-red-version.mjs c1",
+      "exitCode": 1,
+      "durationMs": 18467,
+      "passed": false,
+      "timedOut": false,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: VERVER OK c1"
+      ],
+      "stdoutSha256": "a85b3b152346b3fcc8f4139471fbc850a8d5646fd8ec08e2e2d6791e25a3626a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "VERVER FAIL c1: task-verify отверг свежий red.json v5 (exit 1): task-verify: red.json: версия 5 устарела, нужна 4 — перезапустите task-red\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 7,
+  "failed": 4,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C5",
+    "C7"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C5",
+      "C7"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C6"
+    ]
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}
