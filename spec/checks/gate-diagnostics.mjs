@@ -83,6 +83,28 @@ function pathWithoutNode() {
   return parts.join(path.delimiter);
 }
 
+/*
+ * 0066: «node нет» не всегда представимо (CI Linux держит node в /usr/bin и /usr/local/bin).
+ * Смотрим в PATH заданной среды сами: node.exe на Windows, node/nodejs на POSIX с правом X_OK.
+ */
+function nodeDiscoverable(env) {
+  const isWin = process.platform === 'win32';
+  const names = isWin ? ['node.exe'] : ['node', 'nodejs'];
+  const mode = isWin ? fs.constants.F_OK : fs.constants.X_OK;
+  for (const dir of String((env && env.PATH) || '').split(path.delimiter)) {
+    if (!dir) continue;
+    for (const name of names) {
+      const candidate = path.join(dir, name);
+      try {
+        if (!fs.statSync(candidate).isFile()) continue;
+        fs.accessSync(candidate, mode);
+        return candidate;
+      } catch { /* нет файла или нет прав на исполнение */ }
+    }
+  }
+  return null;
+}
+
 const ID = '0001';
 const META = {
   id: ID, version: 1, title: 'т', risk: 'low', created: '2026-11-04', owner: 'a',
@@ -167,6 +189,18 @@ function c2() {
 
 /* c3: хуки без node в PATH — .node-path работает, иначе предупреждение один раз. */
 function c3() {
+  /* --with-node: PATH не чистим вовсе — ровно так выглядит linux-раннер. */
+  if (process.argv.includes('--with-node')) {
+    console.log('GATEDIAG SKIP c3: среда не позволяет изобразить «node нет» — PATH не чистился (--with-node)');
+    return;
+  }
+  const env = { ...process.env, PATH: pathWithoutNode() };
+  delete env.WF_NODE;
+  const foundNode = nodeDiscoverable(env);
+  if (foundNode) {
+    console.log('GATEDIAG SKIP c3: среда не позволяет изобразить «node нет» — node найден в ' + foundNode);
+    return;
+  }
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-gate-hooks-'));
   try {
     git(repo, ['init', '-q']);
@@ -185,10 +219,6 @@ function c3() {
     git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
     git(repo, ['add', '-A']);
     git(repo, ['commit', '-q', '-m', 'base']);
-    /* --with-node: PATH не чистим — так выглядит среда, где node находится всегда (CI Linux). */
-    const env = { ...process.env, ...(process.argv.includes('--with-node') ? {} : { PATH: pathWithoutNode() }) };
-    delete env.WF_NODE;
-
     /* 1) .node-path записан (как это делает init) — commit-msg обязан блокировать. */
     write(path.join(repo, 'docs', 'subagent-workflow', '.node-path'), process.execPath + '\n');
     write(path.join(repo, 'src', 'app.js'), 'export const x = 1;\n');

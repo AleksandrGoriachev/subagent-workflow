@@ -1,0 +1,197 @@
+{
+  "version": 3,
+  "task": "0066",
+  "taskFileSha256": "499f035bf54a643f364414e25e6222e8b84cd560434da3995a07e93a87e68a8a",
+  "criteriaSha256": "2de2d9a0c162aac7a8fc9c818a5f5aa180881b6fc062538ddc9d41e4277b509a",
+  "criteriaJsonSha256": "26d7fd19e70b108cefc3139ade523fc04e52b78a4439f4afee3f037604959201",
+  "attackSha256": null,
+  "contractCommit": "2584d890846ee9eb847ec00d75e67d3bb18a673b",
+  "protected": [
+    {
+      "path": "package.json",
+      "sha256": "d8ebdcfec03b73030b2abf86b2dc19ce47ec77148b8d80d27cff950f1aaf9294"
+    },
+    {
+      "path": "plugin/BACKLOG.md",
+      "sha256": "6419c8af7cb5264ab3fd7998b6767afd52ed8b220e7b039b63a8c7e3f4902b6c"
+    },
+    {
+      "path": "plugin/LICENSE",
+      "sha256": "6faae4701bd1ae1f4d4a359a66a6a5d1bbcd4ce7917150fa5e824057a2f484c0"
+    },
+    {
+      "path": "plugin/PLUGIN-PLAN.md",
+      "sha256": "bc3bee3a7fc0f0cc1a3b805813554de8608bb26556b849e29c2dbeb34e3ae227"
+    },
+    {
+      "path": "plugin/README.md",
+      "sha256": "c2a78f146c4abae532163f2dff19503c4105874f7ce55c1d91ae239b6a2ef5c8"
+    },
+    {
+      "path": "plugin/cordis.patch.yml",
+      "sha256": "9217cb4524dcd8cada1d840f5a03ee36501bca989f21fd331acdccaf113d50bd"
+    },
+    {
+      "path": "plugin/lib/api.js",
+      "sha256": "12bd27b406e1d0e4dd7616d45ab007c102d234311e4e0933c3ecf7cba2b05c08"
+    },
+    {
+      "path": "plugin/lib/checks.js",
+      "sha256": "71e5a9642c8b39c09409ce16487c3c538c3a384e0440874df8f1008d5cfb6947"
+    },
+    {
+      "path": "plugin/lib/client.js",
+      "sha256": "f70e382d395891f4be606b799ddc2bec517ec7668025171f7b216fc1f3be22d1"
+    },
+    {
+      "path": "plugin/lib/compat.js",
+      "sha256": "5578ae0a8b548c64e6942e5655688cabae1f03db607e7f6a6b2692757772e660"
+    },
+    {
+      "path": "plugin/lib/deploy.js",
+      "sha256": "79383091d47c5625e15e48d3a20cc35e7ff237e650bb8ea7aaf7c0b096346fa6"
+    },
+    {
+      "path": "plugin/lib/engine-root.js",
+      "sha256": "f56baa2bce360db90b5e7f0d21d1e66d9fa6a10ec7e3e74a532b302fc1810c7f"
+    },
+    {
+      "path": "plugin/lib/guard.js",
+      "sha256": "0fce3ebbbe7dcc1713cfe0d795e5e8bd7af063bc44f7513b3a60bdaeda2a584c"
+    },
+    {
+      "path": "plugin/lib/index.js",
+      "sha256": "86570ecd5a7bfa31b44df30a9ed75738a1d525595f13b95db70d0481f8bde660"
+    },
+    {
+      "path": "plugin/lib/state.js",
+      "sha256": "03cb45af560411bb66f14258958d17596d5d1dcfd5afbd79d6cf6476f1d049e1"
+    },
+    {
+      "path": "plugin/package.json",
+      "sha256": "5de3184227a4cbd3ff0ce3aa1bf12686dc9b4ada7bd8c467a247391b609ac01b"
+    },
+    {
+      "path": "plugin/test/api.test.mjs",
+      "sha256": "314ec3f4304800299311c39dc47553df97e402c8abe3262391b8995d1b17420a"
+    },
+    {
+      "path": "plugin/test/client.test.mjs",
+      "sha256": "1250605c54e824a6d31c16c43daf2d7cebac1fa402ed1994ea0661a69f9e064b"
+    },
+    {
+      "path": "plugin/test/compat.test.mjs",
+      "sha256": "01492bfb642f03e82a050ab8fe7a6da325e78c393a8342f2a5e75ff13d8664a1"
+    },
+    {
+      "path": "plugin/test/engine-link.test.mjs",
+      "sha256": "80f305aeec4924f6846a682d5244a6842d26e1da6ff03d38cc052ae7a87daf54"
+    },
+    {
+      "path": "plugin/test/engine-root.test.mjs",
+      "sha256": "aae067b900621e3aa904988dafd306f489465aa918f30817baeb410317bf1429"
+    },
+    {
+      "path": "plugin/test/fixture.mjs",
+      "sha256": "82fb47486f11c5f247b8aa29a86f4444ed7d8faf973aaf85c64bcf652c14bd8a"
+    },
+    {
+      "path": "plugin/test/panel-older.test.mjs",
+      "sha256": "81ef75901e1b1df0eefe32fc86bb980a4986085948ca9e99a4ea487eff645963"
+    },
+    {
+      "path": "plugin/test/state.test.mjs",
+      "sha256": "8a6ad564f9cf31af2c22238f630aa86b2e7baffe80adcfb1eceed020b4abbdb3"
+    },
+    {
+      "path": "plugin/tools/dev-server.mjs",
+      "sha256": "ed0be126adfc3a9da369333d85bc54671be2886796d689ab53fb80ef064ee15a"
+    },
+    {
+      "path": "plugin/tools/test.mjs",
+      "sha256": "8b176b652052b7ce22277c0fc8a7d163639fa80de65fced0f2f5e19588795ea4"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "spec/checks/gate-diagnostics.mjs",
+      "docs/tasks/0066/**"
+    ],
+    "protectedPaths": [
+      "plugin/**",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0066/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/gate-diagnostics.mjs c3 --with-node",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATEDIAG SKIP c3"
+        },
+        "covers": [
+          "spec/checks/gate-diagnostics.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/gate-diagnostics.mjs c3",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATEDIAG OK c3"
+        },
+        "covers": [
+          "spec/checks/gate-diagnostics.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/selftest.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "SELFTEST OK"
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node spec/checks/gate-rules.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATE RULES OK"
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-04T21:48:17.145Z",
+  "tool": "subagent-workflow/2.6.26"
+}
