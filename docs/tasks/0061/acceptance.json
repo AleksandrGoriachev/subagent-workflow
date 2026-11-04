@@ -1,0 +1,190 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0061",
+  "title": "подсказка порядка коммитов при lock-отказе, фатальная причина одной строкой в stdout, init пишет .node-path для хуков (WC-40/41/42; заменяет 0060)",
+  "risk": "low",
+  "taskFileSha256": "63a4f22bf2e7998d9609853797226c4468c6c88c62358eef4c1d369f8f64015f",
+  "criteriaSha256": "a66bc4b646efe8cd86586cc0481e061f3be406f3abae5a6b3fb034e2ae07584e",
+  "criteriaJsonSha256": "27bc82c6ff0a32f48573194df6c025fd64da08d350a93fa0c33fda64391d826e",
+  "contractCommit": "21d43c833a57871f288e229a0f0b94167543b00e",
+  "baseCommit": "21d43c833a57871f288e229a0f0b94167543b00e",
+  "candidateCommit": "80b78813f13838783a6559cb5cacbc6208ef1318",
+  "tree": "4ab1e58b36e0fab1af7a1df05c01ecb7c1176d93",
+  "worktreeDigest": "1df08f4c10925876bd8389d4ce470bc600a94c4d2dd3ef15e621b33010028f40",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-9934686a-2fb3-4638-a6f8-6b9749041635",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "d57152a7-5ed3-475e-96d5-5d8c449ece1c",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "7999bbf99c0500ea294771233a96444a",
+    "runKind": "accept",
+    "startedAt": "2026-11-04T19:30:49.860Z",
+    "finishedAt": "2026-11-04T19:32:48.571Z",
+    "durationMs": 118723,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "fe48d7abb06e928b94d6e4c595c65b6cbe6849f624f4cb5f273b197c2b368dd0",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "21d43c833a57871f288e229a0f0b94167543b00e",
+    "contractCommit": "21d43c833a57871f288e229a0f0b94167543b00e",
+    "criteriaJsonSha256": "27bc82c6ff0a32f48573194df6c025fd64da08d350a93fa0c33fda64391d826e",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "mustPass": [
+        "C5",
+        "C6"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 5,
+          "total": 6,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/gate-diagnostics.mjs c1",
+      "exitCode": 0,
+      "durationMs": 18709,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/gate-diagnostics.mjs c2",
+      "exitCode": 0,
+      "durationMs": 19318,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-diagnostics.mjs c3",
+      "exitCode": 0,
+      "durationMs": 23295,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-diagnostics.mjs c4",
+      "exitCode": 0,
+      "durationMs": 4855,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 57378,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 92575,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-04T19:32:49.149Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "0061: ворота говорят сами - подсказка порядка коммитов, причина в stdout, .node-path для хуков (WC-40/41/42; заменяет 0060)",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "Eokap9KFKJJYP9PGTWEFmRrpBPdECUSleWlruj8gK5mNICP6Gz86bn7q/3IUlhR3gtaZHYa5Gj2ImfSmDHk8DQ=="
+}
