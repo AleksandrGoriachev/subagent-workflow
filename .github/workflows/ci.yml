@@ -49,6 +49,24 @@ jobs:
         run: node spec/checks/update-flow.mjs
       - name: deploy-safety — ключ проекта и POST-маршруты (0018)
         run: node spec/checks/deploy-safety.mjs
+      - name: gate-rules — правила ворот не сломаны
+        run: node spec/checks/gate-rules.mjs
+      - name: pipe-free c1 — инструменты пакета без пайпов (0059)
+        run: node spec/checks/pipe-free.mjs c1
+      - name: gate-diagnostics c1 — диагностика ворот (0064)
+        run: node spec/checks/gate-diagnostics.mjs c1
+      - name: gate-diagnostics c2 — диагностика ворот (0064)
+        run: node spec/checks/gate-diagnostics.mjs c2
+      - name: gate-diagnostics c3 — диагностика ворот (0064)
+        run: node spec/checks/gate-diagnostics.mjs c3
+      - name: gate-diagnostics c4 — диагностика ворот (0064)
+        run: node spec/checks/gate-diagnostics.mjs c4
+      - name: gate-diagnostics c5 — диагностика ворот (0064)
+        run: node spec/checks/gate-diagnostics.mjs c5
+      - name: doctor-legacy-key c1 — legacy-ключ проекта (0064)
+        run: node spec/checks/doctor-legacy-key.mjs c1
+      - name: orchestration-doc c1 — инструкция внешнему оркестратору (0065)
+        run: node spec/checks/orchestration-doc.mjs c1
 
   plugin:
     name: plugin / ${{ matrix.os }} / node ${{ matrix.node }}
