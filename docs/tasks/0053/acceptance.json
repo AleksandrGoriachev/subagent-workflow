@@ -1,0 +1,132 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0053",
+  "title": "§Отчёт требует все проверки контракта; reportRead declared/not-declared без ложной проверки",
+  "risk": "low",
+  "taskFileSha256": "926782fce0d49bea2cc8b36172dab779feb9564a2b8dec65eb2fac3c0ada95ef",
+  "criteriaSha256": "1edd49baff65fe02da86db5db266dec2a65b8a9b2926b5b0a25a84262abda871",
+  "criteriaJsonSha256": "71099619d5cfea696c5e8668b1695db63a105cb3f8d99e9545afeef77ebd25d1",
+  "contractCommit": "3deae911bb82f34bf31c70e9727344b97b8b4693",
+  "baseCommit": "3deae911bb82f34bf31c70e9727344b97b8b4693",
+  "candidateCommit": "9ea743fa5ec9301dca214a1463dd2872fe384533",
+  "tree": "63e9195415455dc0adf5e55f64d1b87265f35115",
+  "worktreeDigest": "e3e3f7eb63d8a3095eee81baa42098c560fc0f3dde027f960b81f9d51af89f60",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-5c236846-8633-4428-b773-1f2ef0b814ed",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "a5061e5d-35ab-40d6-9650-9b82e6276c6e",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": false,
+    "reportRead": "declared",
+    "reportReadVerified": false,
+    "reportReadReason": "risk=low: приёмщик прочитал отчёт исполнителя для проверки §Отчёт",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "c16b51dd9b3eb007c1702a2c09b3cd71",
+    "runKind": "accept",
+    "startedAt": "2026-11-04T01:54:52.618Z",
+    "finishedAt": "2026-11-04T01:55:37.651Z",
+    "durationMs": 45034,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "a2c60cebbbb5bd97dce03c2110297f849a1429a7ad4b93d1178fb8ba38965cdf",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "3deae911bb82f34bf31c70e9727344b97b8b4693",
+    "contractCommit": "3deae911bb82f34bf31c70e9727344b97b8b4693",
+    "criteriaJsonSha256": "71099619d5cfea696c5e8668b1695db63a105cb3f8d99e9545afeef77ebd25d1",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/report-honesty.mjs c1",
+      "exitCode": 0,
+      "durationMs": 564,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/report-honesty.mjs c2",
+      "exitCode": 0,
+      "durationMs": 576,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 36349,
+      "passed": true
+    }
+  ],
+  "acceptor": "subagent:judge",
+  "acceptedAt": "2026-11-04T01:55:38.513Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "hrjJ8QR+1ejgqkY/etqUtXqqTA1fwD0w+h+dQXtTkFgRhFfakmrA/ycSMA0M4qt/5f7vqWyPYu36EIXJTuBYAA=="
+}
