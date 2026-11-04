@@ -1,0 +1,166 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0065",
+  "title": "docs/EXTERNAL-ORCHESTRATION.md, docs/adr/0001-process-vs-harness.md и шаги CI на проверки 2.6.23-2.6.25 (публикация схемы)",
+  "risk": "low",
+  "taskFileSha256": "16a161fb459d539629cbbede88f56309d2c28a1ac60b65c7eeacb2c880158f0a",
+  "criteriaSha256": "afabab926f6ab6c59a4a5a489cdc26b64af4005ff722822d970aa8210bceebc5",
+  "criteriaJsonSha256": "22c3847c2261a6d55db29313562dfd4b2f97057fb405fb76617cc4120fafd131",
+  "contractCommit": "be63728997eb4a512d53b39c1e493af7200cce94",
+  "baseCommit": "be63728997eb4a512d53b39c1e493af7200cce94",
+  "candidateCommit": "e084c278a069231ce7a16cc4ed724cefb1b800e4",
+  "tree": "ecefe14465f4619559754ce8e4c76d0afb92b28e",
+  "worktreeDigest": "a8bd0a35ae8f75aeffabadbc0b574cbc404a6288114bc1066a2e0174f0e84609",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-9934686a-2fb3-4638-a6f8-6b9749041635",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "09b122ea-b750-4597-9add-7399c3275354",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "988d1666589a0729fea9021e007ce5cb",
+    "runKind": "accept",
+    "startedAt": "2026-11-04T21:40:21.344Z",
+    "finishedAt": "2026-11-04T21:43:15.118Z",
+    "durationMs": 173782,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "dbd4b0670071021e0010af7898fff42f678b1c413dc9bf9aaed5c4eb651d146b",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "be63728997eb4a512d53b39c1e493af7200cce94",
+    "contractCommit": "be63728997eb4a512d53b39c1e493af7200cce94",
+    "criteriaJsonSha256": "22c3847c2261a6d55db29313562dfd4b2f97057fb405fb76617cc4120fafd131",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/orchestration-doc.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1517,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/ci-config.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1804,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 99937,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 160473,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1348,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-04T21:43:16.254Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "0065: инструкция внешнему оркестратору, ADR границы с DSH, CI на проверки 2.6.23-2.6.25",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "srtVmatHALoagqdpcoz4uPHDX/2WnNZFtYwA3WbSWItQUuO/PcT3To2LBwctZhEKHmDz6hhAN41u1pKPQgbSCw=="
+}
