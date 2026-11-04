@@ -1,0 +1,45 @@
+{
+  "task": "0053",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2"],
+    "mustPass": ["C3"],
+    "reasons": {
+      "C1": "REPORT FAIL c1",
+      "C2": "REPORT FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "§Отчёт требует все проверки контракта",
+      "command": "node spec/checks/report-honesty.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/templates/task.md"],
+      "expect": { "exitCode": 0, "stdoutContains": "REPORT OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Честные поля о чтении отчёта",
+      "command": "node spec/checks/report-honesty.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/lib/acceptance-policy.mjs", "spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "REPORT OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
