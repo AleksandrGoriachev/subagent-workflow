@@ -4,7 +4,7 @@ import {
   parseArgv, readTask, verifyLock, repoRoot, git, dirtyPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, truncate, writeJson, writeText,
   formatGateRow, formatGateSummary, evaluateRedExpectation, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
-  detectCheckDefect, matchRedReason, redReasonWindow,
+  detectCheckDefect, matchRedReason, redReasonWindow, lockOrderHint, reportFatal,
 } from './lib/common.mjs';
 
 const NL = String.fromCharCode(10);
@@ -39,13 +39,22 @@ try {
   const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria);
   if (!lockCheck.ok) {
     for (const e of lockCheck.errors) console.error('task-red: lock: ' + e);
+    /* 0060 (WC-41): причина отказа видна в stdout, а не только в stderr. */
+    if (argv.json) console.log(JSON.stringify({ ok: false, errors: lockCheck.errors.map((e) => 'lock: ' + e) }, null, 2));
+    else for (const e of lockCheck.errors) console.log('task-red: lock: ' + e);
+    /* 0060 (WC-40): сдвиг contractCommit объясняется порядком коммитов. */
+    const hint = lockOrderHint(lockCheck);
+    if (hint) {
+      console.error(hint);
+      if (!argv.json) console.log(hint);
+    }
     process.exit(1);
   }
 
   const baseRef = String(argv.base || meta.base || 'HEAD');
   const base = git(repo, ['rev-parse', '--verify', baseRef + '^{commit}']);
   if (base.exitCode !== 0) {
-    console.error('task-red: не разрешается base: ' + baseRef);
+    reportFatal('task-red', 'не разрешается base: ' + baseRef, { json: Boolean(argv.json) });
     process.exit(1);
   }
   const baseSha = base.stdout.trim();
@@ -54,11 +63,18 @@ try {
   if (lockCheck.expected.contractCommit !== headSha) {
     console.error('task-red: контракт закоммичен в ' + lockCheck.expected.contractCommit + ', а HEAD ' + headSha + '.');
     console.error('Красный прогон идёт только на контрактном коммите; после правки контракта перезапустите task-hash --write.');
+    reportFatal('task-red', 'контракт закоммичен в ' + lockCheck.expected.contractCommit + ', а HEAD ' + headSha + '.', { stderr: false, json: Boolean(argv.json) });
+    const hint = lockOrderHint({ errors: ['contractCommit: ожидалось ' + lockCheck.expected.contractCommit + ', сейчас ' + headSha] });
+    if (hint) {
+      console.error(hint);
+      if (!argv.json) console.log(hint);
+    }
     process.exit(1);
   }
   if (baseSha !== headSha && !argv['allow-base-mismatch']) {
     console.error('task-red: base (' + baseSha.slice(0, 12) + ') не совпадает с HEAD (' + headSha.slice(0, 12) + ').');
     console.error('Красный прогон должен идти на базовом коде: checkout base или --base HEAD. Для осознанного исключения — --allow-base-mismatch.');
+    reportFatal('task-red', 'base (' + baseSha.slice(0, 12) + ') не совпадает с HEAD (' + headSha.slice(0, 12) + ').', { stderr: false, json: Boolean(argv.json) });
     process.exit(1);
   }
 
@@ -74,13 +90,14 @@ try {
     allowBaseMismatch: Boolean(argv['allow-base-mismatch'] && baseSha !== headSha),
   };
   if (Object.values(bypasses).some(Boolean) && meta.risk === 'high') {
-    console.error('task-red: high-risk задача не может использовать обход (--allow-dirty / --allow-base-mismatch).');
+    reportFatal('task-red', 'high-risk задача не может использовать обход (--allow-dirty / --allow-base-mismatch).', { json: Boolean(argv.json) });
     process.exit(1);
   }
   if (unexpected.length && !argv['allow-dirty']) {
     console.error('task-red: рабочее дерево грязное вне разрешённых путей:');
     for (const p of unexpected) console.error('  ' + p);
     console.error('Красный прогон должен идти на закоммиченном контракте; допустимы только артефакты задания.');
+    reportFatal('task-red', 'рабочее дерево грязное вне разрешённых путей: ' + unexpected.join(', '), { stderr: false, json: Boolean(argv.json) });
     process.exit(1);
   }
 
@@ -107,7 +124,7 @@ try {
   }
   if (setupFailed) {
     writeText(files.redLog, log.join(NL));
-    console.error('task-red: setup завершился ошибкой; см. ' + files.redLog);
+    reportFatal('task-red', 'setup завершился ошибкой; см. ' + files.redLog, { json: Boolean(argv.json) });
     process.exit(1);
   }
 
@@ -280,6 +297,6 @@ try {
   process.exit(redProven ? 0 : 1);
 } catch (err) {
   if (argv.json) console.log(JSON.stringify({ ok: false, errors: [err.message] }, null, 2));
-  else console.error('task-red: ' + err.message);
+  else reportFatal('task-red', err.message);
   process.exit(err.exitCode || 1);
 }

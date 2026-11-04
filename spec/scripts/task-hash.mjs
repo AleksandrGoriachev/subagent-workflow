@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
   parseArgv, readTask, computeLock, verifyLock, writeJson, exists, repoRoot, taskFiles,
   checkContractCommitted, sameLockContract, readJson, loadConfig,
-  fail, toPosix, contractSnapshot, protectedManifest, relockAllowed,
+  fail, toPosix, contractSnapshot, protectedManifest, relockAllowed, reportFatal,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -31,6 +31,8 @@ try {
       console.error('task-hash: контракт задания не зафиксирован в git:');
       for (const error of contract.errors) console.error('  ERROR ' + error);
       console.error('Сначала закоммитьте task.md, criteria.json и защищённые проверки; иначе их можно переписать после выдачи.');
+      /* 0060 (WC-41): причина отказа одной строкой в stdout. */
+      reportFatal('task-hash', 'контракт задания не зафиксирован в git: ' + contract.errors.join('; '), { stderr: false });
     }
     process.exit(1);
   }
@@ -75,7 +77,10 @@ try {
     const verdict = relockAllowed(previous.contract, nextContract);
     if (!verdict.ok) {
       if (argv.json) console.log(JSON.stringify({ ok: false, errors: [verdict.reason], changed: verdict.changed }, null, 2));
-      else console.error('task-hash: ' + verdict.reason);
+      else {
+        console.error('task-hash: ' + verdict.reason);
+        reportFatal('task-hash', verdict.reason, { stderr: false });
+      }
       process.exit(1);
     }
     /*
@@ -163,6 +168,7 @@ try {
         else {
           console.error('task-hash: ' + errors[0]);
           console.error('Нужна новая версия задания: новый каталог/ID, новый красный прогон. Перезапись criteria.lock после красного запрещена.');
+          reportFatal('task-hash', errors[0], { stderr: false });
         }
         process.exit(1);
       }
@@ -191,6 +197,7 @@ try {
         console.error('task-hash: атака спецификации не пропускает замок:');
         for (const error of attackErrors) console.error('  ERROR ' + error);
         console.error('Проведите атаку (task-attack --prompt), устраните blocking-находки и повторите --write.');
+        reportFatal('task-hash', 'атака спецификации не пропускает замок: ' + attackErrors.join('; '), { stderr: false });
       }
       process.exit(1);
     }
@@ -221,6 +228,6 @@ try {
   process.exit(check.ok ? 0 : 1);
 } catch (err) {
   if (argv.json) console.log(JSON.stringify({ ok: false, errors: [err.message] }, null, 2));
-  else console.error('task-hash: ' + err.message);
+  else reportFatal('task-hash', err.message);
   process.exit(err.exitCode || 1);
 }

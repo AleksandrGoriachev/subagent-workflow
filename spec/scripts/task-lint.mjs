@@ -4,7 +4,7 @@ import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
   DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects, hasAcceptedRecord,
-  patternsIntersect,
+  patternsIntersect, reportFatal,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -528,6 +528,8 @@ try {
     console.log(JSON.stringify({ ok: errors.length === 0, task: id, errors, warnings }, null, 2));
   } else {
     console.log('task-lint: ' + (id || '(без id)') + ' — ' + (errors.length ? 'ОШИБКИ' : 'ок'));
+    /* 0060 (WC-41): причина отказа — одной строкой в stdout, с префиксом ворот. */
+    if (errors.length) console.log('task-lint: ' + errors[0]);
     for (const e of errors) console.log('  ERROR ' + e);
     if (!argv.quiet) for (const w of warnings) console.log('  WARN  ' + w);
     if (errors.length) console.log(NL + 'Исправьте ошибки до красного прогона.');
@@ -535,6 +537,6 @@ try {
   process.exit(errors.length ? 1 : 0);
 } catch (err) {
   if (argv.json) console.log(JSON.stringify({ ok: false, errors: [err.message], warnings }, null, 2));
-  else console.error('task-lint: ' + err.message);
+  else reportFatal('task-lint', err.message);
   process.exit(err.exitCode || 1);
 }

@@ -1,5 +1,5 @@
 #!/bin/sh
-# subagent-workflow 2.5.0 — коммит без активного задания отклоняется.
+# subagent-workflow 2.6.24 — коммит без активного задания отклоняется.
 #
 # $1 — файл сообщения коммита. Только здесь видна метка обхода
 # (guard.bypassMarker, по умолчанию "workflow-bypass"); без метки изменение,
@@ -10,12 +10,37 @@
 repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 guard="$repo/docs/subagent-workflow/scripts/task-guard.mjs"
 [ -f "$guard" ] || exit 0
-if ! command -v node >/dev/null 2>&1; then
+# 2.6.24 (0060, WC-42): порядок резолва node: $WF_NODE → docs/subagent-workflow/.node-path
+# (его пишет init) → command -v node. В bundled-окружении PATH node не содержит, и
+# блокирующий commit-msg молча пропускал проверку покрытия. Путь, которого нет,
+# считается ненайденным. Найден — guard работает как раньше; не найден —
+# предупреждение один раз на репозиторий (маркер в git-path), дальше хуки молчат.
+node_bin=""
+if [ -n "${WF_NODE:-}" ]; then
+  wf_node=$(printf '%s' "$WF_NODE" | tr '\\' '/')
+  if [ -f "$wf_node" ]; then node_bin="$wf_node"; fi
+fi
+if [ -z "$node_bin" ] && [ -f "$repo/docs/subagent-workflow/.node-path" ]; then
+  node_line=$(head -n 1 "$repo/docs/subagent-workflow/.node-path" 2>/dev/null | tr -d '\r')
+  node_line=$(printf '%s' "$node_line" | tr '\\' '/')
+  if [ -n "$node_line" ] && [ -f "$node_line" ]; then node_bin="$node_line"; fi
+fi
+if [ -z "$node_bin" ]; then
+  node_bin=$(command -v node 2>/dev/null || true)
+fi
+if [ -z "$node_bin" ]; then
+  marker=$(git rev-parse --git-path workflow-node-missing 2>/dev/null)
+  case "$marker" in
+    /*) ;;
+    *) if [ -n "$marker" ]; then marker="$repo/$marker"; fi ;;
+  esac
+  if [ -n "$marker" ] && [ -f "$marker" ]; then exit 0; fi
   echo "task-guard: node не найден — проверка покрытия пропущена" >&2
+  if [ -n "$marker" ]; then : > "$marker"; fi
   exit 0
 fi
 message=""
 if [ -n "$1" ] && [ -f "$1" ]; then
   message=$(cat "$1")
 fi
-exec node "$guard" --repo "$repo" --staged --message="$message"
+exec "$node_bin" "$guard" --repo "$repo" --staged --message="$message"

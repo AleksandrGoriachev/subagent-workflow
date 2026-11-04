@@ -878,6 +878,50 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) 
   return { ok: errors.length === 0, errors, notes, expected: lock, actual };
 }
 
+/*
+ * 0060 (WC-40): подсказка порядка коммитов в точке отказа.
+ *
+ * Сторонний агент после task-red закоммитил criteria.lock: HEAD ушёл, следующий
+ * прогон упал с «lock: contractCommit: ожидалось X, сейчас Y». Правило живёт в
+ * SPEC (§«Порядок коммитов») и в шаблоне задания, но не в точке отказа, поэтому
+ * из сообщения не видно, что делать. Функция чистая: решает по lockCheck.errors
+ * и возвращает текст подсказки или null, печатает вызывающий. Сдвиг — только
+ * ошибка contractCommit: остальные расхождения замка (версия, хеши, защищённые
+ * файлы) к порядку коммитов отношения не имеют.
+ */
+export function lockOrderHint(lockCheck) {
+  const errors = lockCheck && Array.isArray(lockCheck.errors) ? lockCheck.errors : [];
+  const shifted = errors.some((error) => String(error).indexOf('contractCommit:') === 0);
+  if (!shifted) return null;
+  const NL = String.fromCharCode(10);
+  return [
+    'Подсказка: не коммитьте критерии и артефакты после task-red — сдвиг HEAD отвязывает кандидата от contractCommit.',
+    'Порядок коммитов: контракт → task-hash --write → task-red → работа → task-verify → task-accept.',
+    'Кандидат — коммит, на котором task-red доказал красный; его SHA обязан совпадать с contractCommit в criteria.lock.',
+  ].join(NL);
+}
+
+/**
+ * 0060 (WC-41): причина фатального отказа — одной строкой в stdout с префиксом
+ * '<gate>: ', подробности остаются в stderr. Под обёрткой pwsh «пустой stdout +
+ * exit 1» выглядел молчаливым отказом: у первого task-red не было ни строки
+ * stdout. options.stderr === false не дублирует подробности, которые вызывающий
+ * уже напечатал сам; options.json === true оставляет stdout машинным — причина
+ * уходит объектом { ok: false, errors }, как в catch ворот.
+ */
+export function reportFatal(gate, message, options = {}) {
+  const NL = String.fromCharCode(10);
+  const prefix = String(gate) + ': ';
+  const text = message === undefined || message === null ? '' : String(message);
+  if (options.stderr !== false) console.error(prefix + text);
+  const lines = text.split(NL).map((line) => line.trim()).filter((line) => line !== '');
+  if (options.json === true) {
+    console.log(JSON.stringify({ ok: false, errors: lines.length > 0 ? lines : [text] }, null, 2));
+    return;
+  }
+  if (lines.length > 0) console.log(prefix + lines[0]);
+}
+
 export function dirtyPaths(repo) {
   const set = new Set();
   for (const args of [

@@ -269,6 +269,17 @@ if (sameSource) {
 fs.mkdirSync(path.join(repo, tasksDir), { recursive: true });
 
 /*
+ * 2.6.24 (0060, WC-42): хуки ищут node в PATH, а в bundled-окружении его там
+ * нет — тогда commit-msg, блокирующий guard, молча пропускает проверку покрытия
+ * и предупреждает на каждом коммите. Ворота штатно работают от process.execPath,
+ * поэтому init записывает этот путь рядом с движком; хуки читают его, когда PATH
+ * молчит. Строка .gitignore — ниже, вместе с остальными: путь машины не должен
+ * попадать в коммиты.
+ */
+const nodePathFile = path.join(dest, '.node-path');
+fs.writeFileSync(nodePathFile, process.execPath + String.fromCharCode(10));
+
+/*
  * VERSION — номер того, что действительно развёрнуто. Обновляем его только когда
  * файлы пакета обновлены (--force) или копия создаётся впервые: иначе получилось бы
  * «версия новая, содержимое старое» — именно так в ws-school-app оказался каталог
@@ -422,6 +433,12 @@ appendIgnore('# subagent-workflow: журналы прогонов', ignoreLine)
  */
 const guardLogRel = path.posix.join(workflowDir, 'guard.log');
 appendIgnore('# subagent-workflow: журнал включения guard', guardLogRel);
+/*
+ * 2.6.24 (0060, WC-42): .node-path — путь к node этой машины, а не к проекту:
+ * в коммиты ему нельзя, иначе чужой checkout получит заведомо неверный путь.
+ */
+const nodePathRel = path.posix.join(workflowDir, '.node-path');
+appendIgnore('# subagent-workflow: node для хуков', nodePathRel);
 
 /*
  * VERSION последним (2.6.3, B2). Только здесь, после файлов, конфига, хуков и
@@ -454,6 +471,7 @@ if (fs.existsSync(hooksDir)) {
       ? 'core.hooksPath НЕ выставлен — проверьте git'
       : 'не git-репозиторий: хуки не включены';
   console.log('  hooks       ' + hooksRel + ' (' + state + ')');
+  console.log('  node        ' + nodePathRel);
   if (hooksState.previous && hooksState.previous !== hooksRel) {
     console.warn('init: WARN core.hooksPath был "' + hooksState.previous + '" — заменён на "' + hooksRel + '" (локально, глобальный не тронут)');
   }

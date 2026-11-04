@@ -5,7 +5,7 @@ import {
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, writeJson, writeText,
   formatGateRow, formatGateSummary, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
   checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
-  gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
+  gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord, lockOrderHint, reportFatal,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 
@@ -22,7 +22,7 @@ const repo = path.resolve(argv.repo || repoRoot(taskDir));
 /* Ключ приёмщика не должен попадать в код задачи, который мы запускаем. */
 delete process.env.TASK_ACCEPT_KEY;
 
-function fail(message) { console.error('task-verify: ' + message); process.exit(1); }
+function fail(message) { reportFatal('task-verify', message, { json: Boolean(argv.json) }); process.exit(1); }
 
 function printSummary(title, rows) {
   console.log(title);
@@ -38,6 +38,15 @@ try {
   const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria);
   if (!lockCheck.ok) {
     for (const e of lockCheck.errors) console.error('task-verify: lock: ' + e);
+    /* 0060 (WC-41): причина отказа видна в stdout, а не только в stderr. */
+    if (argv.json) console.log(JSON.stringify({ ok: false, errors: lockCheck.errors.map((e) => 'lock: ' + e) }, null, 2));
+    else for (const e of lockCheck.errors) console.log('task-verify: lock: ' + e);
+    /* 0060 (WC-40): сдвиг contractCommit объясняется порядком коммитов. */
+    const hint = lockOrderHint(lockCheck);
+    if (hint) {
+      console.error(hint);
+      if (!argv.json) console.log(hint);
+    }
     process.exit(1);
   }
   const headSha = lockCheck.expected.contractCommit;
@@ -75,6 +84,7 @@ try {
     console.error('task-verify: изменения вне разрешённых путей:');
     for (const p of outsideBefore) console.error('  ' + p);
     console.error('Разрешено: ' + allowedDiff.join(', '));
+    reportFatal('task-verify', 'изменения вне разрешённых путей: ' + outsideBefore.join(', '), { stderr: false, json: Boolean(argv.json) });
     process.exit(1);
   }
 
@@ -100,7 +110,7 @@ try {
   }
   if (setupFailed) {
     writeText(files.verifyLog, log.join(NL));
-    console.error('task-verify: setup завершился ошибкой; см. ' + files.verifyLog);
+    reportFatal('task-verify', 'setup завершился ошибкой; см. ' + files.verifyLog, { json: Boolean(argv.json) });
     process.exit(1);
   }
 
@@ -272,6 +282,6 @@ try {
   process.exit(allPassed ? 0 : 1);
 } catch (err) {
   if (argv.json) console.log(JSON.stringify({ ok: false, errors: [err.message] }, null, 2));
-  else console.error('task-verify: ' + err.message);
+  else reportFatal('task-verify', err.message);
   process.exit(err.exitCode || 1);
 }

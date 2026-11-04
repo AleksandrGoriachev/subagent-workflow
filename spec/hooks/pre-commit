@@ -1,5 +1,5 @@
 #!/bin/sh
-# subagent-workflow 2.5.0 — ранний отчёт перед коммитом.
+# subagent-workflow 2.6.24 — ранний отчёт перед коммитом.
 #
 # Решение принимает commit-msg: git отдаёт сообщение коммита только хукам
 # commit-msg/prepare-commit-msg, а метка обхода живёт именно в сообщении.
@@ -8,11 +8,36 @@
 repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 guard="$repo/docs/subagent-workflow/scripts/task-guard.mjs"
 [ -f "$guard" ] || exit 0
-if ! command -v node >/dev/null 2>&1; then
+# 2.6.24 (0060, WC-42): порядок резолва node: $WF_NODE → docs/subagent-workflow/.node-path
+# (его пишет init) → command -v node. В bundled-окружении PATH node не содержит, и
+# блокирующий commit-msg молча пропускал проверку покрытия. Путь, которого нет,
+# считается ненайденным. Найден — guard работает как раньше; не найден —
+# предупреждение один раз на репозиторий (маркер в git-path), дальше хуки молчат.
+node_bin=""
+if [ -n "${WF_NODE:-}" ]; then
+  wf_node=$(printf '%s' "$WF_NODE" | tr '\\' '/')
+  if [ -f "$wf_node" ]; then node_bin="$wf_node"; fi
+fi
+if [ -z "$node_bin" ] && [ -f "$repo/docs/subagent-workflow/.node-path" ]; then
+  node_line=$(head -n 1 "$repo/docs/subagent-workflow/.node-path" 2>/dev/null | tr -d '\r')
+  node_line=$(printf '%s' "$node_line" | tr '\\' '/')
+  if [ -n "$node_line" ] && [ -f "$node_line" ]; then node_bin="$node_line"; fi
+fi
+if [ -z "$node_bin" ]; then
+  node_bin=$(command -v node 2>/dev/null || true)
+fi
+if [ -z "$node_bin" ]; then
+  marker=$(git rev-parse --git-path workflow-node-missing 2>/dev/null)
+  case "$marker" in
+    /*) ;;
+    *) if [ -n "$marker" ]; then marker="$repo/$marker"; fi ;;
+  esac
+  if [ -n "$marker" ] && [ -f "$marker" ]; then exit 0; fi
   echo "task-guard: node не найден — проверка покрытия пропущена" >&2
+  if [ -n "$marker" ]; then : > "$marker"; fi
   exit 0
 fi
-report=$(node "$guard" --repo "$repo" --audit)
+report=$("$node_bin" "$guard" --repo "$repo" --audit)
 # Печатаем только при реальных нарушениях: подстрока «не покрыт: » с двоеточием,
 # чтобы строка итога «не покрыто 0» не включала отчёт на каждом коммите.
 case "$report" in
