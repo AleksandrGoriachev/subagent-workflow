@@ -1,0 +1,45 @@
+{
+  "task": "0052",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2"],
+    "mustPass": ["C3"],
+    "reasons": {
+      "C1": "DISCIPLINE FAIL c1",
+      "C2": "DISCIPLINE FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Правило границ в шаблоне",
+      "command": "node spec/checks/contract-discipline.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/templates/task.md"],
+      "expect": { "exitCode": 0, "stdoutContains": "DISCIPLINE OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Строка accept после кандидата",
+      "command": "node spec/checks/contract-discipline.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/scripts/task-accept.mjs"],
+      "expect": { "exitCode": 0, "stdoutContains": "DISCIPLINE OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
