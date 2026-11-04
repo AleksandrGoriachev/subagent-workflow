@@ -1111,6 +1111,42 @@ export function formatMs(ms) {
   return (ms / 60000).toFixed(1) + ' min';
 }
 
+/*
+ * 0055 (WC-24): ворота печатают exit-код и длительность каждого критерия.
+ *
+ * Замер критика: приёмщик 0039–0048 добирал эти числа ручными прогонами (≈980 с
+ * дублей за семь приёмок) — в stdout было только `PASS  C1  5.5 s`, без кода
+ * возврата и без общей картины. Формат строки побайтно задан контрактом задания:
+ * `PASS  <id>  exit <code>  <ms> ms` (два пробела между полями). Функции чистые:
+ * ничего не читают и не пишут, поэтому ими же пользуется проверка формата.
+ */
+function gateRowParts(row) {
+  const source = row && typeof row === 'object' && !Array.isArray(row) ? row : {};
+  const exitCode = Number(source.exitCode);
+  const durationMs = Number(source.durationMs);
+  return {
+    id: source.id === undefined || source.id === null ? '' : String(source.id),
+    code: Number.isFinite(exitCode) ? String(exitCode) : '—',
+    ms: Number.isFinite(durationMs) ? String(Math.round(durationMs)) : '—',
+    passed: source.passed === true,
+  };
+}
+
+export function formatGateRow(row) {
+  const parts = gateRowParts(row);
+  return (parts.passed ? 'PASS' : 'FAIL') + '  ' + parts.id + '  exit ' + parts.code + '  ' + parts.ms + ' ms';
+}
+
+/* Итог одной строкой: «Итог: C1 exit 0 530 ms; C2 exit 3 1200 ms». */
+export function formatGateSummary(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  if (list.length === 0) return 'Итог: исполняемых проверок нет';
+  return 'Итог: ' + list.map((row) => {
+    const parts = gateRowParts(row);
+    return parts.id + ' exit ' + parts.code + ' ' + parts.ms + ' ms';
+  }).join('; ');
+}
+
 export function isManual(criterion) {
   return criterion.manual === true || (Array.isArray(criterion.tags) && criterion.tags.includes('manual'));
 }

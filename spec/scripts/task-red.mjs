@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, repoRoot, git, dirtyPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, truncate, writeJson, writeText,
-  formatMs, evaluateRedExpectation, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
+  formatGateRow, formatGateSummary, evaluateRedExpectation, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 
 const NL = String.fromCharCode(10);
@@ -27,9 +27,10 @@ function firstLines(text, max = 5) {
 function printSummary(title, rows) {
   console.log(title);
   for (const r of rows) {
-    console.log('  ' + (r.passed ? 'PASS' : 'FAIL') + '  ' + r.id + '  ' + formatMs(r.durationMs));
+    console.log(formatGateRow(r));
     if (!r.passed && r.reasons && r.reasons.length) for (const reason of r.reasons) console.log('        ' + reason);
   }
+  console.log(formatGateSummary(rows));
 }
 
 try {

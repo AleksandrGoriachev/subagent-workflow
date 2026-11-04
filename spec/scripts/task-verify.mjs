@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
   parseArgv, readTask, verifyLock, repoRoot, diffPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, writeJson, writeText,
-  formatMs, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
+  formatGateRow, formatGateSummary, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
   checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
   gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
@@ -27,9 +27,10 @@ function fail(message) { console.error('task-verify: ' + message); process.exit(
 function printSummary(title, rows) {
   console.log(title);
   for (const r of rows) {
-    console.log('  ' + (r.passed ? 'PASS' : 'FAIL') + '  ' + r.id + '  ' + formatMs(r.durationMs));
+    console.log(formatGateRow(r));
     if (!r.passed && r.reasons && r.reasons.length) for (const reason of r.reasons) console.log('        ' + reason);
   }
+  console.log(formatGateSummary(rows));
 }
 
 try {

@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, repoRoot, runSync, quoteArg, exists,
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
+  formatGateRow, formatGateSummary,
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
@@ -624,6 +625,10 @@ try {
     console.log('  candidate     ' + candidate.commit);
     console.log('  tree          ' + candidate.tree);
     console.log('  acceptance    ' + files.acceptance);
+    console.log('');
+    /* 0055: те же строки, что печатают ворота, — приёмщику не нужен повторный прогон. */
+    for (const row of verify.results || []) console.log(formatGateRow(row));
+    console.log(formatGateSummary(verify.results || []));
     console.log('');
     console.log('Финализация (дерево кода остаётся деревом кандидата):');
     console.log('  git reset --hard ' + candidate.commit + '   # рабочее дерево уже равно кандидату');
