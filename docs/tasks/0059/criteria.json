@@ -1,0 +1,128 @@
+{
+  "task": "0059",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "PIPEFREE FAIL c1",
+      "C2": "PIPEFREE FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Нет спавнов с пайпами в движке и инструментах",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/**",
+        "tools/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "spawnSyncPipeFree повторяет контракт spawnSync",
+      "command": "node spec/checks/pipe-free.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "selftest зелёный",
+      "command": "node spec/checks/pipe-free.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "task-check-acceptance проверяет запись 0058",
+      "command": "node spec/checks/pipe-free.mjs c4",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/task-check-acceptance.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c4"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "e2e зелёный",
+      "command": "node spec/checks/pipe-free.mjs c5",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c5"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Правила ворот не сломаны",
+      "command": "node spec/checks/gate-rules.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    }
+  ]
+}
