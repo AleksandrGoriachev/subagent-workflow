@@ -1,0 +1,152 @@
+{
+  "task": "0058",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C5",
+      "C7"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "REDREASON FAIL c1",
+      "C2": "REDREASON FAIL c2",
+      "C5": "REDREASON FAIL c5",
+      "C7": "VERVER FAIL c1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Отказ с ReferenceError — дефект проверки",
+      "command": "node spec/checks/red-reason.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-red.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REDREASON OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Причина только в вердиктной зоне; reasonWindow расширяет окно",
+      "command": "node spec/checks/red-reason.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-red.mjs",
+        "spec/templates/criteria.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REDREASON OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Настоящий красный доказывается",
+      "command": "node spec/checks/red-reason.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REDREASON OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Ожидаемый сбой негативного критерия — не дефект",
+      "command": "node spec/checks/red-reason.mjs c4",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REDREASON OK c4"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "lint валидирует reasonWindow",
+      "command": "node spec/checks/red-reason.mjs c5",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/task-lint.mjs",
+        "spec/templates/task.md"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REDREASON OK c5"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Формат строк ворот не изменился",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEOUT OK c1"
+      }
+    },
+    {
+      "id": "C7",
+      "title": "task-verify принимает red.json v4 и v5",
+      "command": "node spec/checks/verify-red-version.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/task-verify.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERVER OK c1"
+      }
+    }
+  ]
+}
