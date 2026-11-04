@@ -28,8 +28,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
 import { generateKeyPair, publicKeyFingerprint } from './sign.mjs';
+import { spawnSyncPipeFree } from './lib/common.mjs';
 
 function args(argv) {
   const out = { _: [] };
@@ -200,7 +200,7 @@ const repo = path.resolve(String(argv.repo || '.'));
  * хуки во всех репозиториях машины, а init отвечает за одно пространство (D2).
  */
 function runGit(args) {
-  return spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  return spawnSyncPipeFree('git', ['-C', repo, ...args], { encoding: 'utf8' });
 }
 const tasksDir = String(argv.tasks || 'docs/tasks').replace(/\\/g, '/');
 const workflowDir = 'docs/subagent-workflow';
@@ -246,7 +246,7 @@ if (argv.external !== undefined) {
  * и продолжает обычное развёртывание: ворота и хуки требуют git.
  */
 if (argv['git-init'] === true && !fs.existsSync(path.join(repo, '.git'))) {
-  const started = spawnSync('git', ['init'], { cwd: repo, encoding: 'utf8' });
+  const started = spawnSyncPipeFree('git', ['init'], { cwd: repo, encoding: 'utf8' });
   if (started.error || started.status !== 0) {
     console.error('init: --git-init: git init не выполнился: '
       + String((started.error && started.error.message) || started.stderr || '').trim());

@@ -7,8 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { spawnSync } from 'node:child_process';
-import { findRepoRoot, loadConfig, exists, readJson } from './lib/common.mjs';
+import { findRepoRoot, loadConfig, exists, readJson, spawnSyncPipeFree } from './lib/common.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
 import { loadAcceptors, publicKeyFingerprint } from './sign.mjs';
 import { policyOf, familyOf } from './lib/policy.mjs';
@@ -103,7 +102,7 @@ function readPrivateKeys(dirs) {
 const major = Number(String(process.versions.node).split('.')[0]);
 check('Node.js >= 20', major >= 20, 'сейчас ' + process.versions.node);
 
-const gitVersion = spawnSync('git', ['--version'], { encoding: 'utf8' });
+const gitVersion = spawnSyncPipeFree('git', ['--version'], { encoding: 'utf8' });
 check('git доступен', gitVersion.status === 0, (gitVersion.stdout || '').trim());
 
 const root = findRepoRoot(repo);

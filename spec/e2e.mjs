@@ -10,8 +10,8 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { spawnSyncPipeFree } from './scripts/lib/common.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'wf2-e2e-'));
@@ -32,7 +32,7 @@ function run(script, args, opts = {}) {
    */
   const env = { ...process.env, ...(opts.env || {}) };
   for (const key of opts.unsetEnv || []) delete env[key];
-  const r = spawnSync(process.execPath, [path.join(HERE, 'scripts', script), ...args], {
+  const r = spawnSyncPipeFree(process.execPath, [path.join(HERE, 'scripts', script), ...args], {
     cwd: opts.cwd || repo,
     env,
     encoding: 'utf8',
@@ -42,7 +42,7 @@ function run(script, args, opts = {}) {
 }
 
 function git(args) {
-  const r = spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  const r = spawnSyncPipeFree('git', ['-C', repo, ...args], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error('git ' + args.join(' ') + ': ' + r.stderr);
   return r.stdout.trim();
 }
@@ -76,7 +76,7 @@ try {
    * 2.4.1: e2e-deploy обязан работать и из развёрнутой копии — раньше он искал
    * корень как HERE/.. и падал на docs/VERSION.
    */
-  const deployedDeploy = spawnSync(process.execPath, [path.join(repo, 'docs/subagent-workflow/e2e-deploy.mjs')], {
+  const deployedDeploy = spawnSyncPipeFree(process.execPath, [path.join(repo, 'docs/subagent-workflow/e2e-deploy.mjs')], {
     cwd: repo, encoding: 'utf8', timeout: 300000,
   });
   report('e2e-deploy запускается из развёрнутой копии',
@@ -86,7 +86,7 @@ try {
   const secondRepo = path.join(tmp, 'second');
   const secondKeys = path.join(tmp, 'keys-second');
   const deployedInit = path.join(repo, 'docs/subagent-workflow/scripts/init.mjs');
-  const secondInit = spawnSync(process.execPath, [deployedInit, '--repo', secondRepo, '--key-out', secondKeys], { encoding: 'utf8' });
+  const secondInit = spawnSyncPipeFree(process.execPath, [deployedInit, '--repo', secondRepo, '--key-out', secondKeys], { encoding: 'utf8' });
   report(
     'init из развёрнутого каталога создаёт свой ключ, а не копирует acceptors.json',
     secondInit.status === 0 && fs.existsSync(path.join(secondKeys, 'agent-judge.key.pem')),
@@ -110,7 +110,7 @@ try {
     );
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
   };
-  const gitTry = (args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  const gitTry = (args) => spawnSyncPipeFree('git', ['-C', repo, ...args], { encoding: 'utf8' });
   const hooksPath = gitTry(['config', '--get', 'core.hooksPath']);
   report('2.5.0: init выставил локальный core.hooksPath',
     hooksPath.status === 0 && hooksPath.stdout.trim() === 'docs/subagent-workflow/hooks',
@@ -135,7 +135,7 @@ try {
   const guardBypass = gitTry(['commit', '-q', '-m', 'notes: срочно [workflow-bypass: проверка e2e]']);
   report('2.5.0: метка обхода в сообщении разрешает коммит',
     guardBypass.status === 0, (guardBypass.stdout || '') + (guardBypass.stderr || ''));
-  const guardAudit = spawnSync(
+  const guardAudit = spawnSyncPipeFree(
     process.execPath,
     [guardScript, '--repo', repo, '--audit', '--range', 'HEAD~1..HEAD'],
     { encoding: 'utf8' },
@@ -149,7 +149,7 @@ try {
    * хук проверяет коммиты, которых нет ни в одном remote.
    */
   const bareOrigin = path.join(tmp, 'origin.git');
-  spawnSync('git', ['init', '--bare', '-q', bareOrigin], { encoding: 'utf8' });
+  spawnSyncPipeFree('git', ['init', '--bare', '-q', bareOrigin], { encoding: 'utf8' });
   gitTry(['remote', 'add', 'origin', bareOrigin]);
   const deniedPush = gitTry(['push', 'origin', 'HEAD']);
   const deniedPushText = (deniedPush.stdout || '') + (deniedPush.stderr || '');

@@ -112,6 +112,65 @@ export function runSync(command, opts = {}) {
   };
 }
 
+/*
+ * Синхронный запуск без пайпов (0059, WC-37). В ограниченной песочнице DSH
+ * процесс не может открыть именованный канал: spawnSync с stdio 'pipe' (в том
+ * числе по умолчанию) падает с EPERM. Здесь вывод ребёнка идёт в два временных
+ * файла, которые отдаются в stdio ['ignore', ofd, efd], после завершения
+ * читаются и удаляются.
+ *
+ * Результат совместим со spawnSync: { status, stdout, stderr, signal, error }.
+ * Поддержаны cwd, env, timeout, windowsHide и encoding: 'utf8' даёт строки,
+ * 'buffer' или отсутствие encoding — Buffer, как у spawnSync по умолчанию.
+ * Отсутствующий бинарник не бросает: status: null и заполненный error.
+ */
+export function spawnSyncPipeFree(command, args, options = {}) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const list = Array.isArray(args) ? args : [];
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-spawn-'));
+  const outFile = path.join(dir, 'stdout');
+  const errFile = path.join(dir, 'stderr');
+  let ofd;
+  let efd;
+  let res = null;
+  let launchError = null;
+  try {
+    ofd = fs.openSync(outFile, 'w');
+    efd = fs.openSync(errFile, 'w');
+    res = spawnSync(command, list, {
+      cwd: opts.cwd || process.cwd(),
+      env: opts.env && typeof opts.env === 'object' ? opts.env : process.env,
+      timeout: opts.timeout,
+      windowsHide: opts.windowsHide === true,
+      stdio: ['ignore', ofd, efd],
+    });
+  } catch (error) {
+    launchError = error;
+  } finally {
+    if (ofd !== undefined) { try { fs.closeSync(ofd); } catch { /* ignore */ } }
+    if (efd !== undefined) { try { fs.closeSync(efd); } catch { /* ignore */ } }
+  }
+  const asText = opts.encoding === 'utf8';
+  const read = (file) => {
+    try {
+      const data = fs.readFileSync(file);
+      return asText ? data.toString('utf8') : data;
+    } catch {
+      return asText ? '' : Buffer.alloc(0);
+    }
+  };
+  const stdout = read(outFile);
+  const stderr = read(errFile);
+  try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* ignore */ }
+  return {
+    status: res && res.status !== undefined ? res.status : null,
+    stdout,
+    stderr,
+    signal: res ? res.signal || null : null,
+    error: launchError || (res ? res.error || null : null),
+  };
+}
+
 export function git(repo, args, opts = {}) {
   const cmd = 'git ' + args.map(quoteArg).join(' ');
   return runSync(cmd, { ...opts, cwd: repo });

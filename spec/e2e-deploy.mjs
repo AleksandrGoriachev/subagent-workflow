@@ -17,8 +17,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { spawnSyncPipeFree } from './scripts/lib/common.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -56,7 +56,7 @@ function report(label, ok, detail) {
 }
 
 function runNode(script, args, opts = {}) {
-  const r = spawnSync(process.execPath, [script, ...args], {
+  const r = spawnSyncPipeFree(process.execPath, [script, ...args], {
     cwd: opts.cwd || tmp,
     env: { ...process.env, ...(opts.env || {}) },
     encoding: 'utf8',
@@ -66,7 +66,7 @@ function runNode(script, args, opts = {}) {
 }
 
 function git(cwd, args) {
-  const r = spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
+  const r = spawnSyncPipeFree('git', ['-C', cwd, ...args], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error('git ' + args.join(' ') + ': ' + r.stderr);
 }
 

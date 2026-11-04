@@ -1,0 +1,222 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "8e7e8a4c1c55208516d9488a8dd8170a",
+  "runKind": "accept",
+  "task": "0059",
+  "createdAt": "2026-11-04T18:27:20.815Z",
+  "headSha": "f598de47ce1baaf726076bcdf87740c399f05e17",
+  "contractCommit": "f598de47ce1baaf726076bcdf87740c399f05e17",
+  "criteriaSha256": "6e50e7d2bdde1a23544bbf892b8f776704051803d3c68172d013ff8f81614666",
+  "criteriaJsonSha256": "ab650b6368c79499941796ea800042392ee58cf11606a7a18f22aae4e3f91cc7",
+  "taskFileSha256": "147ccbb926ade2ca33f70e55efb78bee833c74b6984e03aabe538d3ba884c6fc",
+  "changedPaths": [
+    "docs/tasks/0059/criteria.lock",
+    "docs/tasks/0059/gates.jsonl",
+    "docs/tasks/0059/red.json",
+    "docs/tasks/0059/report.md",
+    "docs/tasks/0059/verify.executor.json",
+    "docs/tasks/0059/verify.json",
+    "spec/e2e-deploy.mjs",
+    "spec/e2e.mjs",
+    "spec/scripts/doctor.mjs",
+    "spec/scripts/init.mjs",
+    "spec/scripts/lib/common.mjs",
+    "spec/scripts/task-check-acceptance.mjs",
+    "spec/selftest.mjs",
+    "tools/pack-plugin.mjs"
+  ],
+  "coverage": {
+    "declared": 7,
+    "covered": [
+      {
+        "path": "spec/e2e-deploy.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/e2e.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/doctor.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/init.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-check-acceptance.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/selftest.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "tools/pack-plugin.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1238,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "a1cb9ad2b4d1981e59b3bf103eae7546f2ad013d21c0e6190287f72ac60e1564",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/pipe-free.mjs c2",
+      "exitCode": 0,
+      "durationMs": 4678,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "9199bc85cd6c115469490df2aad18d0f60e636494bacb2ccf76543873a9091e4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/pipe-free.mjs c3",
+      "exitCode": 0,
+      "durationMs": 104291,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f2987877fa6428bdda1d188f8abc8cb409f05860857bc3b7b50c6c10a09935e4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/pipe-free.mjs c4",
+      "exitCode": 0,
+      "durationMs": 6832,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "05da1ef3343eeeb87b5c74c1d450023260e8ac28f4d5a1b7fc3b217135236a0f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c4\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/pipe-free.mjs c5",
+      "exitCode": 0,
+      "durationMs": 251146,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "15de6ea1e22801bde778b9d4f6bdc48fe1313458811d765408da37e62ab31f69",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c5\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 174681,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7b8a148efb894bdd307359546a1b58bea2552c6428b0c9bb57ed7730e6d723ae",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS F-7: пересечение allowedPaths/protectedPaths — ошибка\nPASS F-7 контроль: без пересечения — ок\nPASS F-7 узость: свои task.md/criteria.json — ок\nPASS F-7 узость: шаблон docs/tasks/0001/*.md — ошибка\nPASS covers: шаблон из allowedPaths без covers — WARN и exit 0\nPASS covers: конкретный файл из allowedPaths без covers — ERROR и exit 1\nPASS covers: файл из allowedPaths под шаблоном covers — ок, exit 0\nPASS F-5: пустой mustFail без noRed — ошибка\nPASS F-5 контроль: noRed с причиной — ок\nPASS F-6: при несовпадении причина и вывод напечатаны\nPASS F-8: verify.json сохранён как verify.executor.json\n\nGATE RULES OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "f598de47ce1baaf726076bcdf87740c399f05e17",
+    "contractCommit": "f598de47ce1baaf726076bcdf87740c399f05e17",
+    "criteriaJsonSha256": "ab650b6368c79499941796ea800042392ee58cf11606a7a18f22aae4e3f91cc7",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "e6fd63847556a1d73c76c2a8c20fae083811ad31cb3f5aab4f19e0a10504f124",
+  "log": "verify.log"
+}

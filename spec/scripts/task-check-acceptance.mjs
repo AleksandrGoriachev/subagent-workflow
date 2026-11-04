@@ -12,9 +12,8 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { loadAcceptors, verifyRecord, publicKeyFingerprint, readJsonFile } from './sign.mjs';
-import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions, evaluateEffects } from './lib/common.mjs';
+import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions, evaluateEffects, spawnSyncPipeFree } from './lib/common.mjs';
 import { policyOf, modelLevel, familyOf, applyLevel } from './lib/policy.mjs';
 import { assessIndependence, LEVEL_RANK, requiredLevel } from './actor.mjs';
 import { validateReview } from './lib/review.mjs';
@@ -37,15 +36,13 @@ function sha256Buffer(buffer) {
 }
 
 function git(repo, args, { buffer = false } = {}) {
-  try {
-    return execFileSync('git', ['-C', repo, ...args], {
-      encoding: buffer ? 'buffer' : 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      maxBuffer: 64 * 1024 * 1024,
-    });
-  } catch (err) {
-    throw new Error('git ' + args.join(' ') + ': ' + String(err.stderr || err.message).trim());
+  const r = spawnSyncPipeFree('git', ['-C', repo, ...args], { encoding: buffer ? 'buffer' : 'utf8' });
+  if (r.error || r.status !== 0) {
+    const detail = r.stderr === undefined || r.stderr === null ? '' : String(r.stderr);
+    const message = detail.trim() !== '' ? detail : (r.error && r.error.message ? r.error.message : '');
+    throw new Error('git ' + args.join(' ') + ': ' + String(message).trim());
   }
+  return r.stdout;
 }
 
 function gitTry(repo, args) {

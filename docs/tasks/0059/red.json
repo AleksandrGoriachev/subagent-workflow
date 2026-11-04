@@ -1,0 +1,153 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0059",
+  "createdAt": "2026-11-04T18:08:36.251Z",
+  "base": "HEAD",
+  "baseSha": "f598de47ce1baaf726076bcdf87740c399f05e17",
+  "headSha": "f598de47ce1baaf726076bcdf87740c399f05e17",
+  "contractCommit": "f598de47ce1baaf726076bcdf87740c399f05e17",
+  "criteriaSha256": "6e50e7d2bdde1a23544bbf892b8f776704051803d3c68172d013ff8f81614666",
+  "criteriaJsonSha256": "ab650b6368c79499941796ea800042392ee58cf11606a7a18f22aae4e3f91cc7",
+  "dirtyPaths": [
+    "docs/tasks/0059/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 1,
+      "durationMs": 1001,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: PIPEFREE OK c1"
+      ],
+      "stdoutSha256": "7fe34d40986daee9d7614b1401f55817fe0f6f9ee9dd6a1c92f8c62e6f00e2cb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE FAIL c1: спавны с пайпами (18): spec/e2e-deploy.mjs: spawnSync -> (process.execPath, [script, ...args], { cwd: opts.cwd || tmp, env: { ...process.env, ...(opts.env || {}) }, encoding: 'utf8', timeout: 300000, }) | spec/e2e-deploy.mjs: spawnSync -> ('git', ['-C', cwd, ...args], { encoding: 'utf8' }) | spec/e2e.mjs: spawnSync -> (process.execPath, [path.join(HERE, 'scripts', script), ...args], { cwd: opts.cwd || repo, env, encoding: 'utf8', timeout: 300000, }) | spec/e2e.mjs: spawnSync -> ('git', ['-C', repo, ...args], { encoding: 'utf8' }) | spec/e2e.mjs: spawnSync -> (process.execPath, [path.join(repo, 'docs/subagent-workflow/e2e-deploy.mjs')], { cwd: repo, encoding: 'utf8', timeout: 300000, }) | spec/e2e.mjs: spawnSync -> (process.execPath, [deployedInit, '--repo', secondRepo, '--key-out', secondKeys], { encoding: 'utf8' })\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/pipe-free.mjs c2",
+      "exitCode": 1,
+      "durationMs": 1046,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: PIPEFREE OK c2"
+      ],
+      "stdoutSha256": "b51fe2d2e45a473d7cd2e4542ddee82b4951a35d8d34bdb5c94602425c0d3f9e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE FAIL c2: в common.mjs нет export function spawnSyncPipeFree\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/pipe-free.mjs c3",
+      "exitCode": 0,
+      "durationMs": 105573,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f2987877fa6428bdda1d188f8abc8cb409f05860857bc3b7b50c6c10a09935e4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/pipe-free.mjs c4",
+      "exitCode": 0,
+      "durationMs": 5178,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "05da1ef3343eeeb87b5c74c1d450023260e8ac28f4d5a1b7fc3b217135236a0f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c4\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/pipe-free.mjs c5",
+      "exitCode": 0,
+      "durationMs": 290787,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "15de6ea1e22801bde778b9d4f6bdc48fe1313458811d765408da37e62ab31f69",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c5\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 203966,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7b8a148efb894bdd307359546a1b58bea2552c6428b0c9bb57ed7730e6d723ae",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS F-7: пересечение allowedPaths/protectedPaths — ошибка\nPASS F-7 контроль: без пересечения — ок\nPASS F-7 узость: свои task.md/criteria.json — ок\nPASS F-7 узость: шаблон docs/tasks/0001/*.md — ошибка\nPASS covers: шаблон из allowedPaths без covers — WARN и exit 0\nPASS covers: конкретный файл из allowedPaths без covers — ERROR и exit 1\nPASS covers: файл из allowedPaths под шаблоном covers — ок, exit 0\nPASS F-5: пустой mustFail без noRed — ошибка\nPASS F-5 контроль: noRed с причиной — ок\nPASS F-6: при несовпадении причина и вывод напечатаны\nPASS F-8: verify.json сохранён как verify.executor.json\n\nGATE RULES OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 2,
+  "failedIds": [
+    "C1",
+    "C2"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

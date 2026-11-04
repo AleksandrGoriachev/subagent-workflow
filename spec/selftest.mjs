@@ -7,10 +7,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
-import { summarizeDecisions, evaluateEffects, TOOL, loadConfig } from './scripts/lib/common.mjs';
+import { summarizeDecisions, evaluateEffects, TOOL, loadConfig, spawnSyncPipeFree } from './scripts/lib/common.mjs';
 import { detectActor, assessIndependence } from './scripts/actor.mjs';
 import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './scripts/lib/regress.mjs';
 
@@ -26,7 +25,7 @@ function report(label, ok, detail) {
 }
 
 function git(repo, args) {
-  const r = spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  const r = spawnSyncPipeFree('git', ['-C', repo, ...args], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error('git ' + args.join(' ') + ': ' + r.stderr);
   return r.stdout.trim();
 }
@@ -41,7 +40,7 @@ function sha(file) {
 }
 
 function runChecker(file, repo, keys, extra = []) {
-  return spawnSync(process.execPath, [CHECKER, '--file', file, '--repo', repo, '--keys', keys, '--task', 'docs/tasks/0001', ...extra], { encoding: 'utf8' });
+  return spawnSyncPipeFree(process.execPath, [CHECKER, '--file', file, '--repo', repo, '--keys', keys, '--task', 'docs/tasks/0001', ...extra], { encoding: 'utf8' });
 }
 
 try {
@@ -164,7 +163,7 @@ try {
   /* 2.3.1: запись v3 — история, а не подделка: ворота говорят «legacy» и не валят CI. */
   const legacyPath = path.join(tmp, 'legacy-v3.json');
   fs.writeFileSync(legacyPath, JSON.stringify({ version: 3, status: 'accepted', task: '0001' }, null, 2) + '\n');
-  const legacyRun = spawnSync(process.execPath, [CHECKER, '--file', legacyPath, '--repo', repo, '--keys', keysFile], { encoding: 'utf8' });
+  const legacyRun = spawnSyncPipeFree(process.execPath, [CHECKER, '--file', legacyPath, '--repo', repo, '--keys', keysFile], { encoding: 'utf8' });
   report('запись v3 принимается как legacy', legacyRun.status === 0 && /legacy/.test(legacyRun.stdout + legacyRun.stderr), legacyRun.stdout + legacyRun.stderr);
 
   const selfAccept = signRecord({ ...base, actor: { ...base.actor, session: 'issuer-session' }, independence: { ...base.independence, level: 'same-session' } }, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-main' });
@@ -654,7 +653,7 @@ try {
   const doctorTask = (id, risk) => write(path.join(doctorRepo, 'docs', 'tasks', id, 'task.md'),
     '# Задание ' + id + '\n\n<!-- TASK-META\n{ "id": "' + id + '", "risk": "' + risk + '" }\n-->\n');
   doctorTask('0001', 'medium');
-  const doctor = () => spawnSync(process.execPath, [DOCTOR, '--repo', doctorRepo], { encoding: 'utf8' });
+  const doctor = () => spawnSyncPipeFree(process.execPath, [DOCTOR, '--repo', doctorRepo], { encoding: 'utf8' });
   const quietDoctor = doctor();
   report('doctor: без задач risk: high про ключ human-* молчит',
     /задач risk: high нет — ключ human-\* не нужен/.test(quietDoctor.stdout),

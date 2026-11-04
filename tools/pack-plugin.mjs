@@ -23,8 +23,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { spawnSyncPipeFree } from '../spec/scripts/lib/common.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGIN = path.join(ROOT, 'plugin');
@@ -151,7 +151,7 @@ for (const file of [versionedPath, stablePath, versionedPath + '.sha256', stable
 }
 
 /*
- * На Windows npm — это npm.cmd, а spawnSync без shell не запускает .cmd.
+ * На Windows npm — это npm.cmd, а spawn без shell не запускает .cmd.
  * Запускаем через cmd.exe /d /s /c; shell: true с аргументами в Node даёт
  * deprecation-предупреждение и лишний слой разбора кавычек.
  */
@@ -168,7 +168,7 @@ const args = process.platform === 'win32'
 let failure = null;
 try {
   stageVendor();
-  const packed = spawnSync(command, args, { cwd: PLUGIN, encoding: 'utf8', windowsHide: true });
+  const packed = spawnSyncPipeFree(command, args, { cwd: PLUGIN, encoding: 'utf8', windowsHide: true });
   const output = String(packed.stdout || '') + String(packed.stderr || '');
   if (packed.error) {
     fail('не удалось запустить npm pack: ' + packed.error.message);
