@@ -1,0 +1,166 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0058",
+  "title": "task-red: дефект проверки != красный, причина только в вердиктной зоне; task-verify принимает red.json v4 и v5 (WC-35, заменяет 0057)",
+  "risk": "low",
+  "taskFileSha256": "6c9596565d8f3e77342298778d958768bbeacf69b7ead1329afa2d2adfeae232",
+  "criteriaSha256": "9cb7264d555740e9b754e2e92e0b2decc8ef47ddc1072dc7b9fb6b4b1d87b48a",
+  "criteriaJsonSha256": "69022595550ac88ee204c300193623ce0be595b255968a381e1aeb3746ee08f5",
+  "contractCommit": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+  "baseCommit": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+  "candidateCommit": "2234201c4fe1c8c5fe1d662fdc05facbd9c6af8d",
+  "tree": "700206cc11f547ce18139ed8fe300ca4720e213d",
+  "worktreeDigest": "7f8a9102b0844dac6f4cee94658f9c92b7c70f773d81615a973f4e2b059eeb95",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-9934686a-2fb3-4638-a6f8-6b9749041635",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "e1344f52-78eb-4e1f-a1ea-79a1d872855e",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "c5a61079139ce07b28a738072c998126",
+    "runKind": "accept",
+    "startedAt": "2026-11-04T04:44:43.879Z",
+    "finishedAt": "2026-11-04T04:46:34.324Z",
+    "durationMs": 110458,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "4817a74b0292669dcaee84db93f06f9eee2a364adb385af0eecf8d5d090b5193",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+    "contractCommit": "f9d7825c9990b37e2e76a3aa96a58bb6ce9ed3a0",
+    "criteriaJsonSha256": "69022595550ac88ee204c300193623ce0be595b255968a381e1aeb3746ee08f5",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C5",
+      "C7"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C5",
+        "C7"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C6"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/red-reason.mjs c1",
+      "exitCode": 0,
+      "durationMs": 24539,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/red-reason.mjs c2",
+      "exitCode": 0,
+      "durationMs": 45265,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/red-reason.mjs c3",
+      "exitCode": 0,
+      "durationMs": 24687,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/red-reason.mjs c4",
+      "exitCode": 0,
+      "durationMs": 25371,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/red-reason.mjs c5",
+      "exitCode": 0,
+      "durationMs": 79914,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "exitCode": 0,
+      "durationMs": 587,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/verify-red-version.mjs c1",
+      "exitCode": 0,
+      "durationMs": 57791,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-04T04:46:34.873Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "0058: дефект проверки != красный, причина в вердиктной зоне, task-verify принимает red.json v4/v5",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "T+EwYjDsoJgGLqkEtE9XBjZTQ7gNBNMRqAGgiOwxjOJ+NrKXDyzISsDn0IgA56k+FHiPc6J4KCB5nImrpEh7AA=="
+}
