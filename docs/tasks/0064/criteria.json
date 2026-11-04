@@ -1,0 +1,129 @@
+{
+  "task": "0064",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "GATEDIAG FAIL c5",
+      "C2": "DOCTORLEGACY FAIL c1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Подсказка различает причину сдвига HEAD",
+      "command": "node spec/checks/gate-diagnostics.mjs c5",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-red.mjs",
+        "spec/scripts/task-verify.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG OK c5"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "doctor: имя ключа только у активных пинов",
+      "command": "node spec/checks/doctor-legacy-key.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/doctor.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DOCTORLEGACY OK c1"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Прежняя подсказка не сломана",
+      "command": "node spec/checks/gate-diagnostics.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEDIAG OK c1"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Новых пайпов нет",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c1"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Правила ворот не сломаны",
+      "command": "node spec/checks/gate-rules.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    }
+  ]
+}

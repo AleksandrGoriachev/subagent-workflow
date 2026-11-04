@@ -105,8 +105,8 @@ function criteriaBody() {
     criteria: [{ id: 'C1', title: 't', command: 'node -e "console.log(1)"', cwd: '.', timeoutMs: 60000, tags: ['fast'], expect: { exitCode: 0 } }],
   };
 }
-/* Контракт заперт, затем HEAD сдвинут коммитом артефакта — ровно ошибка стороннего агента. */
-function makeStaleLockRepo() {
+/* Контракт заперт, затем HEAD сдвинут коммитом: 'artifact' — артефакт задания, 'code' — код исполнителя. */
+function makeStaleLockRepo(kind = 'artifact') {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-gate-diag-'));
   git(repo, ['init', '-q']);
   git(repo, ['config', 'user.email', 'p@l']);
@@ -119,9 +119,15 @@ function makeStaleLockRepo() {
   git(repo, ['commit', '-q', '-m', 'contract']);
   const hash = run(process.execPath, [path.join(repo, 'docs', 'subagent-workflow', 'scripts', 'task-hash.mjs'), '--task', 'docs/tasks/' + ID, '--write'], repo);
   truthy(hash.code === 0, 'task-hash --write в фикстуре не прошёл: ' + hash.out.trim().slice(-300));
-  write(path.join(dir, 'notes.txt'), 'artifact\n');
-  git(repo, ['add', '-A']);
-  git(repo, ['commit', '-q', '-m', 'artifact commit moves HEAD']);
+  if (kind === 'code') {
+    write(path.join(repo, 'src', 'app.js'), 'export const x = 1;\n');
+    git(repo, ['add', '-A']);
+    git(repo, ['commit', '-q', '-m', 'executor code commit moves HEAD']);
+  } else {
+    write(path.join(dir, 'notes.txt'), 'artifact\n');
+    git(repo, ['add', '-A']);
+    git(repo, ['commit', '-q', '-m', 'artifact commit moves HEAD']);
+  }
   return { repo, dir };
 }
 function gate(repo, name) {
@@ -225,10 +231,30 @@ function c4() {
   } finally { cleanup(repo); }
 }
 
-const table = { c1, c2, c3, c4 };
+/* c5: подсказка различает причину сдвига HEAD — артефакт, код, metadata. */
+function c5() {
+  const cases = [
+    { kind: 'code', path: 'src/app.js', words: [/код/iu, /task-accept/u] },
+    { kind: 'artifact', path: 'docs/tasks/0001/notes.txt', words: [/артефакт/iu, /кандидат/iu] },
+  ];
+  for (const item of cases) {
+    const t = makeStaleLockRepo(item.kind);
+    try {
+      const r = gate(t.repo, 'task-red.mjs');
+      truthy(r.code !== 0, item.kind + ': отказ не случился');
+      for (const word of item.words) {
+        truthy(word.test(r.out), item.kind + ': в выводе нет ' + word + ': ' + r.out.trim().slice(0, 400));
+      }
+      truthy(r.out.includes(item.path), item.kind + ': в выводе нет изменённого пути ' + item.path + ': ' + r.out.trim().slice(0, 400));
+    } finally { cleanup(t.repo); }
+  }
+  console.log('GATEDIAG OK c5');
+}
+
+const table = { c1, c2, c3, c4, c5 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/gate-diagnostics.mjs c1|c2|c3|c4');
+  console.log('usage: node spec/checks/gate-diagnostics.mjs c1|c2|c3|c4|c5');
   process.exit(2);
 }
 try {
