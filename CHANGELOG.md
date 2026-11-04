@@ -1,5 +1,25 @@
 # Изменения
 
+## 2.6.23 — 2026-11-04
+
+- **Инструменты пакета работают без пайпов (задание 0059, WC-37).** В ограниченной песочнице DSH
+  процесс не может открыть именованный канал: `spawnSync`/`execFileSync` с `stdio: 'pipe'` (и по
+  умолчанию) падают с `EPERM`. Из-за этого в такой сессии не шли `selftest`, `e2e`, `gate-rules`,
+  `release-hygiene` и даже `task-check-acceptance` — приёмку 0058 пришлось проверять раскладкой по
+  частям. Ворота (`task-red/verify/accept`) всегда были файловыми: `runCommand`/`runSync` пишут
+  вывод во временные файлы.
+- **`spawnSyncPipeFree`.** В `spec/scripts/lib/common.mjs` добавлен помощник с результатом как у
+  `spawnSync` (`status`/`stdout`/`stderr`/`signal`/`error`), выводом в два временных файла и
+  `stdio: ['ignore', ofd, efd]`; поддержаны `cwd`, `env`, `timeout`, `windowsHide`, `encoding`
+  (`'utf8'` — строки, `'buffer'` — Buffer), отсутствующий бинарник даёт `status: null` и `error`.
+- **Переведены 18 спавнов в 7 файлах:** `spec/selftest.mjs` (4), `spec/e2e.mjs` (7),
+  `spec/e2e-deploy.mjs` (2), `spec/scripts/doctor.mjs` (1), `spec/scripts/init.mjs` (2),
+  `spec/scripts/task-check-acceptance.mjs` (1), `tools/pack-plugin.mjs` (1). Поведение, вывод и коды
+  возврата не менялись; в `task-check-acceptance` Buffer-режим `git show` сохранён.
+- Проверка `spec/checks/pipe-free.mjs`: c1 — статический сканер `spec/**` и `tools/**` (кроме
+  `spec/checks`), c2 — контракт помощника, c3–c5 — `selftest`, `task-check-acceptance` по записи
+  0058, `e2e`. Остались проверки пакета со своими `run()` — это WC-39.
+- Приёмка 0059: кандидат `6eee7c5`, metadata `fdfa137`, `task-check-acceptance` — «запись корректна».
 ## 2.6.22 — 2026-11-04
 
 - **Красный доказывается причиной, а не фактом отказа (задание 0058, WC-35).** Отказ критерия с
