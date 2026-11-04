@@ -79,8 +79,13 @@ function keyIds(repo) {
   return JSON.parse(fs.readFileSync(file, 'utf8')).acceptors;
 }
 
-/* Файлы дерева, без состояния конкретного пространства. */
-const STATE_FILES = new Set(['acceptors.json', 'workflow.config.json', 'VERSION']);
+/*
+ * Файлы дерева, которые принадлежат конкретному пространству или машине, а не
+ * пакету: состояние пространства (acceptors.json, workflow.config.json, VERSION)
+ * и машинно-локальный .node-path, который init пишет путём к process.execPath.
+ * Всё остальное сравнивается побайтно; лишний файл вне набора — FAIL.
+ */
+const STATE_FILES = new Set(['acceptors.json', 'workflow.config.json', 'VERSION', '.node-path']);
 
 function listFiles(dir, base = dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -125,7 +130,7 @@ try {
 
   const deployDiff = diffTree(HERE, path.join(repoA, WORKFLOW));
   report(
-    'развёрнутое дерево совпадает с пакетом (кроме acceptors.json и конфигурации)',
+    'развёрнутое дерево совпадает с пакетом (кроме локальных acceptors.json, workflow.config.json, VERSION и .node-path)',
     deployDiff.missing.length === 0 && deployDiff.extra.length === 0 && deployDiff.changed.length === 0,
     JSON.stringify(deployDiff),
   );
