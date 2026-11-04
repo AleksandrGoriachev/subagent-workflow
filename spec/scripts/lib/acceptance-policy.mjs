@@ -32,6 +32,28 @@ export function reportReadGuard({ risk, reportRead, reason } = {}) {
 }
 
 /**
+ * Честная запись о том, читал ли приёмщик отчёт исполнителя (0053).
+ *
+ * reportWithheld (0049) утверждал «отчёт не читали» по одному лишь отсутствию
+ * флага: task-accept не видит сессию приёмщика и доказать чтение не может.
+ * Поэтому поле заменяется парой, которая не выдаёт заявление за доказательство:
+ *   reportRead         — 'declared' (флаг --report-read передан) или 'not-declared';
+ *   reportReadVerified — всегда false: доказательства чтения нет;
+ *   reportReadReason   — причина из --report-read-reason (trim), иначе ''.
+ * reportWithheld остаётся в записи для совместимости потребителей, но
+ * доказательством не считается.
+ *
+ * @returns {{ reportRead: 'declared' | 'not-declared', reportReadVerified: false, reportReadReason: string }}
+ */
+export function reportReadRecord({ reportRead, reason } = {}) {
+  return {
+    reportRead: reportRead ? 'declared' : 'not-declared',
+    reportReadVerified: false,
+    reportReadReason: typeof reason === 'string' ? reason.trim() : '',
+  };
+}
+
+/**
  * Фактическая модель актора: DSH_MODEL (trim) → config.model (trim) → unknown.
  *
  * Запись приёмки должна называть модель, которая действительно работала, а не

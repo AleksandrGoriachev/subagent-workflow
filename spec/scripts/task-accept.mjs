@@ -18,7 +18,7 @@ import {
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
-import { reportReadGuard, actorModel } from './lib/acceptance-policy.mjs';
+import { reportReadGuard, reportReadRecord, actorModel } from './lib/acceptance-policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
 import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
@@ -253,6 +253,18 @@ try {
   }
 
   /*
+   * 0053: reportWithheld (0049) — не доказательство чтения, а отсутствие флага.
+   * Доказать чтение по сессии приёмщика task-accept не может, поэтому в запись
+   * идёт честная пара: reportRead = declared|not-declared и
+   * reportReadVerified = false (доказательства нет), причина — рядом.
+   * reportWithheld остаётся для совместимости потребителей (plugin/lib/state.js).
+   */
+  const reportReadProof = reportReadRecord({
+    reportRead: Boolean(argv['report-read']),
+    reason: reportReadReason,
+  });
+
+  /*
    * 0049: в записи — фактическая модель актора, а не «unknown» по умолчанию.
    * Цепочка actorModel: DSH_MODEL → config.actor.model → unknown; последним
    * шагом берётся модель, которую уже определил detectActor по actor.modelSources
@@ -326,7 +338,14 @@ try {
       dryRun: true,
       note: 'проверки не перезапускались',
       actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, source: actor.source, sourceKind: actor.sourceKind, keyId },
-      independence: { level: independence.level, basis: independence.basis, separateSession: independence.level !== 'same-session', reportWithheld: !argv['report-read'], reportReadReason, keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key' },
+      independence: {
+        level: independence.level,
+        basis: independence.basis,
+        separateSession: independence.level !== 'same-session',
+        reportWithheld: !argv['report-read'],
+        ...reportReadProof,
+        keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key',
+      },
       acceptance: {
         version: 6, status: 'accepted', task: String(meta.id), candidateCommit: null, tree: null, worktreeDigest: digest,
         decisions: { count: decisionSummary.count, digest: decisionSummary.digest, assumed: decisionSummary.assumed, confirmed: decisionSummary.confirmed },
@@ -483,8 +502,9 @@ try {
       level: independence.level,
       basis: independence.basis,
       separateSession: independence.level === 'separate-session' || independence.level === 'human',
+      /* Совместимость: смысл поля — «флага не было», а не «чтение опровергнуто». */
       reportWithheld: !argv['report-read'],
-      reportReadReason,
+      ...reportReadProof,
       keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key',
       modelLevel: actorModelLevel,
     },
