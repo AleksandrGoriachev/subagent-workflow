@@ -1,0 +1,45 @@
+{
+  "task": "0054",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": ["C1", "C2"],
+    "mustPass": ["C3"],
+    "reasons": {
+      "C1": "SCHEMA FAIL c1",
+      "C2": "SCHEMA FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Схема знает поля чтения отчёта",
+      "command": "node spec/checks/acceptance-schema-fields.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/templates/acceptance.schema.json"],
+      "expect": { "exitCode": 0, "stdoutContains": "SCHEMA OK c1" }
+    },
+    {
+      "id": "C2",
+      "title": "Реальная запись проходит схему",
+      "command": "node spec/checks/acceptance-schema-fields.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": ["fast", "negative"],
+      "covers": ["spec/templates/acceptance.schema.json"],
+      "expect": { "exitCode": 0, "stdoutContains": "SCHEMA OK c2" }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 1800000,
+      "tags": ["slow"],
+      "covers": ["spec/**"],
+      "expect": { "exitCode": 0, "stdoutContains": "SELFTEST OK" }
+    }
+  ]
+}
