@@ -123,7 +123,13 @@ if (root) {
   if (exists(keysPath)) {
     try {
       const list = loadAcceptors(keysPath);
-      const bad = list.filter((key) => !String(key.keyId).startsWith(key.kind + '-'));
+      /*
+       * 0064 (WC-45): правило имени — только для активных пинов. Ключ без префикса,
+       * закреплённый для истории (revokedAt: старые записи приёмки перестали бы
+       * резолвиться при переименовании), — документированное исключение, а не дефект.
+       * Активный пин без префикса по-прежнему FAIL с именем ключа.
+       */
+      const bad = list.filter((key) => !key.revokedAt && !String(key.keyId).startsWith(key.kind + '-'));
       check('ключи: kind совпадает с префиксом', bad.length === 0, bad.map((key) => key.keyId).join(', '));
       const highTasks = countHighRiskTasks(path.join(root, String(config.tasksDir || 'docs/tasks')));
       check('ключи: human-* для high-risk', !highTasks || list.some((key) => key.kind === 'human'),

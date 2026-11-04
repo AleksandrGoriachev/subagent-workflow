@@ -888,17 +888,46 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) 
  * и возвращает текст подсказки или null, печатает вызывающий. Сдвиг — только
  * ошибка contractCommit: остальные расхождения замка (версия, хеши, защищённые
  * файлы) к порядку коммитов отношения не имеют.
+ *
+ * 0064 (WC-47): текст один на все случаи, и сторонний оркестратор, собиравшийся
+ * закоммитить КОД перед приёмкой, получал диагноз про артефакты — неверный. У нас
+ * код не коммитит никто: кандидата создаёт task-accept, ветку двигает архитектор
+ * после metadata. Поэтому подсказка называет три причины сдвига HEAD (артефакт
+ * задания, код исполнителя, metadata приёмки), правило для каждой и, если
+ * вызывающий передал список, сами изменённые пути. Решение «это сдвиг»
+ * по-прежнему только по ошибке contractCommit: — функция остаётся чистой и
+ * ничего не запускает; diff считают task-red и task-verify.
  */
-export function lockOrderHint(lockCheck) {
+function shiftPathKind(file) {
+  const p = String(file).replaceAll(String.fromCharCode(92), '/');
+  const base = p.split('/').pop();
+  if (base === 'acceptance.json') return 'metadata приёмки — ожидаемый сдвиг';
+  if (p.startsWith('docs/tasks/')) return 'артефакт задания — коммитить нельзя';
+  return 'код исполнителя — коммитить нельзя, кандидата создаёт task-accept';
+}
+
+export function lockOrderHint(lockCheck, changedPaths) {
   const errors = lockCheck && Array.isArray(lockCheck.errors) ? lockCheck.errors : [];
   const shifted = errors.some((error) => String(error).indexOf('contractCommit:') === 0);
   if (!shifted) return null;
   const NL = String.fromCharCode(10);
-  return [
-    'Подсказка: не коммитьте критерии и артефакты после task-red — сдвиг HEAD отвязывает кандидата от contractCommit.',
+  const paths = Array.isArray(changedPaths)
+    ? changedPaths.map((p) => String(p)).filter((p) => p.trim() !== '')
+    : [];
+  const lines = [
+    'Подсказка: HEAD сдвинулся после замка — кандидат отвязан от contractCommit. Причина — один из трёх видов коммита:',
+    '  1) артефакт задания (criteria.lock, red.json, gates.jsonl) — артефакты не коммитятся до приёмки: они не кандидат.',
+    '  2) код исполнителя — код не коммитится: кандидата создаёт task-accept, ветку двигает архитектор после metadata приёмки.',
+    '  3) metadata приёмки (acceptance.json) — у принятого задания сдвиг HEAD ожидаем.',
     'Порядок коммитов: контракт → task-hash --write → task-red → работа → task-verify → task-accept.',
     'Кандидат — коммит, на котором task-red доказал красный; его SHA обязан совпадать с contractCommit в criteria.lock.',
-  ].join(NL);
+  ];
+  if (Array.isArray(changedPaths)) {
+    lines.push('Изменённые пути (git diff --name-only <contractCommit> HEAD):');
+    if (paths.length === 0) lines.push('  (нет)');
+    for (const p of paths) lines.push('  ' + p + ' — ' + shiftPathKind(p));
+  }
+  return lines.join(NL);
 }
 
 /**

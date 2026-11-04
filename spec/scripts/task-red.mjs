@@ -34,6 +34,18 @@ function printSummary(title, rows) {
   console.log(formatGateSummary(rows));
 }
 
+/*
+ * 0064 (WC-47): подсказка о сдвиге HEAD называет фактические пути, чтобы агент
+ * увидел свою причину. Запуск идёт тем же pipe-free git(), что и остальные
+ * чтения; verifyLock остаётся чистым — diff считает вызывающий.
+ */
+function changedSinceContract(contractCommit) {
+  if (!contractCommit) return [];
+  const r = git(repo, ['diff', '--name-only', String(contractCommit), 'HEAD']);
+  if (r.exitCode !== 0) return [];
+  return r.stdout.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
+}
+
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
   const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria);
@@ -42,8 +54,8 @@ try {
     /* 0060 (WC-41): причина отказа видна в stdout, а не только в stderr. */
     if (argv.json) console.log(JSON.stringify({ ok: false, errors: lockCheck.errors.map((e) => 'lock: ' + e) }, null, 2));
     else for (const e of lockCheck.errors) console.log('task-red: lock: ' + e);
-    /* 0060 (WC-40): сдвиг contractCommit объясняется порядком коммитов. */
-    const hint = lockOrderHint(lockCheck);
+    /* 0060 (WC-40): сдвиг contractCommit объясняется порядком коммитов; 0064 (WC-47): с путями. */
+    const hint = lockOrderHint(lockCheck, changedSinceContract(lockCheck.expected && lockCheck.expected.contractCommit));
     if (hint) {
       console.error(hint);
       if (!argv.json) console.log(hint);
@@ -64,7 +76,10 @@ try {
     console.error('task-red: контракт закоммичен в ' + lockCheck.expected.contractCommit + ', а HEAD ' + headSha + '.');
     console.error('Красный прогон идёт только на контрактном коммите; после правки контракта перезапустите task-hash --write.');
     reportFatal('task-red', 'контракт закоммичен в ' + lockCheck.expected.contractCommit + ', а HEAD ' + headSha + '.', { stderr: false, json: Boolean(argv.json) });
-    const hint = lockOrderHint({ errors: ['contractCommit: ожидалось ' + lockCheck.expected.contractCommit + ', сейчас ' + headSha] });
+    const hint = lockOrderHint(
+      { errors: ['contractCommit: ожидалось ' + lockCheck.expected.contractCommit + ', сейчас ' + headSha] },
+      changedSinceContract(lockCheck.expected.contractCommit),
+    );
     if (hint) {
       console.error(hint);
       if (!argv.json) console.log(hint);

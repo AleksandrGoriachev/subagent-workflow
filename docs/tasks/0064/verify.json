@@ -1,0 +1,202 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "7dd20a0f2baf6a9ee00d043de6786568",
+  "runKind": "accept",
+  "task": "0064",
+  "createdAt": "2026-11-04T20:49:00.250Z",
+  "headSha": "58a39dac6971ee5546cd5f81cd914b17aa35a096",
+  "contractCommit": "58a39dac6971ee5546cd5f81cd914b17aa35a096",
+  "criteriaSha256": "cc8da0cba3ea14669cabdfe695bf7bb48fcef9dd05831f1df0960581cd4772ea",
+  "criteriaJsonSha256": "078186b7139c6509cf023bbfe10d585830bc7661410399ee55c64b2a9cae8747",
+  "taskFileSha256": "9d758e010ee98df0e5aeee36fe9aba73ade2377c19e54b9fbf7aec6fecc0ca2e",
+  "changedPaths": [
+    "docs/tasks/0064/criteria.lock",
+    "docs/tasks/0064/gates.jsonl",
+    "docs/tasks/0064/red.json",
+    "docs/tasks/0064/report.md",
+    "docs/tasks/0064/verify.executor.json",
+    "docs/tasks/0064/verify.json",
+    "spec/scripts/doctor.mjs",
+    "spec/scripts/lib/common.mjs",
+    "spec/scripts/task-red.mjs",
+    "spec/scripts/task-verify.mjs"
+  ],
+  "coverage": {
+    "declared": 8,
+    "covered": [
+      {
+        "path": "spec/scripts/doctor.mjs",
+        "criterion": "C2"
+      },
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-red.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-verify.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/gate-diagnostics.mjs c5",
+      "exitCode": 0,
+      "durationMs": 30485,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "1654846a33c33f7a1585c4cc2b05922f236a4cce798bea4c752ea685296b7202",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEDIAG OK c5\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/doctor-legacy-key.mjs c1",
+      "exitCode": 0,
+      "durationMs": 6256,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7c6d6da0ffbc15015f2310584bdd2b07eb33bb33d9e3e6e30fe397b7bf7776a2",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "DOCTORLEGACY OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-diagnostics.mjs c1",
+      "exitCode": 0,
+      "durationMs": 20736,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "30eb426d917f252b9be84f06dd827913d545c367f8a025b39dd3a24d5f0256e0",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEDIAG OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1040,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "a1cb9ad2b4d1981e59b3bf103eae7546f2ad013d21c0e6190287f72ac60e1564",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 62415,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "803fa48473d8731c0298a6ac9c67b128ef0143828ea91ffc91db56c671e06f38",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 98630,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7b8a148efb894bdd307359546a1b58bea2552c6428b0c9bb57ed7730e6d723ae",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS F-7: пересечение allowedPaths/protectedPaths — ошибка\nPASS F-7 контроль: без пересечения — ок\nPASS F-7 узость: свои task.md/criteria.json — ок\nPASS F-7 узость: шаблон docs/tasks/0001/*.md — ошибка\nPASS covers: шаблон из allowedPaths без covers — WARN и exit 0\nPASS covers: конкретный файл из allowedPaths без covers — ERROR и exit 1\nPASS covers: файл из allowedPaths под шаблоном covers — ок, exit 0\nPASS F-5: пустой mustFail без noRed — ошибка\nPASS F-5 контроль: noRed с причиной — ок\nPASS F-6: при несовпадении причина и вывод напечатаны\nPASS F-8: verify.json сохранён как verify.executor.json\n\nGATE RULES OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "58a39dac6971ee5546cd5f81cd914b17aa35a096",
+    "contractCommit": "58a39dac6971ee5546cd5f81cd914b17aa35a096",
+    "criteriaJsonSha256": "078186b7139c6509cf023bbfe10d585830bc7661410399ee55c64b2a9cae8747",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 3,
+          "total": 4,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "3dcbdc3bf282870dde6b3f5722fec52e9261226b88a95a1763466aa8efd05e8b",
+  "log": "verify.log"
+}

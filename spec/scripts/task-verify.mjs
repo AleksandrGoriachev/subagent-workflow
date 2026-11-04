@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import {
-  parseArgv, readTask, verifyLock, repoRoot, diffPaths, matchesAny, relPosix,
+  parseArgv, readTask, verifyLock, repoRoot, git, diffPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, writeJson, writeText,
   formatGateRow, formatGateSummary, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
   checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
@@ -33,6 +33,18 @@ function printSummary(title, rows) {
   console.log(formatGateSummary(rows));
 }
 
+/*
+ * 0064 (WC-47): подсказка о сдвиге HEAD называет фактические пути, чтобы агент
+ * увидел свою причину. Запуск идёт тем же pipe-free git(), что и остальные
+ * чтения; verifyLock остаётся чистым — diff считает вызывающий.
+ */
+function changedSinceContract(contractCommit) {
+  if (!contractCommit) return [];
+  const r = git(repo, ['diff', '--name-only', String(contractCommit), 'HEAD']);
+  if (r.exitCode !== 0) return [];
+  return r.stdout.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
+}
+
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
   const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria);
@@ -41,8 +53,8 @@ try {
     /* 0060 (WC-41): причина отказа видна в stdout, а не только в stderr. */
     if (argv.json) console.log(JSON.stringify({ ok: false, errors: lockCheck.errors.map((e) => 'lock: ' + e) }, null, 2));
     else for (const e of lockCheck.errors) console.log('task-verify: lock: ' + e);
-    /* 0060 (WC-40): сдвиг contractCommit объясняется порядком коммитов. */
-    const hint = lockOrderHint(lockCheck);
+    /* 0060 (WC-40): сдвиг contractCommit объясняется порядком коммитов; 0064 (WC-47): с путями. */
+    const hint = lockOrderHint(lockCheck, changedSinceContract(lockCheck.expected && lockCheck.expected.contractCommit));
     if (hint) {
       console.error(hint);
       if (!argv.json) console.log(hint);
