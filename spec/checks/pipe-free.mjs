@@ -9,8 +9,11 @@
  * руками. Ворота (task-red/verify/accept) всегда работали, потому что runCommand
  * и runSync в lib/common.mjs пишут вывод во временные файлы и отдают их в stdio.
  *
+ * 2.6.30 (0071, WC-39): проверено и на самих проверках — spec/checks/*.mjs переведены
+ * на тот же помощник, и c1 сканирует их вместе с движком и инструментами.
+ *
  * Здесь два обязательства:
- *  - c1: в движке и инструментах нет спавнов с пайпами (статическая проверка);
+ *  - c1: в движке, инструментах и проверках нет спавнов с пайпами (статическая проверка);
  *  - c2: общий помощник spawnSyncPipeFree существует и ведёт себя как spawnSync
  *        (status/stdout/stderr, коды возврата, Buffer-режим);
  *  - c3..c5: то, что раньше не запускалось, работает (selftest, e2e,
@@ -97,7 +100,8 @@ export function pipeFindings(text) {
 }
 
 const SCAN_DIRS = ['spec', 'tools'];
-const SCAN_EXCLUDE = ['spec/checks', 'spec/templates', 'docs/subagent-workflow', 'node_modules', '.tmp', 'dist', 'vendor', 'docs/tasks'];
+/* 0071 (WC-39): spec/checks больше не исключается — проверки обязаны быть примером правила. */
+const SCAN_EXCLUDE = ['spec/templates', 'docs/subagent-workflow', 'node_modules', '.tmp', 'dist', 'vendor', 'docs/tasks'];
 
 function scanFiles() {
   const files = [];

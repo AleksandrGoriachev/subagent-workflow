@@ -1,0 +1,143 @@
+{
+  "task": "0071",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7"
+    ],
+    "reasons": {
+      "C1": "PIPEFREE FAIL c1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Проверки без пайпов",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/checks/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Помощник без пайпов цел",
+      "command": "node spec/checks/pipe-free.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Интеграционный e2e зелёный",
+      "command": "node spec/e2e.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "E2E OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Правила ворот не сломаны",
+      "command": "node spec/checks/gate-rules.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Переведённая проверка gate-output работает",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/gate-output.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEOUT OK c1"
+      }
+    },
+    {
+      "id": "C7",
+      "title": "Переведённая проверка actor-sources работает",
+      "command": "node spec/checks/actor-sources.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/actor-sources.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACTOR SOURCES OK"
+      }
+    }
+  ]
+}
