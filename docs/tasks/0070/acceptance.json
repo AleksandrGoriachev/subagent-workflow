@@ -1,0 +1,159 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0070",
+  "title": "task-accept: actor.node только из --node/WF_ACTOR_NODE, без подстановки acceptorNode из TASK-META; nodeConsistency(meta, record) в common.mjs (дефект 0069)",
+  "risk": "medium",
+  "taskFileSha256": "4527aef353e89cba72795dde7ea8626552010016f8b3435d46431b8772364763",
+  "criteriaSha256": "b6a98b7d17c280c45896b92bdae25ff5baf229eabe26b1b6b4334f0b3277461c",
+  "criteriaJsonSha256": "b4ab14c87bccb55dfde3a1a04174f8b0d1bcc30c03c6c89f0514a9de018580f4",
+  "contractCommit": "af332bf5ddd4aae352aa82dbbe5119eed4b05512",
+  "baseCommit": "af332bf5ddd4aae352aa82dbbe5119eed4b05512",
+  "candidateCommit": "e38bd730558c70838cb52ae520983540b6e59587",
+  "tree": "b05cb6821969faf1a84746da65db15dfbcbe19e8",
+  "worktreeDigest": "48cd072116f0af4fe649b536594ef62d947893e49154c6b98ab43f6ef70da0df",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-9934686a-2fb3-4638-a6f8-6b9749041635",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "d7a5aada-4e07-4ff8-9623-e7334cd8fa9a",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "d77dd023f068eb9a1dc84349cd49fde5",
+    "runKind": "accept",
+    "startedAt": "2026-11-05T06:06:52.457Z",
+    "finishedAt": "2026-11-05T06:09:31.709Z",
+    "durationMs": 159265,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "8133b26cc28e49e246257fd920a1a04cf7d7eaaf2d6ebfb29cdd02b5ebd6c795",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "af332bf5ddd4aae352aa82dbbe5119eed4b05512",
+    "contractCommit": "af332bf5ddd4aae352aa82dbbe5119eed4b05512",
+    "criteriaJsonSha256": "b4ab14c87bccb55dfde3a1a04174f8b0d1bcc30c03c6c89f0514a9de018580f4",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/node-attribution.mjs c3",
+      "exitCode": 0,
+      "durationMs": 674,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 151425,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 62259,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 110749,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1105,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-05T06:09:32.242Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "0070: actor.node только из --node; nodeConsistency(meta, record)",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "MItm6ZJpmApofeWr9HsqeuSlCXP87rpV+z2K/R8kgNwFT7C5vm9OLVakS3LxjtHRQ92TVCv6Az6UkV5GAM6RBQ=="
+}
