@@ -221,10 +221,46 @@ function c5() {
   });
 }
 
-const table = { c1, c2, c3, c4, c5 };
+
+function c6() {
+  return load().then((mod) => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-pre-'));
+    const makeRoot = (name, waitPolicy) => {
+      const root = path.join(base, name);
+      fs.mkdirSync(path.join(root, 'docs', 'subagent-workflow'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify({ enforcement: { waitPolicy, waitBudgetMs: 1000 } }));
+      return root;
+    };
+    try {
+      const strict = makeRoot('strict', 'fail');
+      const box = { listeners: new Map() };
+      const ctx = { on: (name, fn) => { if (!box.listeners.has(name)) box.listeners.set(name, []); box.listeners.get(name).push(fn); } };
+      mod.registerWaitGuard(ctx, { waitPolicy: 'warn', waitBudgetMs: 120000, jobScript: true, roots: [strict] });
+      const pre = (box.listeners.get('tools/pre-execute') || [])[0];
+      truthy(typeof pre === 'function', 'нет подписки tools/pre-execute: отказ без инъекции tools невозможен');
+      let nextCalled = 0;
+      const next = async () => { nextCalled += 1; return { allow: true }; };
+      const slow = { name: 'pwsh', arguments: { command: 'Start-Sleep -Seconds 300' }, cwd: strict };
+      return Promise.resolve(pre(slow, next)).then((decision) => {
+        truthy(decision && decision.kind === 'deny', 'нет отказа {kind: deny} на долгое ожидание: ' + JSON.stringify(decision));
+        truthy(/job/.test(String(decision.reason || '')), 'в reason нет рецепта scripts/job.mjs: ' + JSON.stringify(decision.reason));
+        truthy(nextCalled === 0, 'при отказе downstream не должен вызываться');
+        const fast = { name: 'pwsh', arguments: { command: 'echo ok' }, cwd: strict };
+        return Promise.resolve(pre(fast, next));
+      }).then((decision) => {
+        truthy(nextCalled === 1, 'обычный вызов не дошёл до downstream: ' + JSON.stringify(decision));
+        console.log('WAITGUARD OK c6');
+      });
+    } finally {
+      try { fs.rmSync(base, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
+  });
+}
+
+const table = { c1, c2, c3, c4, c5, c6 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/wait-guard.mjs c1|c2|c3|c4|c5');
+  console.log('usage: node spec/checks/wait-guard.mjs c1|c2|c3|c4|c5|c6');
   process.exit(2);
 }
 Promise.resolve()

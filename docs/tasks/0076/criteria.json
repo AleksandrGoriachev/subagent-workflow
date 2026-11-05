@@ -1,0 +1,143 @@
+{
+  "task": "0076",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7"
+    ],
+    "reasons": {
+      "C1": "WAITGUARD FAIL c6"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Отказ через tools/pre-execute",
+      "command": "node spec/checks/wait-guard.mjs c6",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/wait-guard.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "WAITGUARD OK c6"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Политика по воркспейсу",
+      "command": "node spec/checks/wait-guard.mjs c5",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/lib/wait-guard.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "WAITGUARD OK c5"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "fail отклоняет, warn предупреждает",
+      "command": "node spec/checks/wait-guard.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/lib/wait-guard.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "WAITGUARD OK c2"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Журнал ожиданий",
+      "command": "node spec/checks/wait-guard.mjs c4",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "plugin/lib/wait-guard.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "WAITGUARD OK c4"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Императив воркспейса",
+      "command": "node spec/checks/workspace-imperative.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/checks/workspace-imperative.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "IMPERATIVE OK c1"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C7",
+      "title": "Пайпов не добавилось",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c1"
+      }
+    }
+  ]
+}
