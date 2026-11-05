@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, repoRoot, runSync, quoteArg, exists,
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
-  attributionGap, formatGateRow, formatGateSummary,
+  attributionGap, nodeConsistency, formatGateRow, formatGateSummary,
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
@@ -194,14 +194,16 @@ try {
   if (acceptor === meta.executor) fail('acceptor не может совпадать с executor');
 
   /*
-   * 0068 (WC-43): узел роли. Приоритет — флаг, затем окружение, затем
-   * контракт: acceptorNode объявлен заранее, и приёмщику не нужно повторять его
-   * в команде. Пустая строка узлом не считается.
+   * 0070 (WC-45): узел в записи — доказательство, а не намерение контракта.
+   * Источники только два: --node и WF_ACTOR_NODE. acceptorNode из TASK-META —
+   * объявление, и подставлять его в запись нельзя: после отказа узла judge
+   * запись 0069 утверждала приёмку узлом, которого не было. Объявление
+   * сверяется с записью отдельно — nodeConsistency(meta, record).
+   * Пустая строка узлом не считается.
    */
   const suppliedNode = typeof argv.node === 'string' ? argv.node.trim() : '';
   const envNode = typeof process.env.WF_ACTOR_NODE === 'string' ? process.env.WF_ACTOR_NODE.trim() : '';
-  const contractNode = typeof meta.acceptorNode === 'string' ? meta.acceptorNode.trim() : '';
-  const actorNode = suppliedNode || envNode || contractNode;
+  const actorNode = suppliedNode || envNode;
   if (actorNode !== '' && !/^[a-z][a-z0-9-]*$/.test(actorNode)) {
     fail('узел "' + actorNode + '" не соответствует шаблону ^[a-z][a-z0-9-]*$: используйте имя узла структуры, например judge');
   }
@@ -586,6 +588,16 @@ try {
     notes: argv.note ? String(argv.note) : '',
     ...(deviation !== '' ? { deviation } : {}),
   };
+
+  /*
+   * 0070 (WC-45): сверка объявленного узла с записью — между сборкой актора и
+   * подписью. warn печатается строкой в stdout и exit не меняет: расхождение
+   * должно быть видно приёмщику, но объяснимое отсутствие узла (deviation)
+   * вердиктом не является. Отказ за отсутствие узла при risk medium/high
+   * по-прежнему даёт attributionGap выше.
+   */
+  const nodeVerdict = nodeConsistency(meta, body);
+  if (nodeVerdict && nodeVerdict.level === 'warn') console.log('task-accept: WARN ' + nodeVerdict.message);
 
   const taskRel = relPosix(repo, taskDir);
   const acceptanceRel = taskRel + '/acceptance.json';

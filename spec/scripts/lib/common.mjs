@@ -337,6 +337,41 @@ export function metaAttributionGap(meta) {
   };
 }
 
+/*
+ * nodeConsistency(meta, record) — 0070: узел в записи — доказательство, а не
+ * намерение контракта.
+ *
+ * acceptorNode в TASK-META объявляет, кто должен принимать, а не кто принимал.
+ * Поэтому сверка идёт между объявлением и записью, а подставлять объявленный
+ * узел в запись нельзя: при отказе узла judge запись 0069 утверждала приёмку
+ * узлом, которого не было. Вердикты: совпадение — null; запись без узла, но с
+ * deviation — null (отсутствие объяснено); запись без узла без объяснения —
+ * warn с именем объявленного узла; другой узел в записи — warn о расхождении.
+ */
+export function nodeConsistency(meta, record) {
+  const contract = meta && typeof meta === 'object' && !Array.isArray(meta) ? meta : {};
+  const declared = typeof contract.acceptorNode === 'string' ? contract.acceptorNode.trim() : '';
+  if (declared === '') return null;
+  const source = record && typeof record === 'object' && !Array.isArray(record) ? record : {};
+  const actor = source.actor && typeof source.actor === 'object' && !Array.isArray(source.actor) ? source.actor : {};
+  const node = typeof actor.node === 'string' ? actor.node.trim() : '';
+  const hint = 'укажите узел (--node <узел> или WF_ACTOR_NODE) или объясните отсутствие (--deviation "<причина>")';
+  if (node === '') {
+    const deviation = typeof source.deviation === 'string' ? source.deviation.trim() : '';
+    if (deviation !== '') return null;
+    return {
+      level: 'warn',
+      message: 'контракт объявляет acceptorNode "' + declared + '", а в записи узла нет: ' + hint,
+    };
+  }
+  if (node === declared) return null;
+  return {
+    level: 'warn',
+    message: 'acceptorNode контракта "' + declared + '" не совпадает с узлом записи "' + node
+      + '": объясните расхождение (--deviation "<причина>") или принимайте под объявленным узлом',
+  };
+}
+
 export function extractCriteriaBlock(taskMd) {
   const m = taskMd.match(/<!--\s*CRITERIA:BEGIN\s*-->([\s\S]*?)<!--\s*CRITERIA:END\s*-->/);
   if (!m) fail('В task.md нет блока <!-- CRITERIA:BEGIN --> ... <!-- CRITERIA:END -->');
