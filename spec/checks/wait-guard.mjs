@@ -127,10 +127,51 @@ function c3() {
   }
 }
 
-const table = { c1, c2, c3 };
+
+function c4() {
+  return load().then((mod) => {
+    truthy(typeof mod.registerWaitGuard === 'function', 'нет экспорта registerWaitGuard');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-waits-'));
+    const previous = process.env.WF_WAITS_DIR;
+    process.env.WF_WAITS_DIR = dir;
+    const cleanup = () => {
+      if (previous === undefined) delete process.env.WF_WAITS_DIR; else process.env.WF_WAITS_DIR = previous;
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* ignore */ }
+    };
+    const readJournal = () => {
+      const files = fs.readdirSync(dir).filter((f) => f.endsWith('.jsonl'));
+      truthy(files.length === 1, 'журнал не создан или создан не один файл: ' + JSON.stringify(files));
+      const line = fs.readFileSync(path.join(dir, files[0]), 'utf8').trim().split('\n')[0];
+      const row = JSON.parse(line);
+      for (const key of ['at', 'tool', 'mode', 'denied', 'reason', 'waitMs', 'budgetMs']) {
+        truthy(Object.prototype.hasOwnProperty.call(row, key), 'в строке журнала нет поля ' + key + ': ' + line.slice(0, 200));
+      }
+      truthy(row.tool === 'pwsh', 'журнал: tool = ' + row.tool);
+      truthy(row.mode === 'warn', 'журнал: mode = ' + row.mode);
+      truthy(row.denied === false, 'журнал: denied должен быть false для warn');
+      truthy(Number(row.waitMs) === 300000, 'журнал: waitMs = ' + row.waitMs + ', ожидалось 300000');
+      truthy(Number(row.budgetMs) === 120000, 'журнал: budgetMs = ' + row.budgetMs);
+    };
+    const box = { guards: [], listeners: new Map() };
+    const ctx = {
+      tools: { guard: (fn) => box.guards.push(fn) },
+      on: (name, fn) => { if (!box.listeners.has(name)) box.listeners.set(name, []); box.listeners.get(name).push(fn); },
+    };
+    mod.registerWaitGuard(ctx, { waitPolicy: 'warn', waitBudgetMs: 120000, jobScript: true, root: PKG });
+    const slow = { name: 'pwsh', arguments: { command: 'Start-Sleep -Seconds 300' } };
+    const post = (box.listeners.get('tools/post-execute') || [])[0];
+    truthy(post, 'warn: нет подписки tools/post-execute');
+    return Promise.resolve(post(slow, undefined, async () => ({ ok: true })))
+      .then(() => readJournal())
+      .then(() => console.log('WAITGUARD OK c4'))
+      .finally(cleanup);
+  });
+}
+
+const table = { c1, c2, c3, c4 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/wait-guard.mjs c1|c2|c3');
+  console.log('usage: node spec/checks/wait-guard.mjs c1|c2|c3|c4');
   process.exit(2);
 }
 Promise.resolve()
