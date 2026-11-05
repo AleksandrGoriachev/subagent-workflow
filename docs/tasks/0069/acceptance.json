@@ -1,0 +1,160 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0069",
+  "title": "e2e: приёмки фикстур risk medium передают --node (или --deviation), поведение проверок не ослабляется (хвост 0068)",
+  "risk": "low",
+  "taskFileSha256": "f7b68b22aaa7b275b0e7c575d9fdf451497578929f700df24efa820730130b44",
+  "criteriaSha256": "fd1d6828bc9841bce079848d264d3c7f11511a3c081e0d7c493363921f95755e",
+  "criteriaJsonSha256": "b51a72b5440f40999733e94f4971afc64eda0202e726b9d6e103a3b6f2595591",
+  "contractCommit": "0c41b90effb03d0e7adfd8c7b42fd38ad05ade74",
+  "baseCommit": "0c41b90effb03d0e7adfd8c7b42fd38ad05ade74",
+  "candidateCommit": "01ebf962b24be04d9fa226fc632ff0fb59b4f408",
+  "tree": "0d6dabc33d8fb3dd6cc053bdbc2e288b3cf6e44e",
+  "worktreeDigest": "0b64b58fda02c30b3518a7479b74d0b544173c9e3aebc2218bd5b8eeb73ad1e4",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-9934686a-2fb3-4638-a6f8-6b9749041635",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "7e010c69-5141-43e5-a403-1b7e2f0cc6a4",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "eaf2c5ff5805f7788de0cfd416eea915",
+    "runKind": "accept",
+    "startedAt": "2026-11-05T05:44:48.134Z",
+    "finishedAt": "2026-11-05T05:47:25.715Z",
+    "durationMs": 157595,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "093ca000c9d16995614e58c8189120802e8304ffabdc02324ee9afc5415c3c64",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "0c41b90effb03d0e7adfd8c7b42fd38ad05ade74",
+    "contractCommit": "0c41b90effb03d0e7adfd8c7b42fd38ad05ade74",
+    "criteriaJsonSha256": "b51a72b5440f40999733e94f4971afc64eda0202e726b9d6e103a3b6f2595591",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 6,
+          "total": 50,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 150662,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/e2e-deploy.mjs",
+      "exitCode": 0,
+      "durationMs": 17401,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 65744,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 110794,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 821,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-05T05:47:26.263Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "0069: фикстуры e2e передают --node judge (хвост 0068)",
+  "deviation": "узел judge не выполнил прогон: три попытки вернули текст без вызова инструментов или ошибку (2026-11-05 08:55); приёмку выполнил нативный субагент по правилу реестра отклонений",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "cG/luiDLL3YjfmvSyYEu9OlXEkuA/M3VtNJAi7g8PSjNJB1ctXOjjQuwBGrdxe9bRH+4tnxuKEynL3elg/IzCw=="
+}
