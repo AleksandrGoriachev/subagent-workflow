@@ -9,6 +9,7 @@
  *
  * c1: запись приёмки — attributionGap(record) и схема (actor.node, deviation).
  * c2: контракт — metaAttributionGap(meta): acceptor-субагент без acceptorNode.
+ * c3: узел в записи — только доказательство: nodeConsistency(meta, record), без подстановки из контракта.
  *
  * Вне пакета — SKIP.
  */
@@ -92,10 +93,35 @@ async function c2() {
   console.log("NODEATTR OK c2");
 }
 
-const table = { c1, c2 };
+async function c3() {
+  /*
+   * 0070: узел в записи — доказательство, а не намерение. task-accept не должен
+   * подставлять acceptorNode из контракта: иначе запись утверждает, что приёмку
+   * сделал узел, хотя его не вызывали (так вышло с 0069 при отказе узла judge).
+   */
+  const lib = await common();
+  truthy(typeof lib.nodeConsistency === "function", "в common.mjs нет nodeConsistency(meta, record)");
+  const meta = { acceptorNode: "judge" };
+
+  const matched = lib.nodeConsistency(meta, { actor: { node: "judge" } });
+  truthy(matched === null, "узел совпал, а расхождение найдено: " + JSON.stringify(matched));
+
+  const missing = lib.nodeConsistency(meta, { actor: {} });
+  truthy(missing && missing.level === "warn", "контракт объявил узел, запись без узла — должен быть warn: " + JSON.stringify(missing));
+  truthy(/judge/u.test(missing.message || ""), "warn не называет объявленный узел: " + JSON.stringify(missing));
+
+  const explained = lib.nodeConsistency(meta, { actor: {}, deviation: "узел недоступен, приёмку сделал субагент" });
+  truthy(explained === null, "deviation должен снимать расхождение: " + JSON.stringify(explained));
+
+  const other = lib.nodeConsistency(meta, { actor: { node: "worker" } });
+  truthy(other && other.level === "warn", "чужой узел должен давать warn: " + JSON.stringify(other));
+  console.log("NODEATTR OK c3");
+}
+
+const table = { c1, c2, c3 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log("usage: node spec/checks/node-attribution.mjs c1|c2");
+  console.log("usage: node spec/checks/node-attribution.mjs c1|c2|c3");
   process.exit(2);
 }
 try {
