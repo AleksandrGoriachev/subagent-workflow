@@ -18,7 +18,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -70,11 +70,11 @@ function makeRepo(pins) {
   });
   fs.writeFileSync(path.join(engine, "acceptors.json"), JSON.stringify({ acceptors }, null, 2), "utf8");
   fs.writeFileSync(path.join(home, ".wf-keys", "agent-judge.key.pem"), judge.privateKeyPem, "utf8");
-  spawnSync("git", ["init", "-q"], { cwd: repoDir });
+  spawnSyncPipeFree("git", ["init", "-q"], { cwd: repoDir });
   return { root, repoDir, home, engine };
 }
 function runDoctor(ctx) {
-  const r = spawnSync(process.execPath, [path.join(ctx.engine, "scripts", "doctor.mjs"), "--repo", ctx.repoDir], {
+  const r = spawnSyncPipeFree(process.execPath, [path.join(ctx.engine, "scripts", "doctor.mjs"), "--repo", ctx.repoDir], {
     cwd: ctx.repoDir, encoding: "utf8", timeout: 300000,
     env: { ...process.env, HOME: ctx.home, USERPROFILE: ctx.home, DSH_SESSION_ID: "session-doctor-legacy-test" },
   });

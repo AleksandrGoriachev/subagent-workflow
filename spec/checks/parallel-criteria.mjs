@@ -13,6 +13,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
@@ -67,14 +68,13 @@ async function c2() {
 
 async function c3() {
   const gates = ['task-red.mjs', 'task-verify.mjs', 'task-accept.mjs'];
-  const { execFileSync } = await import('node:child_process');
   for (const gate of gates) {
     const file = path.join(PKG, 'spec', 'scripts', gate);
     truthy(fs.existsSync(file), 'нет ' + gate);
     const text = fs.readFileSync(file, 'utf8');
     truthy(/runCriteria/u.test(text), gate + ' не использует runCriteria');
-    const syntax = execFileSync(process.execPath, ['--check', file], { encoding: 'utf8' });
-    void syntax;
+    const syntax = spawnSyncPipeFree(process.execPath, ['--check', file], { encoding: 'utf8' });
+    truthy(syntax.status === 0, file + ': ' + String(syntax.stderr || '').trim());
   }
   console.log('PARALLEL OK c3');
 }

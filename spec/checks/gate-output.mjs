@@ -10,7 +10,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -51,7 +51,8 @@ function c2() {
     const text = fs.readFileSync(file, 'utf8');
     truthy(/formatGateRow/u.test(text), gate + ' не печатает строки через formatGateRow');
     truthy(/formatGateSummary/u.test(text), gate + ' не печатает итог через formatGateSummary');
-    execFileSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+    const syntax = spawnSyncPipeFree(process.execPath, ['--check', file], { encoding: 'utf8' });
+    truthy(syntax.status === 0, file + ': ' + String(syntax.stderr || '').trim());
   }
   console.log('GATEOUT OK c2');
 }

@@ -1,0 +1,157 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0071",
+  "createdAt": "2026-11-05T10:20:59.836Z",
+  "base": "HEAD",
+  "baseSha": "04658e97a33219f4c2878016844706daa13f3e03",
+  "headSha": "04658e97a33219f4c2878016844706daa13f3e03",
+  "contractCommit": "04658e97a33219f4c2878016844706daa13f3e03",
+  "criteriaSha256": "455032ac793a6c659b3a8203088d4a80b66e9759720153073d559eb5934c90f5",
+  "criteriaJsonSha256": "b7a223a57f2861b1e71098019de946c4a23e0a47a364faa12ddf29918e33c4eb",
+  "dirtyPaths": [
+    "docs/tasks/0071/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 1,
+      "durationMs": 910,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: PIPEFREE OK c1"
+      ],
+      "stdoutSha256": "e764c54d9a21cf98d4cb7b54515dc76ab40f35449b7509d398212aaedeea1c14",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE FAIL c1: спавны с пайпами (37): spec/checks/acceptance-p0.mjs: spawnSync -> (cmd, args, { cwd, encoding: 'utf8', env: env || process.env, timeout: 300000 }) | spec/checks/acceptance-record.mjs: spawnSync -> (cmd, args, { cwd, encoding: 'utf8', timeout: 900000 }) | spec/checks/acceptance-schema.mjs: spawnSync -> (process.execPath, [PACK_TOOL, '--plan'], { cwd: ROOT, encoding: 'utf8' }) | spec/checks/actor-sources.mjs: spawnSync -> ('git', args, { cwd: repo, encoding: 'utf8' }) | spec/checks/actor-sources.mjs: spawnSync -> (process.execPath, [SCRIPT(repo, script), ...args], { cwd: repo, env, encoding: 'utf8', timeout: 120000, }) | spec/checks/ci-behavior.mjs: spawnSync -> (cmd, args, { cwd, encoding: 'utf8', timeout: 900000 })\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/pipe-free.mjs c2",
+      "exitCode": 0,
+      "durationMs": 4821,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "9199bc85cd6c115469490df2aad18d0f60e636494bacb2ccf76543873a9091e4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PIPEFREE OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 104297,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "803fa48473d8731c0298a6ac9c67b128ef0143828ea91ffc91db56c671e06f38",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 241092,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "4e212aec5fafa0820071fc231d333d051a742a5d3931d8ee7253d145e3894084",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  init разворачивает рабочее пространство\nPASS  init создаёт закреплённый ключ\nPASS  e2e-deploy запускается из развёрнутой копии\nPASS  init из развёрнутого каталога создаёт свой ключ, а не копирует acceptors.json\nPASS  2.5.0: init выставил локальный core.hooksPath\nPASS  2.5.0: выключенный guard не мешает коммиту вне задания\nPASS  2.5.0: включённый guard отклоняет коммит вне задания\nPASS  2.5.0: метка обхода в сообщении разрешает коммит\nPASS  2.5.0: --audit показывает метку обхода\nPASS  2.5.0: guard отклоняет push с изменением вне задания\nPASS  2.5.0: выключенный guard не мешает push\nPASS  2.5.0: guard выключен — рабочий цикл задачи не меняется\nPASS  new-task создаёт задание с issuedBy\nPASS  G6: C3 — самостоятельный сценарий, а не копия C1\nPASS  lint требует covers для medium\nPASS  lint требует критерий эффекта для решения с влиянием на пользователя\nPASS  lint отклоняет effect.measuredBy на сам критерий\nPASS  lint отклоняет семантическое решение без доказательства\nPASS  G2: lint отклоняет решение вне цепи эффекта\nPASS  hash без атаки отказывает при policy.attack=fail\nPASS  hash не запирает контракт с нерешённой blocking-находкой\nPASS  task-attack отклоняет нерешённый blocking\nPASS  task-attack принимает закрытую находку\nPASS  hash создаёт замок для закоммиченного контракта\nPASS  lint --strict зелёный\nPASS  red доказывает падение по ожиданию\nPASS  verify зелёный после фикса\nPASS  verify записывает эффект и цепь решения\nPASS  verify валит изменённый файл без покрытия критерием\nPASS  после удаления непокрытого файла verify снова зелёный\nPASS  2.4.9: без acceptance.json сдвиг HEAD — ERROR contractCommit, а не WARN\nPASS  2.4.9: пустой acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: битый acceptance.json — не основание, ERROR остаётся\nPASS  2.4.9: запись с чужим статусом — не основание, ERROR остаётся\nPASS  2.4.9: task-verify не считает пустой acceptance.json приёмкой (lock строгий)\nPASS  самоприёмка из сессии постановщика отклоняется\nPASS  blocking-замечание без решения не принимается\nPASS  2.6.0: источник runner настроен, окружение пустое — приёмка medium отказывает\nPASS  2.6.0: приёмка medium без DSH — один WF_ACTOR_SESSION даёт отдельную сессию\nPASS  2.5.2: кандидат сохраняет право исполнения из индекса\nPASS  разбор замечаний и releaseReady в записи\nPASS  запись v6 с актором и уровнем независимости\nPASS  2.6.0: запись хранит источник актора и основание независимости\nPASS  эффект записан в приёмку с измерителем\nPASS  G3: запись хранит согласованность решения и эффекта\nPASS  решения записаны с digest и без assumed\nPASS  атака попала в запись с digest и без нерешённых находок\nPASS  проверка ролей: приёмщик другого семейства, чем постановщик\nPASS  check-acceptance принимает запись\nPASS  check-acceptance проверяет metadata-коммит\nPASS  2.4.8: у принятого задания сдвиг HEAD — предупреждение, не ошибка\nPASS  G4: policy.decisions=fail отклоняет решение вне цепи\nPASS  G4: policy.decisions=warn — предупреждение, exit 0\nPASS  G5: policy.decisions=off — ни ошибки, ни предупреждения\nPASS  G7: защита самого пакета в protectedPaths — именно WARN, не ERROR\nPASS  G7: свои проверки в protectedPaths (checks/**) — предупреждения о пакете нет\nPASS  regress принятой задачи зелёный\nPASS  regress ловит сломанную проверку закрытой задачи\nPASS  regress помечает таймаут отдельно\nPASS  подмена записи ловится\n\nE2E OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 184714,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7b8a148efb894bdd307359546a1b58bea2552c6428b0c9bb57ed7730e6d723ae",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS F-7: пересечение allowedPaths/protectedPaths — ошибка\nPASS F-7 контроль: без пересечения — ок\nPASS F-7 узость: свои task.md/criteria.json — ок\nPASS F-7 узость: шаблон docs/tasks/0001/*.md — ошибка\nPASS covers: шаблон из allowedPaths без covers — WARN и exit 0\nPASS covers: конкретный файл из allowedPaths без covers — ERROR и exit 1\nPASS covers: файл из allowedPaths под шаблоном covers — ок, exit 0\nPASS F-5: пустой mustFail без noRed — ошибка\nPASS F-5 контроль: noRed с причиной — ок\nPASS F-6: при несовпадении причина и вывод напечатаны\nPASS F-8: verify.json сохранён как verify.executor.json\n\nGATE RULES OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "exitCode": 0,
+      "durationMs": 907,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "752658261266c9f7b951712f34e61eef571f53513ed5d91baabd5492fe831f4f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATEOUT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/actor-sources.mjs c1",
+      "exitCode": 0,
+      "durationMs": 39088,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7d2f4e7cb9e2a78c4b16daf5823a03ae63a129b2c56ef4a98ec161d65932317a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS runner: WF_ACTOR_SESSION даёт separate-session\nPASS harness: DSH_SESSION_ID по-прежнему separate-session\nPASS ci: GITHUB_RUN_ID даёт только declared\nPASS manual: TASK_ACTOR_SESSION даёт только declared\nPASS контроль: пустое окружение — none и doctor красный\nPASS legacy: primaryEnv — env/separate-session как раньше\nPASS legacy: fallbackEnv — declared как раньше\nPASS неизвестный вид источника закрывает ворота\n\nACTOR SOURCES OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 7,
+  "failed": 1,
+  "failedIds": [
+    "C1"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

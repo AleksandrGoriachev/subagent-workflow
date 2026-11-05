@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -27,7 +27,7 @@ const pass = (n) => console.log('PASS ' + n);
 const fail = (n, d) => { failed += 1; console.log('FAIL ' + n + (d ? ' — ' + d : '')); };
 
 function run(cmd, args, cwd, env) {
-  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 600000, env: env || process.env });
+  const r = spawnSyncPipeFree(cmd, args, { cwd, encoding: 'utf8', timeout: 600000, env: env || process.env });
   return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') };
 }
 function git(cwd, args) { return run('git', ['-C', cwd, ...args], cwd); }

@@ -13,7 +13,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -34,12 +34,12 @@ function contains(text, needle, label) {
 /** Развёрнутый движок: init из пакета, как в жизни. */
 function deployedRepo() {
   const repo = fs.mkdtempSync(path.join(ROOT, 'repo-'));
-  const git = spawnSync('git', ['init', '-q'], { cwd: repo, stdio: 'ignore' });
+  const git = spawnSyncPipeFree('git', ['init', '-q'], { cwd: repo });
   truthy(git.status === 0, 'git init фикстуры');
-  const init = spawnSync(process.execPath, [
+  const init = spawnSyncPipeFree(process.execPath, [
     path.join(PKG, 'spec', 'scripts', 'init.mjs'),
     '--repo', repo, '--key-id', 'agent-judge', '--key-out', path.join(repo, '.wf-keys'),
-  ], { cwd: PKG, stdio: 'ignore', env: { ...process.env } });
+  ], { cwd: PKG, env: { ...process.env } });
   truthy(init.status === 0, 'init развернул движок в фикстуре (exit ' + init.status + ')');
   return repo;
 }
@@ -75,9 +75,8 @@ async function c1() {
   truthy(!/FAIL  medium возможен/u.test(String(result.log)), 'доктор из панели: medium не должен быть FAIL');
 
   /* Без маркера тот же воркспейс остаётся честно красным: проверка не ослепла. */
-  const manual = spawnSync(process.execPath, [path.join(repo, 'docs', 'subagent-workflow', 'scripts', 'doctor.mjs')], {
+  const manual = spawnSyncPipeFree(process.execPath, [path.join(repo, 'docs', 'subagent-workflow', 'scripts', 'doctor.mjs')], {
     cwd: repo,
-    stdio: ['ignore', 'pipe', 'pipe'],
     encoding: 'utf8',
     env: (() => { const env = { ...process.env }; delete env.WF_CHECK_CONTEXT; delete env.DSH_SESSION_ID; delete env.WF_ACTOR_SESSION; return env; })(),
   });
@@ -86,9 +85,8 @@ async function c1() {
   contains(manual.stdout, 'DOCTOR: ', 'доктор без маркера');
 
   /* С сессией агента и без маркера — зелёный, как раньше. */
-  const withSession = spawnSync(process.execPath, [path.join(repo, 'docs', 'subagent-workflow', 'scripts', 'doctor.mjs')], {
+  const withSession = spawnSyncPipeFree(process.execPath, [path.join(repo, 'docs', 'subagent-workflow', 'scripts', 'doctor.mjs')], {
     cwd: repo,
-    stdio: ['ignore', 'pipe', 'pipe'],
     encoding: 'utf8',
     env: (() => { const env = { ...process.env }; delete env.WF_CHECK_CONTEXT; env.DSH_SESSION_ID = 'session-check-fixture'; return env; })(),
   });

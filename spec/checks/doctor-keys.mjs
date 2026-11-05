@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -63,7 +63,7 @@ function makeRepo(withPrivate, stray) {
   fs.copyFileSync(path.join(PKG, 'VERSION'), path.join(engine, 'VERSION'));
   fs.mkdirSync(path.join(repoDir, 'docs', 'tasks'), { recursive: true });
   fs.writeFileSync(path.join(engine, 'workflow.config.json'), JSON.stringify({ tasksDir: 'docs/tasks', keysFile: 'docs/subagent-workflow/acceptors.json' }, null, 2), 'utf8');
-  spawnSync('git', ['init', '-q'], { cwd: repoDir });
+  spawnSyncPipeFree('git', ['init', '-q'], { cwd: repoDir });
   fs.mkdirSync(path.join(home, '.wf-keys'), { recursive: true });
   const keys = { 'agent-judge': makeKey(), 'agent-judge-2': makeKey() };
   const acceptors = Object.entries(keys).map(([keyId, k]) => ({
@@ -83,7 +83,7 @@ function makeRepo(withPrivate, stray) {
 }
 
 function runDoctor(ctx) {
-  const r = spawnSync(process.execPath, [path.join(ctx.engine, 'scripts', 'doctor.mjs'), '--repo', ctx.repoDir], {
+  const r = spawnSyncPipeFree(process.execPath, [path.join(ctx.engine, 'scripts', 'doctor.mjs'), '--repo', ctx.repoDir], {
     cwd: ctx.repoDir,
     encoding: 'utf8',
     timeout: 300000,

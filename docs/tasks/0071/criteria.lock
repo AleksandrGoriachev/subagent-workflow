@@ -1,0 +1,371 @@
+{
+  "version": 3,
+  "task": "0071",
+  "taskFileSha256": "0588bb7980bc6eedb5f1003d939f07fcb576861dce66b89f4db8e34e606c97b1",
+  "criteriaSha256": "455032ac793a6c659b3a8203088d4a80b66e9759720153073d559eb5934c90f5",
+  "criteriaJsonSha256": "b7a223a57f2861b1e71098019de946c4a23e0a47a364faa12ddf29918e33c4eb",
+  "attackSha256": null,
+  "contractCommit": "04658e97a33219f4c2878016844706daa13f3e03",
+  "protected": [
+    {
+      "path": "package.json",
+      "sha256": "37b26513cc1bba6842c5aefbb4715bd6f8035b57b730e19a9687561a4b1c47c5"
+    },
+    {
+      "path": "plugin/BACKLOG.md",
+      "sha256": "29534b0dbc92ce4bf60f316edc920dfcf1dfb170bd648eff66168d7cdc6ab104"
+    },
+    {
+      "path": "plugin/LICENSE",
+      "sha256": "6faae4701bd1ae1f4d4a359a66a6a5d1bbcd4ce7917150fa5e824057a2f484c0"
+    },
+    {
+      "path": "plugin/PLUGIN-PLAN.md",
+      "sha256": "bc3bee3a7fc0f0cc1a3b805813554de8608bb26556b849e29c2dbeb34e3ae227"
+    },
+    {
+      "path": "plugin/README.md",
+      "sha256": "c2a78f146c4abae532163f2dff19503c4105874f7ce55c1d91ae239b6a2ef5c8"
+    },
+    {
+      "path": "plugin/cordis.patch.yml",
+      "sha256": "9217cb4524dcd8cada1d840f5a03ee36501bca989f21fd331acdccaf113d50bd"
+    },
+    {
+      "path": "plugin/lib/api.js",
+      "sha256": "fb9cf4b3e5414b41c28ab110537c70c2c86794612cc7807dc300088c1e16e111"
+    },
+    {
+      "path": "plugin/lib/archive.mjs",
+      "sha256": "487dbdac38dec91f22a8990a8e429ca6961104a277de4537e3c777210d116583"
+    },
+    {
+      "path": "plugin/lib/checks.js",
+      "sha256": "71e5a9642c8b39c09409ce16487c3c538c3a384e0440874df8f1008d5cfb6947"
+    },
+    {
+      "path": "plugin/lib/client.js",
+      "sha256": "0e3448fd753818a547395c16f9fbf653a1db2349aa14c05be163947c34c6db2b"
+    },
+    {
+      "path": "plugin/lib/compat.js",
+      "sha256": "853f880d815464488e4fd5730f10369a33b7f4b798976843cc93c54290f47b84"
+    },
+    {
+      "path": "plugin/lib/deploy.js",
+      "sha256": "79383091d47c5625e15e48d3a20cc35e7ff237e650bb8ea7aaf7c0b096346fa6"
+    },
+    {
+      "path": "plugin/lib/engine-root.js",
+      "sha256": "f56baa2bce360db90b5e7f0d21d1e66d9fa6a10ec7e3e74a532b302fc1810c7f"
+    },
+    {
+      "path": "plugin/lib/guard.js",
+      "sha256": "0fce3ebbbe7dcc1713cfe0d795e5e8bd7af063bc44f7513b3a60bdaeda2a584c"
+    },
+    {
+      "path": "plugin/lib/index.js",
+      "sha256": "86570ecd5a7bfa31b44df30a9ed75738a1d525595f13b95db70d0481f8bde660"
+    },
+    {
+      "path": "plugin/lib/release-source.mjs",
+      "sha256": "0ba2f44f88be64796c0be7f01f45f64f74a70b9ff1d9fc6a4c3dfaad1f6f3f99"
+    },
+    {
+      "path": "plugin/lib/state.js",
+      "sha256": "03cb45af560411bb66f14258958d17596d5d1dcfd5afbd79d6cf6476f1d049e1"
+    },
+    {
+      "path": "plugin/package.json",
+      "sha256": "8061ad73dfbd5fde43b6bea0cf4398da7e47a3fc479aa8ff7180e96acfc674bb"
+    },
+    {
+      "path": "plugin/test/api.test.mjs",
+      "sha256": "314ec3f4304800299311c39dc47553df97e402c8abe3262391b8995d1b17420a"
+    },
+    {
+      "path": "plugin/test/client.test.mjs",
+      "sha256": "1250605c54e824a6d31c16c43daf2d7cebac1fa402ed1994ea0661a69f9e064b"
+    },
+    {
+      "path": "plugin/test/compat.test.mjs",
+      "sha256": "01492bfb642f03e82a050ab8fe7a6da325e78c393a8342f2a5e75ff13d8664a1"
+    },
+    {
+      "path": "plugin/test/engine-link.test.mjs",
+      "sha256": "80f305aeec4924f6846a682d5244a6842d26e1da6ff03d38cc052ae7a87daf54"
+    },
+    {
+      "path": "plugin/test/engine-root.test.mjs",
+      "sha256": "aae067b900621e3aa904988dafd306f489465aa918f30817baeb410317bf1429"
+    },
+    {
+      "path": "plugin/test/fixture.mjs",
+      "sha256": "82fb47486f11c5f247b8aa29a86f4444ed7d8faf973aaf85c64bcf652c14bd8a"
+    },
+    {
+      "path": "plugin/test/panel-older.test.mjs",
+      "sha256": "81ef75901e1b1df0eefe32fc86bb980a4986085948ca9e99a4ea487eff645963"
+    },
+    {
+      "path": "plugin/test/state.test.mjs",
+      "sha256": "8a6ad564f9cf31af2c22238f630aa86b2e7baffe80adcfb1eceed020b4abbdb3"
+    },
+    {
+      "path": "plugin/tools/dev-server.mjs",
+      "sha256": "ed0be126adfc3a9da369333d85bc54671be2886796d689ab53fb80ef064ee15a"
+    },
+    {
+      "path": "plugin/tools/test.mjs",
+      "sha256": "8b176b652052b7ce22277c0fc8a7d163639fa80de65fced0f2f5e19588795ea4"
+    },
+    {
+      "path": "spec/checks/pipe-free.mjs",
+      "sha256": "1486dd43a1199ab44d03f670d5fc457a7d1ecec322d07fe657a46107e11caa7a"
+    },
+    {
+      "path": "spec/scripts/actor.mjs",
+      "sha256": "49286d0c6b915062c261296aa8b8c2cc6ea3225d38f895776f7e3380eef1071d"
+    },
+    {
+      "path": "spec/scripts/doctor.mjs",
+      "sha256": "8910cc5a102cd04c7885bd0374de21ff6902bc4d40adb3f3c09486792eaf8126"
+    },
+    {
+      "path": "spec/scripts/init.mjs",
+      "sha256": "dc24ae0efc711f6885c967a9e25c9c30210762bb3c4738c2572b30293114324d"
+    },
+    {
+      "path": "spec/scripts/lib/acceptance-policy.mjs",
+      "sha256": "9e582792ade089fa9a0664660333b747ffb19fe2c813dd2ed76fa814053bd4fe"
+    },
+    {
+      "path": "spec/scripts/lib/attack.mjs",
+      "sha256": "95ed1737ede602fc03ac8577c98f566bbd6e24991e9eb977069ff7ac6ada6a6e"
+    },
+    {
+      "path": "spec/scripts/lib/common.mjs",
+      "sha256": "8088c439d61a19a3e2c5d8ea54651e42af4643ad29793420dba48776917dc3b5"
+    },
+    {
+      "path": "spec/scripts/lib/policy.mjs",
+      "sha256": "036701d685fca8da11caf935a87fb3b9e8ea59faf932b60bb9a65205b5aad918"
+    },
+    {
+      "path": "spec/scripts/lib/regress.mjs",
+      "sha256": "23c826b8d13a2ab1ef91c53bdece0ece7e66435e794d31cb726bd85dbb14ae2a"
+    },
+    {
+      "path": "spec/scripts/lib/review.mjs",
+      "sha256": "d387db287df453f04eca92281b11087ead555d576568746d81637e25e28d97cc"
+    },
+    {
+      "path": "spec/scripts/new-task.mjs",
+      "sha256": "30cb0b6eafbe9983733d43d06e807ffa22f383be2da94ab40f2358f1c520b671"
+    },
+    {
+      "path": "spec/scripts/sign.mjs",
+      "sha256": "dfd6a1b3f78e6d6e6addee11c6f968f03adc0d6b4dc2573ca428eb0d0ea42d8e"
+    },
+    {
+      "path": "spec/scripts/task-accept.mjs",
+      "sha256": "dfbc19cc733e42a157ea02f547b7b63f640cbce78cb64bd97a90388e304cd13d"
+    },
+    {
+      "path": "spec/scripts/task-attack.mjs",
+      "sha256": "745bbb7a84fa6e8957399f3f4a5686f5d02653b4b531c5378df94a978f6127d2"
+    },
+    {
+      "path": "spec/scripts/task-check-acceptance.mjs",
+      "sha256": "f32fbe383b687bd796f95ed4e9a1c6a75e03f99f23344d78ecfc1ca4c6664ff2"
+    },
+    {
+      "path": "spec/scripts/task-guard.mjs",
+      "sha256": "f82a028e724c793e6fc7fb79827454a5ac50bf9c895adf77d11724a8ec0d8c15"
+    },
+    {
+      "path": "spec/scripts/task-hash.mjs",
+      "sha256": "b864c09a6d19dc11fa367ee1edded71b289554773a959b8377fa4e9481356bb1"
+    },
+    {
+      "path": "spec/scripts/task-lint.mjs",
+      "sha256": "110afa7ee68aa2a90f5c18848df2e53d9b4a0cb110c910ed54cf28164a5367f5"
+    },
+    {
+      "path": "spec/scripts/task-red.mjs",
+      "sha256": "0dc7b8d37e0b5c971a5fafd7b37e164196bcafe17c2e066f3630150461672ba3"
+    },
+    {
+      "path": "spec/scripts/task-regress.mjs",
+      "sha256": "0cdf60ed925992a628fbed940281fa61702b178334dce5aca399159c6342f8eb"
+    },
+    {
+      "path": "spec/scripts/task-verify.mjs",
+      "sha256": "743463bce29b6ec85d16009134a5533cb2d972fb5c4ac18b4a9cbeab3369bed3"
+    },
+    {
+      "path": "spec/scripts/tests-for.mjs",
+      "sha256": "8adb75a535e68495cecb3ebfb0db19f024c7d54b906337b3e87c4e6ea3891844"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "spec/checks/acceptance-p0.mjs",
+      "spec/checks/acceptance-record.mjs",
+      "spec/checks/acceptance-schema.mjs",
+      "spec/checks/actor-sources.mjs",
+      "spec/checks/ci-behavior.mjs",
+      "spec/checks/contract-selfcheck.mjs",
+      "spec/checks/covers-severity.mjs",
+      "spec/checks/criteria-overlap.mjs",
+      "spec/checks/deploy-safety.mjs",
+      "spec/checks/deployed-copy.mjs",
+      "spec/checks/doctor-keys.mjs",
+      "spec/checks/doctor-legacy-key.mjs",
+      "spec/checks/engine-root.mjs",
+      "spec/checks/external-engine.mjs",
+      "spec/checks/gate-output.mjs",
+      "spec/checks/gate-rules.mjs",
+      "spec/checks/gates-journal.mjs",
+      "spec/checks/guard-acceptance.mjs",
+      "spec/checks/hooks-mode.mjs",
+      "spec/checks/narrow-external.mjs",
+      "spec/checks/narrow-suite.mjs",
+      "spec/checks/outside-package.mjs",
+      "spec/checks/panel-deploy.mjs",
+      "spec/checks/panel-doctor.mjs",
+      "spec/checks/panel-older.mjs",
+      "spec/checks/parallel-criteria.mjs",
+      "spec/checks/release-hygiene.mjs",
+      "spec/checks/targeted-tests.mjs",
+      "spec/checks/update-flow.mjs",
+      "docs/tasks/0071/**"
+    ],
+    "protectedPaths": [
+      "spec/checks/pipe-free.mjs",
+      "spec/scripts/**",
+      "plugin/**",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0071/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/pipe-free.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "PIPEFREE OK c1"
+        },
+        "covers": [
+          "spec/checks/**"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/pipe-free.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "PIPEFREE OK c2"
+        },
+        "covers": [
+          "spec/scripts/lib/common.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/selftest.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "SELFTEST OK"
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node spec/e2e.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "E2E OK"
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C5",
+        "command": "node spec/checks/gate-rules.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATE RULES OK"
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C6",
+        "command": "node spec/checks/gate-output.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 300000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATEOUT OK c1"
+        },
+        "covers": [
+          "spec/checks/gate-output.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C7",
+        "command": "node spec/checks/actor-sources.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 300000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "ACTOR SOURCES OK"
+        },
+        "covers": [
+          "spec/checks/actor-sources.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-05T10:16:44.640Z",
+  "tool": "subagent-workflow/2.6.30"
+}

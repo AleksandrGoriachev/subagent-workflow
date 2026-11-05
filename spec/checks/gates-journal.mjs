@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -69,7 +69,8 @@ function c2() {
     truthy(fs.existsSync(file), 'нет ' + gate);
     const text = fs.readFileSync(file, 'utf8');
     truthy(/appendGateRecord/u.test(text), gate + ' не пишет журнал вердиктов');
-    execFileSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+    const syntax = spawnSyncPipeFree(process.execPath, ['--check', file], { encoding: 'utf8' });
+    truthy(syntax.status === 0, file + ': ' + String(syntax.stderr || '').trim());
   }
   console.log('GATES OK c2');
 }

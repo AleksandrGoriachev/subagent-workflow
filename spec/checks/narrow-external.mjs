@@ -11,7 +11,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -42,8 +42,8 @@ function c1() {
 
 function c2() {
   const started = Date.now();
-  const run = spawnSync(process.execPath, [path.join(PKG, 'spec', 'checks', 'external-engine.mjs'), 'c2'], {
-    cwd: PKG, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 900000,
+  const run = spawnSyncPipeFree(process.execPath, [path.join(PKG, 'spec', 'checks', 'external-engine.mjs'), 'c2'], {
+    cwd: PKG, encoding: 'utf8', timeout: 900000,
   });
   const wall = Math.round((Date.now() - started) / 1000);
   truthy(run.status === 0, 'external-engine.mjs c2: exit ' + run.status + ' (' + wall + ' с); '

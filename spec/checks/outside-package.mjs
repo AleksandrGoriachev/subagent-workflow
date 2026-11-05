@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -32,7 +32,7 @@ function copyTree(from, to) {
 }
 
 function classify(file, cwd) {
-  const r = spawnSync(process.execPath, [file], { cwd, encoding: 'utf8', timeout: 300000 });
+  const r = spawnSyncPipeFree(process.execPath, [file], { cwd, encoding: 'utf8', timeout: 300000 });
   const out = String(r.stdout || '') + String(r.stderr || '');
   return { code: r.status, skip: r.status === 0 && /SKIP/.test(out), tail: out.trim().split('\n').slice(-2).join(' / ') };
 }

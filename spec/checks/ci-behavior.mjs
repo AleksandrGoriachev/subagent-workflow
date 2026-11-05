@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -20,14 +20,18 @@ if (!fs.existsSync(path.join(PKG, 'spec'))) {
 let failed = 0;
 const pass = (n) => console.log('PASS ' + n);
 const fail = (n, d) => { failed += 1; console.log('FAIL ' + n + (d ? ' — ' + d : '')); };
-function run(cmd, args, cwd) { const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 900000 }); return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') }; }
+function run(cmd, args, cwd) { const r = spawnSyncPipeFree(cmd, args, { cwd, encoding: 'utf8', timeout: 900000 }); return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') }; }
 function git(cwd, args) { return run('git', ['-C', cwd, ...args], cwd); }
 function copyPkg() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-ci-'));
-  const tar = spawnSync('git', ['-C', PKG, 'archive', 'HEAD'], { encoding: 'buffer', maxBuffer: 1 << 28 });
+  const tar = spawnSyncPipeFree('git', ['-C', PKG, 'archive', 'HEAD'], { encoding: 'buffer' });
   if (tar.status !== 0) throw new Error('git archive failed');
   fs.mkdirSync(path.join(dir, 'pkg'), { recursive: true });
-  const t = spawnSync('tar', ['-x', '-C', path.join(dir, 'pkg')], { input: tar.stdout, maxBuffer: 1 << 28 });
+  /* Помощник пишет вывод в файлы и закрывает stdin: архив HEAD кладём в файл,
+   * а распаковщику отдаём его через -f — смысл `git archive | tar -x` сохранён. */
+  const archive = path.join(dir, 'head.tar');
+  fs.writeFileSync(archive, tar.stdout);
+  const t = spawnSyncPipeFree('tar', ['-x', '-f', archive, '-C', path.join(dir, 'pkg')]);
   if (t.status !== 0) throw new Error('tar failed');
   const pkg = path.join(dir, 'pkg');
   /* Изменённые и новые файлы рабочего дерева поверх HEAD: иначе проверки из критериев

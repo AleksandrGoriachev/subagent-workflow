@@ -11,7 +11,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -26,7 +26,7 @@ const pass = (n) => console.log('PASS ' + n);
 const fail = (n, d) => { failed += 1; console.log('FAIL ' + n + (d ? ' — ' + d : '')); };
 
 function git(cwd, args) {
-  const r = spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
+  const r = spawnSyncPipeFree('git', ['-C', cwd, ...args], { encoding: 'utf8' });
   return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') };
 }
 function tempRepo(withGit) {

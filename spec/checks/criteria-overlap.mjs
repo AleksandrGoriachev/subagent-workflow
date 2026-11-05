@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
@@ -93,13 +94,13 @@ async function c2() {
 }
 
 async function c3() {
-  const { execFileSync } = await import('node:child_process');
   for (const gate of ['task-red.mjs', 'task-verify.mjs', 'task-accept.mjs']) {
     const file = path.join(PKG, 'spec', 'scripts', gate);
     truthy(fs.existsSync(file), 'нет ' + gate);
     const text = fs.readFileSync(file, 'utf8');
     truthy(/runCriteria/u.test(text), gate + ' не использует runCriteria');
-    execFileSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+    const syntax = spawnSyncPipeFree(process.execPath, ['--check', file], { encoding: 'utf8' });
+    truthy(syntax.status === 0, file + ': ' + String(syntax.stderr || '').trim());
   }
   const source = fs.readFileSync(path.join(PKG, 'spec', 'scripts', 'lib', 'common.mjs'), 'utf8');
   truthy(/WF_CRITERIA_PARALLEL/u.test(source), 'нет WF_CRITERIA_PARALLEL');

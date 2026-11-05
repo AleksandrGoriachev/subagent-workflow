@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +30,7 @@ function argValue(name) {
 }
 
 function run(cmd, args, cwd) {
-  const result = spawnSync(cmd, args, { cwd, encoding: 'utf8' });
+  const result = spawnSyncPipeFree(cmd, args, { cwd, encoding: 'utf8' });
   return { code: result.status, out: String(result.stdout || '') + String(result.stderr || '') };
 }
 

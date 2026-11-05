@@ -13,7 +13,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -32,7 +32,7 @@ function truthy(value, label) {
 }
 
 function runHelper(args) {
-  const result = spawnSync(process.execPath, [HELPER, ...args], {
+  const result = spawnSyncPipeFree(process.execPath, [HELPER, ...args], {
     cwd: PKG,
     encoding: 'utf8',
     timeout: 120000,

@@ -13,7 +13,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -45,14 +45,14 @@ function engineRepo(version) {
   fs.writeFileSync(path.join(engineDir, 'VERSION'), version + '\n');
   fs.writeFileSync(path.join(engineDir, 'workflow.config.json'), JSON.stringify({ version: 1, tasksDir: 'docs/tasks', logs: 'local' }));
   fs.mkdirSync(path.join(dir, 'docs', 'tasks'), { recursive: true });
-  const git = spawnSync('git', ['init', '-q'], { cwd: dir, stdio: 'ignore' });
+  const git = spawnSyncPipeFree('git', ['init', '-q'], { cwd: dir });
   truthy(git.status === 0, 'git init репозитория движка');
   return dir;
 }
 
 function emptyWorkspace() {
   const dir = fs.mkdtempSync(path.join(ROOT, 'ws-'));
-  const git = spawnSync('git', ['init', '-q'], { cwd: dir, stdio: 'ignore' });
+  const git = spawnSyncPipeFree('git', ['init', '-q'], { cwd: dir });
   truthy(git.status === 0, 'git init воркспейса');
   return dir;
 }
@@ -153,11 +153,11 @@ async function c2() {
   truthy(tests.includes(CLIENT_TEST), 'client.test.mjs: нет теста «' + CLIENT_TEST + '»');
 
   /* Узкий набор: только свой файл карточки, а не весь набор пакета (0048). */
-  const run = spawnSync(process.execPath, [
+  const run = spawnSyncPipeFree(process.execPath, [
     '--test',
     path.join(PKG, 'plugin', 'test', 'client.test.mjs'),
   ], {
-    cwd: PKG, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 1800000,
+    cwd: PKG, encoding: 'utf8', timeout: 1800000,
   });
   if (run.status !== 0) throw new Error('тесты панели не зелёные: ' + String(run.stdout || '').slice(-1200) + String(run.stderr || '').slice(-600));
 }

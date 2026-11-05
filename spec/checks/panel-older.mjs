@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -76,7 +76,7 @@ function deployedRepo(version) {
   fs.writeFileSync(path.join(engineDir, 'VERSION'), version + '\n');
   fs.writeFileSync(path.join(engineDir, 'workflow.config.json'), JSON.stringify({ version: 1, tasksDir: 'docs/tasks', logs: 'local' }));
   fs.mkdirSync(path.join(repo, 'docs', 'tasks'), { recursive: true });
-  const git = spawnSync('git', ['init', '-q'], { cwd: repo, stdio: 'ignore' });
+  const git = spawnSyncPipeFree('git', ['init', '-q'], { cwd: repo });
   truthy(git.status === 0, 'git init в фикстуре');
   return repo;
 }
@@ -134,12 +134,12 @@ async function c2() {
   truthy(tests.includes(CARD_TEST), 'client.test.mjs: нет теста «' + CARD_TEST + '»');
 
   /* Узкий набор: только свои файлы карточки, а не весь набор пакета (0047). */
-  const run = spawnSync(process.execPath, [
+  const run = spawnSyncPipeFree(process.execPath, [
     '--test',
     path.join(PKG, 'plugin', 'test', 'client.test.mjs'),
     path.join(PKG, 'plugin', 'test', 'panel-older.test.mjs'),
   ], {
-    cwd: PKG, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 1800000,
+    cwd: PKG, encoding: 'utf8', timeout: 1800000,
   });
   if (run.status !== 0) throw new Error('тесты панели не зелёные: ' + String(run.stdout || '').slice(-1200) + String(run.stderr || '').slice(-600));
 }

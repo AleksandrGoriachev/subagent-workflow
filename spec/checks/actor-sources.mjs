@@ -17,7 +17,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -57,7 +57,7 @@ function envWith(extra) {
 
 function makeRepo(actorConfig) {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-actor-'));
-  const git = (args) => spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+  const git = (args) => spawnSyncPipeFree('git', args, { cwd: repo, encoding: 'utf8' });
   git(['init', '-q']);
   git(['config', 'user.email', 'actor@local']);
   git(['config', 'user.name', 'actor']);
@@ -78,7 +78,7 @@ function cleanup(repo) {
 }
 
 function node(repo, script, args, env) {
-  const result = spawnSync(process.execPath, [SCRIPT(repo, script), ...args], {
+  const result = spawnSyncPipeFree(process.execPath, [SCRIPT(repo, script), ...args], {
     cwd: repo, env, encoding: 'utf8', timeout: 120000,
   });
   return { code: result.status, out: String(result.stdout || '') + String(result.stderr || '') };

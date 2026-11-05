@@ -14,7 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -66,8 +66,8 @@ function c3() {
   ];
   for (const [file, id, timeout] of runs) {
     const started = Date.now();
-    const run = spawnSync(process.execPath, [path.join(PKG, 'spec', 'checks', file), id], {
-      cwd: PKG, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout,
+    const run = spawnSyncPipeFree(process.execPath, [path.join(PKG, 'spec', 'checks', file), id], {
+      cwd: PKG, encoding: 'utf8', timeout,
     });
     const wall = Math.round((Date.now() - started) / 1000);
     truthy(run.status === 0, file + ' ' + id + ': exit ' + run.status + ' (' + wall + ' с); '

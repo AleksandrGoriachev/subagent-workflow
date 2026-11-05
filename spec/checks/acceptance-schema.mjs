@@ -12,7 +12,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -152,7 +152,7 @@ if (pkg) {
 if (!fs.existsSync(PACK_TOOL)) {
   fail('есть tools/pack-plugin.mjs');
 } else {
-  const result = spawnSync(process.execPath, [PACK_TOOL, '--plan'], { cwd: ROOT, encoding: 'utf8' });
+  const result = spawnSyncPipeFree(process.execPath, [PACK_TOOL, '--plan'], { cwd: ROOT, encoding: 'utf8' });
   const out = String(result.stdout || '') + String(result.stderr || '');
   /* Имена ассетов строятся из манифеста: сборщик обязан взять имя и версию оттуда. */
   const assetName = String((pkg && pkg.name) || '');

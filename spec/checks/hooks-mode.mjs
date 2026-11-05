@@ -26,7 +26,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -44,7 +44,7 @@ const fail = (message) => { failed += 1; console.log('FAIL ' + message); };
 const pass = (message) => console.log('PASS ' + message);
 
 function git(args, cwd = ROOT) {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const result = spawnSyncPipeFree('git', args, { cwd, encoding: 'utf8' });
   return { code: result.status, out: String(result.stdout || ''), err: String(result.stderr || '') };
 }
 
@@ -97,7 +97,7 @@ function behavior() {
     ...process.env,
     PATH: path.dirname(process.execPath) + path.delimiter + String(process.env.PATH || ''),
   };
-  const at = (args) => spawnSync('git', ['-C', repo, ...args], { cwd: repo, encoding: 'utf8', env });
+  const at = (args) => spawnSyncPipeFree('git', ['-C', repo, ...args], { cwd: repo, encoding: 'utf8', env });
   const text = (result) => String(result.stdout || '') + String(result.stderr || '');
   try {
     fs.mkdirSync(repo, { recursive: true });
@@ -106,7 +106,7 @@ function behavior() {
     at(['config', 'user.email', 'hooks-mode@local']);
     at(['config', 'user.name', 'hooks-mode']);
 
-    const deploy = spawnSync(process.execPath, [
+    const deploy = spawnSyncPipeFree(process.execPath, [
       path.join(ROOT, 'spec', 'scripts', 'init.mjs'), '--repo', repo, '--key-out', keys,
     ], { cwd: repo, encoding: 'utf8', env, timeout: 300000 });
     if (deploy.status !== 0) { fail('поведение: init не развернул движок из spec/: ' + text(deploy).trim().slice(-400)); return; }

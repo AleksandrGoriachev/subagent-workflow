@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -18,7 +18,7 @@ if (!fs.existsSync(path.join(PKG, 'spec'))) {
 let failed = 0;
 const pass = (n) => console.log('PASS ' + n);
 const fail = (n, d) => { failed += 1; console.log('FAIL ' + n + (d ? ' — ' + d : '')); };
-function run(cmd, args, cwd) { const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 900000 }); return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') }; }
+function run(cmd, args, cwd) { const r = spawnSyncPipeFree(cmd, args, { cwd, encoding: 'utf8', timeout: 900000 }); return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') }; }
 function copyTree(from, to) {
   fs.mkdirSync(to, { recursive: true });
   for (const e of fs.readdirSync(from, { withFileTypes: true })) {
