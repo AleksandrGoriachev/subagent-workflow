@@ -1,0 +1,176 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0071",
+  "title": "Проверки пакета без пайпов: 29 spec/checks/*.mjs на spawnSyncPipeFree, сканер pipe-free c1 включает spec/checks (WC-39)",
+  "risk": "medium",
+  "taskFileSha256": "0588bb7980bc6eedb5f1003d939f07fcb576861dce66b89f4db8e34e606c97b1",
+  "criteriaSha256": "455032ac793a6c659b3a8203088d4a80b66e9759720153073d559eb5934c90f5",
+  "criteriaJsonSha256": "b7a223a57f2861b1e71098019de946c4a23e0a47a364faa12ddf29918e33c4eb",
+  "contractCommit": "04658e97a33219f4c2878016844706daa13f3e03",
+  "baseCommit": "04658e97a33219f4c2878016844706daa13f3e03",
+  "candidateCommit": "18546cee97e9dd7efccaf8354c52aaa844907b9a",
+  "tree": "df50daac87eee3a51e6874fc2c5d1fa7cae03887",
+  "worktreeDigest": "d1cb6fe4d66f0c1acaa6e6b8f717e79a5b66a6012a0a21d177cf4af388ef9ea3",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-6827c6951522",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "528c1cf0-cd5f-4374-b7dd-f4f7df503124",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "8c0dcbea4f316286c549df328e2e0908",
+    "runKind": "accept",
+    "startedAt": "2026-11-05T10:49:33.699Z",
+    "finishedAt": "2026-11-05T10:52:47.477Z",
+    "durationMs": 193791,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "a777f4f2068d734b7013bcd7d70e2b2b5df07fa6426fe6f63db3deee477e2249",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "04658e97a33219f4c2878016844706daa13f3e03",
+    "contractCommit": "04658e97a33219f4c2878016844706daa13f3e03",
+    "criteriaJsonSha256": "b7a223a57f2861b1e71098019de946c4a23e0a47a364faa12ddf29918e33c4eb",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 812,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/pipe-free.mjs c2",
+      "exitCode": 0,
+      "durationMs": 4147,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 78334,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/e2e.mjs",
+      "exitCode": 0,
+      "durationMs": 183490,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/gate-rules.mjs",
+      "exitCode": 0,
+      "durationMs": 144339,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-output.mjs c1",
+      "exitCode": 0,
+      "durationMs": 967,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/actor-sources.mjs c1",
+      "exitCode": 0,
+      "durationMs": 27666,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-05T10:52:48.554Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "узел judge не выполнил прогон: два спавна вернули реплику без работы; приёмку выполнил нативный subagent",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "+fhq4rs410WoqJBYc9N9Ol5/hqi6wTsoNUKvXh82mHl+kAIbAzKmhtvR7nVLmnEj/yy19TdZGrErN1uGTArMDw=="
+}
