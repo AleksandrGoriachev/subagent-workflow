@@ -381,12 +381,17 @@ try {
   fs.rmSync(acceptanceFile, { force: true });
   git(['reset', '--soft', contractCommit]);
 
-  const selfAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge'], { env: { DSH_SESSION_ID: 'issuer-session' } });
+  /*
+   * 2.6.29 (0069): приёмка medium обязана назвать узел роли. Здесь проверяется
+   * роль приёмщика, поэтому у всех четырёх приёмок фикстуры — judge; без --node
+   * запись не создаётся вовсе, и проверки ролей/независимости не доходят.
+   */
+  const selfAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--node', 'judge'], { env: { DSH_SESSION_ID: 'issuer-session' } });
   report('самоприёмка из сессии постановщика отклоняется', selfAccept.code !== 0 && /issuedBy/.test(selfAccept.out), selfAccept.out);
 
   const blockingReview = path.join(tmp, 'review-blocking.json');
   fs.writeFileSync(blockingReview, JSON.stringify({ decision: 'accepted', remarks: [{ id: 'R1', class: 'blocking' }] }, null, 2));
-  const blockedAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', blockingReview], { env: { DSH_SESSION_ID: 'judge-session' } });
+  const blockedAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--node', 'judge', '--review', blockingReview], { env: { DSH_SESSION_ID: 'judge-session' } });
   report('blocking-замечание без решения не принимается', blockedAccept.code !== 0 && /blocking/.test(blockedAccept.out), blockedAccept.out);
 
   const reviewFile = path.join(tmp, 'review-ok.json');
@@ -403,7 +408,7 @@ try {
    * 2.6.0: актор без DSH. Контроль — источник runner настроен шаблоном
    * конфига, но окружение пустое: ворота отказывают, сессию не выдумывают.
    */
-  const noSessionAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { unsetEnv: ['DSH_SESSION_ID', 'DSH_MODEL', 'WF_ACTOR_SESSION', 'WF_ACTOR_MODEL', 'TASK_ACTOR_SESSION', 'TASK_ACTOR_MODEL'] });
+  const noSessionAccept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--node', 'judge', '--review', reviewFile], { unsetEnv: ['DSH_SESSION_ID', 'DSH_MODEL', 'WF_ACTOR_SESSION', 'WF_ACTOR_MODEL', 'TASK_ACTOR_SESSION', 'TASK_ACTOR_MODEL'] });
   report('2.6.0: источник runner настроен, окружение пустое — приёмка medium отказывает',
     noSessionAccept.code !== 0 && /независимости|не дало идентификатор/.test(noSessionAccept.out), noSessionAccept.out);
 
@@ -411,7 +416,7 @@ try {
    * И приёмка medium проходит отдельной сессией без DSH: только обёртка
    * проекта выставила WF_ACTOR_SESSION/WF_ACTOR_MODEL (вид runner).
    */
-  const accept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--review', reviewFile], { env: { WF_ACTOR_SESSION: 'wrapper-session', WF_ACTOR_MODEL: 'judge-model' }, unsetEnv: ['DSH_SESSION_ID', 'DSH_MODEL', 'TASK_ACTOR_SESSION', 'TASK_ACTOR_MODEL'] });
+  const accept = run('task-accept.mjs', ['--task', 'docs/tasks/0001', '--acceptor', 'judge', '--key', path.join(keys, 'agent-judge.key.pem'), '--key-id', 'agent-judge', '--node', 'judge', '--review', reviewFile], { env: { WF_ACTOR_SESSION: 'wrapper-session', WF_ACTOR_MODEL: 'judge-model' }, unsetEnv: ['DSH_SESSION_ID', 'DSH_MODEL', 'TASK_ACTOR_SESSION', 'TASK_ACTOR_MODEL'] });
   report('2.6.0: приёмка medium без DSH — один WF_ACTOR_SESSION даёт отдельную сессию', accept.code === 0, accept.out);
   const acceptancePath = acceptanceFile;
   const record = JSON.parse(fs.readFileSync(acceptancePath, 'utf8'));
