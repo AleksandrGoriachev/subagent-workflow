@@ -1,5 +1,18 @@
 # Изменения
 
+## 2.6.32 — 2026-11-05
+
+- **Императив проверяется машиной (задание 0073, WC-55).** Плагин получил сторож долгих ожиданий:
+  `Start-Sleep` ≥ 60 с, `job_output(wait: true, timeout_ms > 120000)`, `project_graph_run(timeoutMs ≥ 240000)`.
+  При `enforcement.waitPolicy: fail` вызов отклоняется через `ctx.tools.guard` со ссылкой на
+  `scripts/job.mjs start/wait`; при `warn` — проходит с notice полной формы v4 (`id`, `role`,
+  `source.kind = 'plugin:dsh-workflow-console'`). Старый движок (без `job.mjs`) не блокируется:
+  сначала обновление.
+- **Блок `enforcement` в конфиге.** Шаблон `spec/workflow.config.json` и `init` несут
+  `{ waitPolicy, waitBudgetMs, processPolicy, structurePolicy } = fail`; в существующий конфиг
+  досыпаются только недостающие ключи — заданные значения владельца не перетираются.
+- Плагин 0.9.11. Приёмка 0073 — кандидат `01fa9e66`, metadata `9f43da5`, с `deviation` (узел `judge`
+  не выполняет инструменты).
 ## 2.6.31 — 2026-11-05
 
 - **Сторож в пакете (задание 0072, WC-54).** Ожидание тяжёлого прогона сном (`Start-Sleep`, длинный
