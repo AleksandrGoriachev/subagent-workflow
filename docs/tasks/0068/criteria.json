@@ -1,0 +1,128 @@
+{
+  "task": "0068",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasons": {
+      "C1": "NODEATTR FAIL c1",
+      "C2": "NODEATTR FAIL c2"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Запись: узел, отклонение, схема",
+      "command": "node spec/checks/node-attribution.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/templates/acceptance.schema.json"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "NODEATTR OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Контракт: acceptorNode и deviation",
+      "command": "node spec/checks/node-attribution.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-lint.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "NODEATTR OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Схема записи цела",
+      "command": "node spec/checks/acceptance-schema.mjs",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/templates/acceptance.schema.json"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Правила ворот не сломаны",
+      "command": "node spec/checks/gate-rules.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE RULES OK"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Пайпов не добавилось",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c1"
+      }
+    }
+  ]
+}
