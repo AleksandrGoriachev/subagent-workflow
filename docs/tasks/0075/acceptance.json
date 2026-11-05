@@ -1,0 +1,176 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0075",
+  "title": "Политика императива по воркспейсу: enforcement из workflow.config.json каждого корня (WC-57)",
+  "risk": "medium",
+  "taskFileSha256": "3ee7f861c26ac9d722fc6823f7f2291b77f132abdcf2e52cec2376a1e623f10c",
+  "criteriaSha256": "8bf9919f1d83ea0da48bc3d92d2bcabbcc88a628b3d82babe96ca25d40b76ef1",
+  "criteriaJsonSha256": "ab8b1760a661ea9c4b809ffa4d408b9002ffd75ba50bdd60903edf259833aba4",
+  "contractCommit": "3eb7e1b0a2b15619dfebeab807eb560ff696d8f5",
+  "baseCommit": "3eb7e1b0a2b15619dfebeab807eb560ff696d8f5",
+  "candidateCommit": "7ecc493f8634144945246df3e70a269be6babd10",
+  "tree": "e4cc12f9f0acc83150b2b8e56bbf03e519664bf3",
+  "worktreeDigest": "76a0403f3673af2c284f38e35207f0d4aa2ac72202408a66e132e9f0e58e062a",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-cf1938f6-4045-48d5-9b4d-85f4e87c93e7",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "d6a60851-483e-41fe-afc9-5c401f43c6e8",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "coordinator"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "24eb13c194652b45c9ce61cf2d7f64a6",
+    "runKind": "accept",
+    "startedAt": "2026-11-05T12:28:54.944Z",
+    "finishedAt": "2026-11-05T12:29:44.732Z",
+    "durationMs": 49800,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "9c6ac1df528936d9a2503f1c2915ab6e13317d792aea574f76af95d20bcb68c9",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "3eb7e1b0a2b15619dfebeab807eb560ff696d8f5",
+    "contractCommit": "3eb7e1b0a2b15619dfebeab807eb560ff696d8f5",
+    "criteriaJsonSha256": "ab8b1760a661ea9c4b809ffa4d408b9002ffd75ba50bdd60903edf259833aba4",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/wait-guard.mjs c5",
+      "exitCode": 0,
+      "durationMs": 1005,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/wait-guard.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1060,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/wait-guard.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1076,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/wait-guard.mjs c4",
+      "exitCode": 0,
+      "durationMs": 1071,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/workspace-imperative.mjs c1",
+      "exitCode": 0,
+      "durationMs": 933,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 38966,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 881,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-05T12:29:45.398Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "узел judge не выполняет инструменты (три спавна вернули реплику без вызова); приёмку выполнил узел coordinator, отдельная сессия",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "kY6QkT4A24vnY9Tph5ZmKGoFKVnLkld2JFgkSGvVdmGZlfd0p477FA+NOw4m6RLaIZoPjtTOSmFqOtBJEILBCg=="
+}
