@@ -10,8 +10,9 @@
  *   - job_output с wait: true и timeout_ms больше бюджета (120000 по умолчанию);
  *   - project_graph_run с timeoutMs >= 2 * бюджета.
  *
- * fail — вызов отклоняется через ctx.tools.guard (DSH: guard только запрещает,
- * строка — причина отказа, undefined — не вмешиваться).
+ * fail — вызов отклоняется до исполнения событием tools/pre-execute
+ * ({kind: 'deny', reason}); ctx.tools.guard (строка-причина / undefined) остаётся
+ * вторым слоем, когда сервис доступен.
  * warn — вызов проходит, а tools/post-execute добавляет notice полной формы v4
  * к результату, не теряя downstream-результат.
  * off — молчит.
@@ -35,12 +36,18 @@
  * (off|warn|fail) и enforcement.waitBudgetMs. Нет файла, нет ключа, битый JSON
  * или неверное значение — профильный дефолт из config (waitPolicy = fail);
  * ошибка чтения не бросается, кэш сверяет mtime файла. Guard подписывается при
- * наличии ctx.tools.guard независимо от политик корней и отклоняет только
- * вызов в fail-корне; tools/post-execute подписывается всегда и добавляет
+ * наличии ctx.tools.guard вторым слоем (0076) независимо от политик корней и
+ * отклоняет только вызов в fail-корне; tools/post-execute подписывается всегда и добавляет
  * notice только для warn-корня; off-корень не получает ни отказа, ни notice
  * (off осознанно сильнее профильного fail). Порог — waitBudgetMs корня, иначе
  * профильный; журнал пишет root и mode фактического решения. Вызов без roots
  * ведёт себя как раньше: политика из config и process.cwd().
+ *
+ * 0076 (WC-59): отказ не зависит от инъекции сервиса tools. registerWaitGuard
+ * подписывает tools/pre-execute (exec, next) и на долгий вызов в fail-корне
+ * возвращает {kind: 'deny', reason} БЕЗ вызова next(); обычный вызов уходит в
+ * next(). Политика, порог, кэш по mtime и журнал — прежние. ctx.tools.guard
+ * подписывается вторым слоем, если сервис есть; его отсутствие не ошибка.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
@@ -443,9 +450,80 @@ function addNotice(result, hit, options) {
 }
 
 /**
+ * Решение об отказе по одному вызову: {kind: 'deny', reason} для
+ * tools/pre-execute, либо null (не долгий вызов / корень не fail). Журнал
+ * пишется здесь же — и для pre-execute, и для guard второго слоя. Ошибка
+ * политики не бросается: решение не принимается, вызов решает downstream.
+ */
+function preExecuteDenial(exec, state) {
+  try {
+    const decision = resolveCall(exec, state);
+    if (decision.effective !== 'fail') return null;
+    const hit = detectLongWait(exec, decision.budgetMs);
+    if (hit === null) return null;
+    const reason = waitGuardReason(hit);
+    recordWait(exec, hit, {
+      root: decision.root,
+      mode: 'fail',
+      denied: true,
+      reason,
+      budgetMs: decision.budgetMs,
+    });
+    return { kind: 'deny', reason };
+  } catch {
+    return null;
+  }
+}
+
+/** Второй слой: guard возвращает строку-причину или undefined (не вмешиваться). */
+function guardDenial(exec, state) {
+  const denial = preExecuteDenial(exec, state);
+  return denial === null ? undefined : denial.reason;
+}
+
+/** tools/pre-execute: отказ до исполнения, иначе решение отдаётся downstream. */
+function preExecuteHandler(state) {
+  return async (...args) => {
+    const denial = preExecuteDenial(args[0], state);
+    if (denial !== null) return denial;
+    const next = downstreamOf(args);
+    return typeof next === 'function' ? next() : undefined;
+  };
+}
+
+/** tools/post-execute: notice warn-корня, downstream-результат не теряется. */
+function postExecuteHandler(state) {
+  return async (...args) => {
+    const next = downstreamOf(args);
+    const result = next ? await next() : undefined;
+    try {
+      const decision = resolveCall(args[0], state);
+      if (decision.effective === 'warn') {
+        const hit = detectLongWait(args[0], decision.budgetMs);
+        if (hit !== null) {
+          recordWait(args[0], hit, {
+            root: decision.root,
+            mode: 'warn',
+            denied: false,
+            reason: waitSummary(hit),
+            budgetMs: decision.budgetMs,
+          });
+          return addNotice(result, hit, { engineOutdated: !decision.jobScript });
+        }
+      }
+    } catch {
+      /* ошибка политики не ломает downstream-результат */
+    }
+    return result;
+  };
+}
+
+/**
  * Подписать сторож на контекст плагина.
  *
- * @param {{tools?: {guard?: Function}, on?: Function}} ctx контекст DSH
+ * @param {{tools?: {guard?: Function}, on?: Function}} ctx контекст DSH:
+ *   on — waterfall-события (tools/pre-execute, tools/post-execute); tools.guard —
+ *   второй слой, его отсутствие не ошибка
  * @param {object} [config] конфиг плагина: waitPolicy/waitBudgetMs/jobScript
  *   (профильный дефолт) и roots — абсолютные корни воркспейсов; допустим и
  *   блок { enforcement: { ... } } из workflow.config.json
@@ -476,57 +554,19 @@ export function registerWaitGuard(ctx, config = {}) {
   const listenAvailable = typeof ctx.on === 'function';
 
   /*
-   * 0075 (WC-57): смешанные политики. Guard подписывается всегда, когда он
-   * есть в ctx, и отклоняет только вызов в fail-корне; post-execute
-   * подписывается всегда и добавляет notice только для warn-корня.
+   * 0076 (WC-59): отказ — waterfall tools/pre-execute: он не требует инъекции
+   * сервиса tools и работает там, где ctx.tools нет. Guard подписывается вторым
+   * слоем, если сервис доступен; его отсутствие не бросает.
    */
+  if (listenAvailable && (state.workspaceMode || profileEffective === 'fail')) {
+    ctx.on('tools/pre-execute', preExecuteHandler(state));
+  }
+
   if (state.workspaceMode) {
-    if (guardAvailable) {
-      ctx.tools.guard((exec) => {
-        try {
-          const decision = resolveCall(exec, state);
-          if (decision.effective !== 'fail') return undefined;
-          const hit = detectLongWait(exec, decision.budgetMs);
-          if (hit === null) return undefined;
-          const reason = waitGuardReason(hit);
-          recordWait(exec, hit, {
-            root: decision.root,
-            mode: 'fail',
-            denied: true,
-            reason,
-            budgetMs: decision.budgetMs,
-          });
-          return reason;
-        } catch {
-          return undefined;
-        }
-      });
-    }
-    if (listenAvailable) {
-      ctx.on('tools/post-execute', async (...args) => {
-        const next = downstreamOf(args);
-        const result = next ? await next() : undefined;
-        try {
-          const decision = resolveCall(args[0], state);
-          if (decision.effective === 'warn') {
-            const hit = detectLongWait(args[0], decision.budgetMs);
-            if (hit !== null) {
-              recordWait(args[0], hit, {
-                root: decision.root,
-                mode: 'warn',
-                denied: false,
-                reason: waitSummary(hit),
-                budgetMs: decision.budgetMs,
-              });
-              return addNotice(result, hit, { engineOutdated: !decision.jobScript });
-            }
-          }
-        } catch {
-          /* ошибка политики не ломает downstream-результат */
-        }
-        return result;
-      });
-    }
+    /* 0075 (WC-57): смешанные политики. Guard — вторым слоем, post-execute —
+     * notice только для warn-корня, off-корень молчит. */
+    if (guardAvailable) ctx.tools.guard((exec) => guardDenial(exec, state));
+    if (listenAvailable) ctx.on('tools/post-execute', postExecuteHandler(state));
     return result;
   }
 
@@ -534,47 +574,10 @@ export function registerWaitGuard(ctx, config = {}) {
   if (profileEffective === 'off') return result;
 
   if (profileEffective === 'fail') {
-    if (!guardAvailable) return result;
-    ctx.tools.guard((exec) => {
-      try {
-        const hit = detectLongWait(exec, profile.budgetMs);
-        if (hit === null) return undefined;
-        const reason = waitGuardReason(hit);
-        recordWait(exec, hit, {
-          root: profile.root,
-          mode: 'fail',
-          denied: true,
-          reason,
-          budgetMs: profile.budgetMs,
-        });
-        return reason;
-      } catch {
-        return undefined;
-      }
-    });
+    if (guardAvailable) ctx.tools.guard((exec) => guardDenial(exec, state));
     return result;
   }
 
-  if (!listenAvailable) return result;
-  ctx.on('tools/post-execute', async (...args) => {
-    const next = downstreamOf(args);
-    const result = next ? await next() : undefined;
-    try {
-      const hit = detectLongWait(args[0], profile.budgetMs);
-      if (hit !== null) {
-        recordWait(args[0], hit, {
-          root: profile.root,
-          mode: 'warn',
-          denied: false,
-          reason: waitSummary(hit),
-          budgetMs: profile.budgetMs,
-        });
-        return addNotice(result, hit, { engineOutdated: !profile.jobScript });
-      }
-    } catch {
-      /* ошибка политики не ломает downstream-результат */
-    }
-    return result;
-  });
+  if (listenAvailable) ctx.on('tools/post-execute', postExecuteHandler(state));
   return result;
 }
