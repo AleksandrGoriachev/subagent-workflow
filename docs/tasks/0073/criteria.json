@@ -1,0 +1,112 @@
+{
+  "task": "0073",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasons": {
+      "C1": "WAITGUARD FAIL c1",
+      "C2": "WAITGUARD FAIL c2",
+      "C3": "WAITGUARD FAIL c3"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Детектор долгих ожиданий",
+      "command": "node spec/checks/wait-guard.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/wait-guard.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "WAITGUARD OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "fail отклоняет, warn предупреждает",
+      "command": "node spec/checks/wait-guard.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "plugin/lib/wait-guard.js",
+        "plugin/lib/index.js"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "WAITGUARD OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Шаблон и init несут enforcement",
+      "command": "node spec/checks/wait-guard.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 300000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/workflow.config.json",
+        "spec/scripts/init.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "WAITGUARD OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Пайпов не добавилось",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c1"
+      }
+    }
+  ]
+}
