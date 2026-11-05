@@ -1,0 +1,176 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0076",
+  "title": "Отказ сторожа через tools/pre-execute (форма {kind:'deny', reason}), guard — второй слой (WC-59)",
+  "risk": "medium",
+  "taskFileSha256": "908783ee38c22c329011487ed4a5479fc94dab713401f71b7afbfc919591c877",
+  "criteriaSha256": "9b7135dd06a7ea62d0836de21e3ae3ee9c724dfbc0b4237da59ed65ce05ed5ca",
+  "criteriaJsonSha256": "18b58ea2e9a7f27c0e95e52ca8f2e235d264683aac88b06701a21a332b8e871b",
+  "contractCommit": "8b9b4fdfc73ae58c87c91e3118dc25f6ebb5890d",
+  "baseCommit": "8b9b4fdfc73ae58c87c91e3118dc25f6ebb5890d",
+  "candidateCommit": "f08489a7de31a99bbf0f61de770578d6adde7945",
+  "tree": "02f637028a1d8a8472831c34e494b6271b03d019",
+  "worktreeDigest": "d1f74cd4843b98dc3a68bb8c30b8f3ed23779fde031416e8abb0a1648bc71b5d",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-cf1938f6-4045-48d5-9b4d-85f4e87c93e7",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "19ecb4b2-335e-4586-bc59-0eb1b71b451e",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "coordinator"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "9eef8c3abd24bb5abec1898cf918f4c8",
+    "runKind": "accept",
+    "startedAt": "2026-11-05T12:52:44.499Z",
+    "finishedAt": "2026-11-05T12:53:33.659Z",
+    "durationMs": 49168,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "b0b8ff7a032fd3f8602a9bdffe0c9d7dc48f39c9bca2db9f73b44808fb76638a",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "8b9b4fdfc73ae58c87c91e3118dc25f6ebb5890d",
+    "contractCommit": "8b9b4fdfc73ae58c87c91e3118dc25f6ebb5890d",
+    "criteriaJsonSha256": "18b58ea2e9a7f27c0e95e52ca8f2e235d264683aac88b06701a21a332b8e871b",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/wait-guard.mjs c6",
+      "exitCode": 0,
+      "durationMs": 1161,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/wait-guard.mjs c5",
+      "exitCode": 0,
+      "durationMs": 1391,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/wait-guard.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1132,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/wait-guard.mjs c4",
+      "exitCode": 0,
+      "durationMs": 1143,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/workspace-imperative.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1091,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 38031,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1201,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-05T12:53:34.445Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "узел judge не выполняет инструменты (спавны возвращают реплику без вызова); приёмку выполнил узел coordinator, отдельная сессия",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "yxX1ZeYL0/IDdzYzDNgKiZCZENa1n+XeBRWBjztLODsPtCvg3alH1YYs4nw050j/D1Vnpc1cOleVNnaCIb19BA=="
+}
