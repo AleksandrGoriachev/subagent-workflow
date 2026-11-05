@@ -59,6 +59,15 @@ window.__ModuleLoader__.load({
     const RELEASE_UPDATE_SOURCE = "release";
     const RELEASE_UPDATE_HINT = "Версия движка скачивается из релиза GitHub (tarball + sha256), а не из сборки панели.";
     /*
+     * 0.9.17 (0079, WC-52): обновление самого пакета панели. Кнопки движения
+     * обновляют только движок; когда сборка панели старше движка, тупик
+     * разрывает именно эта установка: релизный tarball плагина заменяет каталог
+     * пакета в профиле, прежний сохраняется рядом как .dsh-plugin-backup-*.
+     */
+    const PLUGIN_UPDATE_LABEL = "Обновить панель";
+    const PLUGIN_UPDATE_ROUTE = "/api/plugin-update";
+    const PLUGIN_UPDATE_HINT = "Скачивает tarball панели из релиза GitHub (sha256), заменяет пакет в профиле и требует перезапуск DSH.";
+    /*
      * 2.6.16 (0042): внешний движок обновляется в СВОЁМ репозитории. Явный
      * target отличает этот запрос от обновления воркспейса, которое для
      * внешнего движка по-прежнему запрещено (409 engine-external).
@@ -1516,6 +1525,24 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             } catch {
               data = { error: "ответ не JSON: HTTP " + response.status };
             }
+            /*
+             * 0078 (WC-61): up-to-date — не отказ. Сервер отвечает 409 с кодом
+             * up-to-date, когда установленная версия уже равна последнему
+             * релизу; до этой правки панель показывала «обновление из релиза не
+             * выполнено: HTTP 409». Сборка это уже различала (см. выше), релиз —
+             * нет.
+             */
+            if (data.code === "up-to-date") {
+              setUpdateNote({
+                kind: "ok",
+                code: null,
+                text: "Обновление не нужно: уже установлена версия "
+                  + fmt(data.version || data.targetVersion) + ".",
+                log: data.log || "",
+              });
+              closeUpdate();
+              return;
+            }
             if (!response.ok || data.ok !== true) {
               const unavailable = data.code === "release-unavailable";
               setUpdateNote({
@@ -1545,6 +1572,56 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           }
         }
 
+        /*
+         * 0079 (WC-52): обновление самой панели пакетом из релиза. Отдельный
+         * маршрут: замена каталога плагина — не обновление движка и не запись
+         * воркспейса; после успеха нужен перезапуск DSH.
+         */
+        async function runPluginUpdate() {
+          if (updateBusy) return;
+          setUpdateBusy(true);
+          setUpdateNote(null);
+          setError(null);
+          try {
+            const response = await fetch(BASE + PLUGIN_UPDATE_ROUTE, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ confirm: true }),
+            });
+            const text = await response.text();
+            let data = {};
+            try {
+              data = text.length > 0 ? JSON.parse(text) : {};
+            } catch {
+              data = { error: "ответ не JSON: HTTP " + response.status };
+            }
+            if (data.ok !== true) {
+              const code = data.code || "http-" + response.status;
+              let message = data.error || data.hint
+                || "обновление панели не выполнено: HTTP " + response.status;
+              if (code === "plugin-up-to-date") {
+                message = "Обновление не нужно: панель уже версии " + fmt(data.version || data.current) + ".";
+              } else if (code === "plugin-dev-install") {
+                message = data.hint || data.error
+                  || "Плагин установлен ссылкой на рабочее дерево: обновляйте его в репозитории.";
+              }
+              setUpdateNote({ kind: code === "plugin-up-to-date" ? "ok" : "error", code, text: message, log: data.log || "" });
+              return;
+            }
+            setUpdateNote({
+              kind: "ok",
+              code: null,
+              text: "Панель обновлена: " + fmt(data.from) + " → " + fmt(data.to)
+                + ". Перезапустите DSH, чтобы новая версия загрузилась. Бэкап пакета: " + fmt(data.backup) + ".",
+              log: "",
+            });
+          } catch (failure) {
+            setUpdateNote({ kind: "error", code: "network", text: errorText(failure), log: "" });
+          } finally {
+            setUpdateBusy(false);
+          }
+        }
+
         /* 0067: действие «Обновить из релиза» с коротким объяснением источника версии. */
         function renderReleaseAction() {
           return h(
@@ -1561,6 +1638,22 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 "aria-label": RELEASE_UPDATE_LABEL,
               },
               updateBusy ? "Скачиваю релиз…" : RELEASE_UPDATE_LABEL,
+            ),
+            /*
+             * 0079 (WC-52): выход из тупика «сборка панели старше движка» —
+             * обновить сам пакет панели, а не двигать движок ещё раз.
+             */
+            h(
+              "button",
+              {
+                type: "button",
+                style: updateBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                disabled: updateBusy,
+                onClick: () => void runPluginUpdate(),
+                title: PLUGIN_UPDATE_HINT,
+                "aria-label": PLUGIN_UPDATE_LABEL,
+              },
+              updateBusy ? "Обновляю панель…" : PLUGIN_UPDATE_LABEL,
             ),
             h("span", { style: S.hint }, RELEASE_UPDATE_HINT),
           );

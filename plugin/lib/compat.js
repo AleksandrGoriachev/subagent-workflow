@@ -7,7 +7,7 @@
  * never actions the panel performs.
  */
 /* Версия для панели. Обязана совпадать с package.json — это проверяет тест. */
-export const PLUGIN_VERSION = '0.9.14';
+export const PLUGIN_VERSION = '0.9.17';
 /* Диапазон, который панель показывает. С 0.9.0 в него входит внешний движок (2.6.9). */
 export const SUPPORTED_LABEL = '2.0.0 – 2.6.x';
 

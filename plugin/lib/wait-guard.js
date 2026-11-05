@@ -48,6 +48,13 @@
  * возвращает {kind: 'deny', reason} БЕЗ вызова next(); обычный вызов уходит в
  * next(). Политика, порог, кэш по mtime и журнал — прежние. ctx.tools.guard
  * подписывается вторым слоем, если сервис есть; его отсутствие не ошибка.
+ *
+ * 0077 (WC-60): порядок регистрации. Доступ к ctx.tools стоит ПОСЛЕ подписки и
+ * внутри try/catch: в хосте, где сервис tools не инжектирован в контекст
+ * плагина, обращение к нему бросает, и прежний код обрывал регистрацию до
+ * tools/pre-execute — политика fail молчала. registerWaitGuard возвращает
+ * result.registration = { preExecute, guard, postExecute, guardError }: живое
+ * состояние видно из /workflow/api/status.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
@@ -71,6 +78,10 @@ const WORKFLOW_CONFIG_RELATIVE = path.join('docs', 'subagent-workflow', 'workflo
 
 const SLEEP_SECONDS_RE = /-Seconds +[']?([0-9]+([.][0-9]+)?)/gi;
 const SLEEP_MILLISECONDS_RE = /-Milliseconds +[']?([0-9]+([.][0-9]+)?)/gi;
+
+function errorTextOf(error) {
+  return error && typeof error.message === 'string' ? error.message : String(error);
+}
 
 function finiteNumber(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -174,6 +185,8 @@ function recordWait(exec, hit, decision) {
     appendWaitRecord({
       at: isoTimestampWithOffset(new Date()),
       root: String(decision.root),
+      /* 0080: cwd | agent | call | fallback — видно, откуда взят корень. */
+      attribution: typeof decision.attribution === 'string' ? decision.attribution : null,
       tool: toolNameOf(exec),
       mode: decision.mode,
       denied: decision.denied === true,
@@ -364,13 +377,41 @@ function agentCwd(exec) {
   return session === null ? null : absolutePath(session.cwd);
 }
 
-/** Корень вызова: exec.cwd → agent cwd → config.root/roots[0]/cwd (инвариант 1). */
-function callRoot(exec, state) {
+/**
+ * cwd сессии по идентификатору вызова (0080/WC-62: атрибуция корня).
+ *
+ * У вызова из PTC-моста нет ни exec.cwd, ни agent.cwd: мост передаёт только
+ * parent/rootCallId. Корень восстанавливается по карте callId → cwd сессии,
+ * которую сторож ведёт из session/event (tool/call пишет, tool/result стирает).
+ */
+function callIdCwd(exec, state) {
+  if (!state || !(state.callRoots instanceof Map)) return null;
+  const ids = [exec && exec.rootCallId, exec && exec.parent, exec && exec.callId];
+  for (const id of ids) {
+    if (typeof id !== 'string' || id === '') continue;
+    const cwd = state.callRoots.get(id);
+    if (typeof cwd === 'string' && cwd !== '') return cwd;
+  }
+  return null;
+}
+
+/**
+ * Корень вызова: exec.cwd → agent cwd → cwd сессии по callId →
+ * config.root/roots[0]/cwd (инвариант 1). Возвращает пару корень+источник,
+ * чтобы журнал был честным: fallback — это «корень не определён», а не решение.
+ */
+function callRootWithSource(exec, state) {
   const direct = rootForPath(exec && exec.cwd, state.roots);
-  if (direct !== null) return direct;
+  if (direct !== null) return { root: direct, attribution: 'cwd' };
   const fromAgent = rootForPath(agentCwd(exec), state.roots);
-  if (fromAgent !== null) return fromAgent;
-  return state.fallbackRoot;
+  if (fromAgent !== null) return { root: fromAgent, attribution: 'agent' };
+  const fromCall = rootForPath(callIdCwd(exec, state), state.roots);
+  if (fromCall !== null) return { root: fromCall, attribution: 'call' };
+  return { root: state.fallbackRoot, attribution: 'fallback' };
+}
+
+function callRoot(exec, state) {
+  return callRootWithSource(exec, state).root;
 }
 
 /** Путь конфига воркспейса: <root>/docs/subagent-workflow/workflow.config.json. */
@@ -424,13 +465,21 @@ function readWorkspaceWaitSettings(root, cache) {
  * профильной, в том числе off (осознанно сильнее профильного fail).
  */
 function resolveCall(exec, state) {
-  const root = callRoot(exec, state);
+  const located = callRootWithSource(exec, state);
+  const root = located.root;
   const settings = state.workspaceMode ? readWorkspaceWaitSettings(root, state.cache) : {};
   const policy = settings.policy !== undefined ? settings.policy : state.policy;
   const budgetMs = settings.budgetMs !== undefined ? settings.budgetMs : state.budgetMs;
   /* Старый движок: сторожа в воркспейсе нет — отклонять нельзя, действует warn. */
   const effective = policy === 'fail' && !state.jobScript ? 'warn' : policy;
-  return { root, policy, effective, budgetMs, jobScript: state.jobScript };
+  return {
+    root,
+    attribution: located.attribution,
+    policy,
+    effective,
+    budgetMs,
+    jobScript: state.jobScript,
+  };
 }
 
 /** Хвост waterfall: последний функциональный аргумент — downstream. */
@@ -464,6 +513,7 @@ function preExecuteDenial(exec, state) {
     const reason = waitGuardReason(hit);
     recordWait(exec, hit, {
       root: decision.root,
+      attribution: decision.attribution,
       mode: 'fail',
       denied: true,
       reason,
@@ -503,6 +553,7 @@ function postExecuteHandler(state) {
         if (hit !== null) {
           recordWait(args[0], hit, {
             root: decision.root,
+            attribution: decision.attribution,
             mode: 'warn',
             denied: false,
             reason: waitSummary(hit),
@@ -535,6 +586,8 @@ export function registerWaitGuard(ctx, config = {}) {
   const profileEffective = profile.policy === 'fail' && !profile.jobScript ? 'warn' : profile.policy;
   const state = {
     roots,
+    /* 0080: callId → cwd сессии; у вложенных вызовов другого источника корня нет. */
+    callRoots: new Map(),
     workspaceMode: roots.length > 0,
     policy: profile.policy,
     budgetMs: profile.budgetMs,
@@ -550,34 +603,113 @@ export function registerWaitGuard(ctx, config = {}) {
   };
   if (!ctx || typeof ctx !== 'object') return result;
 
-  const guardAvailable = Boolean(ctx.tools) && typeof ctx.tools.guard === 'function';
   const listenAvailable = typeof ctx.on === 'function';
+  /*
+   * 2.6.36 (WC-60): подписка — первая операция, сервис tools читается ПОСЛЕ неё
+   * и внутри try/catch. Прежний порядок (Boolean(ctx.tools) выше подписки)
+   * обрывал регистрацию целиком там, где сервис tools не инжектирован в
+   * контекст плагина: apply() ловил исключение, панель работала, а
+   * tools/pre-execute не подписывался — и политика fail молчала.
+   */
+  const registration = {
+    preExecute: false,
+    guard: false,
+    postExecute: false,
+    guardError: null,
+  };
+  const subscribe = (event, handler) => {
+    if (!listenAvailable) return false;
+    try {
+      ctx.on(event, handler);
+      return true;
+    } catch (error) {
+      registration.guardError = errorTextOf(error);
+      return false;
+    }
+  };
+  const attachGuard = (service) => {
+    if (!service || typeof service.guard !== 'function') return;
+    try {
+      service.guard((exec) => guardDenial(exec, state));
+      registration.guard = true;
+    } catch (error) {
+      registration.guardError = errorTextOf(error);
+    }
+  };
 
   /*
-   * 0076 (WC-59): отказ — waterfall tools/pre-execute: он не требует инъекции
-   * сервиса tools и работает там, где ctx.tools нет. Guard подписывается вторым
-   * слоем, если сервис доступен; его отсутствие не бросает.
+   * 0080: карта вызов → cwd сессии. PTC-мост не передаёт ни exec.cwd, ни agent
+   * для вложенных вызовов, поэтому корень берётся из события сессии по
+   * callId/rootCallId. Ошибка карты не имеет права ломать вызов.
    */
-  if (listenAvailable && (state.workspaceMode || profileEffective === 'fail')) {
-    ctx.on('tools/pre-execute', preExecuteHandler(state));
+  const cwdOfSession = (session) => {
+    const candidates = [
+      session && session.cwd,
+      session && session.header && session.header.cwd,
+      session && session.agent && session.agent.cwd,
+    ];
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate !== '') return candidate;
+    }
+    return '';
+  };
+  const rememberCall = (session, event) => {
+    try {
+      if (!event || typeof event !== 'object' || !listenAvailable) return;
+      const data = event.data && typeof event.data === 'object' ? event.data : {};
+      const id = typeof data.callId === 'string' ? data.callId : '';
+      if (id === '') return;
+      if (event.type === 'tool/call') {
+        const cwd = cwdOfSession(session);
+        if (cwd === '') return;
+        state.callRoots.set(id, cwd);
+        while (state.callRoots.size > 500) {
+          const oldest = state.callRoots.keys().next().value;
+          if (oldest === undefined) break;
+          state.callRoots.delete(oldest);
+        }
+      } else if (event.type === 'tool/result') {
+        state.callRoots.delete(id);
+      }
+    } catch {
+      /* атрибуция не имеет права ломать вызов */
+    }
+  };
+  if (listenAvailable) subscribe('session/event', rememberCall);
+
+  if (state.workspaceMode || profileEffective === 'fail') {
+    registration.preExecute = subscribe('tools/pre-execute', preExecuteHandler(state));
+  }
+
+  let toolsService = null;
+  try {
+    toolsService = ctx.tools;
+  } catch (error) {
+    registration.guardError = errorTextOf(error);
   }
 
   if (state.workspaceMode) {
     /* 0075 (WC-57): смешанные политики. Guard — вторым слоем, post-execute —
      * notice только для warn-корня, off-корень молчит. */
-    if (guardAvailable) ctx.tools.guard((exec) => guardDenial(exec, state));
-    if (listenAvailable) ctx.on('tools/post-execute', postExecuteHandler(state));
+    attachGuard(toolsService);
+    registration.postExecute = subscribe('tools/post-execute', postExecuteHandler(state));
+    result.registration = registration;
     return result;
   }
 
   /* Совместимость: без roots — как раньше, политика профиля и один корень. */
-  if (profileEffective === 'off') return result;
-
-  if (profileEffective === 'fail') {
-    if (guardAvailable) ctx.tools.guard((exec) => guardDenial(exec, state));
+  if (profileEffective === 'off') {
+    result.registration = registration;
     return result;
   }
 
-  if (listenAvailable) ctx.on('tools/post-execute', postExecuteHandler(state));
+  if (profileEffective === 'fail') {
+    if (!registration.preExecute) attachGuard(toolsService);
+    result.registration = registration;
+    return result;
+  }
+
+  registration.postExecute = subscribe('tools/post-execute', postExecuteHandler(state));
+  result.registration = registration;
   return result;
 }

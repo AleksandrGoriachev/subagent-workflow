@@ -29,6 +29,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   readRepoInfo,
   readRepository,
@@ -46,6 +47,7 @@ import {
   availableSpecRoot,
   availableVersion,
   tasksInProgress,
+  compareVersions,
 } from './deploy.js';
 import {
   resolveEngine,
@@ -56,6 +58,12 @@ import {
   writeEngineLink,
 } from './engine-root.js';
 import { prepareEngineSpec } from './release-source.mjs';
+import {
+  PLUGIN_PACKAGE_NAME,
+  pluginInstallMode,
+  preparePluginTarball,
+  installPluginFiles,
+} from './plugin-update.mjs';
 
 export const API_PREFIX = '/workflow';
 export const PLUGIN_NAME = 'dsh-workflow-console';
@@ -146,12 +154,31 @@ export function createWorkflowRuntime(config = {}, options = {}) {
       ? config.updateSource
       : options.updateSource,
   );
+  /*
+   * 0079 (WC-52): откуда брать пакет плагина. Локальный tarball (config или
+   * WF_PLUGIN_UPDATE_FILE) — для офлайна и тестов; иначе — релиз GitHub.
+   */
+  const pluginUpdateFile = (() => {
+    const fromConfig = config && typeof config === 'object' && typeof config.pluginUpdateFile === 'string'
+      ? config.pluginUpdateFile.trim()
+      : '';
+    if (fromConfig !== '') return fromConfig;
+    const fromEnv = typeof process.env.WF_PLUGIN_UPDATE_FILE === 'string' ? process.env.WF_PLUGIN_UPDATE_FILE.trim() : '';
+    return fromEnv !== '' ? fromEnv : null;
+  })();
   return {
     roots,
     engines,
     updateSource,
+    pluginUpdateFile,
+    /* 0079: каталог установленного пакета; в тестах подменяется на временный. */
+    pluginRoot: typeof options.pluginRoot === 'string' && options.pluginRoot.trim() !== ''
+      ? path.resolve(options.pluginRoot)
+      : null,
     getWorkspaceRegistry,
     defaultRoot: roots.length > 0 ? roots[0] : null,
+    /* 0077 (WC-60): сторож докладывает живое состояние в /api/status. */
+    guard: typeof options.guard === 'function' ? options.guard : null,
     plugin: { name: PLUGIN_NAME, version: PLUGIN_VERSION, tool: TOOL },
   };
 }
@@ -400,6 +427,18 @@ function selectRoot(runtime, value) {
   return { root: match, error: null };
 }
 
+/**
+ * 0077 (WC-60): живое состояние сторожа долгих ожиданий. Считается в apply()
+ * плагина; здесь только читается. Ошибка чтения не отменяет статус панели.
+ */
+function guardPayload(runtime) {
+  try {
+    return runtime && typeof runtime.guard === 'function' ? runtime.guard() : null;
+  } catch (error) {
+    return { error: error && typeof error.message === 'string' ? error.message : String(error) };
+  }
+}
+
 function repoInfoPayload(info) {
   const policy = policyView(info.config, { root: info.root, configPath: info.configPath });
   return {
@@ -448,7 +487,8 @@ export function createWebHandler(runtime) {
       }
       const rel = pathname.slice(API_PREFIX.length) || '/';
       const postRoutes = rel === '/api/run' || rel === '/api/guard'
-        || rel === '/api/deploy' || rel === '/api/update' || rel === '/api/engine-link';
+        || rel === '/api/deploy' || rel === '/api/update' || rel === '/api/engine-link'
+        || rel === '/api/plugin-update';
       if (postRoutes ? method !== 'POST' : method !== 'GET') {
         res.setHeader('Allow', postRoutes ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
@@ -468,6 +508,7 @@ export function createWebHandler(runtime) {
         if (!selection.root) {
           sendJson(res, 200, {
             plugin: runtime.plugin,
+            guard: guardPayload(runtime),
             roots,
             root: null,
             rootConfigured: false,
@@ -494,6 +535,7 @@ export function createWebHandler(runtime) {
         const info = readRepoInfo(engineReadRoot(selection.root, engine));
         sendJson(res, 200, {
           plugin: runtime.plugin,
+          guard: guardPayload(runtime),
           roots,
           root: selection.root,
           rootConfigured,
@@ -917,6 +959,95 @@ export function createWebHandler(runtime) {
           allowInProgress: body.allowInProgress === true,
         });
         sendJson(res, updateResponseStatus(report), { plugin: runtime.plugin, root: target.root, ...report });
+        return;
+      }
+
+      /*
+       * 0079 (WC-52): обновление самого плагина из релиза. Заменяет каталог
+       * пакета в профиле, прежний сохраняет рядом как .dsh-plugin-backup-*.
+       * Для link/junction-установок отказ: код принадлежит рабочему дереву.
+       */
+      if (rel === '/api/plugin-update') {
+        const problem = writeRequestProblem(req);
+        if (problem) {
+          sendJson(res, problem.status, { error: problem.error });
+          return;
+        }
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        if (body.confirm !== true) {
+          sendJson(res, 400, {
+            error: 'обновление плагина требует confirm: true',
+            code: 'confirm-required',
+          });
+          return;
+        }
+        const packageRoot = runtime.pluginRoot || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+        const mode = pluginInstallMode(packageRoot);
+        if (mode.mode !== 'dir') {
+          sendJson(res, 409, {
+            ok: false,
+            code: 'plugin-dev-install',
+            mode: mode.mode,
+            error: mode.hint || 'плагин установлен ссылкой: обновление пакетом недоступно',
+            hint: mode.hint || null,
+          });
+          return;
+        }
+        let prepared;
+        try {
+          prepared = await preparePluginTarball({
+            apiBase: runtime.updateSource ? runtime.updateSource.apiBase : undefined,
+            repo: runtime.updateSource ? runtime.updateSource.repo : undefined,
+            file: runtime.pluginUpdateFile || undefined,
+          });
+        } catch (error) {
+          sendJson(res, 502, {
+            ok: false,
+            code: 'plugin-release-unavailable',
+            error: 'не удалось получить пакет плагина из релиза: '
+              + (error && error.message ? error.message : String(error)),
+          });
+          return;
+        }
+        if (compareVersions(prepared.version, PLUGIN_VERSION) <= 0) {
+          sendJson(res, 409, {
+            ok: false,
+            code: 'plugin-up-to-date',
+            current: PLUGIN_VERSION,
+            version: prepared.version,
+          });
+          return;
+        }
+        let installed;
+        try {
+          installed = installPluginFiles({
+            files: prepared.files,
+            packageRoot,
+            version: prepared.version,
+          });
+        } catch (error) {
+          sendJson(res, 500, {
+            ok: false,
+            code: 'plugin-install-failed',
+            error: 'установка пакета не удалась: '
+              + (error && error.message ? error.message : String(error)),
+          });
+          return;
+        }
+        sendJson(res, 200, {
+          ok: true,
+          plugin: runtime.plugin,
+          from: PLUGIN_VERSION,
+          to: prepared.version,
+          backup: installed.backupName,
+          restartRequired: true,
+        });
         return;
       }
 

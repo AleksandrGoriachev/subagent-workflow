@@ -1,6 +1,6 @@
 {
   "name": "subagent-workflow",
-  "version": "2.6.35",
+  "version": "2.6.36",
   "private": true,
   "license": "MIT",
   "type": "module",
