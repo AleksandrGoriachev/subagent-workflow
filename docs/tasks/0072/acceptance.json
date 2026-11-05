@@ -1,0 +1,175 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0072",
+  "title": "Сторож в пакете: spec/scripts/job.mjs (start/wait/status/kill) вместо длинных ожиданий; вердикт в stdout (WC-54)",
+  "risk": "medium",
+  "taskFileSha256": "41f0e46c4a5cd0e232f824349b7b5735e21da9bf288591a633b7afe18cc221ff",
+  "criteriaSha256": "1de38ecfa5514dcebedf3b01c0bc3b6f6bdad2128e624e0003631b6dd97da191",
+  "criteriaJsonSha256": "9f672c9b6dcd2a907bec1ae1bf38957ad205d05e14b3d488cefa8e43bf66a0e1",
+  "contractCommit": "48a714264e6c5a28e3ce11c673ec1f190ffba76d",
+  "baseCommit": "48a714264e6c5a28e3ce11c673ec1f190ffba76d",
+  "candidateCommit": "fd3ba7150f487c26e4403ead851d63d1885a3da5",
+  "tree": "33b85389b9a1335c37f596af60d3681026ee9f0a",
+  "worktreeDigest": "2d95e3d698025a1b654aeeb37eee7a18737beb2ad4d6477636889ff03028228a",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-cf1938f6-4045-48d5-9b4d-85f4e87c93e7",
+    "model": "deepseek-v4.1-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "bbf1c72e-2f55-4027-af8a-f58c772fa4cf",
+    "model": "unknown",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "8ad2085e355b323c7832da425d4924c0",
+    "runKind": "accept",
+    "startedAt": "2026-11-05T11:22:29.792Z",
+    "finishedAt": "2026-11-05T11:23:17.130Z",
+    "durationMs": 47338,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "df1bdef96fa438c1c22e10cf5249c7a00891ea5a0c284d400f56a50478e391cf",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "48a714264e6c5a28e3ce11c673ec1f190ffba76d",
+    "contractCommit": "48a714264e6c5a28e3ce11c673ec1f190ffba76d",
+    "criteriaJsonSha256": "9f672c9b6dcd2a907bec1ae1bf38957ad205d05e14b3d488cefa8e43bf66a0e1",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4",
+        "C5"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/job-runner.mjs c1",
+      "exitCode": 0,
+      "durationMs": 6292,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/job-runner.mjs c2",
+      "exitCode": 0,
+      "durationMs": 6794,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/job-runner.mjs c3",
+      "exitCode": 0,
+      "durationMs": 6096,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 38156,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "exitCode": 0,
+      "durationMs": 812,
+      "passed": true
+    }
+  ],
+  "acceptor": "judge",
+  "acceptedAt": "2026-11-05T11:23:17.654Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 0,
+    "digest": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "assumed": [],
+    "confirmed": 0
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "узел judge не выполняет инструменты: спавн и повторный run вернули реплику без работы; приёмку выполнил нативный subagent",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "d8b2d1bad69e228a",
+  "signature": "32CLi0BB6UWLDFFOKYXcT+RfhJfzCEJPwikrzgg/osd/uijTG6dV6Lm7VW/u1mxNrHhO+3tpACUTBAloejEKBA=="
+}
