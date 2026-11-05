@@ -24,6 +24,12 @@
   "models": {},
   "roles": {},
   "verifyTimeoutMs": 1800000,
+  "enforcement": {
+    "waitPolicy": "fail",
+    "waitBudgetMs": 120000,
+    "processPolicy": "fail",
+    "structurePolicy": "fail"
+  },
   "guard": {
     "enabled": false,
     "mode": "fail",

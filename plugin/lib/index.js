@@ -6,6 +6,7 @@
  * path — the panel is a view over the repository.
  */
 import { createWorkflowRuntime, registerWorkflowWeb } from './api.js';
+import { registerWaitGuard } from './wait-guard.js';
 
 export const name = 'dsh-workflow-console';
 
@@ -28,6 +29,16 @@ function resolveWorkspaceRegistry(ctx) {
 }
 
 export function apply(ctx, config = {}) {
+  /*
+   * 2.6.32 (0073, WC-55): сторож долгих ожиданий — часть плагина, а не память
+   * агента. Политика берётся из конфига (waitPolicy/waitBudgetMs/jobScript)
+   * или из блока enforcement воркспейса; ошибка сторожа не отменяет панель.
+   */
+  try {
+    registerWaitGuard(ctx, config);
+  } catch {
+    /* панель важнее: сбой политики не должен ломать плагин */
+  }
   const runtime = createWorkflowRuntime(config, {
     getWorkspaceRegistry: () => resolveWorkspaceRegistry(ctx),
   });

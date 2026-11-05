@@ -309,6 +309,26 @@ const config = configExisted
   : JSON.parse(fs.readFileSync(path.join(packageRoot, 'workflow.config.json'), 'utf8'));
 config.tasksDir = tasksDir;
 config.logs = logs;
+/*
+ * 2.6.32 (0073, WC-55): блок enforcement — политика обязательности регламента
+ * (сторож долгих ожиданий, процессов, структуры). Шаблон несёт fail; в уже
+ * существующий конфиг добавляются только НЕДОСТАЮЩИЕ ключи: значения,
+ * заданные владельцем воркспейса, не перетираются.
+ */
+const ENFORCEMENT_DEFAULTS = {
+  waitPolicy: 'fail',
+  waitBudgetMs: 120000,
+  processPolicy: 'fail',
+  structurePolicy: 'fail',
+};
+const enforcementRaw = config.enforcement;
+const enforcementBlock = enforcementRaw && typeof enforcementRaw === 'object' && !Array.isArray(enforcementRaw)
+  ? enforcementRaw
+  : {};
+for (const [key, value] of Object.entries(ENFORCEMENT_DEFAULTS)) {
+  if (!Object.prototype.hasOwnProperty.call(enforcementBlock, key)) enforcementBlock[key] = value;
+}
+config.enforcement = enforcementBlock;
 fs.writeFileSync(configFile, JSON.stringify(config, null, 2) + '\n');
 
 /*
