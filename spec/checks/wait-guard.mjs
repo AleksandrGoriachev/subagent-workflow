@@ -168,10 +168,63 @@ function c4() {
   });
 }
 
-const table = { c1, c2, c3, c4 };
+
+function c5() {
+  return load().then((mod) => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-policy-'));
+    const makeRoot = (name, waitPolicy, waitBudgetMs) => {
+      const root = path.join(base, name);
+      fs.mkdirSync(path.join(root, 'docs', 'subagent-workflow'), { recursive: true });
+      fs.writeFileSync(path.join(root, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify({ enforcement: { waitPolicy, waitBudgetMs } }));
+      return root;
+    };
+    try {
+      const lenient = makeRoot('lenient', 'warn', 5000);
+      const strict = makeRoot('strict', 'fail', 1000);
+      const silent = makeRoot('silent', 'off', 1000);
+      const box = { guards: [], listeners: new Map() };
+      const ctx = {
+        tools: { guard: (fn) => box.guards.push(fn) },
+        on: (name, fn) => { if (!box.listeners.has(name)) box.listeners.set(name, []); box.listeners.get(name).push(fn); },
+      };
+      mod.registerWaitGuard(ctx, { waitPolicy: 'warn', waitBudgetMs: 120000, jobScript: true, roots: [lenient, strict, silent] });
+      const guard = box.guards[0];
+      truthy(typeof guard === 'function', 'guard не подписан при смешанных политиках воркспейсов');
+      const slow = (cwd) => ({ name: 'pwsh', arguments: { command: 'Start-Sleep -Seconds 300' }, cwd });
+      const short = (cwd) => ({ name: 'pwsh', arguments: { command: 'Start-Sleep -Seconds 2' }, cwd });
+      const strictReason = guard(slow(strict));
+      truthy(typeof strictReason === 'string' && /job/.test(strictReason), 'fail-воркспейс: guard не отклонил (' + JSON.stringify(strictReason) + ')');
+      truthy(guard(slow(lenient)) === undefined, 'warn-воркспейс: guard не должен отклонять');
+      truthy(guard(slow(silent)) === undefined, 'off-воркспейс: guard не должен отклонять');
+      truthy(guard(short(strict)) === undefined, 'короткое ожидание в fail-воркспейсе отклонено');
+      /* Порог берётся из конфига воркспейса: 4000 мс > 1000 в strict, но < 5000 в lenient. */
+      const midStrict = { name: 'pwsh', arguments: { command: 'Start-Sleep -Seconds 4' }, cwd: strict };
+      const midLenient = { name: 'pwsh', arguments: { command: 'Start-Sleep -Seconds 4' }, cwd: lenient };
+      truthy(typeof guard(midStrict) === 'string', 'fail-воркспейс: порог из workflow.config.json не применён (4000 > 1000)');
+      truthy(guard(midLenient) === undefined, 'warn-воркспейс: порог из workflow.config.json не применён (4000 < 5000)');
+      const post = (box.listeners.get('tools/post-execute') || [])[0];
+      truthy(typeof post === 'function', 'нет подписки tools/post-execute для warn-воркспейса');
+      return Promise.resolve(post(slow(lenient), undefined, async () => ({ ok: true })))
+        .then((result) => {
+          const contexts = (result && result.additionalContexts) || [];
+          truthy(contexts.length === 1, 'warn-воркспейс: notice не добавлен');
+          return post(slow(strict), undefined, async () => ({ ok: true }));
+        })
+        .then((result) => {
+          const contexts = (result && result.additionalContexts) || [];
+          truthy(contexts.length === 0, 'fail-воркспейс: notice не нужен, вызов отклонён guard');
+          console.log('WAITGUARD OK c5');
+        });
+    } finally {
+      try { fs.rmSync(base, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
+  });
+}
+
+const table = { c1, c2, c3, c4, c5 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/wait-guard.mjs c1|c2|c3|c4');
+  console.log('usage: node spec/checks/wait-guard.mjs c1|c2|c3|c4|c5');
   process.exit(2);
 }
 Promise.resolve()
