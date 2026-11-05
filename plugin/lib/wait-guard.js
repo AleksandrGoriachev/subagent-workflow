@@ -19,8 +19,18 @@
  * Старый движок (scripts/job.mjs в воркспейсе нет, config.jobScript === false):
  * отклонять нельзя — сторожа в воркспейсе нет. Guard не подписывается, политика
  * действует как warn: сначала обновить движок.
+ *
+ * 2.6.33 (0074, WC-58): журнал долгих ожиданий. Каждое срабатывание (отказ fail
+ * и notice warn) пишется одной строкой JSON в append-only jsonl:
+ * { at, root, tool, mode, denied, reason, waitMs, budgetMs }. Каталог —
+ * process.env.WF_WAITS_DIR, иначе <HOME>/.dsh/workflow/waits; файл —
+ * <12 hex sha256 корня>.jsonl. Ошибка записи глотается: вызов важнее журнала.
+ * off не пишет.
  */
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 /** Бюджет ожидания по умолчанию, мс: дольше — уже долгое ожидание. */
 export const WAIT_BUDGET_MS = 120000;
@@ -62,12 +72,89 @@ function secondsText(milliseconds) {
   return (Number.isInteger(seconds) ? String(seconds) : String(Math.round(seconds * 10) / 10)) + ' с';
 }
 
+/** Переменная окружения с каталогом журнала долгих ожиданий (для проверок). */
+export const WAITS_DIR_ENV = 'WF_WAITS_DIR';
+/** Имя файла журнала: первые 12 hex от sha256 корня. */
+const JOURNAL_HASH_LENGTH = 12;
+
+/** Каталог журнала: WF_WAITS_DIR, иначе <HOME>/.dsh/workflow/waits. */
+function waitsDirectory() {
+  const fromEnv = process.env[WAITS_DIR_ENV];
+  if (typeof fromEnv === 'string' && fromEnv.trim() !== '') return fromEnv;
+  return path.join(os.homedir(), '.dsh', 'workflow', 'waits');
+}
+
+/** Путь журнала корня воркспейса: <каталог>/<12 hex sha256 корня>.jsonl. */
+function waitJournalPath(root) {
+  const key = createHash('sha256').update(String(root)).digest('hex').slice(0, JOURNAL_HASH_LENGTH);
+  return path.join(waitsDirectory(), key + '.jsonl');
+}
+
+/** ISO 8601 с локальным оффсетом (как в письмах), а не UTC с Z. */
+function isoTimestampWithOffset(date) {
+  const pad = (value, width = 2) => String(Math.abs(value)).padStart(width, '0');
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+  const offsetRest = Math.abs(offsetMinutes) % 60;
+  return date.getFullYear()
+    + '-' + pad(date.getMonth() + 1)
+    + '-' + pad(date.getDate())
+    + 'T' + pad(date.getHours())
+    + ':' + pad(date.getMinutes())
+    + ':' + pad(date.getSeconds())
+    + '.' + pad(date.getMilliseconds(), 3)
+    + sign + pad(offsetHours) + ':' + pad(offsetRest);
+}
+
+/** Имя инструмента из exec-объекта waterfall. */
+function toolNameOf(exec) {
+  if (!exec || typeof exec !== 'object') return '';
+  return String(exec.name || exec.tool || '');
+}
+
+/**
+ * Дописать одну строку журнала. Append-only, каталог создаётся при первой
+ * записи. Ошибка записи (права, диск) глотается: отказ и notice формируются
+ * независимо от журнала.
+ */
+function appendWaitRecord(record) {
+  try {
+    const file = waitJournalPath(record.root);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.appendFileSync(file, JSON.stringify(record) + '\n', 'utf8');
+  } catch {
+    /* журнал не имеет права ломать вызов */
+  }
+}
+
+/** Строка журнала на срабатывание сторожа (поля согласованы со structure). */
+function recordWait(exec, hit, mode, denied, reason, config) {
+  try {
+    const waitMs = finiteNumber(hit.waitMs);
+    appendWaitRecord({
+      at: isoTimestampWithOffset(new Date()),
+      root: String(config.root),
+      tool: toolNameOf(exec),
+      mode,
+      denied: denied === true,
+      reason: String(reason),
+      waitMs: waitMs === null ? null : waitMs,
+      budgetMs: config.budgetMs,
+    });
+  } catch {
+    /* журнал не имеет права ломать вызов */
+  }
+}
+
 /**
  * Чистая функция-детектор долгого ожидания.
  *
  * @param {{name?: string, tool?: string, arguments?: object}|null} exec
  * @param {number} [budgetMs] бюджет ожидания для job_output, по умолчанию 120000
- * @returns {{kind: string, detail: string}|null}
+ * @returns {{kind: string, detail: string, waitMs: number}|null}
+ *   waitMs — измеренное ожидание в миллисекундах (максимальный Start-Sleep для
+ *   pwsh, timeoutMs для pwsh/project_graph_run, timeout_ms для job_output).
  */
 export function detectLongWait(exec, budgetMs = WAIT_BUDGET_MS) {
   if (!exec || typeof exec !== 'object') return null;
@@ -79,11 +166,11 @@ export function detectLongWait(exec, budgetMs = WAIT_BUDGET_MS) {
   if (name === 'pwsh') {
     const sleep = sleepMilliseconds(args.command);
     if (sleep !== null && sleep >= SLEEP_THRESHOLD_SECONDS * 1000) {
-      return { kind: 'pwsh-sleep', detail: 'pwsh: Start-Sleep ' + secondsText(sleep) };
+      return { kind: 'pwsh-sleep', detail: 'pwsh: Start-Sleep ' + secondsText(sleep), waitMs: sleep };
     }
     const timeout = finiteNumber(args.timeoutMs);
     if (timeout !== null && timeout >= TOOL_TIMEOUT_THRESHOLD_MS) {
-      return { kind: 'pwsh-timeout', detail: 'pwsh: timeoutMs=' + timeout };
+      return { kind: 'pwsh-timeout', detail: 'pwsh: timeoutMs=' + timeout, waitMs: timeout };
     }
     return null;
   }
@@ -91,7 +178,11 @@ export function detectLongWait(exec, budgetMs = WAIT_BUDGET_MS) {
   if (name === 'job_output') {
     const timeout = finiteNumber(args.timeout_ms);
     if (args.wait === true && timeout !== null && timeout > budget) {
-      return { kind: 'job-wait', detail: 'job_output: wait=true, timeout_ms=' + timeout + ' (бюджет ' + budget + ')' };
+      return {
+        kind: 'job-wait',
+        detail: 'job_output: wait=true, timeout_ms=' + timeout + ' (бюджет ' + budget + ')',
+        waitMs: timeout,
+      };
     }
     return null;
   }
@@ -99,7 +190,7 @@ export function detectLongWait(exec, budgetMs = WAIT_BUDGET_MS) {
   if (name === 'project_graph_run') {
     const timeout = finiteNumber(args.timeoutMs);
     if (timeout !== null && timeout >= TOOL_TIMEOUT_THRESHOLD_MS) {
-      return { kind: 'graph-run-timeout', detail: 'project_graph_run: timeoutMs=' + timeout };
+      return { kind: 'graph-run-timeout', detail: 'project_graph_run: timeoutMs=' + timeout, waitMs: timeout };
     }
     return null;
   }
@@ -117,9 +208,14 @@ export function waitGuardReason(hit) {
     + ' сон внутри инструмента императивом W1 не допускается';
 }
 
+/** Одна и та же строка «долгое ожидание …» для notice и строки журнала. */
+function waitSummary(hit) {
+  return 'долгое ожидание: ' + hit.detail;
+}
+
 /** Notice полной формы v4 (id, role, content, source.kind/form/summary). */
 export function waitNoticeMessage(hit, options = {}) {
-  const summary = 'долгое ожидание: ' + hit.detail;
+  const summary = waitSummary(hit);
   /* Старый движок: сторожа в воркспейсе нет — сначала обновить движок. */
   const engineHint = options && options.engineOutdated === true
     ? ' Движок воркспейса старше 2.6.31 (scripts/job.mjs нет) — обновите движок, чтобы правило включалось в fail.'
@@ -153,7 +249,15 @@ function resolvePolicy(config) {
   const policy = WAIT_POLICIES.includes(raw) ? raw : 'fail';
   const budget = finiteNumber(firstDefined(source.waitBudgetMs, nested.waitBudgetMs));
   const jobScript = firstDefined(source.jobScript, nested.jobScript) !== false;
-  return { policy, budgetMs: budget === null ? WAIT_BUDGET_MS : budget, jobScript };
+  /* Корень журнала: root/repoRoot/workspaceRoot/roots[0] конфига (как в api.js), иначе cwd. */
+  const firstConfiguredRoot = Array.isArray(source.roots)
+    ? source.roots.find((item) => typeof item === 'string' && item.trim() !== '')
+    : undefined;
+  const configuredRoot = firstDefined(source.root, source.repoRoot, source.workspaceRoot, firstConfiguredRoot);
+  const root = typeof configuredRoot === 'string' && configuredRoot.trim() !== ''
+    ? path.resolve(configuredRoot)
+    : process.cwd();
+  return { policy, budgetMs: budget === null ? WAIT_BUDGET_MS : budget, jobScript, root };
 }
 
 /** Хвост waterfall: последний функциональный аргумент — downstream. */
@@ -183,7 +287,7 @@ function addNotice(result, hit, options) {
 export function registerWaitGuard(ctx, config = {}) {
   const resolved = resolvePolicy(config);
   const effective = resolved.policy === 'fail' && !resolved.jobScript ? 'warn' : resolved.policy;
-  const state = { ...resolved, policy: effective };
+  const state = { policy: effective, budgetMs: resolved.budgetMs, jobScript: resolved.jobScript };
 
   if (!ctx || typeof ctx !== 'object') return state;
   if (effective === 'off') return state;
@@ -193,7 +297,10 @@ export function registerWaitGuard(ctx, config = {}) {
     ctx.tools.guard((exec) => {
       try {
         const hit = detectLongWait(exec, resolved.budgetMs);
-        return hit === null ? undefined : waitGuardReason(hit);
+        if (hit === null) return undefined;
+        const reason = waitGuardReason(hit);
+        recordWait(exec, hit, 'fail', true, reason, resolved);
+        return reason;
       } catch {
         return undefined;
       }
@@ -207,7 +314,10 @@ export function registerWaitGuard(ctx, config = {}) {
     const result = next ? await next() : undefined;
     try {
       const hit = detectLongWait(args[0], resolved.budgetMs);
-      if (hit !== null) return addNotice(result, hit, { engineOutdated: !resolved.jobScript });
+      if (hit !== null) {
+        recordWait(args[0], hit, 'warn', false, waitSummary(hit), resolved);
+        return addNotice(result, hit, { engineOutdated: !resolved.jobScript });
+      }
     } catch {
       /* ошибка политики не ломает downstream-результат */
     }
