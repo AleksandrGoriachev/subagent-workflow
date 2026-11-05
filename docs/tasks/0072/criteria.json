@@ -1,0 +1,111 @@
+{
+  "task": "0072",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasons": {
+      "C1": "JOBRUN FAIL c1",
+      "C2": "JOBRUN FAIL c2",
+      "C3": "JOBRUN FAIL c3"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "start не блокирует, wait ждёт конец",
+      "command": "node spec/checks/job-runner.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/job.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "JOBRUN OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "wait --timeout даёт TIMEOUT и exit 0",
+      "command": "node spec/checks/job-runner.mjs c2",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/job.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "JOBRUN OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "kill снимает задание с RUNNING",
+      "command": "node spec/checks/job-runner.mjs c3",
+      "cwd": ".",
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "covers": [
+        "spec/scripts/job.mjs"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "JOBRUN OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Пайпов не добавилось",
+      "command": "node spec/checks/pipe-free.mjs c1",
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "covers": [
+        "spec/**"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PIPEFREE OK c1"
+      }
+    }
+  ]
+}
