@@ -58,6 +58,7 @@ import {
   writeEngineLink,
 } from './engine-root.js';
 import { prepareEngineSpec } from './release-source.mjs';
+import { imperativeView } from './imperative.js';
 import {
   PLUGIN_PACKAGE_NAME,
   pluginInstallMode,
@@ -1084,6 +1085,13 @@ export function createWebHandler(runtime) {
           root: info.root,
           configPath: info.configPath,
           ...policyView(info.config, { root: info.root, configPath: info.configPath }),
+          /* 0081 (WC-56, S4): императив одним взглядом — версия, enforcement, ожидания, отказы. */
+          imperative: imperativeView({
+            root: info.root,
+            readRoot,
+            config: info.config,
+            engine: engineView(engine),
+          }),
           /* guard — настройка ворот, а не политика: панель только показывает и переключает флаг. */
           guard: {
             enabled: guard.enabled,

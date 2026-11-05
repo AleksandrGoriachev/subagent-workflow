@@ -49,6 +49,42 @@ export const DEPLOY_LOG_REL = path.join('docs', 'subagent-workflow', 'deploy.log
 export const VENDOR_SPEC = path.join(PACKAGE_ROOT, 'vendor', 'spec');
 export const DEV_SPEC = path.resolve(PACKAGE_ROOT, '..', 'spec');
 
+/**
+ * 0082 (WC-44): откуда взялась спека. Деплой из рабочего дерева не
+ * воспроизводим: 04.11 так развернули «2.6.23» из грязной копии. В журнал
+ * пишется source и git describe --dirty, а грязный источник даёт warning.
+ *
+ * @param {string} specRoot каталог, из которого запускается init
+ * @returns {{kind: 'vendor'|'dev'|'other', describe: string|null, dirty: boolean}}
+ */
+export function sourceProvenance(specRoot) {
+  const spec = path.resolve(String(specRoot || ''));
+  if (spec === path.resolve(VENDOR_SPEC)) return { kind: 'vendor', describe: null, dirty: false };
+  if (spec === path.resolve(DEV_SPEC)) {
+    let describe = null;
+    try {
+      const result = spawnSync('git', ['-C', PACKAGE_ROOT, 'describe', '--dirty', '--always'], {
+        encoding: 'utf8',
+        timeout: 5000,
+      });
+      if (result && result.status === 0) describe = String(result.stdout || '').trim() || null;
+    } catch {
+      /* git может отсутствовать: источник всё равно рабочий каталог */
+    }
+    return { kind: 'dev', describe, dirty: Boolean(describe && /-dirty$/u.test(describe)) };
+  }
+  return { kind: 'other', describe: null, dirty: false };
+}
+
+/** Предупреждение о невоспроизводимом источнике: показывается в отчёте панели. */
+export function provenanceWarning(provenance) {
+  if (!provenance || provenance.kind !== 'dev') return null;
+  if (provenance.dirty) {
+    return 'источник — грязное рабочее дерево (git describe: ' + provenance.describe + '): деплой не воспроизводим по тегу';
+  }
+  return 'источник — рабочее дерево (git describe: ' + (provenance.describe || 'без git') + '), а не релизный tarball';
+}
+
 /* 0.7.1: ключ приёмщика — каталог проекта, а не глобальный профиль машины. */
 export const KEY_DIR_REL = '.wf-keys';
 export const KEY_ID = 'agent-judge';
@@ -243,13 +279,15 @@ function ensureDeployLogIgnored(repo) {
  * успехе, и при отказе init — иначе «почему не обновилось» видно только в
  * выводе, который панель не сохраняет.
  */
-function appendDeployLog(repo, { from, to, actor, result }) {
+function appendDeployLog(repo, { from, to, actor, result, provenance }) {
   const file = path.join(repo, DEPLOY_LOG_REL);
   const line = new Date().toISOString()
     + ' deploy from=' + (from || 'none')
     + ' to=' + (to || '?')
     + ' actor=' + (actor || 'unknown')
     + ' result=' + (result || 'unknown')
+    + (provenance ? ' source=' + provenance.kind : '')
+    + (provenance && provenance.describe ? ' describe=' + provenance.describe : '')
     + '\n';
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -395,12 +433,16 @@ function prepareUpdate(root, options = {}) {
 /** Финализация обеих веток: проверка результата, журнал, коды. */
 function finishUpdate(prepared, run) {
   const log = tail(String(run.stdout || '') + String(run.stderr || ''));
+  /* 0082 (WC-44): источник и его состояние — в журнал и в отчёт. */
+  const provenance = sourceProvenance(prepared.specRoot);
+  const warning = provenanceWarning(provenance);
   const failed = (error) => {
     appendDeployLog(prepared.repo, {
       from: prepared.from,
       to: prepared.to,
       actor: prepared.actor,
       result: 'init-failed',
+      provenance,
     });
     return {
       ok: false,
@@ -411,6 +453,8 @@ function finishUpdate(prepared, run) {
       to: prepared.to,
       version: prepared.from,
       tasks: prepared.tasks,
+      provenance,
+      warning,
     };
   };
   if (run.error) {
@@ -435,6 +479,7 @@ function finishUpdate(prepared, run) {
     to: version,
     actor: prepared.actor,
     result: 'ok',
+    provenance,
   });
   return {
     ok: true,
@@ -443,6 +488,8 @@ function finishUpdate(prepared, run) {
     version,
     log,
     tasks: prepared.tasks,
+    provenance,
+    warning,
   };
 }
 
@@ -534,6 +581,9 @@ export function deployWorkflow(root, options = {}) {
   const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : DEFAULT_TIMEOUT_MS;
   const actor = actorOf(options);
   const to = targetVersion(specRoot);
+  /* 0082 (WC-44): источник развёртывания и его состояние. */
+  const provenance = sourceProvenance(specRoot);
+  const warning = provenanceWarning(provenance);
   /*
    * init запускается в репозитории: --force обновляет файлы пакета, ключ и
    * workflow.config.json не перезаписывает (это решает сам init). Вывод
@@ -557,7 +607,7 @@ export function deployWorkflow(root, options = {}) {
   const log = tail(String(result.stdout || '') + String(result.stderr || ''));
   if (result.error) {
     const timedOut = result.error.code === 'ETIMEDOUT' || result.signal === 'SIGTERM';
-    appendDeployLog(repo, { from: null, to, actor, result: 'init-failed' });
+    appendDeployLog(repo, { from: null, to, actor, result: 'init-failed', provenance });
     return {
       ok: false,
       code: 'init-failed',
@@ -568,7 +618,7 @@ export function deployWorkflow(root, options = {}) {
     };
   }
   if (result.status !== 0) {
-    appendDeployLog(repo, { from: null, to, actor, result: 'init-failed' });
+    appendDeployLog(repo, { from: null, to, actor, result: 'init-failed', provenance });
     return {
       ok: false,
       code: 'init-failed',
@@ -584,7 +634,7 @@ export function deployWorkflow(root, options = {}) {
    * спекой (pack-plugin кладёт его в vendor), и «развёрнуто» определить нечем.
    */
   if (!fs.existsSync(versionFile)) {
-    appendDeployLog(repo, { from: null, to, actor, result: 'init-failed' });
+    appendDeployLog(repo, { from: null, to, actor, result: 'init-failed', provenance });
     return {
       ok: false,
       code: 'init-failed',
@@ -593,8 +643,8 @@ export function deployWorkflow(root, options = {}) {
     };
   }
   const version = fs.readFileSync(versionFile, 'utf8').trim();
-  appendDeployLog(repo, { from: null, to: version, actor, result: 'ok' });
-  return { ok: true, version, log, gitInit: gitInitialized };
+  appendDeployLog(repo, { from: null, to: version, actor, result: 'ok', provenance });
+  return { ok: true, version, log, gitInit: gitInitialized, provenance, warning };
 }
 
 /**

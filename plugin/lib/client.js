@@ -2808,6 +2808,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 row[2],
               ])),
             ),
+            /* 0081 (WC-56, S4): императив воркспейса виден целиком, а не по журналам. */
+            section("Императив воркспейса", renderImperative(policy.imperative)),
             section("Проверка коммитов (guard)", renderGuard()),
             section(
               "Модели",
@@ -2840,6 +2842,67 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
          * эффективные значения и пределы честно: --no-verify обходит хуки
          * целиком, метка обхода остаётся в аудите.
          */
+
+        /*
+         * 0081 (WC-56, S4): сводка императива по корню. Зелёный/красный — это
+         * пять проверок из docs/IMPERATIVE-workspaces.md §Г, а не текст: версия
+         * движка, scripts/job.mjs, enforcement.waitPolicy, счётчик ожиданий и
+         * последние отказы с атрибуцией корня.
+         */
+        function renderImperative(imperative) {
+          if (!imperative) return h("div", { style: S.empty }, "Сводка императива не пришла: обновите панель.");
+          const ok = imperative.ok === true;
+          const reasons = Array.isArray(imperative.reasons) ? imperative.reasons : [];
+          const enforcement = imperative.enforcement || {};
+          const waits = imperative.waits || { total: 0, denied: 0, warn: 0, last: [] };
+          const rows = [
+            ["движок", imperative.engine && imperative.engine.version ? imperative.engine.version : "—",
+              "минимум " + (imperative.minimumEngine || "2.6.31") + " — версия со сторожем W1"],
+            ["scripts/job.mjs", imperative.checks && imperative.checks.job ? "есть" : "нет",
+              "без него ожидать тяжёлый прогон нечем"],
+            ["enforcement.waitPolicy", enforcement.waitPolicy || "—", "off | warn | fail"],
+            ["enforcement.waitBudgetMs", enforcement.waitBudgetMs === null || enforcement.waitBudgetMs === undefined ? "—" : String(enforcement.waitBudgetMs), "порог долгого ожидания, мс"],
+            ["enforcement.processPolicy", enforcement.processPolicy || "—", "порядок шагов движка"],
+            ["enforcement.structurePolicy", enforcement.structurePolicy || "—", "обход структуры (читает плагин structure)"],
+            ["долгие ожидания", String(waits.total) + " (отказов " + waits.denied + ", notice " + waits.warn + ")",
+              "журнал " + fmt(waits.path)],
+          ];
+          return h(
+            "div",
+            null,
+            h(
+              "div",
+              { style: { marginBottom: "8px" } },
+              badge(ok ? "императив исполняется" : "императив нарушен", ok ? T.success : T.danger,
+                ok ? "все проверки §Г зелёные" : reasons.join("; "), false),
+              reasons.length > 0 ? h("div", { style: S.hint }, "причины: " + reasons.join("; ")) : null,
+            ),
+            table(["пункт", "значение", "что означает"], rows.map((row) => [
+              h("span", { style: S.mono }, row[0]),
+              String(row[1]) === "fail"
+                ? badge(String(row[1]), T.danger, row[2])
+                : String(row[1]) === "warn"
+                  ? badge(String(row[1]), T.warn, row[2])
+                  : String(row[1]) === "off"
+                    ? badge("off", T.warn, row[2])
+                    : h("span", { style: S.mono }, String(row[1])),
+              row[2],
+            ])),
+            (waits.last || []).length === 0
+              ? h("div", { style: S.empty }, "Срабатываний сторожа в этом корне ещё не было.")
+              : table(
+                  ["когда", "инструмент", "режим", "корень", "откуда корень", "ожидание"],
+                  waits.last.map((row) => [
+                    h("span", { style: S.mono }, fmt(row.at)),
+                    h("span", { style: S.mono }, fmt(row.tool)),
+                    row.denied === true ? badge("отказ", T.danger, "тело не исполнялось") : badge(fmt(row.mode), T.warn, "вызов прошёл"),
+                    h("span", { style: S.mono }, fmt(row.root)),
+                    h("span", { style: S.mono }, fmt(row.attribution)),
+                    row.waitMs ? Math.round(row.waitMs / 1000) + " с" : "—",
+                  ]),
+                ),
+          );
+        }
         function renderGuard() {
           if (!root) return h("div", { style: S.empty }, "Корень не настроен.");
           const guard = (policy && policy.guard) || {};

@@ -87,8 +87,30 @@ export function apply(ctx, config = {}) {
   probeApply(ctx, config, { guardState });
   const runtime = createWorkflowRuntime(config, {
     getWorkspaceRegistry: () => resolveWorkspaceRegistry(ctx),
-    /* 0077 (WC-60): живое состояние сторожа в /workflow/api/status, а не в файле. */
-    guard: () => guardState,
+    /*
+     * 0077 (WC-60): живое состояние сторожа в /workflow/api/status, а не в файле.
+     * 0081 (0.9.18): наружу — только то, что реально несёт отказ. Второй слой
+     * ctx.tools.guard без inject недоступен («cannot get property tools without
+     * inject») и ничего не добавляет к pre-execute; показывать guard:false с
+     * guardError — значит выдавать норму за аварию (дважды начинали разбор).
+     */
+    guard: () => {
+      const state = guardState && typeof guardState === 'object' ? guardState : {};
+      const registration = state.registration && typeof state.registration === 'object'
+        ? state.registration
+        : {};
+      return {
+        policy: state.policy,
+        budgetMs: state.budgetMs,
+        jobScript: state.jobScript,
+        roots: state.roots,
+        via: registration.preExecute === true ? 'tools/pre-execute' : 'none',
+        registration: {
+          preExecute: registration.preExecute === true,
+          postExecute: registration.postExecute === true,
+        },
+      };
+    },
   });
   ctx.inject(['webServer'], (webCtx) => registerWorkflowWeb(webCtx, runtime));
 }
