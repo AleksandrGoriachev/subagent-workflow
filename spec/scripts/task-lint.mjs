@@ -4,7 +4,7 @@ import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
   DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects, hasAcceptedRecord,
-  patternsIntersect, reportFatal,
+  patternsIntersect, reportFatal, metaAttributionGap,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -87,6 +87,14 @@ try {
   if (meta.created && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(String(meta.created))) warn('TASK-META.created: ожидается дата YYYY-MM-DD');
   if (meta.risk === 'high' && meta.securityReview !== true) error('risk=high без securityReview: true');
   if (meta.risk === 'high' && meta.humanSignoff !== true) error('risk=high без humanSignoff: true');
+  /*
+   * 0068 (WC-43): приёмщик-субагент без узла — видимое предупреждение. Политика
+   * структуры остаётся warn, поэтому exit не меняется: контракт можно запереть,
+   * но отсутствие узла видно до красного прогона и на панели.
+   */
+  const metaGap = metaAttributionGap(meta);
+  if (metaGap) warn('attribution: ' + metaGap.message);
+
   /*
    * Кто выдал задание — часть контракта, а не отчёт исполнителя (1.4, D1). Сессия постановщика
    * фиксируется до работы и позже не даёт приёмщику совпасть с ним. Для low поле не требуется:

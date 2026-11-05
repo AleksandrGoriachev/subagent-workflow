@@ -1373,6 +1373,16 @@ measuredBy}`: `measuredBy` обязателен и обязан указыват
 и `independence.basis`. Номер версии записи не меняется — поля добавлены, а
 записи до 2.6.0 без них проверяются как раньше.
 
+**Узел роли.** Запись фиксирует, каким узлом структуры выполнена приёмка:
+необязательный `actor.node` (`^[a-z][a-z0-9-]*$`). Если узла нет, отсутствие
+объясняется необязательным `deviation` (строка, `minLength ≥ 10`). Правило
+«без узла — объяснение» проверяет `attributionGap(record)`: для `risk`
+`medium`/`high` без узла и без `deviation` — `error`, для `low` и при указанном
+`deviation` — `warn`. `task-accept` отказывает на `error` с подсказкой
+`--node`/`--deviation`, `task-check-acceptance` повторяет вердикт (`error` —
+exit 1), `task-lint` печатает `metaAttributionGap(meta)` для контракта:
+приёмщик-субагент без `acceptorNode`/`deviation` — предупреждение.
+
 **Хеши.** `taskFileSha256` и `criteriaJsonSha256` — SHA-256 байтов файлов в
 кандидатном коммите (не в рабочей копии). `criteriaSha256` — SHA-256 канонизированного
 блока таблицы критериев из `task.md`.

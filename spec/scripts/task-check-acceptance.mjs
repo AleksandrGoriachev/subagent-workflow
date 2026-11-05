@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadAcceptors, verifyRecord, publicKeyFingerprint, readJsonFile } from './sign.mjs';
-import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions, evaluateEffects, spawnSyncPipeFree } from './lib/common.mjs';
+import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions, evaluateEffects, spawnSyncPipeFree, attributionGap } from './lib/common.mjs';
 import { policyOf, modelLevel, familyOf, applyLevel } from './lib/policy.mjs';
 import { assessIndependence, LEVEL_RANK, requiredLevel } from './actor.mjs';
 import { validateReview } from './lib/review.mjs';
@@ -252,6 +252,33 @@ function run() {
   const criteriaFile = fileAt(repo, candidate, taskRel + '/criteria.json');
   if (!criteriaFile) note('в кандидате нет ' + taskRel + '/criteria.json');
   else if (sha256Text(canonicalize(criteriaFile.toString('utf8'))) !== record.criteriaJsonSha256) note('criteriaJsonSha256 не совпадает с кандидатом');
+
+  /*
+   * 0068 (WC-43): привязка роли к узлу. Вердикт attributionGap печатается
+   * всегда; error валит проверку, когда контракт объявил узел или отклонение
+   * (acceptorNode/deviation в TASK-META). Для контрактов старше правила
+   * отсутствие узла остаётся предупреждением: подписанные записи 0063-0067 не
+   * переписываются, их фиксирует docs/DEVIATIONS.md, а не отказ CI.
+   */
+  const gap = attributionGap(record);
+  if (gap) {
+    let contractAttribution = false;
+    if (taskFile) {
+      const metaMatch = taskFile.toString('utf8').match(/<!--\s*TASK-META\s*([\s\S]*?)-->/);
+      if (metaMatch) {
+        try {
+          const contractMeta = JSON.parse(metaMatch[1].trim());
+          contractAttribution = (typeof contractMeta.acceptorNode === 'string' && contractMeta.acceptorNode.trim() !== '')
+            || (typeof contractMeta.deviation === 'string' && contractMeta.deviation.trim() !== '');
+        } catch { /* нечитаемый TASK-META уже отмечен отдельной проверкой */ }
+      }
+    }
+    if (gap.level === 'error' && contractAttribution) note(gap.message);
+    else {
+      warnings.push(gap.message
+        + (gap.level === 'error' ? ' (контракт не объявляет acceptorNode/deviation — запись старше правила, см. docs/DEVIATIONS.md)' : ''));
+    }
+  }
 
   /*
    * Решения (2.1.0): запись обязана совпадать с контрактом. Digest и список

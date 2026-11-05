@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parseArgv, readTask, verifyLock, repoRoot, runSync, quoteArg, exists,
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
-  formatGateRow, formatGateSummary,
+  attributionGap, formatGateRow, formatGateSummary,
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
@@ -29,6 +29,7 @@ const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
   console.log('Usage: node task-accept.mjs --task <dir> --key <private.pem> --key-id <keyId> [--repo <dir>]');
   console.log('       [--acceptor <name>] [--human <who>] [--expect-contract <sha>] [--note <text>]');
+  console.log('       [--node <узел>] [--deviation "<причина>"]');
   console.log('       [--allow-missing-red] [--allow-manual] [--allow-declared-actor]');
   console.log('       [--review <review.json>] [--reuse-verify] [--report-read] [--report-read-reason <text>]');
   console.log('       [--dry-run] [--force] [--json]');
@@ -192,6 +193,31 @@ try {
   if (!acceptor) fail('не указан acceptor (--acceptor или TASK-META.acceptor)');
   if (acceptor === meta.executor) fail('acceptor не может совпадать с executor');
 
+  /*
+   * 0068 (WC-43): узел роли. Приоритет — флаг, затем окружение, затем
+   * контракт: acceptorNode объявлен заранее, и приёмщику не нужно повторять его
+   * в команде. Пустая строка узлом не считается.
+   */
+  const suppliedNode = typeof argv.node === 'string' ? argv.node.trim() : '';
+  const envNode = typeof process.env.WF_ACTOR_NODE === 'string' ? process.env.WF_ACTOR_NODE.trim() : '';
+  const contractNode = typeof meta.acceptorNode === 'string' ? meta.acceptorNode.trim() : '';
+  const actorNode = suppliedNode || envNode || contractNode;
+  if (actorNode !== '' && !/^[a-z][a-z0-9-]*$/.test(actorNode)) {
+    fail('узел "' + actorNode + '" не соответствует шаблону ^[a-z][a-z0-9-]*$: используйте имя узла структуры, например judge');
+  }
+  const deviation = typeof argv.deviation === 'string' ? argv.deviation.trim() : '';
+  if (deviation !== '' && deviation.length < 10) {
+    fail('--deviation: причина короче 10 символов — объяснение отсутствия узла должно быть содержательным');
+  }
+  /*
+   * Отказ без узла и без объяснения — до прогона критериев и до подписи:
+   * medium/high не должны оставлять запись, которую потом примут за
+   * доказательство; warn (low или deviation) печатается в stdout.
+   */
+  const attribution = attributionGap({ risk: meta.risk, actor: { node: actorNode }, deviation });
+  if (attribution && attribution.level === 'error') fail('attribution: ' + attribution.message);
+  if (attribution && attribution.level === 'warn') console.log('task-accept: WARN ' + attribution.message);
+
   const keyId = String(argv['key-id'] || '');
   const keyFile = argv.key ? path.resolve(String(argv.key)) : '';
   if (!keyId || !keyFile) fail('нужны --key <private.pem> и --key-id <keyId>: запись подписывается Ed25519');
@@ -338,7 +364,7 @@ try {
     console.log(JSON.stringify({
       dryRun: true,
       note: 'проверки не перезапускались',
-      actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, source: actor.source, sourceKind: actor.sourceKind, keyId },
+      actor: { kind: actor.kind, session: actor.session, attestedBy: actor.attestedBy, source: actor.source, sourceKind: actor.sourceKind, keyId, node: actorNode || null },
       independence: {
         level: independence.level,
         basis: independence.basis,
@@ -356,7 +382,7 @@ try {
         actor: { model: recordActorModel, family: familyOf(config, recordActorModel) },
         independence: { level: independence.level, modelLevel: actorModelLevel },
         releaseReady: decisionSummary.assumed.length === 0 && (!attackCheck || attackCheck.summary.unresolved === 0),
-        acceptor, humanSignoff: Boolean(requiresHuman && humanSigner), signedBy: humanSigner,
+        acceptor, deviation: deviation || null, humanSignoff: Boolean(requiresHuman && humanSigner), signedBy: humanSigner,
       },
     }, null, 2));
     process.exit(0);
@@ -498,6 +524,7 @@ try {
       attestedBy: actor.attestedBy,
       source: actor.source,
       sourceKind: actor.sourceKind,
+      ...(actorNode !== '' ? { node: actorNode } : {}),
     },
     independence: {
       level: independence.level,
@@ -557,6 +584,7 @@ try {
       : null,
     releaseReady,
     notes: argv.note ? String(argv.note) : '',
+    ...(deviation !== '' ? { deviation } : {}),
   };
 
   const taskRel = relPosix(repo, taskDir);
@@ -612,6 +640,7 @@ try {
   } else {
     console.log('task-accept: ' + meta.id + ' принят');
     console.log('  acceptor      ' + acceptor + ' (' + entry.kind + ')');
+    console.log('  node          ' + (actorNode || (deviation ? '— (deviation)' : '—')));
     console.log('  actor         ' + actor.kind + ' / ' + (actor.session || '—') + ' [' + actor.attestedBy + ']'
       + (actor.source ? ' ' + actor.source + ' (' + actor.sourceKind + ')' : ''));
     console.log('  independence  ' + independence.level + ' (нужно ' + independence.required + ')');

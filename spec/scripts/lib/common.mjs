@@ -273,8 +273,68 @@ export function repoRoot(start) {
 export function parseTaskMeta(taskMd) {
   const m = taskMd.match(/<!--\s*TASK-META\s*([\s\S]*?)-->/);
   if (!m) fail('В task.md нет блока <!-- TASK-META ... -->');
-  try { return JSON.parse(m[1].trim()); }
+  let meta;
+  try { meta = JSON.parse(m[1].trim()); }
   catch (err) { fail('TASK-META не является JSON: ' + err.message); }
+  /*
+   * 0068 (WC-43): узлы ролей — часть контракта, а не украшение. JSON.parse их и
+   * так сохраняет, но нормализуем значения здесь: строка из одних пробелов не
+   * должна выглядеть как указанный узел. Задача без узлов остаётся без них.
+   */
+  if (meta && typeof meta === 'object' && !Array.isArray(meta)) {
+    for (const key of ['executorNode', 'acceptorNode']) {
+      if (typeof meta[key] === 'string') meta[key] = meta[key].trim();
+    }
+  }
+  return meta;
+}
+
+/*
+ * 0068 (WC-43): привязка роли к узлу структуры.
+ *
+ * Приёмки 0063-0067 сделал нативный subagent вместо узла judge: подпись и
+ * отдельная сессия были, а прогона в журнале структуры и Node: в письмах — нет.
+ * Обход стал возможен потому, что движок не спрашивал про узел вовсе. Правило
+ * должно отвечать машиной, а не дисциплиной.
+ *
+ * attributionGap(record) — вердикт по записи приёмки: null, если actor.node
+ * указан; warn с причиной, если узла нет, но deviation объясняет отсутствие;
+ * error для risk medium/high без узла и без объяснения; warn для low.
+ */
+export function attributionGap(record) {
+  const source = record && typeof record === 'object' && !Array.isArray(record) ? record : {};
+  const actor = source.actor && typeof source.actor === 'object' && !Array.isArray(source.actor) ? source.actor : {};
+  const node = typeof actor.node === 'string' ? actor.node.trim() : '';
+  if (node !== '') return null;
+  const deviation = typeof source.deviation === 'string' ? source.deviation.trim() : '';
+  if (deviation !== '') {
+    return { level: 'warn', message: 'приёмка без actor.node объяснена отклонением: ' + deviation };
+  }
+  const risk = String(source.risk || '').toLowerCase();
+  const hint = 'укажите узел (--node <узел> или WF_ACTOR_NODE) или объясните отсутствие (--deviation "<причина>")';
+  if (risk === 'medium' || risk === 'high') {
+    return { level: 'error', message: 'в записи нет actor.node, а risk=' + risk + ' требует узла: ' + hint };
+  }
+  return { level: 'warn', message: 'в записи нет actor.node: ' + hint };
+}
+
+/*
+ * metaAttributionGap(meta) — то же для контракта: приёмщик-субагент без
+ * acceptorNode должен быть назван либо узлом, либо deviation. Нативный subagent
+ * допустим (политика структуры — warn), но отсутствие узла видно до работы.
+ */
+export function metaAttributionGap(meta) {
+  const source = meta && typeof meta === 'object' && !Array.isArray(meta) ? meta : {};
+  const node = typeof source.acceptorNode === 'string' ? source.acceptorNode.trim() : '';
+  if (node !== '') return null;
+  const deviation = typeof source.deviation === 'string' ? source.deviation.trim() : '';
+  if (deviation !== '') return null;
+  const acceptor = typeof source.acceptor === 'string' ? source.acceptor.trim() : '';
+  if (!/^subagent/i.test(acceptor)) return null;
+  return {
+    level: 'warn',
+    message: 'acceptor ' + acceptor + ' — нативный subagent без acceptorNode: укажите acceptorNode (узел) или deviation (причина)',
+  };
 }
 
 export function extractCriteriaBlock(taskMd) {
