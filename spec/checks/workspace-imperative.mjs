@@ -14,6 +14,7 @@
  *  - c4: вне развёрнутого воркспейса (в самом пакете) — SKIP по конвенции deployed-copy.
  */
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -105,10 +106,43 @@ function c4() {
   console.log('IMPERATIVE OK c4');
 }
 
-const table = { c1, c2, c3, c4 };
+/*
+ * 0084 (2.6.38): императив структуры исполняется, а не объявлен. Плагин
+ * structure пишет health.json: при structurePolicy=fail и снятой подписке на
+ * tools/pre-execute обход структуры не блокируется — это ошибка, а не мелочь.
+ * Нет health.json — легаси-случай: предупреждаем, но не краснеем.
+ */
+function c5() {
+  const dir = workflowDir();
+  const { config } = readConfig(dir);
+  const enforcement = config.enforcement && typeof config.enforcement === 'object' ? config.enforcement : {};
+  if (enforcement.structurePolicy !== 'fail') {
+    console.log('IMPERATIVE OK c5 (structurePolicy=' + JSON.stringify(enforcement.structurePolicy) + ', подписка не требуется)');
+    return;
+  }
+  const store = process.env.WF_LAUNCH_STORE && process.env.WF_LAUNCH_STORE.trim() !== ''
+    ? path.resolve(process.env.WF_LAUNCH_STORE.trim())
+    : path.join(os.homedir(), '.dsh', 'project-graph');
+  const healthFile = path.join(store, 'health.json');
+  if (!fs.existsSync(healthFile)) {
+    console.log('IMPERATIVE WARN c5: нет ' + healthFile + ' — состояние подписки структуры неизвестно (плагин structure не писал health)');
+    return;
+  }
+  let health;
+  try { health = JSON.parse(fs.readFileSync(healthFile, 'utf8')); } catch (error) {
+    throw new Error('health.json не JSON: ' + (error && error.message ? error.message : error));
+  }
+  truthy(health && health.preExecuteSubscribed !== false,
+    'structurePolicy=fail, но подписка tools/pre-execute не удалась'
+    + (health && health.error ? ' (' + health.error + ')' : '')
+    + ' — обход структуры не блокируется; перезапустите DSH и проверьте /project-graph/api/status');
+  console.log('IMPERATIVE OK c5');
+}
+
+const table = { c1, c2, c3, c4, c5 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/workspace-imperative.mjs c1|c2|c3|c4');
+  console.log('usage: node spec/checks/workspace-imperative.mjs c1|c2|c3|c4|c5');
   process.exit(2);
 }
 try { table[which](); } catch (error) {

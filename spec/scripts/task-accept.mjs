@@ -19,6 +19,12 @@ import {
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
+import {
+  findAcceptorLaunch,
+  modelVerdict,
+  policyEnforced,
+  acceptorModelDeclaration,
+} from './lib/launch-evidence.mjs';
 import { reportReadGuard, reportReadRecord, actorModel } from './lib/acceptance-policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
@@ -243,6 +249,34 @@ try {
   const actorSourceErrors = Array.isArray(config.actor.errors) ? config.actor.errors : [];
   if (actorSourceErrors.length > 0) fail('actor.sources: ' + actorSourceErrors.join('; '));
   const actor = detectActor(process.env, { ...config.actor, kind: entry.kind, host: os.hostname() });
+  /*
+   * 0084 (2.6.38): приёмка в объявленной структуре требует свидетельства запуска.
+   * childId записи сравнивается с DSH_SESSION_ID приёмщика — argv и --node его
+   * подделать не могут. Нет записи — отказ, а не «unknown».
+   */
+  const acceptorNode = typeof meta.acceptorNode === 'string' ? meta.acceptorNode.trim() : '';
+  let launchRecord = null;
+  if (acceptorNode !== '') {
+    const evidence = findAcceptorLaunch({
+      root: repo,
+      sessionId: actor.session,
+      node: acceptorNode,
+      runId: typeof argv.run === 'string' ? argv.run : '',
+    });
+    if (!evidence.ok) fail(evidence.code + ': ' + evidence.message);
+    launchRecord = evidence.record;
+    if (actorNode !== '' && actorNode !== launchRecord.node) {
+      fail('node-declared-only: --node ' + actorNode + ' не совпадает с записью запуска (узел ' + launchRecord.node + ')');
+    }
+    const declared = acceptorModelDeclaration(repo, launchRecord.node);
+    const verdict = modelVerdict(launchRecord, declared);
+    if (verdict === 'mismatch') {
+      fail('acceptor-model-mismatch: узел ' + launchRecord.node + ' объявлен как ' + declared.model
+        + ', а запущен с ' + (launchRecord.model || '(нет модели)'));
+    }
+  }
+  const enforcement = policyEnforced(config);
+  if (!enforcement.ok) fail(enforcement.code + ': ' + enforcement.message);
   const issuedBy = meta.issuedBy || null;
   const executorSession = typeof meta.executorSession === 'string' ? meta.executorSession : null;
   const independence = assessIndependence({ actor, issuedBy, executorSession, risk: meta.risk });
@@ -300,7 +334,14 @@ try {
    * (обёртка проекта/legacy modelEnv) — известную модель запись не обедняет.
    */
   const factualActorModel = actorModel(config.actor || {}, process.env);
-  const recordActorModel = factualActorModel !== 'unknown' ? factualActorModel : actor.model;
+  /*
+   * 0084: модель приёмщика — из записи запуска (свидетельство раннера), а не из
+   * env ребёнка; env остаётся резервом для легаси-проектов без structure.
+   */
+  const launchModel = launchRecord && typeof launchRecord.model === 'string' ? launchRecord.model.trim() : '';
+  const recordActorModel = launchModel !== ''
+    ? launchModel
+    : (factualActorModel !== 'unknown' ? factualActorModel : actor.model);
 
   /*
    * Решения (2.1.0). Приёмка не спорит с семантикой, но фиксирует её состояние:

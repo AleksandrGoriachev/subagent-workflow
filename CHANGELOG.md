@@ -1,5 +1,15 @@
 # Изменения
 
+## 2.6.38 — 2026-11-06 (панель 0.9.18)
+
+- **Контракт «запуск ↔ актор» (0084).** task-accept сверяет childId записи запуска (store/runs/<hash>/launches.jsonl)
+  с DSH_SESSION_ID приёмщика: нет записи — acceptor-not-launched, --node без свидетельства — node-declared-only,
+  чужой --run — run-mismatch. Модель приёмщика берётся из записи и сверяется с объявлением узла в structure/*.json
+  (matched|mismatch); unknown больше не пропускает приёмку при объявленном acceptorNode.
+- **Императив структуры — состояние, а не объявление (0084).** При structurePolicy=fail и health.json плагина с
+  preExecuteSubscribed:false приёмка отклоняется policy-not-enforced; spec/checks/workspace-imperative.mjs c5.
+- **Проверка spec/checks/launch-evidence.mjs (c1–c5)** — записи запусков, чужая сессия, runId, модель, health.
+
 ## 2.6.37 — 2026-11-05 (панель 0.9.18)
 
 - **Панель «Императив» (0081, WC-56, S4).** /workflow/api/policy отдаёт imperative: версия движка и минимум
