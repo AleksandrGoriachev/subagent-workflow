@@ -882,6 +882,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         const [updateOpen, setUpdateOpen] = React.useState(false);
         const [updateRisk, setUpdateRisk] = React.useState(false);
         const [updateBusy, setUpdateBusy] = React.useState(false);
+        /*
+         * 0088 (0.9.20): воркспейс без git. Сервер отказывает not-a-repo, но
+         * решение «создать репозиторий» запоминается: следующее подтверждение
+         * обновления уже несёт initGit, без охоты за второй кнопкой.
+         */
+        const [updateInitGit, setUpdateInitGit] = React.useState(false);
         const [updateNote, setUpdateNote] = React.useState(null);
         const [linkOpen, setLinkOpen] = React.useState(false);
         const [candidates, setCandidates] = React.useState(null);
@@ -1400,7 +1406,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 root: target,
                 confirm: true,
                 allowInProgress: updateRisk === true,
-                ...(initGit ? { initGit: true } : {}),
+                ...(initGit || updateInitGit ? { initGit: true } : {}),
               }, external ? { target: EXTERNAL_UPDATE_TARGET } : {})),
             });
             /*
@@ -1479,6 +1485,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               });
               return;
             }
+            if (data.code === "not-a-repo") {
+              /* 0088: запоминаем решение, чтобы подтверждение работало одним нажатием. */
+              setUpdateInitGit(true);
+            }
             if (!response.ok || data.ok !== true) {
               setUpdateNote({
                 kind: "error",
@@ -1497,6 +1507,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 + ". Панель перечитала состояние.",
               log: data.log || "",
             });
+            setUpdateInitGit(false);
             closeUpdate();
             /* Перечитываем состояние: версии, журнал и список заданий обновились. */
             await load(target, true);
@@ -1703,7 +1714,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                     type: "button",
                     style: updateBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
                     disabled: updateBusy,
-                    onClick: () => void runUpdate({ initGit: true }),
+                    onClick: () => { setUpdateInitGit(true); void runUpdate({ initGit: true }); },
                     title: "Создать git-репозиторий в воркспейсе и повторить обновление",
                   },
                   "Сделать git init и обновить",
@@ -1776,6 +1787,13 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   { style: Object.assign({}, S.stageText, { marginTop: "6px" }) },
                   "Незавершённых заданий нет: обновление ничего не сломает.",
                 ),
+            updateInitGit
+              ? h(
+                  "div",
+                  { style: Object.assign({}, S.stageText, { marginTop: "6px" }) },
+                  "Воркспейс без git: обновление создаст репозиторий (git init) — подтверждение ниже означает согласие.",
+                )
+              : null,
             h(
               "div",
               { style: Object.assign({}, S.actions, { marginTop: "8px" }) },
