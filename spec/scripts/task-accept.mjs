@@ -21,6 +21,7 @@ import {
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
 import {
   findAcceptorLaunch,
+  findLaunchByRun,
   modelVerdict,
   policyEnforced,
   acceptorModelDeclaration,
@@ -255,21 +256,35 @@ try {
    * подделать не могут. Нет записи — отказ, а не «unknown».
    */
   const acceptorNode = typeof meta.acceptorNode === 'string' ? meta.acceptorNode.trim() : '';
+  const runArg = typeof argv.run === 'string' ? argv.run.trim() : '';
   let launchRecord = null;
-  if (acceptorNode !== '') {
-    const evidence = findAcceptorLaunch({
-      root: repo,
-      sessionId: actor.session,
-      node: acceptorNode,
-      runId: typeof argv.run === 'string' ? argv.run : '',
-    });
+  let acceptorInfo = null;
+  /*
+   * 0087 (2.6.41): свидетельство включается и явным --run, даже если узел в
+   * TASK-META не объявлен: приёмщик мог получить runId в задании. Сверка та же —
+   * childId записи обязан совпасть с сессией приёмщика.
+   */
+  const evidenceWanted = acceptorNode !== '' || runArg !== '';
+  if (evidenceWanted) {
+    const evidence = acceptorNode !== ''
+      ? findAcceptorLaunch({ root: repo, sessionId: actor.session, node: acceptorNode, runId: runArg })
+      : findLaunchByRun({ root: repo, runId: runArg, sessionId: actor.session });
     if (!evidence.ok) fail(evidence.code + ': ' + evidence.message);
     launchRecord = evidence.record;
-    if (actorNode !== '' && actorNode !== launchRecord.node) {
+    if (acceptorNode !== '' && actorNode !== '' && actorNode !== launchRecord.node) {
       fail('node-declared-only: --node ' + actorNode + ' не совпадает с записью запуска (узел ' + launchRecord.node + ')');
     }
     const declared = acceptorModelDeclaration(repo, launchRecord.node);
     const verdict = modelVerdict(launchRecord, declared);
+    acceptorInfo = {
+      node: launchRecord.node,
+      sessionId: launchRecord.childId,
+      runId: launchRecord.runId,
+      model: launchRecord.model || null,
+      declaredModel: declared.model || null,
+      verdict,
+      source: 'launch-record',
+    };
     if (verdict === 'mismatch') {
       fail('acceptor-model-mismatch: узел ' + launchRecord.node + ' объявлен как ' + declared.model
         + ', а запущен с ' + (launchRecord.model || '(нет модели)'));
@@ -424,6 +439,7 @@ try {
           : null,
         actor: { model: recordActorModel, family: familyOf(config, recordActorModel) },
         independence: { level: independence.level, modelLevel: actorModelLevel },
+        acceptor: acceptorInfo,
         releaseReady: decisionSummary.assumed.length === 0 && (!attackCheck || attackCheck.summary.unresolved === 0),
         acceptor, deviation: deviation || null, humanSignoff: Boolean(requiresHuman && humanSigner), signedBy: humanSigner,
       },
@@ -577,8 +593,15 @@ try {
       reportWithheld: !argv['report-read'],
       ...reportReadProof,
       keyCustody: entry.kind === 'human' ? 'human-key' : 'agent-key',
+      /*
+       * modelLevel — независимость по семействам моделей (config.models), а не
+       * сверка с записью запуска: узкий смысл, чтобы «unknown» не читался как
+       * отказ контракта. Сверка приёмщика — в acceptor.
+       */
       modelLevel: actorModelLevel,
     },
+    /* 0087: свидетельство запуска отдельным блоком — видно, откуда модель. */
+    acceptor: acceptorInfo,
     acceptorRun,
     effects: effectCheck.effects,
     effectsRequired: effectCheck.required,
@@ -701,7 +724,14 @@ try {
     console.log('  fresh run     ' + (acceptorRun.fresh ? 'да (' + acceptorRun.nonce + ')' : 'нет (reused)'));
     console.log('  decisions     ' + decisionSummary.count + ' (assumed: ' + (decisionSummary.assumed.join(', ') || 'нет') + ')');
     console.log('  attack        ' + (attackCheck ? attackCheck.summary.total + ' находок, blocking ' + attackCheck.summary.blocking + ', без решения ' + attackCheck.summary.unresolved : 'нет'));
-    console.log('  model level   ' + actorModelLevel);
+    console.log('  model level   ' + actorModelLevel
+      + (actorModelLevel === 'unknown'
+        ? ' (независимость: семейства моделей не объявлены в config.models; сверка приёмщика — строка acceptor)'
+        : ''));
+    console.log('  acceptor      ' + (acceptorInfo
+      ? 'узел ' + acceptorInfo.node + ', run ' + acceptorInfo.runId + ', модель ' + (acceptorInfo.model || '—')
+        + ' против ' + (acceptorInfo.declaredModel || '—') + ' → ' + acceptorInfo.verdict
+      : 'свидетельства запуска нет (TASK-META.acceptorNode не объявлен и --run не передан)'));
     console.log('  releaseReady  ' + releaseReady + (decisionSummary.assumed.length ? ' — есть решения без подтверждения' : ''));
     console.log('  contract      ' + contractCommit);
     console.log('  candidate     ' + candidate.commit);

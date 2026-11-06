@@ -1,5 +1,16 @@
 # Изменения
 
+## 2.6.41 — 2026-11-06 (панель 0.9.19)
+
+- **Свидетельство по --run (0087).** Если TASK-META.acceptorNode не объявлен, но приёмщик передал --run,
+  запуск находится по runId, а childId по-прежнему сверяется с DSH_SESSION_ID (run-not-found/run-mismatch).
+- **Блок acceptor в acceptance.json:** {node, sessionId, runId, model, declaredModel, verdict, source} —
+  видно, откуда модель и почему matched/mismatch/unknown.
+- **independence.modelLevel сузился по смыслу:** это семейства моделей из config.models; при unknown
+  печатается пояснение, что сверка приёмщика — отдельная строка acceptor. Пустой config.models больше не
+  читается как «отказ контракта».
+- check launch-evidence: c6 — поиск по runId без объявленного узла.
+
 ## 2.6.40 — 2026-11-06 (панель 0.9.19)
 
 - **health.json: три формы (0086).** readHealth(root) читает per-root по DSH_PROJECT_GRAPH_STORE,

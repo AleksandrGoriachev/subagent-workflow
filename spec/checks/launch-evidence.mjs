@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   findAcceptorLaunch,
+  findLaunchByRun,
   modelVerdict,
   policyEnforced,
   acceptorModelDeclaration,
@@ -49,6 +50,13 @@ equal(wrongRun.code, 'run-mismatch', 'c2: чужой runId');
 const missingRun = findAcceptorLaunch({ root, sessionId: 'session-judge', node: 'judge', runId: 'run-404' });
 equal(missingRun.code, 'run-not-found', 'c2: неизвестный runId');
 
+/* c6: --run без объявленного узла — свидетельство по childId. */
+const byRun = findLaunchByRun({ root, runId: 'run-1', sessionId: 'session-judge' });
+truthy(byRun.ok, 'c6: свой runId должен найти запуск');
+equal(byRun.record.node, 'judge', 'c6: узел из записи');
+equal(findLaunchByRun({ root, runId: 'run-1', sessionId: 'session-other' }).code, 'run-mismatch', 'c6: чужая сессия');
+equal(findLaunchByRun({ root, runId: 'run-404', sessionId: 'session-judge' }).code, 'run-not-found', 'c6: неизвестный runId');
+
 /* c3: модель из записи против объявления. */
 equal(modelVerdict(own.record, { model: 'glm-5.3-flash' }), 'matched', 'c3: совпадение');
 equal(modelVerdict(own.record, { model: 'deepseek-v4.1-flash' }), 'mismatch', 'c3: расхождение');
@@ -72,4 +80,4 @@ equal(declared.model, 'glm-5.3-flash', 'c5: модель узла');
 equal(acceptorModelDeclaration(root, 'worker').model, null, 'c5: неизвестный узел');
 
 fs.rmSync(store, { recursive: true, force: true });
-console.log('launch-evidence: OK c1–c5');
+console.log('launch-evidence: OK c1–c6');

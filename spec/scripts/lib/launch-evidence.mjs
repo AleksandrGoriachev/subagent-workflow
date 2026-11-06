@@ -124,6 +124,31 @@ export function findAcceptorLaunch({ root, sessionId, node, runId, store = store
   return { ok: true, code: null, message: '', record };
 }
 
+
+/**
+ * Запуск по явному runId, без объявленного узла: свидетельством всё равно
+ * остаётся совпадение childId с сессией приёмщика.
+ */
+export function findLaunchByRun({ root, runId, sessionId, store = storeRoot() }) {
+  const { file, exists, records } = readLaunches(root, store);
+  if (!exists) {
+    return { ok: false, code: 'acceptor-not-launched', message: 'нет журнала запусков ' + file, record: null };
+  }
+  const record = runsOf(records).find((item) => item.runId === String(runId).trim()) || null;
+  if (!record) {
+    return { ok: false, code: 'run-not-found', message: 'запуск ' + runId + ' не найден в ' + file, record: null };
+  }
+  if (!sessionId || record.childId !== sessionId) {
+    return {
+      ok: false,
+      code: 'run-mismatch',
+      message: 'запуск ' + runId + ' принадлежит сессии ' + (record.childId || '(пусто)') + ', а приёмщик — ' + (sessionId || '(нет сессии)'),
+      record,
+    };
+  }
+  return { ok: true, code: null, message: '', record };
+}
+
 /** Модель приёмщика из записи против объявления: matched | mismatch | unknown. */
 export function modelVerdict(record, declared) {
   const declaredModel = declared && typeof declared === 'object' ? String(declared.model || '').trim() : '';
