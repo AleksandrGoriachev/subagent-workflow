@@ -346,8 +346,36 @@ function prepareUpdate(root, options = {}) {
   if (!root || !dirExists(repo)) {
     return { ok: false, code: 'not-found', error: 'корень не найден: ' + repo };
   }
+  /*
+   * 0085 (0.9.19): обновление не-git воркспейса — тот же шаг git init, что у
+   * первичного развёртывания (2.6.14). Без этого воркспейс без .git попадал в
+   * тупик: развернуть можно, обновить нельзя.
+   */
+  let gitInitialized = false;
   if (!fs.existsSync(path.join(repo, '.git'))) {
-    return { ok: false, code: 'not-a-repo', error: 'не git-репозиторий: ' + repo + ' — нужен git init' };
+    if (options.initGit !== true) {
+      return { ok: false, code: 'not-a-repo', error: 'не git-репозиторий: ' + repo + ' — нужен git init' };
+    }
+    const init = spawnSync('git', ['init'], {
+      cwd: repo,
+      encoding: 'utf8',
+      timeout: DEFAULT_TIMEOUT_MS,
+      maxBuffer: 4 * 1024 * 1024,
+      windowsHide: true,
+      env: process.env,
+    });
+    if (init.error || init.status !== 0) {
+      appendDeployLog(repo, { from: null, to: null, actor: actorOf(options), result: 'git-init-failed' });
+      return {
+        ok: false,
+        code: 'git-init-failed',
+        error: init.error
+          ? 'git init не запустился: ' + (init.error.message || String(init.error))
+          : 'git init завершился с кодом ' + (init.status === null ? '?' : init.status),
+        log: tail(String(init.stdout || '') + String(init.stderr || '')),
+      };
+    }
+    gitInitialized = true;
   }
   const from = deployedVersion(repo);
   if (!from) {
@@ -418,6 +446,7 @@ function prepareUpdate(root, options = {}) {
     ok: true,
     repo,
     specRoot,
+    gitInitialized,
     init,
     versionFile: path.join(repo, VERSION_REL),
     keyDir: path.join(repo, KEY_DIR_REL),
@@ -488,6 +517,7 @@ function finishUpdate(prepared, run) {
     version,
     log,
     tasks: prepared.tasks,
+    gitInit: prepared.gitInitialized === true,
     provenance,
     warning,
   };

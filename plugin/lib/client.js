@@ -1376,7 +1376,13 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           setUpdateRisk(false);
         }
 
-        async function runUpdate() {
+        /*
+         * 0085 (0.9.19): initGit — обновление не-git воркспейса тем же шагом
+         * git init, что и первичное развёртывание. Без флага сервер по-прежнему
+         * отвечает not-a-repo.
+         */
+        async function runUpdate(options = {}) {
+          const initGit = options.initGit === true;
           const target = deployTarget();
           /* 0042: внешний движок обновляется в своём репозитории — тем же запросом. */
           const external = externalEngine();
@@ -1394,6 +1400,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 root: target,
                 confirm: true,
                 allowInProgress: updateRisk === true,
+                ...(initGit ? { initGit: true } : {}),
               }, external ? { target: EXTERNAL_UPDATE_TARGET } : {})),
             });
             /*
@@ -1685,6 +1692,23 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             ),
             h("div", { style: { fontSize: "12px", whiteSpace: "pre-wrap" } }, updateNote.text),
             updateNote.release ? renderReleaseAction() : null,
+            /*
+             * 0085: тупик «не git-репозиторий» закрывается кнопкой — тот же
+             * confirm, но с initGit: сервер делает git init и продолжает init --force.
+             */
+            updateNote.code === "not-a-repo"
+              ? h(
+                  "button",
+                  {
+                    type: "button",
+                    style: updateBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                    disabled: updateBusy,
+                    onClick: () => void runUpdate({ initGit: true }),
+                    title: "Создать git-репозиторий в воркспейсе и повторить обновление",
+                  },
+                  "Сделать git init и обновить",
+                )
+              : null,
             logText.length > 0 ? h("pre", { style: S.runLog }, logText) : null,
           );
         }

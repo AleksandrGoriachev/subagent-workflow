@@ -932,6 +932,7 @@ export function createWebHandler(runtime) {
             const report = await updateWorkflowAsync(target.root, {
               specRoot: spec.specRoot,
               allowInProgress: body.allowInProgress === true,
+              initGit: body.initGit === true,
             });
             sendJson(res, updateResponseStatus(report), {
               plugin: runtime.plugin,
@@ -958,6 +959,7 @@ export function createWebHandler(runtime) {
         const report = await updateWorkflowAsync(target.root, {
           specRoot: availableSpecRoot(),
           allowInProgress: body.allowInProgress === true,
+          initGit: body.initGit === true,
         });
         sendJson(res, updateResponseStatus(report), { plugin: runtime.plugin, root: target.root, ...report });
         return;
