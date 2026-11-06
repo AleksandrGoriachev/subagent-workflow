@@ -275,7 +275,7 @@ try {
         + ', а запущен с ' + (launchRecord.model || '(нет модели)'));
     }
   }
-  const enforcement = policyEnforced(config);
+  const enforcement = policyEnforced(config, repo);
   if (!enforcement.ok) fail(enforcement.code + ': ' + enforcement.message);
   const issuedBy = meta.issuedBy || null;
   const executorSession = typeof meta.executorSession === 'string' ? meta.executorSession : null;

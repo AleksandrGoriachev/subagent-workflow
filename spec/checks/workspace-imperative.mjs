@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readHealth } from '../scripts/lib/launch-evidence.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
@@ -120,19 +121,15 @@ function c5() {
     console.log('IMPERATIVE OK c5 (structurePolicy=' + JSON.stringify(enforcement.structurePolicy) + ', подписка не требуется)');
     return;
   }
-  const store = process.env.WF_LAUNCH_STORE && process.env.WF_LAUNCH_STORE.trim() !== ''
+  const root = workspaceRoot(dir);
+  const health = readHealth(root, process.env.WF_LAUNCH_STORE && process.env.WF_LAUNCH_STORE.trim() !== ''
     ? path.resolve(process.env.WF_LAUNCH_STORE.trim())
-    : path.join(os.homedir(), '.dsh', 'project-graph');
-  const healthFile = path.join(store, 'health.json');
-  if (!fs.existsSync(healthFile)) {
-    console.log('IMPERATIVE WARN c5: нет ' + healthFile + ' — состояние подписки структуры неизвестно (плагин structure не писал health)');
+    : path.join(os.homedir(), '.dsh', 'project-graph'));
+  if (!health) {
+    console.log('IMPERATIVE WARN c5: нет health.json для ' + root + ' — состояние подписки структуры неизвестно (плагин structure не писал health)');
     return;
   }
-  let health;
-  try { health = JSON.parse(fs.readFileSync(healthFile, 'utf8')); } catch (error) {
-    throw new Error('health.json не JSON: ' + (error && error.message ? error.message : error));
-  }
-  truthy(health && health.preExecuteSubscribed !== false,
+  truthy(health.preExecuteSubscribed !== false,
     'structurePolicy=fail, но подписка tools/pre-execute не удалась'
     + (health && health.error ? ' (' + health.error + ')' : '')
     + ' — обход структуры не блокируется; перезапустите DSH и проверьте /project-graph/api/status');

@@ -1,5 +1,12 @@
 # Изменения
 
+## 2.6.40 — 2026-11-06 (панель 0.9.19)
+
+- **health.json: три формы (0086).** readHealth(root) читает per-root по DSH_PROJECT_GRAPH_STORE,
+  per-root <store>/<basename>-<sha1(root)[0..8]>/health.json и сводный индекс 1.0.9 <store>/health.json
+  с roots{}; workspace-imperative c5 и policyEnforced в task-accept работают с любой формой.
+- Проверено на живой машине: c5 = OK при индексe 1.0.9 (preExecuteSubscribed: true).
+
 ## 2.6.39 — 2026-11-06 (панель 0.9.19)
 
 - **Обновление не-git воркспейса (0085).** prepareUpdate принимает initGit: true — делает git init и продолжает init --force;

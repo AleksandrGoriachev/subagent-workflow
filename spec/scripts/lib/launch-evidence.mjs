@@ -30,15 +30,7 @@ export function launchesFile(root, store = storeRoot()) {
   return path.join(store, 'runs', hash, 'launches.jsonl');
 }
 
-/** health.json плагина: <store>/health.json (store — родитель runs). */
-export function healthFile(store = storeRoot()) {
-  return path.join(store, 'health.json');
-}
-
-/**
- * Все записи журнала (обе строки одного запуска остаются раздельными).
- * Битые строки пропускаются: журнал пишет другой процесс.
- */
+/** Все записи журнала (старт и settled одного запуска остаются раздельными). */
 export function readLaunches(root, store = storeRoot()) {
   const file = launchesFile(root, store);
   let text = '';
@@ -54,7 +46,7 @@ export function readLaunches(root, store = storeRoot()) {
       const row = JSON.parse(line);
       if (row && typeof row === 'object') records.push(row);
     } catch {
-      /* пропускаем */
+      /* битая строка не отменяет остальные */
     }
   }
   return { file, exists: true, records };
@@ -76,9 +68,7 @@ export function runsOf(records) {
 
 /**
  * Найти запуск приёмщика: childId == sessionId, node == acceptorNode
- * (или явный runId, который обязан совпасть по childId).
- *
- * @returns {{ok: boolean, code: string|null, message: string, record: object|null}}
+ * (или явный runId, который обязан совпасть по childId и узлу).
  */
 export function findAcceptorLaunch({ root, sessionId, node, runId, store = storeRoot() }) {
   const { file, exists, records } = readLaunches(root, store);
@@ -134,10 +124,7 @@ export function findAcceptorLaunch({ root, sessionId, node, runId, store = store
   return { ok: true, code: null, message: '', record };
 }
 
-/**
- * Модель приёмщика из записи против объявления.
- * @returns {'matched'|'mismatch'|'unknown'}
- */
+/** Модель приёмщика из записи против объявления: matched | mismatch | unknown. */
 export function modelVerdict(record, declared) {
   const declaredModel = declared && typeof declared === 'object' ? String(declared.model || '').trim() : '';
   const recordModel = record && typeof record.model === 'string' ? record.model.trim() : '';
@@ -145,26 +132,57 @@ export function modelVerdict(record, declared) {
   return declaredModel === recordModel ? 'matched' : 'mismatch';
 }
 
-/** health.json плагина, или null. */
-export function readHealth(store = storeRoot()) {
-  const file = healthFile(store);
-  try {
-    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return parsed && typeof parsed === 'object' ? { ...parsed, file } : null;
-  } catch {
-    return null;
+/**
+ * health.json плагина для конкретного корня.
+ *
+ * Форматов два, оба поддержаны:
+ *  - per-root: <DSH_PROJECT_GRAPH_STORE>/health.json;
+ *  - per-root в хранилище по умолчанию: <store>/<basename>-<sha1(root)[0..8]>/health.json;
+ *  - сводный индекс (1.0.9): <store>/health.json с { roots: { "<abs root>": {...} } }.
+ *
+ * @param {string} root абсолютный корень
+ * @param {string} [store] каталог ~/.dsh/project-graph (для тестов)
+ * @returns {object|null} плоская запись health или null
+ */
+export function readHealth(root, store = storeRoot()) {
+  const candidates = [];
+  const envStore = process.env.DSH_PROJECT_GRAPH_STORE;
+  if (typeof envStore === 'string' && envStore.trim() !== '') {
+    candidates.push(path.join(path.resolve(envStore.trim()), 'health.json'));
   }
+  if (root) {
+    const absolute = path.resolve(String(root));
+    const sha1 = crypto.createHash('sha1').update(absolute).digest('hex').slice(0, 8);
+    candidates.push(path.join(store, path.basename(absolute) + '-' + sha1, 'health.json'));
+  }
+  candidates.push(path.join(store, 'health.json'));
+  for (const file of candidates) {
+    let parsed;
+    try {
+      parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch {
+      continue;
+    }
+    if (!parsed || typeof parsed !== 'object') continue;
+    if (parsed.roots && typeof parsed.roots === 'object' && root) {
+      const entry = parsed.roots[path.resolve(String(root))];
+      if (entry && typeof entry === 'object') return { ...entry, file };
+      continue;
+    }
+    if (Object.prototype.hasOwnProperty.call(parsed, 'preExecuteSubscribed')) return { ...parsed, file };
+  }
+  return null;
 }
 
 /**
  * Императив исполняется? При structurePolicy=fail и снятой подписке — нет.
  * @returns {{ok: boolean, code: string|null, message: string, health: object|null}}
  */
-export function policyEnforced(config, store = storeRoot()) {
+export function policyEnforced(config, root, store = storeRoot()) {
   const block = config && config.enforcement && typeof config.enforcement === 'object' ? config.enforcement : {};
   const mode = block.structurePolicy;
   if (mode !== 'fail') return { ok: true, code: null, message: '', health: null };
-  const health = readHealth(store);
+  const health = readHealth(root, store);
   if (health && health.preExecuteSubscribed === false) {
     return {
       ok: false,
