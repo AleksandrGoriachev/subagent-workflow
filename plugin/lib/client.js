@@ -764,13 +764,31 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             color ? { color, borderColor: color } : null,
             hint ? { cursor: "help" } : null,
           ),
+          /*
+           * 0098 (WC-2): title остаётся (наведение на десктопе и совместимость WC-1),
+           * data-tip показывает ту же подсказку на :focus — тап на тач-экране и Tab.
+           */
           title: hint,
+          "data-tip": hint || undefined,
           "aria-label": hint || String(text),
           tabIndex: focusable && hint ? 0 : undefined,
         },
         text,
       );
     }
+
+    /*
+     * 0098 (WC-2): нативный title не показывается на фокусе и на тапе. CSS-подсказка
+     * по data-tip работает на hover, на :focus (тап по плашке) и с клавиатуры
+     * (Tab). Плашка фокусируема только когда есть подсказка — см. badge().
+     */
+    const TOOLTIP_CSS = [
+      '[data-tip]{position:relative}',
+      '[data-tip]:focus::after{content:attr(data-tip);position:absolute;left:0;top:100%;',
+      'margin-top:4px;z-index:60;max-width:320px;white-space:normal;padding:6px 8px;border-radius:6px;',
+      'background:#1f2430;color:#fff;font-size:12px;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}',
+      '[data-tip]:focus-visible{outline:2px solid #6b8afd;outline-offset:2px}',
+    ].join('');
 
     function dot(color) {
       return h("span", { style: Object.assign({}, S.dot, { background: color }) });
@@ -3400,6 +3418,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         return h(
           "div",
           { style: S.root },
+          h("style", { key: "tooltip-css" }, TOOLTIP_CSS),
           renderHeader(),
           renderTabs(),
           h(
