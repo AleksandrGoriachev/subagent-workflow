@@ -28,7 +28,7 @@
 | WC-28 | done | high | Журнал вердиктов ворот (0051): `docs/tasks/<id>/gates.jsonl`, append-only, `kind=red|verify|accept`, причины отказов; сбой журнала — WARN |
 | WC-30 | done | medium | Строка `accept` теперь после сборки кандидата и подписи (0052) |
 | WC-31 | done | low | **Guard подписи срабатывает (0093).** `contract-discipline.mjs c2` искал `signAcceptance`, а функция — `signRecord`: проверка «строка accept после подписи» молча не выполнялась. Теперь ищется фактический вызов, отсутствие подписи — отказ, а не тихий пропуск. c1/c2 зелёные |
-| WC-32 | proposed | low | Строка `accept` не попадает в репозиторий: пишется после сборки кандидата, `reset --hard` её теряет — дописывать при metadata-коммите |
+| WC-32 | done | low | **Строка accept не теряется (0097).** task-accept печатает финализацию с обоими путями (acceptance.json + gates.jsonl) и явно предупреждает, что reset --hard выбросит строку accept без git add; task-check-acceptance даёт WARN, если в gates.jsonl нет строки kind=accept для задания. Живое подтверждение: у принятого 0110 в dsh-project-graph строки accept в журнале нет — WARN сработал; с синтетической строкой accept предупреждения нет. SPEC §Порядок коммитов обновлён |
 | WC-33 | done | high | Схема записи отставала от кода: `reportReadReason` (0049) и `reportRead`/`reportReadVerified` (0053) отсутствовали в `acceptance.schema.json` — 0054 добавил, схема v7, проверка валидирует реальную запись |
 | WC-34 | done | high | §Отчёт требует все проверки контракта (0053): команда и exit каждой, `NOT RUN` для непрогнанной |
 | WC-24 | done | high | Ворота печатают `PASS  C1  exit 0  530 ms` и `Итог: …` (0056) — приёмщику не нужен ручной повтор (≈980 с дублей) |

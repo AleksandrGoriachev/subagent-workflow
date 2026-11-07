@@ -168,6 +168,34 @@ function run() {
     }
   }
 
+  /*
+   * 0097 (WC-32): журнал ворот обязан нести строку accept. Она пишется после
+   * сборки кандидата, и git reset --hard выбрасывает её, если gates.jsonl не
+   * добавлен в metadata-коммит. Отсутствие строки — предупреждение: запись
+   * приёмки цела, но аудит журнала неполон.
+   */
+  try {
+    const taskDirArg = argv.task ? path.resolve(String(argv.task)) : path.dirname(file);
+    const gateFile = path.join(taskDirArg, 'gates.jsonl');
+    if (fs.existsSync(gateFile)) {
+      const hasAccept = fs.readFileSync(gateFile, 'utf8').split('\n').some((line) => {
+        if (!line.trim()) return false;
+        try {
+          const row = JSON.parse(line);
+          return row && row.kind === 'accept' && String(row.task) === String(record.task);
+        } catch {
+          return false;
+        }
+      });
+      if (!hasAccept) {
+        warnings.push('в gates.jsonl нет строки accept для ' + record.task
+          + ': добавьте gates.jsonl в metadata-коммит, иначе журнал не подтвердит приёмку');
+      }
+    }
+  } catch {
+    /* журнал — необязательный артефакт */
+  }
+
   const issuedBy = record.issuedBy || {};
   const actor = record.actor || {};
   const risk = record.risk;

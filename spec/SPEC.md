@@ -1,6 +1,6 @@
 # Спецификация: делегирование субагентам с проверяемой приёмкой
 
-Версия: 2.6.48. Дата: 2026-11-07.
+Версия: 2.6.49. Дата: 2026-11-07.
 Статус: проект-независимая, готова к разворачиванию в новом репозитории.
 Основание: редакция 1.3 (роли, риск-уровни, контракт, свежий прогон, redExpect) плюс
 исправление главного дефекта — роль приёмщика проверяется машиной, а не декларацией.
@@ -702,6 +702,7 @@
    `selftest`, `deployed-copy`. Версии пакета и плагина этой задачей не
    двигаются — их двигает релиз архитектора после приёмки.
 
+Версия 2.6.49: строка accept в gates.jsonl не теряется (0097/WC-32) — финализация перечисляет acceptance.json и gates.jsonl, check-acceptance предупреждает об отсутствии строки accept.
 Версия 2.6.48: чужое задание в allowedPaths (0096/WC-36) — task-lint даёт ERROR на docs/tasks/<чужой>/ после копирования каталога с прежним номером, WARN на redAllowDirty.
 Версия 2.6.47: три хвоста проверок (0093–0095) — guard подписи ищет signRecord, legacy-запись без подписи даёт WARN вместо семи ERROR, attribution строг по версии замка (2.6.29+).
 Версия 2.6.46: контракт до красного (0092/WC-20) — task-preflight.mjs гоняет mustPass на базе дешёвыми первыми, дорогие не запускаются после провала; task-red делает это по умолчанию (--skip-preflight для обхода).
@@ -886,7 +887,9 @@ node scripts/task-accept-batch.mjs --tasks 0110,0111 --acceptor judge \
 # 7. проверка записи и фиксация: ветка встаёт на кандидата, запись — отдельным коммитом
 node scripts/task-check-acceptance.mjs --file docs/tasks/0001/acceptance.json --repo . --metadata HEAD
 git reset --hard <candidateCommit>
-git add docs/tasks/0001/acceptance.json && git commit -m "task 0001: приёмка (metadata)"
+# gates.jsonl несёт строку accept: без git add её выбросит reset --hard (WC-32)
+git add docs/tasks/0001/acceptance.json docs/tasks/0001/gates.jsonl \
+  && git commit -m "task 0001: приёмка (metadata)"
 ~~~
 
 ### Порядок коммитов: что двигает HEAD и когда

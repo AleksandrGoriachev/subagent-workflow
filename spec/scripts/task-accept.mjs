@@ -744,8 +744,15 @@ try {
     console.log('');
     console.log('Финализация (дерево кода остаётся деревом кандидата):');
     console.log('  git reset --hard ' + candidate.commit + '   # рабочее дерево уже равно кандидату');
-    console.log('  git add ' + acceptanceRel);
+    /*
+     * 0097 (WC-32): строка accept пишется в gates.jsonl уже после сборки
+     * кандидата, поэтому reset --hard её выбрасывает, если не добавить файл в
+     * индекс. Печатаем оба пути — иначе журнал молча теряет приёмку.
+     */
+    const gateRel = relPosix(repo, path.join(taskDir, 'gates.jsonl'));
+    console.log('  git add ' + acceptanceRel + ' ' + gateRel);
     console.log('  git commit -m "task ' + meta.id + ': приёмка (metadata)"');
+    console.log('  # gates.jsonl несёт строку accept: без git add её выбросит reset --hard');
     /*
      * 0011 (F-2): путь к проверке записи вычисляется от самого скрипта
      * относительно корня репозитория. В пакете это spec/scripts/…, в
