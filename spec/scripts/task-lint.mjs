@@ -119,6 +119,27 @@ try {
     if (p.split('/').includes('..')) error('allowedPaths: ".." запрещён: ' + p);
     if (p === '**' || p === '**/*') warn('allowedPaths: слишком широкий шаблон: ' + p);
   }
+  /*
+   * 0096 (WC-36): путь чужого задания в allowedPaths. Так бывает, когда каталог
+   * 0055 скопировали в 0056 и заменили номер не везде: исполнитель получал право
+   * править контракт предыдущего задания. Своё задание — можно, чужое — ошибка.
+   */
+  const foreignTaskPaths = [];
+  for (const p of allowed) {
+    const match = String(p).match(/^docs\/tasks\/(\d{4})\//u);
+    if (match && match[1] !== String(meta.id)) foreignTaskPaths.push(String(p));
+  }
+  if (foreignTaskPaths.length > 0) {
+    error('allowedPaths ссылается на чужое задание: ' + foreignTaskPaths.join(', ')
+      + ' — при переиспользовании каталога остаются пути прежнего номера');
+  }
+  for (const p of (Array.isArray(meta.redAllowDirty) ? meta.redAllowDirty : [])) {
+    const match = String(p).match(/^docs\/tasks\/(\d{4})\//u);
+    if (match && match[1] !== String(meta.id)) {
+      warn('redAllowDirty ссылается на чужое задание: ' + String(p) + ' — красный сможет править чужие артефакты');
+    }
+  }
+
   const protectedPaths = Array.isArray(meta.protectedPaths) ? meta.protectedPaths : [];
   if (protectedPaths.length === 0 && meta.risk !== 'low') warn('protectedPaths пуст: тесты/проверки не защищены хешем');
   for (const p of protectedPaths) {
