@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
+import { preflightMustPass } from './lib/preflight.mjs';
 import {
   parseArgv, readTask, verifyLock, repoRoot, git, dirtyPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, truncate, writeJson, writeText,
@@ -10,7 +11,7 @@ import {
 const NL = String.fromCharCode(10);
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
-  console.log('Usage: node task-red.mjs --task <dir> [--repo <dir>] [--base <ref>] [--json] [--allow-dirty] [--allow-base-mismatch]');
+  console.log('Usage: node task-red.mjs --task <dir> [--repo <dir>] [--base <ref>] [--json] [--allow-dirty] [--allow-base-mismatch] [--skip-preflight]');
   process.exit(0);
 }
 
@@ -141,6 +142,30 @@ try {
     writeText(files.redLog, log.join(NL));
     reportFatal('task-red', 'setup завершился ошибкой; см. ' + files.redLog, { json: Boolean(argv.json) });
     process.exit(1);
+  }
+
+  /*
+   * 0092 (WC-20): контракт до красного. mustPass по определению зелёные на базе;
+   * если нет — красный прогон докажет ошибку контракта, а не поведение, и время
+   * потрачено зря. Дешёвые mustPass идут первыми, дорогие не запускаются после
+   * первого провала дешёвой.
+   */
+  if (argv['skip-preflight'] !== true) {
+    const preflight = await preflightMustPass({ repo, criteria, env, log: (line) => logLine(line) });
+    if (!preflight.empty) {
+      console.log('preflight mustPass: ' + (preflight.ok ? 'зелёные на базе' : 'КРАСНЫЕ на базе')
+        + (preflight.skipped.length ? ' (пропущено дорогих: ' + preflight.skipped.join(',') + ')' : ''));
+    }
+    if (!preflight.ok) {
+      writeText(files.redLog, log.join(NL));
+      if (argv.json === true) {
+        console.log(JSON.stringify({ ok: false, code: 'contract-broken', preflight }, null, 2));
+      } else {
+        console.log('task-red: контракт сломан: mustPass не зелёный на базе — red не запускается.');
+        console.log('Что сделать: починить контракт (mustPass должны проходить ДО работы) или --skip-preflight, если это осознанно.');
+      }
+      process.exit(1);
+    }
   }
 
   /*
