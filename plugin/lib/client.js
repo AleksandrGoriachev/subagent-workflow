@@ -888,6 +888,18 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
          * обновления уже несёт initGit, без охоты за второй кнопкой.
          */
         const [updateInitGit, setUpdateInitGit] = React.useState(false);
+        /*
+         * 0090 (WC-4): первая запись из панели. Панель не пишет тексты — она
+         * зовёт штатные task-hash.mjs / new-task.mjs и показывает их вывод.
+         */
+        const [lockBusy, setLockBusy] = React.useState(false);
+        const [lockNote, setLockNote] = React.useState(null);
+        const [newTaskOpen, setNewTaskOpen] = React.useState(false);
+        const [newTaskBusy, setNewTaskBusy] = React.useState(false);
+        const [newTaskNote, setNewTaskNote] = React.useState(null);
+        const [newTaskId, setNewTaskId] = React.useState("");
+        const [newTaskTitle, setNewTaskTitle] = React.useState("");
+        const [newTaskRisk, setNewTaskRisk] = React.useState("low");
         const [updateNote, setUpdateNote] = React.useState(null);
         const [linkOpen, setLinkOpen] = React.useState(false);
         const [candidates, setCandidates] = React.useState(null);
@@ -1019,6 +1031,67 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             setRunResult({ check: id, task: taskId || null, ok: false, error: errorText(failure) });
           } finally {
             setRunning(null);
+          }
+        }
+
+        /* 0090: замок контракта — штатный task-hash.mjs --write. */
+        async function lockContract(taskId) {
+          if (!root || lockBusy) return;
+          setLockBusy(true);
+          setLockNote(null);
+          try {
+            const response = await fetch(BASE + "/api/task-hash", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ root: root, task: taskId, confirm: true }),
+            });
+            const data = await readJson(response);
+            setLockNote({
+              ok: data.ok === true,
+              text: data.ok
+                ? "Замок собран: criteria.lock записан, критерии заморожены."
+                : (data.error || "task-hash завершился с ошибкой"),
+              log: data.stdout || data.stderr || "",
+            });
+            if (data.ok === true) await load(root, true);
+          } catch (failure) {
+            setLockNote({ ok: false, text: errorText(failure), log: "" });
+          } finally {
+            setLockBusy(false);
+          }
+        }
+
+        /* 0090: новое задание — штатный new-task.mjs с проверенными аргументами. */
+        async function createTask() {
+          if (!root || newTaskBusy) return;
+          setNewTaskBusy(true);
+          setNewTaskNote(null);
+          try {
+            const response = await fetch(BASE + "/api/new-task", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({
+                root: root,
+                confirm: true,
+                id: newTaskId,
+                title: newTaskTitle,
+                risk: newTaskRisk,
+              }),
+            });
+            const data = await readJson(response);
+            if (data.ok === true) {
+              setNewTaskNote({ ok: true, text: "Задание " + newTaskId + " создано: " + (data.stdout || "").trim(), log: "" });
+              setNewTaskId("");
+              setNewTaskTitle("");
+              setNewTaskOpen(false);
+              await load(root, true);
+            } else {
+              setNewTaskNote({ ok: false, text: data.error || "new-task завершился с ошибкой", log: data.stdout || data.stderr || "" });
+            }
+          } catch (failure) {
+            setNewTaskNote({ ok: false, text: errorText(failure), log: "" });
+          } finally {
+            setNewTaskBusy(false);
           }
         }
 
@@ -2395,6 +2468,64 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             null,
             renderEngineCard(),
             renderEngine(),
+            /*
+             * 0090: новое задание с доски. Панель не создаёт файлы сама —
+             * вызывает new-task.mjs и показывает, что тот напечатал.
+             */
+            h(
+              "div",
+              { style: { margin: "8px 0" } },
+              h(
+                "button",
+                { type: "button", style: S.button, onClick: () => { setNewTaskOpen(!newTaskOpen); setNewTaskNote(null); } },
+                newTaskOpen ? "Скрыть форму" : "Новое задание",
+              ),
+              newTaskOpen
+                ? h(
+                    "div",
+                    { style: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center", marginTop: "8px" } },
+                    h("input", {
+                      type: "text",
+                      value: newTaskId,
+                      placeholder: "id, например 0112",
+                      style: { width: "110px" },
+                      onChange: (event) => setNewTaskId(event.target.value),
+                    }),
+                    h("input", {
+                      type: "text",
+                      value: newTaskTitle,
+                      placeholder: "тема задания",
+                      style: { width: "320px" },
+                      onChange: (event) => setNewTaskTitle(event.target.value),
+                    }),
+                    h(
+                      "select",
+                      { value: newTaskRisk, onChange: (event) => setNewTaskRisk(event.target.value) },
+                      h("option", { value: "low" }, "low"),
+                      h("option", { value: "medium" }, "medium"),
+                      h("option", { value: "high" }, "high"),
+                    ),
+                    h(
+                      "button",
+                      {
+                        type: "button",
+                        style: newTaskBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                        disabled: newTaskBusy,
+                        onClick: () => void createTask(),
+                      },
+                      newTaskBusy ? "Создаю…" : "Создать",
+                    ),
+                  )
+                : null,
+              newTaskNote
+                ? h(
+                    "div",
+                    { style: Object.assign({}, S.hint, newTaskNote.ok ? null : { color: T.danger }) },
+                    newTaskNote.text,
+                    newTaskNote.log ? h("div", { style: S.pre }, newTaskNote.log) : null,
+                  )
+                : null,
+            ),
             h(
               "div",
               { style: S.summary },
@@ -2793,7 +2924,30 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               { style: S.actions },
               runButton("lint", card.id),
               runButton("check-acceptance", card.id),
+              /*
+               * 0090: замок контракта. Кнопка есть всегда — отказ скрипта
+               * («контракт не закоммичен») печатается как есть, без догадок.
+               */
+              h(
+                "button",
+                {
+                  type: "button",
+                  style: lockBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: lockBusy,
+                  onClick: () => void lockContract(card.id),
+                  title: "node task-hash.mjs --write: записать criteria.lock (контракт должен быть закоммичен)",
+                },
+                lockBusy ? "Собираю замок…" : "Собрать замок",
+              ),
             ),
+            lockNote
+              ? h(
+                  "div",
+                  { style: Object.assign({}, S.hint, lockNote.ok ? null : { color: T.danger }) },
+                  lockNote.text,
+                  lockNote.log ? h("div", { style: S.pre }, lockNote.log) : null,
+                )
+              : null,
             h(
               "div",
               { style: S.cardHead },

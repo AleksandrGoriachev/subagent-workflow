@@ -29,6 +29,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   readRepoInfo,
@@ -58,6 +59,7 @@ import {
   writeEngineLink,
 } from './engine-root.js';
 import { prepareEngineSpec } from './release-source.mjs';
+import { taskHashArgs, newTaskArgs, taskDirOf } from './tasks-write.mjs';
 import { imperativeView } from './imperative.js';
 import {
   PLUGIN_PACKAGE_NAME,
@@ -489,7 +491,7 @@ export function createWebHandler(runtime) {
       const rel = pathname.slice(API_PREFIX.length) || '/';
       const postRoutes = rel === '/api/run' || rel === '/api/guard'
         || rel === '/api/deploy' || rel === '/api/update' || rel === '/api/engine-link'
-        || rel === '/api/plugin-update';
+        || rel === '/api/plugin-update' || rel === '/api/task-hash' || rel === '/api/new-task';
       if (postRoutes ? method !== 'POST' : method !== 'GET') {
         res.setHeader('Allow', postRoutes ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
@@ -662,6 +664,108 @@ export function createWebHandler(runtime) {
             scope: id === 'doctor' ? 'repo' : 'task',
             writeFree: true,
           })),
+        });
+        return;
+      }
+
+      /*
+       * 0090 (WC-4): первая запись из панели — замок контракта и новое задание.
+       * Панель не редактирует тексты: она запускает штатные скрипты движка с
+       * явными аргументами (валидация — tasks-write.mjs) и возвращает вывод.
+       */
+      if (rel === '/api/task-hash' || rel === '/api/new-task') {
+        const problem = writeRequestProblem(req);
+        if (problem) {
+          sendJson(res, problem.status, { error: problem.error });
+          return;
+        }
+        if (refuseExternalWriteBeforeBody(runtime, res, url.searchParams.get('root'))) return;
+        let body;
+        try {
+          body = await readJsonBody(req);
+        } catch (error) {
+          sendJson(res, 400, { error: error && error.message ? error.message : 'некорректное тело запроса' });
+          return;
+        }
+        if (refuseExternalWrite(runtime, res, body.root)) return;
+        const target = selectRoot(runtime, body.root);
+        if (!target.root) {
+          sendJson(res, 400, { error: target.error });
+          return;
+        }
+        if (!fs.existsSync(target.root)) {
+          sendJson(res, 404, { error: 'корень не найден: ' + target.root });
+          return;
+        }
+        const engine = resolveRuntimeEngine(runtime, target.root);
+        const info = readRepoInfo(engineReadRoot(target.root, engine));
+        /* Тот же корень, что у проверок: <engine>/docs/subagent-workflow/scripts. */
+        const scriptRel = rel === '/api/task-hash'
+          ? 'docs/subagent-workflow/scripts/task-hash.mjs'
+          : 'docs/subagent-workflow/scripts/new-task.mjs';
+        const script = path.join(engineReadRoot(target.root, engine), scriptRel.split('/').join(path.sep));
+        if (!fs.existsSync(script)) {
+          sendJson(res, 400, {
+            code: 'engine-script-missing',
+            error: 'в движке нет ' + scriptRel + ': обновите движок воркспейса',
+          });
+          return;
+        }
+        if (rel === '/api/task-hash') {
+          let dir;
+          try {
+            dir = taskDirOf(target.root, info.tasksDir, body.task);
+          } catch (error) {
+            sendJson(res, 400, { code: 'invalid-arguments', error: error && error.message ? error.message : String(error) });
+            return;
+          }
+          if (!fs.existsSync(dir)) {
+            sendJson(res, 404, { code: 'task-not-found', error: 'задание не найдено: ' + dir });
+            return;
+          }
+        }
+        let args;
+        try {
+          args = rel === '/api/task-hash'
+            ? taskHashArgs({
+              taskDir: taskDirOf(target.root, info.tasksDir, body.task),
+              root: target.root,
+              mode: body.relock === true ? 'relock' : 'write',
+              reason: body.reason,
+            })
+            : newTaskArgs({
+              id: body.id,
+              title: body.title,
+              risk: body.risk,
+              root: target.root,
+              executor: body.executor,
+              acceptor: body.acceptor,
+            });
+        } catch (error) {
+          sendJson(res, 400, { code: 'invalid-arguments', error: error && error.message ? error.message : String(error) });
+          return;
+        }
+        const run = spawnSync(process.execPath, [script, ...args], {
+          cwd: target.root,
+          encoding: 'utf8',
+          timeout: 120000,
+          maxBuffer: 8 * 1024 * 1024,
+          windowsHide: true,
+          env: process.env,
+        });
+        const out = String(run.stdout || '');
+        const err = String(run.stderr || '');
+        const ok = typeof run.status === 'number' && run.status === 0;
+        sendJson(res, ok ? 200 : 500, {
+          plugin: runtime.plugin,
+          root: target.root,
+          action: rel === '/api/task-hash' ? (body.relock === true ? 'relock' : 'write') : 'new-task',
+          task: rel === '/api/task-hash' ? String(body.task || '') : String(body.id || ''),
+          ok,
+          exitCode: typeof run.status === 'number' ? run.status : null,
+          stdout: out.slice(-4000),
+          stderr: err.slice(-4000),
+          ...(ok ? {} : { error: (err.slice(-1500) || out.slice(-1500) || 'скрипт завершился с ошибкой') }),
         });
         return;
       }
