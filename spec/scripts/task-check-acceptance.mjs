@@ -68,6 +68,16 @@ if (argv.help) {
 
 const errors = [];
 const warnings = [];
+/** Версия инструмента из замка: subagent-workflow/2.6.29 → [2,6,29]. */
+function toolVersionAtLeast(tool, need) {
+  const match = String(tool).match(/(\d+)\.(\d+)\.(\d+)/u);
+  if (!match) return false;
+  const actual = [Number(match[1]), Number(match[2]), Number(match[3])];
+  for (let index = 0; index < 3; index += 1) {
+    if (actual[index] !== need[index]) return actual[index] > need[index];
+  }
+  return true;
+}
 const note = (message) => errors.push(message);
 
 function run() {
@@ -122,8 +132,22 @@ function run() {
   }
   if (record.status !== 'accepted') note('статус записи: ' + record.status);
 
-  const entry = acceptors.find((item) => item.keyId === record.keyId);
-  if (!entry) {
+  /*
+   * 0094 (WC-48): legacy-запись без подписи. Формат с keyId/signature/acceptorRun
+   * появился позже, и такие записи — история: они не «недоверенные», а
+   * неподписанные. Раньше они давали до семи ERROR и валили партию проверок;
+   * теперь — один WARN с честной формулировкой, аудит остаётся неполным, но CI
+   * не спорит с историей. Проверяется признак, а не номер версии.
+   */
+  const signed = Boolean(record.keyId) || Boolean(record.signature);
+  if (!signed) {
+    warnings.push('legacy-запись v' + record.version + ' без подписи (нет keyId/signature): аудит неполон,'
+      + ' проверка ключа и подписи пропущена');
+  }
+  const entry = signed ? acceptors.find((item) => item.keyId === record.keyId) : null;
+  if (!signed) {
+    /* Ключ и подпись не проверяются: поля отсутствуют по формату, а не по ошибке. */
+  } else if (!entry) {
     note('ключ ' + record.keyId + ' не закреплён в acceptors.json');
   } else {
     if (entry.revokedAt && record.acceptedAt && new Date(record.acceptedAt) > new Date(entry.revokedAt)) {
@@ -194,9 +218,11 @@ function run() {
   }
 
   const runInfo = record.acceptorRun || {};
-  if (risk !== 'low') {
+  if (risk !== 'low' && signed) {
     if (runInfo.fresh !== true) note('для medium/high нужен свежий прогон приёмщика (acceptorRun.fresh=true)');
     if (!runInfo.nonce) note('нет nonce свежего прогона');
+  } else if (risk !== 'low' && !signed) {
+    warnings.push('legacy-запись без acceptorRun: свежесть прогона приёмщика не подтверждена (история)');
   }
   if (runInfo.verifySha256 && !/^[0-9a-f]{64}$/.test(runInfo.verifySha256)) note('verifySha256 некорректен');
 
@@ -273,7 +299,28 @@ function run() {
         } catch { /* нечитаемый TASK-META уже отмечен отдельной проверкой */ }
       }
     }
-    if (gap.level === 'error' && contractAttribution) note(gap.message);
+    /*
+     * 0095 (WC-53): строгость по версии инструмента. Если контракт заморожен
+     * движком 2.6.29+, он знал правило «узел или deviation» — запись без узла
+     * это ошибка, а не «старше правила». Записи, сделанные до 2.6.29, остаются
+     * предупреждением: их фиксирует docs/DEVIATIONS.md.
+     */
+    let lockTool = '';
+    {
+      /* taskRel может быть абсолютным (--task <dir>): тогда замок лежит рядом с ним. */
+      const lockPath = path.isAbsolute(taskRel) ? path.join(taskRel, 'criteria.lock') : path.join(repo, taskRel, 'criteria.lock');
+      let lockBuf = fileAt(repo, candidate, taskRel + '/criteria.lock');
+      if (!lockBuf) {
+        try { lockBuf = fs.readFileSync(lockPath); } catch { lockBuf = null; }
+      }
+      if (lockBuf) {
+        try { lockTool = String(JSON.parse(lockBuf.toString('utf8')).tool || ''); } catch { /* замок нечитаем — отдельная проверка */ }
+      }
+    }
+    const strictByTool = lockTool !== '' && toolVersionAtLeast(lockTool, [2, 6, 29]) && Number(record.version) >= 6;
+    if (gap.level === 'error' && (contractAttribution || strictByTool)) {
+      note(gap.message + (contractAttribution ? '' : ' (движок ' + lockTool + ' знал правило: узел или deviation обязательны)'));
+    }
     else {
       warnings.push(gap.message
         + (gap.level === 'error' ? ' (контракт не объявляет acceptorNode/deviation — запись старше правила, см. docs/DEVIATIONS.md)' : ''));

@@ -48,8 +48,14 @@ function c2() {
   const acceptAt = source.search(/appendGateRecord\([\s\S]{0,400}?kind:\s*'accept'/u);
   truthy(acceptAt > 0, 'в task-accept нет записи журнала с kind=accept');
   truthy(acceptAt > candidateAt, 'строка accept пишется до сборки кандидата (индекс ' + acceptAt + ' < ' + candidateAt + ') — при сбое сборки в журнале останется ложный accepted');
-  const signAt = source.indexOf('signAcceptance');
-  if (signAt > 0) truthy(acceptAt > signAt, 'строка accept пишется до подписи записи');
+  /*
+   * 0093 (WC-31): подпись записи — signRecord, а не signAcceptance. Прежняя
+   * строка искала несуществующее имя и молча пропускала проверку: guard не
+   * срабатывал никогда. Отсутствие вызова подписи — отказ, а не тихий пропуск.
+   */
+  const signAt = source.indexOf('signRecord(');
+  truthy(signAt > 0, 'в task-accept нет вызова signRecord — подпись записи не найдена');
+  truthy(acceptAt > signAt, 'строка accept пишется до подписи записи (индекс ' + acceptAt + ' < ' + signAt + ')');
   console.log('DISCIPLINE OK c2');
 }
 
