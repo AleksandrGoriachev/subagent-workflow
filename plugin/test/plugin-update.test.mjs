@@ -102,6 +102,46 @@ test('installPluginFiles: заменяет каталог и сохраняет 
   fs.rmSync(parent, { recursive: true, force: true });
 });
 
+test('installPluginFiles: посторонние файлы остаются на месте (WC-63)', () => {
+  const parent = tempDir('wf-plugin-keep-');
+  const root = path.join(parent, 'dsh-workflow-console');
+  writeInstalledPlugin(root, '0.9.0');
+  fs.mkdirSync(path.join(root, 'test'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'test', 'a.test.mjs'), 'test\n');
+  fs.writeFileSync(path.join(root, 'BACKLOG.md'), 'backlog\n');
+  const { files, version } = readPluginFiles(makeTgz({
+    'package/package.json': JSON.stringify({ name: 'dsh-workflow-console', version: '0.9.99' }),
+    'package/lib/index.js': 'export const marker = "new";\n',
+  }));
+  const report = installPluginFiles({ files, packageRoot: root, version, now: 2 });
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version, '0.9.99');
+  assert.ok(fs.existsSync(path.join(root, 'test', 'a.test.mjs')), 'тесты не стёрты');
+  assert.ok(fs.existsSync(path.join(root, 'BACKLOG.md')), 'бэклог не стёрт');
+  assert.deepEqual(report.leftovers.sort(), ['BACKLOG.md', 'test/a.test.mjs']);
+  fs.rmSync(parent, { recursive: true, force: true });
+});
+
+test('installPluginFiles: в git-рабочем дереве отказ, с force — установка (WC-63)', () => {
+  const parent = tempDir('wf-plugin-git-');
+  fs.mkdirSync(path.join(parent, '.git'), { recursive: true });
+  const root = path.join(parent, 'dsh-workflow-console');
+  writeInstalledPlugin(root, '0.9.0');
+  fs.writeFileSync(path.join(root, 'BACKLOG.md'), 'backlog\n');
+  const { files, version } = readPluginFiles(makeTgz({
+    'package/package.json': JSON.stringify({ name: 'dsh-workflow-console', version: '0.9.99' }),
+    'package/lib/index.js': 'export const marker = "new";\n',
+  }));
+  assert.throws(
+    () => installPluginFiles({ files, packageRoot: root, version, now: 3 }),
+    /рабочее дерево git/u,
+  );
+  assert.match(fs.readFileSync(path.join(root, 'package.json'), 'utf8'), /0\.9\.0/u, 'без force ничего не записано');
+  installPluginFiles({ files, packageRoot: root, version, now: 4, force: true });
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version, '0.9.99');
+  assert.ok(fs.existsSync(path.join(root, 'BACKLOG.md')), 'с force посторонние тоже целы');
+  fs.rmSync(parent, { recursive: true, force: true });
+});
+
 test('pluginInstallMode: каталог — dir, ссылка — linked, пусто — missing', () => {
   const parent = tempDir('wf-plugin-mode-');
   const real = path.join(parent, 'real');
@@ -171,6 +211,32 @@ test('POST /api/plugin-update: ставит пакет из локального
   assert.equal(ok.json.to, '0.9.99');
   assert.equal(ok.json.restartRequired, true);
   assert.match(fs.readFileSync(path.join(root, 'package.json'), 'utf8'), /0\.9\.99/u);
+  fs.rmSync(parent, { recursive: true, force: true });
+});
+
+test('POST /api/plugin-update: рабочее дерево git — 409, с force ставит и не стирает (WC-63)', async () => {
+  const parent = tempDir('wf-plugin-route-git-');
+  fs.mkdirSync(path.join(parent, '.git'), { recursive: true });
+  const root = path.join(parent, 'dsh-workflow-console');
+  writeInstalledPlugin(root, '0.9.0');
+  fs.writeFileSync(path.join(root, 'BACKLOG.md'), 'backlog\n');
+  const tgzPath = path.join(parent, 'dsh-workflow-console.tgz');
+  fs.writeFileSync(tgzPath, makeTgz({
+    'package/package.json': JSON.stringify({ name: 'dsh-workflow-console', version: '0.9.99' }),
+    'package/lib/index.js': 'export const marker = "new";\n',
+  }));
+  const runtime = createWorkflowRuntime(
+    { roots: [parent], pluginUpdateFile: tgzPath },
+    { pluginRoot: root },
+  );
+  const handler = createWebHandler(runtime);
+  const refused = await call(handler, '/workflow/api/plugin-update', { method: 'POST', body: { confirm: true } });
+  assert.equal(refused.status, 409);
+  assert.equal(refused.json.code, 'plugin-dev-install');
+  assert.match(refused.json.error, /рабочее дерево git/u);
+  const forced = await call(handler, '/workflow/api/plugin-update', { method: 'POST', body: { confirm: true, force: true } });
+  assert.equal(forced.status, 200);
+  assert.ok(fs.existsSync(path.join(root, 'BACKLOG.md')), 'бэклог не стёрт даже с force');
   fs.rmSync(parent, { recursive: true, force: true });
 });
 

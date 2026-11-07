@@ -152,36 +152,99 @@ export function stagePluginFiles(files, prefix = 'wf-plugin-') {
 }
 
 /**
- * Заменить каталог плагина скачанными файлами, сохранив прежний.
+ * Каталог внутри git-рабочего дерева? Возвращает корень дерева или null.
  *
- * @param {{files: Map<string, Buffer>, packageRoot: string, version: string, now?: number}} options
- * @returns {{backupDir: string, backupName: string}}
+ * Нужно, чтобы установка пакета не перезаписала исходники: плагин часто
+ * связан с репозиторием (junction), и Node разрешает путь через ссылку, из-за
+ * чего режим 'linked' не виден. Проверка по .git не зависит от того, как
+ * каталог попал сюда.
  */
-export function installPluginFiles({ files, packageRoot, version, now = Date.now() }) {
+export function insideGitWorktree(dir) {
+  let current = path.resolve(String(dir));
+  for (let depth = 0; depth < 12; depth += 1) {
+    if (fs.existsSync(path.join(current, '.git'))) return current;
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return null;
+}
+
+/**
+ * Записать файлы пакета в каталог плагина, сохранив прежнее состояние.
+ *
+ * 0089 (WC-63): каталог больше не заменяется целиком. Раньше он уезжал в
+ * .dsh-plugin-backup-*, а на его место вставал только пакет — то есть всё, чего
+ * нет в tarball (тесты, бэклог, локальные настройки), исчезало из дерева.
+ * Теперь: копия в бэкап, файлы пакета перезаписываются на месте, посторонние
+ * остаются. Установка в git-рабочее дерево запрещена без force.
+ *
+ * @param {{files: Map<string, Buffer>, packageRoot: string, version: string, now?: number, force?: boolean}} options
+ * @returns {{backupDir: string, backupName: string, written: number, leftovers: string[]}}
+ */
+export function installPluginFiles({ files, packageRoot, version, now = Date.now(), force = false }) {
   const target = path.resolve(String(packageRoot));
+  const worktree = insideGitWorktree(target);
+  if (worktree && force !== true) {
+    const error = new Error('каталог плагина — рабочее дерево git (' + worktree
+      + '): установка пакета перезаписала бы исходники. Обновите код в репозитории и перезапустите DSH');
+    error.code = 'plugin-dev-tree';
+    error.worktree = worktree;
+    throw error;
+  }
   const parent = path.dirname(target);
   const safeVersion = String(version || 'unknown').replace(/[^0-9a-z.\-]/giu, '_');
-  const backupName = '.dsh-plugin-backup-' + safeVersion + '-' + now;
-  const backupDir = path.join(parent, backupName);
-  fs.renameSync(target, backupDir);
+  let backupName = '.dsh-plugin-backup-' + safeVersion + '-' + now;
+  let backupDir = path.join(parent, backupName);
+  let attempt = 0;
+  while (fs.existsSync(backupDir)) {
+    attempt += 1;
+    backupName = '.dsh-plugin-backup-' + safeVersion + '-' + now + '-' + attempt;
+    backupDir = path.join(parent, backupName);
+  }
+  fs.mkdirSync(target, { recursive: true });
+  fs.cpSync(target, backupDir, { recursive: true });
+  const written = [];
+  const known = new Set();
   try {
-    fs.mkdirSync(target, { recursive: true });
     for (const [name, data] of files) {
       const parts = safeParts(name);
+      const rel = parts.join('/');
       const dest = path.join(target, ...parts);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, data);
+      written.push(rel);
+      known.add(rel);
     }
   } catch (error) {
-    try {
-      fs.rmSync(target, { recursive: true, force: true });
-      fs.renameSync(backupDir, target);
-    } catch {
-      /* откат не удался — исходный каталог остался под backupName */
+    for (const rel of written) {
+      const parts = rel.split('/');
+      try {
+        const source = path.join(backupDir, ...parts);
+        const dest = path.join(target, ...parts);
+        if (fs.existsSync(source)) fs.copyFileSync(source, dest);
+        else fs.rmSync(dest, { force: true });
+      } catch {
+        /* частичное восстановление: полный бэкап остался на диске */
+      }
     }
     throw error;
   }
-  return { backupDir, backupName };
+  const leftovers = [];
+  const walk = (rel) => {
+    const dir = rel === '' ? target : path.join(target, ...rel.split('/'));
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const child = rel === '' ? entry.name : rel + '/' + entry.name;
+      if (entry.isDirectory()) walk(child);
+      else if (!known.has(child)) leftovers.push(child);
+    }
+  };
+  try {
+    walk('');
+  } catch {
+    /* перечисление остатка — отчётность, не условие установки */
+  }
+  return { backupDir, backupName, written: written.length, leftovers };
 }
 
 async function download(fetchImpl, url, label) {

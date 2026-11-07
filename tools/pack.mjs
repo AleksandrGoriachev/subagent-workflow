@@ -24,6 +24,8 @@ const EXCLUDE_FILES = [/^.DS_Store$/, /\.log$/i, /\.key\.pem$/];
 function collect(dir, rel = '', out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (EXCLUDE_DIRS.has(entry.name)) continue;
+    /* 0089 (WC-63): бэкапы установки панели в пакет не уезжают. */
+    if (entry.isDirectory() && /^\.dsh-plugin-backup-/u.test(entry.name)) continue;
     const relPath = rel ? rel + '/' + entry.name : entry.name;
     if (entry.isDirectory()) collect(path.join(dir, entry.name), relPath, out);
     else if (!EXCLUDE_FILES.some((re) => re.test(entry.name))) out.push(relPath);

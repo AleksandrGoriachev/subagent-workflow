@@ -1033,8 +1033,19 @@ export function createWebHandler(runtime) {
             files: prepared.files,
             packageRoot,
             version: prepared.version,
+            force: body.force === true,
           });
         } catch (error) {
+          /* 0089 (WC-63): каталог плагина — рабочее дерево: пакетом не обновляем. */
+          if (error && error.code === 'plugin-dev-tree') {
+            sendJson(res, 409, {
+              ok: false,
+              code: 'plugin-dev-install',
+              error: error.message,
+              hint: 'обновите код в репозитории (git pull) и перезапустите DSH',
+            });
+            return;
+          }
           sendJson(res, 500, {
             ok: false,
             code: 'plugin-install-failed',
