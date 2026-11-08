@@ -44,9 +44,20 @@ export async function publishRelease(options = {}) {
   const fetchImpl = typeof options.fetchImpl === 'function' ? options.fetchImpl : globalThis.fetch;
   const auth = { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'workflow-release-publish' };
 
-  const lookup = await fetchImpl(API_BASE + '/repos/' + repo + '/releases/tags/' + encodeURIComponent(tag), { headers: auth });
-  const release = JSON.parse(Buffer.from(await lookup.arrayBuffer()).toString('utf8'));
-  if (!lookup.ok) throw new Error('релиз не найден: HTTP ' + lookup.status);
+  /*
+   * 0105: releases/tags/<tag> не отдаёт черновики (404) — а публикуем мы именно
+   * черновик. Ищем по списку релизов, где draft виден, как и приёмка.
+   */
+  async function findRelease() {
+    const lookup = await fetchImpl(API_BASE + '/repos/' + repo + '/releases/tags/' + encodeURIComponent(tag), { headers: auth });
+    if (lookup.ok) return JSON.parse(Buffer.from(await lookup.arrayBuffer()).toString('utf8'));
+    const list = await fetchImpl(API_BASE + '/repos/' + repo + '/releases?per_page=100', { headers: auth });
+    const items = JSON.parse(Buffer.from(await list.arrayBuffer()).toString('utf8'));
+    const found = (Array.isArray(items) ? items : []).find((item) => String(item && item.tag_name || '').replace(/^v/u, '') === String(tag).replace(/^v/u, ''));
+    if (!found) throw new Error('релиз не найден ни среди опубликованных, ни среди черновиков: ' + tag);
+    return found;
+  }
+  const release = await findRelease();
   if (release.draft !== true) return { ok: true, already: true, url: release.html_url || null };
 
   const patched = await fetchImpl(API_BASE + '/repos/' + repo + '/releases/' + release.id, {
