@@ -906,6 +906,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
          * обновления уже несёт initGit, без охоты за второй кнопкой.
          */
         const [updateInitGit, setUpdateInitGit] = React.useState(false);
+        /* 0102 (WC-65): проверка актуальности по требованию — сеть только по кнопке. */
+        const [releaseCheck, setReleaseCheck] = React.useState(null);
+        const [releaseCheckBusy, setReleaseCheckBusy] = React.useState(false);
         /*
          * 0090 (WC-4): первая запись из панели. Панель не пишет тексты — она
          * зовёт штатные task-hash.mjs / new-task.mjs и показывает их вывод.
@@ -1731,6 +1734,47 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           }
         }
 
+        /*
+         * 0102 (WC-65): «Проверить актуальность». Один запрос к API релиза;
+         * на сбое сети ответ всё равно 200 и несёт последнюю удачную пару —
+         * поэтому панель показывает «последняя удачная 18:40», а не «aborted».
+         */
+        async function runReleaseCheck() {
+          if (releaseCheckBusy) return;
+          setReleaseCheckBusy(true);
+          try {
+            const response = await fetch(BASE + "/api/release-check", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({}),
+            });
+            const data = await readJson(response);
+            setReleaseCheck(data);
+          } catch (failure) {
+            setReleaseCheck({ ok: false, error: errorText(failure), latest: null, cached: false });
+          } finally {
+            setReleaseCheckBusy(false);
+          }
+        }
+
+        function releaseCheckText() {
+          if (!releaseCheck) {
+            const cached = status && status.latestRelease ? status.latestRelease : null;
+            return cached
+              ? "последний релиз: движок " + fmt(cached.engine) + ", панель " + fmt(cached.plugin) + " (проверено " + fmt(cached.at) + ")"
+              : null;
+          }
+          if (releaseCheck.ok === true && releaseCheck.latest) {
+            return "последний релиз: движок " + fmt(releaseCheck.latest.engine)
+              + ", панель " + fmt(releaseCheck.latest.plugin)
+              + " (проверено " + fmt(releaseCheck.checkedAt) + ")";
+          }
+          const tail = releaseCheck.latest
+            ? " · последняя удачная " + fmt(releaseCheck.checkedAt) + ": движок " + fmt(releaseCheck.latest.engine) + ", панель " + fmt(releaseCheck.latest.plugin)
+            : "";
+          return fmt(releaseCheck.error || "проверка не удалась") + tail;
+        }
+
         /* 0067: действие «Обновить из релиза» с коротким объяснением источника версии. */
         function renderReleaseAction() {
           return h(
@@ -2246,6 +2290,25 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   + (panelOlder()
                     ? " · сборка панели старше"
                     : engineAvailable() ? " · доступна v" + engineAvailable() : ""),
+            ),
+            /*
+             * 0102 (WC-65): актуальность относительно релиза — по кнопке.
+             * Строка та же, что в дайджесте обмена: сначала факт, потом команда.
+             */
+            h(
+              "span",
+              { style: S.subtitle, title: "Один запрос к API релиза; на сбое сети показывается последняя удачная проверка" },
+              releaseCheckText() ? " · " + releaseCheckText() : "",
+              h(
+                "button",
+                {
+                  type: "button",
+                  style: Object.assign({}, S.button, { marginLeft: "8px", padding: "1px 8px" }),
+                  disabled: releaseCheckBusy,
+                  onClick: () => void runReleaseCheck(),
+                },
+                releaseCheckBusy ? "Проверяю…" : "Проверить актуальность",
+              ),
             ),
             h("span", { style: S.spacer }),
             rootOptions.length > 1

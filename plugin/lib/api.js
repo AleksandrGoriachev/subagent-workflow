@@ -59,6 +59,7 @@ import {
   writeEngineLink,
 } from './engine-root.js';
 import { prepareEngineSpec } from './release-source.mjs';
+import { releaseCheckPayload, readCachedRelease } from './release-check.mjs';
 import { taskHashArgs, newTaskArgs, taskDirOf } from './tasks-write.mjs';
 import { imperativeView } from './imperative.js';
 import {
@@ -491,7 +492,8 @@ export function createWebHandler(runtime) {
       const rel = pathname.slice(API_PREFIX.length) || '/';
       const postRoutes = rel === '/api/run' || rel === '/api/guard'
         || rel === '/api/deploy' || rel === '/api/update' || rel === '/api/engine-link'
-        || rel === '/api/plugin-update' || rel === '/api/task-hash' || rel === '/api/new-task';
+        || rel === '/api/plugin-update' || rel === '/api/task-hash' || rel === '/api/new-task'
+        || rel === '/api/release-check';
       if (postRoutes ? method !== 'POST' : method !== 'GET') {
         res.setHeader('Allow', postRoutes ? 'POST' : 'GET');
         sendJson(res, 405, { error: 'Method ' + method + ' is not allowed.' });
@@ -516,6 +518,8 @@ export function createWebHandler(runtime) {
             root: null,
             rootConfigured: false,
             availableVersion: availableVersion(),
+            /* 0102: последняя удачная проверка релиза из кэша, без сети на загрузке. */
+            latestRelease: readCachedRelease(),
             engine: engineView(engine),
             repo: null,
             error: selection.error,
@@ -529,6 +533,7 @@ export function createWebHandler(runtime) {
             root: selection.root,
             rootConfigured,
             availableVersion: availableVersion(),
+            latestRelease: readCachedRelease(),
             engine: engineView(engine),
             repo: null,
             error: 'корень не найден: ' + selection.root,
@@ -543,6 +548,7 @@ export function createWebHandler(runtime) {
           root: selection.root,
           rootConfigured,
           availableVersion: availableVersion(),
+          latestRelease: readCachedRelease(),
           /* 2.6.9: движок в воркспейсе, снаружи (карта) или его нет. */
           engine: engineView(engine),
           /* Проекты внутри пространства, где workflow развёрнут. */
@@ -550,6 +556,28 @@ export function createWebHandler(runtime) {
           repo: repoInfoPayload(info),
           error: null,
         });
+        return;
+      }
+
+      if (rel === '/api/release-check') {
+        /*
+         * 0102 (WC-65): проверка актуальности по требованию, не на загрузке
+         * страницы. Ответ всегда 200: сеть упала — это состояние проверки, а не
+         * ошибка маршрута, и панель обязана показать последнюю удачную пару.
+         * Тело необязательно: панель шлёт пустой объект.
+         */
+        let checkBody = {};
+        try {
+          checkBody = await readJsonBody(req);
+        } catch {
+          checkBody = {};
+        }
+        const repoOverride = checkBody && typeof checkBody.repo === 'string' ? checkBody.repo.trim() : '';
+        const payload = await releaseCheckPayload({
+          repo: repoOverride !== '' ? repoOverride : undefined,
+          fetchImpl: typeof runtime.fetchReleaseApi === 'function' ? runtime.fetchReleaseApi : undefined,
+        });
+        sendJson(res, 200, payload);
         return;
       }
 

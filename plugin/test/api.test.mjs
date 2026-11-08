@@ -856,3 +856,59 @@ test('POST /workflow/api/update target engine-repo обновляет репоз
     try { fsMod.rmSync(dir, { recursive: true, force: true, maxRetries: 50, retryDelay: 200 }); } catch {}
   }
 });
+
+test('POST /workflow/api/release-check: проверка по кнопке и кэш в /api/status (0102)', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-rc-'));
+  process.env.WF_RELEASE_CACHE = path.join(dir, 'latest-release.json');
+  const runtime = createWorkflowRuntime({ roots: [fixture.repo] });
+  runtime.fetchReleaseApi = async () => ({
+    ok: true,
+    status: 200,
+    arrayBuffer: async () => Buffer.from(JSON.stringify({
+      tag_name: 'v2.6.52',
+      assets: [{ name: 'dsh-workflow-console-0.9.24.tgz' }],
+    }), 'utf8'),
+  });
+  const handler = createWebHandler(runtime);
+  try {
+    const response = await call(handler, '/workflow/api/release-check', { method: 'POST', body: {} });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.ok, true);
+    assert.equal(response.json.latest.engine, '2.6.52');
+    assert.equal(response.json.latest.plugin, '0.9.24');
+    const status = await call(handler, '/workflow/api/status');
+    assert.equal(status.json.latestRelease.engine, '2.6.52');
+    assert.equal(status.json.latestRelease.plugin, '0.9.24');
+  } finally {
+    delete process.env.WF_RELEASE_CACHE;
+    fs.rmSync(dir, { recursive: true, force: true });
+    fixture.cleanup();
+  }
+});
+
+test('POST /workflow/api/release-check: сбой сети — 200, причина и последняя удачная пара', async () => {
+  const fixture = makeRepo({ stage: 'remarks' });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-rc-'));
+  process.env.WF_RELEASE_CACHE = path.join(dir, 'latest-release.json');
+  fs.writeFileSync(process.env.WF_RELEASE_CACHE, JSON.stringify({ at: '2026-11-08T10:00:00.000Z', plugin: '0.9.23', engine: '2.6.50' }));
+  const runtime = createWorkflowRuntime({ roots: [fixture.repo] });
+  runtime.fetchReleaseApi = async () => {
+    const error = new Error('This operation was aborted');
+    error.name = 'TimeoutError';
+    throw error;
+  };
+  const handler = createWebHandler(runtime);
+  try {
+    const response = await call(handler, '/workflow/api/release-check', { method: 'POST', body: {} });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.ok, false);
+    assert.equal(response.json.latest.engine, '2.6.50');
+    assert.match(String(response.json.error), /не удалось прочитать релиз/u);
+    assert.match(String(response.json.fix), /Последняя удачная проверка/u);
+  } finally {
+    delete process.env.WF_RELEASE_CACHE;
+    fs.rmSync(dir, { recursive: true, force: true });
+    fixture.cleanup();
+  }
+});
