@@ -27,6 +27,8 @@ export async function createDraft(options = {}) {
   if (!token) throw new Error('нет токена GitHub: GITHUB_TOKEN или git credential fill');
   const fetchImpl = typeof options.fetchImpl === 'function' ? options.fetchImpl : globalThis.fetch;
   const assetsDir = options.assetsDir || path.join(import.meta.dirname, '..', 'dist');
+  const panelVersion = String(options.panelVersion || '')
+    || JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'plugin', 'package.json'), 'utf8')).version;
   const auth = { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'workflow-release-draft' };
 
   const payload = {
@@ -44,13 +46,17 @@ export async function createDraft(options = {}) {
   const release = JSON.parse(Buffer.from(await created.arrayBuffer()).toString('utf8'));
   if (!created.ok) throw new Error('черновик не создан: HTTP ' + created.status + ' ' + (release.message || ''));
 
-  const files = fs.existsSync(assetsDir)
-    ? fs.readdirSync(assetsDir)
-      .filter((name) => /\.(tgz|tar\.gz|zip|sha256)$/u.test(name))
-      .map((name) => path.join(assetsDir, name))
-      .sort()
-    : [];
-  if (files.length === 0) throw new Error('в ' + assetsDir + ' нет ассетов для загрузки');
+  /*
+   * 0105: в dist лежат сборки всех прошлых версий — грузим только то, что
+   * относится к этому тегу и версии панели. Иначе первый же прогон залил в
+   * черновик 240 старых файлов (поймано на себе 08.11).
+   */
+  const { expectedAssets } = await import('./release-smoke.mjs');
+  const files = expectedAssets(tag, panelVersion).map((name) => path.join(assetsDir, name));
+  const missing = files.filter((file) => !fs.existsSync(file));
+  if (missing.length > 0) {
+    throw new Error('нет локальных ассетов: ' + missing.map((file) => path.basename(file)).join(', '));
+  }
 
   const uploaded = [];
   for (const file of files) {

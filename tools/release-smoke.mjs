@@ -65,9 +65,20 @@ function assetsByName(release) {
   const list = Array.isArray(release && release.assets) ? release.assets : [];
   for (const asset of list) {
     if (!asset || typeof asset.name !== 'string') continue;
-    map.set(asset.name, asset.browser_download_url || asset.url || '');
+    /* Ассеты черновика живут только за API-ссылкой: web-ссылка «untagged-…» без
+       подписи даёт 404. Храним обе и выбираем по наличию токена. */
+    map.set(asset.name, {
+      api: typeof asset.url === 'string' ? asset.url : '',
+      web: typeof asset.browser_download_url === 'string' ? asset.browser_download_url : '',
+    });
   }
   return map;
+}
+
+function assetUrl(entry, token) {
+  if (!entry) return '';
+  if (token && entry.api) return entry.api;
+  return entry.web || entry.api;
 }
 
 /** Ожидаемый набор имён ассетов для тега и версии панели. */
@@ -106,7 +117,20 @@ export async function smokeRelease(options = {}) {
   const assetsDir = options.assetsDir || path.join(import.meta.dirname, '..', 'dist');
 
   const token = typeof options.token === 'string' && options.token.trim() !== '' ? options.token.trim() : '';
-  const release = await getJson(fetchImpl, apiBase + '/repos/' + repo + '/releases/tags/' + encodeURIComponent(tag), token);
+  /*
+   * 0105: releases/tags/<tag> не отдаёт черновики (GitHub: 404). Для приёмки
+   * ДО публикации ищем по списку релизов, где draft виден — с токеном.
+   */
+  let release;
+  try {
+    release = await getJson(fetchImpl, apiBase + '/repos/' + repo + '/releases/tags/' + encodeURIComponent(tag), token);
+  } catch (error) {
+    if (!token || !/HTTP 404/u.test(String(error && error.message))) throw error;
+    const list = await getJson(fetchImpl, apiBase + '/repos/' + repo + '/releases?per_page=100', token);
+    const found = (Array.isArray(list) ? list : []).find((item) => String(item && item.tag_name || '').replace(/^v/u, '') === String(tag).replace(/^v/u, ''));
+    if (!found) throw new Error('релиз ' + tag + ' не найден ни среди опубликованных, ни среди черновиков');
+    release = found;
+  }
   const problems = [];
   const expectedTag = String(tag).replace(/^v/u, '');
   if (String(release.tag_name || '').replace(/^v/u, '') !== expectedTag) {
@@ -122,10 +146,10 @@ export async function smokeRelease(options = {}) {
   /* Панель: байты против .sha256 из релиза и против локальной сборки. */
   const panelName = 'dsh-workflow-console-' + panelVersion + '.tgz';
   if (assets.has(panelName) && assets.has(panelName + '.sha256')) {
-    const bytes = await getBytes(fetchImpl, assets.get(panelName), token);
+    const bytes = await getBytes(fetchImpl, assetUrl(assets.get(panelName), token), token);
     const hash = sha256(bytes);
     hashes[panelName] = hash;
-    const declared = shaFromFile((await getBytes(fetchImpl, assets.get(panelName + '.sha256'), token)).toString('utf8'));
+    const declared = shaFromFile((await getBytes(fetchImpl, assetUrl(assets.get(panelName + '.sha256'), token), token)).toString('utf8'));
     if (!declared) problems.push('файл ' + panelName + '.sha256 без хеша');
     else if (declared !== hash) problems.push('sha256 ' + panelName + ' не совпал с .sha256 релиза');
     const localFile = path.join(assetsDir, panelName);
@@ -137,10 +161,10 @@ export async function smokeRelease(options = {}) {
   /* Движок: байты, .sha256 и VERSION внутри архива. */
   const engineName = 'subagent-workflow-' + expectedTag + '.tar.gz';
   if (assets.has(engineName) && assets.has(engineName + '.sha256')) {
-    const bytes = await getBytes(fetchImpl, assets.get(engineName), token);
+    const bytes = await getBytes(fetchImpl, assetUrl(assets.get(engineName), token), token);
     const hash = sha256(bytes);
     hashes[engineName] = hash;
-    const declared = shaFromFile((await getBytes(fetchImpl, assets.get(engineName + '.sha256'), token)).toString('utf8'));
+    const declared = shaFromFile((await getBytes(fetchImpl, assetUrl(assets.get(engineName + '.sha256'), token), token)).toString('utf8'));
     if (!declared) problems.push('файл ' + engineName + '.sha256 без хеша');
     else if (declared !== hash) problems.push('sha256 ' + engineName + ' не совпал с .sha256 релиза');
     const localFile = path.join(assetsDir, engineName);
