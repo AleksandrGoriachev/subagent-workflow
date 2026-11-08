@@ -61,7 +61,7 @@
 | WC-38 | accepted | high | Обновление DSH до 0.2.2-rc.1 и рантайм-проверка (2026-11-04): статическая совместимость проверена — `COMPAT-DSH-0.2.2-rc1.md`; при установке применить 3 правки профиля (`tool-subagent` → `modelSelection`+`modelDiscovery`, `fs-observation-policy` → `disabled: false`, `tool-executor-ptc` если `run_code` пропадёт), затем чек-лист из §5 отчёта, включая `actor.attestedBy=env` и `DSH_SESSION_ID` |
 | WC-29 | done | medium | Границы до красного (0052): правило в шаблоне §Среда «сверь файлы с allowedPaths до первой правки, иначе стоп» |
 | WC-23 | done | low | `external-engine.mjs c2` сужен (0048): 121 → 78 с, живых спавнов полного набора в `spec/checks` не осталось |
-| WC-25 | proposed | medium | `actor.model` у субагентов остаётся `unknown`: харнесс не передаёт `DSH_MODEL` спавну — просить/прокинуть в env |
+| WC-25 | done | medium | **Модель приёмщика по факту харнесса (0100, 2.6.51).** DSH_MODEL инструментам не передаётся (проверено: пусто), но харнесс сам пишет проекцию сессии: record.rows.modelSelection.val.lastUsed = {provider, model, reasoningEffort}. Порядок источников: запись запуска -> проекция сессии -> env -> actor.model -> unknown; в запись добавлено поле actor.modelSource, в вывод — строка actor model. Модуль lib/session-model.mjs (+ sessionCwdFact), проверка spec/checks/model-source.mjs c1-c4; на живой сессии факт читается (opencode-go/deepseek-v4.1-flash) |
 
 ## WC-5. Показ effect и регресса (workflow 2.3–2.4)
 

@@ -19,6 +19,7 @@ import {
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
+import { sessionModelFact } from './lib/session-model.mjs';
 import {
   findAcceptorLaunch,
   findLaunchByRun,
@@ -353,10 +354,23 @@ try {
    * 0084: модель приёмщика — из записи запуска (свидетельство раннера), а не из
    * env ребёнка; env остаётся резервом для легаси-проектов без structure.
    */
+  /*
+   * 0100 (WC-25): модель приёмщика — по факту харнесса, а не по env. Порядок:
+   * запись запуска (план того, кто запустил) → проекция сессии (lastUsed, пишет
+   * харнесс) → env → actor.model → unknown. Источник пишется в запись, чтобы
+   * «unknown» больше не означал «никто не знает» без объяснения.
+   */
   const launchModel = launchRecord && typeof launchRecord.model === 'string' ? launchRecord.model.trim() : '';
+  const sessionModel = launchModel === '' ? sessionModelFact(actor.session) : null;
   const recordActorModel = launchModel !== ''
     ? launchModel
-    : (factualActorModel !== 'unknown' ? factualActorModel : actor.model);
+    : (sessionModel && sessionModel.model
+      ? sessionModel.model
+      : (factualActorModel !== 'unknown' ? factualActorModel : actor.model));
+  const recordModelSource = launchModel !== ''
+    ? 'launch-record'
+    : (sessionModel && sessionModel.model ? 'session-projcache'
+      : (factualActorModel !== 'unknown' ? 'env' : (actor.model !== 'unknown' ? 'actor' : 'unknown')));
 
   /*
    * Решения (2.1.0). Приёмка не спорит с семантикой, но фиксирует её состояние:
@@ -577,6 +591,8 @@ try {
       kind: actor.kind,
       session: actor.session,
       model: recordActorModel,
+      /* 0100: откуда модель — launch-record | session-projcache | env | actor | unknown. */
+      modelSource: recordModelSource,
       family: familyOf(config, recordActorModel),
       host: actor.host,
       keyId,
@@ -724,6 +740,7 @@ try {
     console.log('  fresh run     ' + (acceptorRun.fresh ? 'да (' + acceptorRun.nonce + ')' : 'нет (reused)'));
     console.log('  decisions     ' + decisionSummary.count + ' (assumed: ' + (decisionSummary.assumed.join(', ') || 'нет') + ')');
     console.log('  attack        ' + (attackCheck ? attackCheck.summary.total + ' находок, blocking ' + attackCheck.summary.blocking + ', без решения ' + attackCheck.summary.unresolved : 'нет'));
+    console.log('  actor model   ' + recordActorModel + ' (' + recordModelSource + ')');
     console.log('  model level   ' + actorModelLevel
       + (actorModelLevel === 'unknown'
         ? ' (независимость: семейства моделей не объявлены в config.models; сверка приёмщика — строка acceptor)'
