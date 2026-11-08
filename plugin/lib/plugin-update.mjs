@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { extractTarGz, sha256Hex } from './archive.mjs';
+import { fetchWithRetry } from './fetch-retry.mjs';
 
 /** Имя стабильного ассета релиза: его же указывает workflowInstallSpec. */
 export const PLUGIN_ASSET_NAME = 'dsh-workflow-console.tgz';
@@ -247,16 +248,14 @@ export function installPluginFiles({ files, packageRoot, version, now = Date.now
   return { backupDir, backupName, written: written.length, leftovers };
 }
 
+/* 0101: повтор и таймаут — см. fetch-retry.mjs; причина называется словами. */
 async function download(fetchImpl, url, label) {
-  let response;
-  try {
-    response = await fetchImpl(url);
-  } catch (error) {
+  const response = await fetchWithRetry(fetchImpl, url, {
+    label,
+    headers: { Accept: 'application/octet-stream', 'User-Agent': 'dsh-workflow-console' },
+  }).catch((error) => {
     throw new Error('не удалось скачать ' + label + ': ' + textOf(error));
-  }
-  if (!response || response.ok !== true) {
-    throw new Error('не удалось скачать ' + label + ': HTTP ' + (response ? response.status : '?') + ' ' + String(url));
-  }
+  });
   return Buffer.from(await response.arrayBuffer());
 }
 

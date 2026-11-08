@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { extractTarGz, sha256Hex } from './archive.mjs';
+import { fetchWithRetry } from './fetch-retry.mjs';
 
 export const DEFAULT_API_BASE = 'https://api.github.com';
 export const DEFAULT_REPO = 'AleksandrGoriachev/subagent-workflow';
@@ -68,16 +69,20 @@ function expectedSha(text) {
   return token.toLowerCase();
 }
 
+/*
+ * 0101: загрузка повторяется и называет причину. Один 503/504 или оборванное
+ * соединение не должны выглядеть как «обновления нет» — 08.11 панель падала
+ * именно так, хотя через минуту тот же запрос проходил.
+ */
 async function download(fetchImpl, url, label) {
   let response;
   try {
-    response = await fetchImpl(url);
+    response = await fetchWithRetry(fetchImpl, url, {
+      label,
+      headers: { Accept: 'application/octet-stream', 'User-Agent': 'dsh-workflow-console' },
+    });
   } catch (error) {
     throw new Error('не удалось скачать ' + label + ': ' + textOf(error));
-  }
-  if (!response || response.ok !== true) {
-    throw new Error('не удалось скачать ' + label + ': HTTP ' + (response ? response.status : '?')
-      + ' ' + String(url));
   }
   return Buffer.from(await response.arrayBuffer());
 }

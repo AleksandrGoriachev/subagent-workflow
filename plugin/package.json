@@ -1,6 +1,6 @@
 {
   "name": "dsh-workflow-console",
-  "version": "0.9.23",
+  "version": "0.9.24",
   "private": true,
   "description": "Read-only workflow console for subagent-workflow repositories in DeepSeek Harness",
   "license": "MIT",
