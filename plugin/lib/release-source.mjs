@@ -75,11 +75,19 @@ function expectedSha(text) {
  * именно так, хотя через минуту тот же запрос проходил.
  */
 async function download(fetchImpl, url, label) {
+  /*
+   * 0103: Accept зависит от адреса. API отдаёт JSON и на
+   * application/octet-stream отвечает 415 — эту ошибку поймал первый же прогон
+   * 2.6.53 на живом обновлении («HTTP 415 … описание последнего релиза»).
+   */
+  const accept = /^https:\/\/api\.github\.com\//u.test(String(url))
+    ? 'application/vnd.github+json'
+    : 'application/octet-stream';
   let response;
   try {
     response = await fetchWithRetry(fetchImpl, url, {
       label,
-      headers: { Accept: 'application/octet-stream', 'User-Agent': 'dsh-workflow-console' },
+      headers: { Accept: accept, 'User-Agent': 'dsh-workflow-console' },
     });
   } catch (error) {
     throw new Error('не удалось скачать ' + label + ': ' + textOf(error));

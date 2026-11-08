@@ -250,9 +250,13 @@ export function installPluginFiles({ files, packageRoot, version, now = Date.now
 
 /* 0101: повтор и таймаут — см. fetch-retry.mjs; причина называется словами. */
 async function download(fetchImpl, url, label) {
+  /* 0103: JSON-адреса GitHub не принимают Accept: application/octet-stream (415). */
+  const accept = /^https:\/\/api\.github\.com\//u.test(String(url))
+    ? 'application/vnd.github+json'
+    : 'application/octet-stream';
   const response = await fetchWithRetry(fetchImpl, url, {
     label,
-    headers: { Accept: 'application/octet-stream', 'User-Agent': 'dsh-workflow-console' },
+    headers: { Accept: accept, 'User-Agent': 'dsh-workflow-console' },
   }).catch((error) => {
     throw new Error('не удалось скачать ' + label + ': ' + textOf(error));
   });
