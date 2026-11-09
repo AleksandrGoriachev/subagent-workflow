@@ -60,6 +60,7 @@ import {
 } from './engine-root.js';
 import { prepareEngineSpec } from './release-source.mjs';
 import { releaseCheckPayload, readCachedRelease } from './release-check.mjs';
+import { anchorsStatus, approveAnchors } from './anchors.js';
 import { taskHashArgs, newTaskArgs, taskDirOf } from './tasks-write.mjs';
 import { imperativeView } from './imperative.js';
 import {
@@ -490,7 +491,7 @@ export function createWebHandler(runtime) {
         return;
       }
       const rel = pathname.slice(API_PREFIX.length) || '/';
-      const postRoutes = rel === '/api/run' || rel === '/api/guard'
+      const postRoutes = rel === '/api/run' || rel === '/api/guard' || rel === '/api/anchors/approve'
         || rel === '/api/deploy' || rel === '/api/update' || rel === '/api/engine-link'
         || rel === '/api/plugin-update' || rel === '/api/task-hash' || rel === '/api/new-task'
         || rel === '/api/release-check';
@@ -556,6 +557,21 @@ export function createWebHandler(runtime) {
           repo: repoInfoPayload(info),
           error: null,
         });
+        return;
+      }
+
+      /* 0111 (WC-77): утверждение якорей из панели — человек нажимает, ключ лежит вне репозитория. */
+      if (rel === '/api/anchors') {
+        sendJson(res, 200, anchorsStatus(selection.root, loadConfig(selection.root)));
+        return;
+      }
+
+      if (rel === '/api/anchors/approve') {
+        try {
+          sendJson(res, 200, approveAnchors(selection.root, loadConfig(selection.root)));
+        } catch (error) {
+          sendJson(res, 200, { ok: false, problems: [error && error.message ? error.message : String(error)] });
+        }
         return;
       }
 

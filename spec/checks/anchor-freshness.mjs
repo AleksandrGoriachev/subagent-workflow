@@ -163,11 +163,25 @@ export function loadRepo(root) {
   } catch {
     approval = null;
   }
+  /*
+   * Якоря живут в репозитории движка, а ключи приёмки — в развёрнутом
+   * пространстве. Ищем по известным местам; WF_ACCEPTORS перекрывает поиск.
+   */
+  const candidates = [
+    process.env.WF_ACCEPTORS,
+    path.join(repo, 'docs', 'subagent-workflow', 'acceptors.json'),
+    path.join(path.dirname(repo), 'docs', 'subagent-workflow', 'acceptors.json'),
+    path.join(repo, 'docs', 'acceptors.json'),
+  ].filter(Boolean);
   let acceptors = null;
-  try {
-    acceptors = loadAcceptors(path.join(repo, 'docs', 'subagent-workflow', 'acceptors.json'));
-  } catch {
-    acceptors = null;
+  for (const candidate of candidates) {
+    try {
+      if (!fs.existsSync(candidate)) continue;
+      acceptors = loadAcceptors(candidate);
+      break;
+    } catch {
+      acceptors = null;
+    }
   }
   return { repo, anchors, approval, acceptors, sha, approvalHash: approval && approval.hash ? String(approval.hash) : null, tags: releaseTags(repo) };
 }

@@ -7,6 +7,14 @@
       "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADtWnWP6StEW0+hTUr/qG8ofTCr48nVTs66mdYlViUmc=\n-----END PUBLIC KEY-----\n",
       "createdAt": "2026-10-27T20:53:41.224Z",
       "fingerprint": "d8b2d1bad69e228a"
+    },
+    {
+      "keyId": "human-user",
+      "kind": "human",
+      "owner": "пользователь",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAl7PuyJGSfUPwr8fKnz9Y7wX2Y4ANsc+oF4tVc1fvDms=\n-----END PUBLIC KEY-----\n",
+      "createdAt": "2026-11-09T12:08:27.163Z",
+      "fingerprint": "556312a6aeef0ad5"
     }
   ]
 }

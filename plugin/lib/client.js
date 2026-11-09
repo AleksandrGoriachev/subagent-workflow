@@ -909,6 +909,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         /* 0102 (WC-65): проверка актуальности по требованию — сеть только по кнопке. */
         const [releaseCheck, setReleaseCheck] = React.useState(null);
         const [releaseCheckBusy, setReleaseCheckBusy] = React.useState(false);
+        /* 0111 (WC-77): утверждение якорей — действие человека из панели, не из PowerShell. */
+        const [anchors, setAnchors] = React.useState(null);
+        const [anchorsBusy, setAnchorsBusy] = React.useState(false);
         /*
          * 0090 (WC-4): первая запись из панели. Панель не пишет тексты — она
          * зовёт штатные task-hash.mjs / new-task.mjs и показывает их вывод.
@@ -989,6 +992,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
 
         React.useEffect(() => {
           void load(null);
+          void loadAnchors();
           // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
 
@@ -1739,6 +1743,67 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
          * на сбое сети ответ всё равно 200 и несёт последнюю удачную пару —
          * поэтому панель показывает «последняя удачная 18:40», а не «aborted».
          */
+        async function loadAnchors() {
+          try {
+            const response = await fetch(BASE + "/api/anchors", { headers: { Accept: "application/json" } });
+            setAnchors(await readJson(response));
+          } catch (failure) {
+            setAnchors({ ok: false, approved: false, problems: [errorText(failure)] });
+          }
+        }
+
+        async function approveAnchorsNow() {
+          if (anchorsBusy) return;
+          setAnchorsBusy(true);
+          try {
+            const response = await fetch(BASE + "/api/anchors/approve", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Accept: "application/json" },
+              body: JSON.stringify({ confirm: true }),
+            });
+            setAnchors(await readJson(response));
+          } catch (failure) {
+            setAnchors({ ok: false, approved: false, problems: [errorText(failure)] });
+          } finally {
+            setAnchorsBusy(false);
+          }
+        }
+
+        function anchorsText() {
+          if (!anchors) return "якоря: состояние не загружено";
+          if (anchors.approved === true) {
+            return "якоря утверждены ключом " + fmt(anchors.keyId) + " · " + fmt(anchors.at) + " · хеш " + String(anchors.hash || "").slice(0, 12) + "…";
+          }
+          const reason = anchors.problems && anchors.problems.length ? anchors.problems[0] : "не утверждены";
+          return "якоря не утверждены: " + reason;
+        }
+
+        function renderAnchorsCard() {
+          return h(
+            "div",
+            { style: S.card },
+            h("div", { style: S.cardTitle }, "Якоря"),
+            h("div", { style: S.note }, anchorsText()),
+            h(
+              "div",
+              { style: Object.assign({}, S.actions, { marginTop: "6px" }) },
+              h(
+                "button",
+                {
+                  type: "button",
+                  style: anchorsBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: anchorsBusy,
+                  onClick: () => void (anchors && anchors.approved === true ? loadAnchors() : approveAnchorsNow()),
+                  title: anchors && anchors.approved === true
+                    ? "Обновить состояние якорей"
+                    : "Подписать утверждение человеческим ключом human-user",
+                },
+                anchorsBusy ? "Подписываю…" : (anchors && anchors.approved === true ? "Обновить" : "Утвердить якоря"),
+              ),
+            ),
+          );
+        }
+
         async function runReleaseCheck() {
           if (releaseCheckBusy) return;
           setReleaseCheckBusy(true);
@@ -2105,6 +2170,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   "Версия совпадает со сборкой панели — обновление не требуется.",
                 )
               : null,
+            /* 0111 (WC-77): утверждение якорей — карточка панели, ключ human остаётся вне репозитория. */
+            renderAnchorsCard(),
             /* 0067: сборка не новее движка — свежий движок можно взять из релиза GitHub. */
             upToDate || older ? renderReleaseAction() : null,
             /*
