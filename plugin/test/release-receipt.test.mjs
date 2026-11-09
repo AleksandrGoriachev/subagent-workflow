@@ -46,6 +46,21 @@ test('c3: релиз без квитанции — обход; с квитанц
   assert.equal(good.ok, true);
 });
 
+test('c5: релиз до появления квитанции — история (warn), а не нарушение', async () => {
+  const result = await checkReleases({
+    fetchImpl: fakeFetch([
+      { tag_name: 'v2.6.60', draft: false, assets: [{ name: 'a.tgz' }] },
+      { tag_name: 'v2.6.61', draft: false, assets: [{ name: 'SMOKE-v2.6.61.json' }] },
+      { tag_name: 'v2.6.62', draft: false, assets: [{ name: 'a.tgz' }] },
+    ]),
+    token: 't',
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.cutoff, 'v2.6.61');
+  assert.ok(result.warnings.some((w) => /v2.6.60/u.test(w)));
+  assert.ok(result.problems.some((p) => /v2.6.62/u.test(p)));
+});
+
 test('c4: черновики не считаются опубликованными', async () => {
   const result = await checkReleases({ fetchImpl: fakeFetch([{ tag_name: 'v3', draft: true, assets: [] }]), token: 't' });
   assert.equal(result.ok, true);

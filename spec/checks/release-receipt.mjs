@@ -40,6 +40,18 @@ export function scanPublishers(toolsDir) {
 }
 
 /** У релиза есть квитанция приёмки? */
+/** Сравнение тегов по числовым сегментам: v2.6.10 > v2.6.9. */
+export function compareTags(left, right) {
+  const parse = (value) => String(value || '').replace(/^v/iu, '').split('.').map((part) => Number.parseInt(part, 10) || 0);
+  const a = parse(left);
+  const b = parse(right);
+  const length = Math.max(a.length, b.length);
+  for (let i = 0; i < length; i += 1) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) - (b[i] || 0);
+  }
+  return 0;
+}
+
 export function hasReceipt(release) {
   const assets = release && Array.isArray(release.assets) ? release.assets : [];
   return assets.some((asset) => RECEIPT_RE.test(String(asset && asset.name)));
@@ -60,15 +72,27 @@ export async function checkReleases(options = {}) {
   const response = await fetchImpl(apiBase + '/repos/' + repo + '/releases?per_page=' + limit, { headers });
   if (!response || response.ok !== true) throw new Error('GitHub не отдал список релизов: HTTP ' + (response ? response.status : '?'));
   const list = JSON.parse(Buffer.from(await response.arrayBuffer()).toString('utf8'));
+  /*
+   * 0108: первые релизы выходили до появления квитанции. Считаем их историей
+   * (WARN), а нарушением — только релиз новее первого, у которого квитанция есть:
+   * иначе проверка вечно красная и её перестают читать.
+   */
+  const published = (Array.isArray(list) ? list : []).filter((release) => release && release.draft !== true);
+  const withReceipt = published.filter((release) => hasReceipt(release));
+  const cutoff = withReceipt.length > 0
+    ? withReceipt.map((release) => release.tag_name).sort((a, b) => compareTags(a, b))[0]
+    : null;
   const problems = [];
+  const warnings = [];
   const checked = [];
-  for (const release of Array.isArray(list) ? list : []) {
-    if (!release || release.draft === true) continue;
+  for (const release of published) {
     const ok = hasReceipt(release);
-    checked.push({ tag: release.tag_name, ok });
-    if (!ok) problems.push(release.tag_name + ': опубликован без SMOKE-<tag>.json — выпуск в обход гейта');
+    const legacy = !ok && cutoff !== null && compareTags(release.tag_name, cutoff) < 0;
+    checked.push({ tag: release.tag_name, ok, legacy });
+    if (!ok && !legacy) problems.push(release.tag_name + ': опубликован без SMOKE-<tag>.json — выпуск в обход гейта');
+    if (legacy) warnings.push(release.tag_name + ': релиз до появления квитанции — история, не нарушение');
   }
-  return { ok: problems.length === 0, problems, checked };
+  return { ok: problems.length === 0, problems, warnings, checked, cutoff };
 }
 
 if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href) {
@@ -78,9 +102,10 @@ if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(proc
   const problems = scanPublishers(path.join(repoRoot, 'tools'));
   for (const problem of problems) console.log('RELEASE-RECEIPT ERROR ' + problem.file + ': ' + problem.reason);
   if (online) {
-    const { githubToken } = await import('../tools/lib/github-token.mjs');
+    const { githubToken } = await import('../../tools/lib/github-token.mjs');
     const result = await checkReleases({ token: githubToken() || '' });
-    for (const row of result.checked) console.log((row.ok ? 'OK  ' : 'ERR ') + row.tag);
+    for (const row of result.checked) console.log((row.ok ? 'OK  ' : (row.legacy ? 'LEG ' : 'ERR ')) + row.tag);
+    for (const warning of result.warnings || []) console.log('RELEASE-RECEIPT WARN ' + warning);
     for (const problem of result.problems) console.log('RELEASE-RECEIPT ERROR ' + problem);
     if (!result.ok) process.exitCode = 1;
   } else {
