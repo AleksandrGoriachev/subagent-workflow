@@ -232,10 +232,28 @@ test('client bundle registers the Workflow conversation view', async () => {
 
   const rendered = textOf(slot.component());
   assert.match(rendered, /Консоль workflow/u);
+  const tabs = elements(slot.component()).filter((element) => element.type === 'button'
+    && ['Обзор', 'Доска', 'Политика', 'Совместимость'].includes(textOf(element).trim()));
+  assert.deepEqual(tabs.slice(0, 4).map((element) => textOf(element).trim()), ['Обзор', 'Доска', 'Политика', 'Совместимость']);
+  assert.ok(tabs[0].props.style && tabs[0].props.style.background, 'overview is the active default tab');
   assert.match(rendered, /Доска/);
   assert.match(rendered, /Политика/);
   assert.match(rendered, /Обновить/);
   assert.match(rendered, /workflow не развёрнут/);
+  const overviewTree = slot.component();
+  const overviewBody = elements(overviewTree).find((element) => element.type === 'div'
+    && element.children.some((child) => child && child.type === 'section'
+      && textOf(child).includes('Семантические якоря')));
+  assert.ok(overviewBody, 'Overview composition is rendered');
+  const overviewText = textOf(overviewBody);
+  assert.ok(overviewText.includes('Сейчас'), 'Overview summary is present');
+  assert.ok(overviewText.includes('Версия движка'), 'Overview engine version is present');
+  assert.ok(overviewText.includes('Семантические якоря'), 'Overview anchors are present');
+  assert.ok(overviewText.includes('Доска задач'), 'Overview board is present');
+  const blockOrder = ['Сейчас', 'Версия движка', 'Семантические якоря', 'Доска задач']
+    .map((label) => overviewText.indexOf(label));
+  assert.ok(blockOrder.every((index) => index >= 0), 'all Overview blocks are present');
+  assert.deepEqual(blockOrder, [...blockOrder].sort((left, right) => left - right), 'Overview blocks follow the approved order');
 });
 
 test('panel renders a real board, task card and policy page', async () => {
@@ -276,6 +294,25 @@ test('panel renders a real board, task card and policy page', async () => {
     assert.match(rendered, /Запись/);
     assert.match(rendered, /Что дальше/);
     assert.match(rendered, /остались assumed-решения/);
+    const cardBody = elements(tree).find((element) => element.type === 'div'
+      && element.props.style && element.props.style.flex === '1 1 auto'
+      && element.props.style.overflow === 'auto');
+    const cardBodyNode = cardBody && cardBody.children[cardBody.children.length - 1];
+    const cardBodyText = textOf(cardBodyNode);
+    const identityTextIndex = cardBodyText.indexOf('0001 · Сложение возвращает сумму');
+    const explanationTextIndex = cardBodyText.indexOf('Карточка показывает идентификатор, состояние');
+    const actionsTextIndex = cardBodyText.indexOf('Проверить задание');
+    assert.ok(identityTextIndex >= 0 && explanationTextIndex >= 0 && actionsTextIndex >= 0, 'identity, explanation and actions exist');
+    assert.ok(identityTextIndex < explanationTextIndex, 'identity precedes explanation');
+    assert.ok(identityTextIndex < actionsTextIndex, 'identity precedes actions');
+
+    const boardTab = findButton(tree, 'Доска');
+    assert.ok(boardTab, 'board tab');
+    boardTab.props.onClick();
+    tree = hooks.render(slot.component);
+    rendered = textOf(tree);
+    assert.match(rendered, /Доска задач/);
+    assert.match(rendered, /Семантические якоря/);
 
     const policyButton = findButton(tree, 'Политика');
     assert.ok(policyButton, 'policy tab');

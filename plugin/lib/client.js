@@ -891,7 +891,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         const [card, setCard] = React.useState(null);
         const [policy, setPolicy] = React.useState(null);
         const [compat, setCompat] = React.useState(null);
-        const [tab, setTab] = React.useState("board");
+        const [tab, setTab] = React.useState("overview");
         const [root, setRoot] = React.useState(null);
         const [currentWorkspace, setCurrentWorkspace] = React.useState(null);
         const [locationNote, setLocationNote] = React.useState(null);
@@ -2493,6 +2493,11 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         }
 
         function renderTabs() {
+          const overviewTab = h(
+            "button",
+            { type: "button", style: tab === "overview" ? S.tabActive : S.tab, onClick: () => { setTab("overview"); setCard(null); } },
+            "Обзор",
+          );
           const boardTab = h(
             "button",
             {
@@ -2521,7 +2526,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "Совместимость",
             compatAttention ? h("span", { style: { color: T.warn } }, " !") : null,
           );
-          return h("div", { style: S.tabs }, boardTab, policyTab, compatTab);
+          return h("div", { style: S.tabs }, overviewTab, boardTab, policyTab, compatTab);
         }
 
         function stageColumn(stage) {
@@ -2639,6 +2644,29 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             busy ? h("div", { style: S.stageText }, "Обновляем состояние панели… Прежние значения оставлены на экране.") : null,
             issue ? h("div", { style: Object.assign({}, S.hint, { margin: "8px 0 0", borderColor: engine.source === "mapping" ? T.warn : T.border1 }) }, issue) : null,
             h("div", { style: Object.assign({}, S.stageText, { marginTop: "6px" }) }, "Сводка показывает состояние движка, панели, якорей и задач. Обновление данных только перечитывает сведения; без него останутся прежние значения."));
+        }
+
+        function renderOverview() {
+          const tasks = board && board.tasks ? board.tasks : [];
+          const working = tasks.filter((task) => ["contract", "attack", "lock", "red", "green", "incomplete"].includes(task.stage)).length;
+          const accepted = tasks.filter((task) => task.stage === "accepted").length;
+          const remarks = tasks.filter((task) => task.stage === "remarks").length;
+          /* 0126: блок «Версия движка» есть всегда — без выбранного корня он объясняет, чего не хватает, а не исчезает. */
+          const engineBlock = renderEngine() || h(
+            "section",
+            { style: S.section },
+            h("h3", { style: S.sectionTitle }, "Версия движка"),
+            h("div", { style: S.stageText }, "Движок не подключён: выберите рабочее пространство, чтобы увидеть версии и обновление."),
+          );
+          return h(
+            "div",
+            null,
+            renderNowSummary(tasks, working, accepted, remarks),
+            engineBlock,
+            renderAnchorsCard(),
+            h("h2", { style: S.summaryTitle }, "Доска задач"),
+            renderBoard(),
+          );
         }
 
         function renderBoard() {
@@ -3183,6 +3211,14 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             null,
             renderNowSummary(summaryTasks, summaryTasks.filter((task) => ["contract", "attack", "lock", "red", "green", "incomplete"].includes(task.stage)).length, summaryTasks.filter((task) => task.stage === "accepted").length, summaryTasks.filter((task) => task.stage === "remarks").length),
             h("h2", { style: S.summaryTitle }, "Карточка задачи"),
+            h(
+              "div",
+              { style: Object.assign({}, S.cardHead, { margin: "8px 0" }) },
+              h("h2", { style: S.cardHeadTitle }, card.id + " · " + (card.title || "без названия")),
+              badge(stageLabel(card.stage), STAGE_COLOR[card.stage], stageHint(card.stage)),
+              card.risk ? badge(card.risk, RISK_COLOR[card.risk], riskHint(card.risk)) : null,
+              h("span", { style: S.kvLabel }, card.dir),
+            ),
             h("div", { style: S.stageText }, "Карточка показывает идентификатор, состояние и материалы выбранного задания. Используйте кнопки ниже для чтения проверок или подготовки замка; без действий переход по этапам задания не подтверждается."),
             h("button", { type: "button", style: Object.assign({}, S.button, S.back), onClick: () => setCard(null) }, "← Доска"),
             h(
@@ -3216,14 +3252,6 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   lockNote.log ? h("div", { style: S.pre }, lockNote.log) : null,
                 )
               : null,
-            h(
-              "div",
-              { style: S.cardHead },
-              h("h2", { style: S.cardHeadTitle }, card.id + " · " + (card.title || "без названия")),
-              badge(stageLabel(card.stage), STAGE_COLOR[card.stage], stageHint(card.stage)),
-              card.risk ? badge(card.risk, RISK_COLOR[card.risk], riskHint(card.risk)) : null,
-              h("span", { style: S.kvLabel }, card.dir),
-            ),
             h(
               "div",
               { style: Object.assign({}, S.stageBox, { borderLeftColor: STAGE_COLOR[card.stage] }) },
@@ -3665,7 +3693,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         if (card) body = renderCard();
         else if (tab === "policy") body = renderPolicy();
         else if (tab === "compat") body = renderCompat();
-        else body = renderBoard();
+        else if (tab === "board") body = renderBoard();
+        else body = renderOverview();
 
         const compatSummary = status && status.repo && status.repo.compat ? status.repo.compat.summary : null;
 
