@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { verifyRecord, loadAcceptors } from '../scripts/sign.mjs';
 
 export const ANCHORS_FILE = 'docs/anchors.json';
 export const APPROVAL_FILE = 'docs/anchors.approval.json';
@@ -79,6 +80,22 @@ export function releasesSince(tags, version) {
  *          now: Date, tags: string[], overrides?: object}} input
  * @returns {{ok: boolean, problems: string[], notes: string[], stale: string[], unconfirmed: string[]}}
  */
+/**
+ * 0110: утверждение подписывает человек. Хеш сам по себе копируется, поэтому
+ * approval.json без валидной подписи human-ключа не считается утверждением.
+ */
+export function checkSignature(approval, acceptors) {
+  if (!approval || typeof approval !== 'object') return { ok: false, reason: 'нет approval.json' };
+  const keyId = approval.keyId || (approval.signature && approval.signature.keyId);
+  if (!keyId) return { ok: false, reason: 'в approval.json нет keyId — подпись не привязана к ключу' };
+  const list = Array.isArray(acceptors) ? acceptors : [];
+  const key = list.find((item) => item && item.keyId === keyId);
+  if (!key) return { ok: false, reason: 'ключ ' + keyId + ' не найден в acceptors.json' };
+  if (key.kind !== 'human') return { ok: false, reason: 'утверждение якорей подписывает человек (kind=human), а ключ ' + keyId + ' — ' + key.kind };
+  if (!verifyRecord(approval, key.publicKeyPem)) return { ok: false, reason: 'подпись approval.json не сходится с ключом ' + keyId };
+  return { ok: true, keyId };
+}
+
 export function evaluateAnchors(input) {
   const problems = [];
   const notes = [];
@@ -91,6 +108,11 @@ export function evaluateAnchors(input) {
 
   if (list.length === 0) problems.push('anchors.json: нет ни одного якоря');
   if (!input.approval) problems.push('нет ' + APPROVAL_FILE + ': якоря не утверждены');
+  else if (input.acceptors !== undefined) {
+    const signed = checkSignature(input.approval, input.acceptors);
+    if (!signed.ok) problems.push('approval: ' + signed.reason);
+    else notes.push('approval подписан ключом ' + signed.keyId);
+  }
   else if (!input.sha || !input.approvalHash) problems.push('approval: нет hash — утверждение не проверяемо');
   else if (input.sha !== input.approvalHash) {
     problems.push('approval: hash не совпадает с anchors.json (' + String(input.approvalHash).slice(0, 12) + '… != ' + String(input.sha).slice(0, 12) + '…) — якоря правились после утверждения');
@@ -137,11 +159,17 @@ export function loadRepo(root) {
   const anchors = JSON.parse(fs.readFileSync(anchorsFile, 'utf8'));
   let approval = null;
   try {
-    approval = JSON.parse(fs.readFileSync(approvalFile, 'utf8'));
+    approval = JSON.parse(fs.readFileSync(approvalFile, 'utf8').replace(/^\uFEFF/u, ''));
   } catch {
     approval = null;
   }
-  return { repo, anchors, approval, sha, approvalHash: approval && approval.hash ? String(approval.hash) : null, tags: releaseTags(repo) };
+  let acceptors = null;
+  try {
+    acceptors = loadAcceptors(path.join(repo, 'docs', 'subagent-workflow', 'acceptors.json'));
+  } catch {
+    acceptors = null;
+  }
+  return { repo, anchors, approval, acceptors, sha, approvalHash: approval && approval.hash ? String(approval.hash) : null, tags: releaseTags(repo) };
 }
 
 /**
@@ -161,6 +189,7 @@ export function checkRepo(root, options = {}) {
     approval: loaded.approval,
     sha: loaded.sha,
     approvalHash: loaded.approvalHash,
+    acceptors: loaded.acceptors,
     now: options.now instanceof Date ? options.now : new Date(),
     tags: Array.isArray(options.tags) ? options.tags : loaded.tags,
   });

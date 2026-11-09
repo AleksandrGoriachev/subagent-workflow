@@ -19,7 +19,9 @@ import {
   releasesSince,
   sha256File,
   checkRepo,
+  checkSignature,
 } from '../../spec/checks/anchor-freshness.mjs';
+import { generateKeyPair, signRecord } from '../../spec/scripts/sign.mjs';
 
 const NOW = new Date('2026-11-09T12:00:00Z');
 
@@ -91,4 +93,26 @@ test('checkRepo без approval.json сообщает причину, а не п
   assert.equal(result.ok, false);
   assert.ok(result.problems.some((p) => /не утверждены/u.test(p)));
   assert.equal(sha256File(path.join(dir, 'docs/anchors.json')).length, 64);
+});
+
+test('c7: утверждение принимается только с подписью human-ключа', () => {
+  const human = generateKeyPair();
+  const agent = generateKeyPair();
+  const body = { version: 1, anchors: 'docs/anchors.json', algo: 'sha256', hash: 'a'.repeat(64), scope: 'project', by: ['пользователь'], at: '2026-11-09T15:00:00+03:00' };
+  const acceptors = [
+    { keyId: 'human-user', kind: 'human', publicKeyPem: human.publicKeyPem },
+    { keyId: 'agent-judge', kind: 'agent', publicKeyPem: agent.publicKeyPem },
+  ];
+  const signedHuman = signRecord(body, { privateKeyPem: human.privateKeyPem, keyId: 'human-user' });
+  assert.equal(checkSignature(signedHuman, acceptors).ok, true);
+
+  const signedAgent = signRecord(body, { privateKeyPem: agent.privateKeyPem, keyId: 'agent-judge' });
+  const byAgent = checkSignature(signedAgent, acceptors);
+  assert.equal(byAgent.ok, false);
+  assert.match(byAgent.reason, /kind=human/u);
+
+  const forged = { ...signedHuman, hash: 'b'.repeat(64) };
+  const result = checkSignature(forged, acceptors);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /подпись/u);
 });
