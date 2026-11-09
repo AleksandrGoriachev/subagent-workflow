@@ -104,9 +104,14 @@ export function anchorsStatus(root, config) {
   const list = Array.isArray(parsed.anchors) ? parsed.anchors.map((anchor) => ({
     id: anchor && anchor.id ? String(anchor.id) : '',
     claim: anchor && anchor.claim ? String(anchor.claim) : '',
+    /* 0124: схема 0.3 — панель показывает слой и исполнителя проверки, а не только «область». */
+    layer: anchor && anchor.layer ? String(anchor.layer) : '',
+    enforcedBy: anchor && anchor.enforcedBy ? String(anchor.enforcedBy) : '',
+    sides: anchor && anchor.sides ? String(anchor.sides) : (anchor && anchor.scope ? String(anchor.scope) : ''),
     scope: anchor && anchor.scope ? String(anchor.scope) : '',
     status: anchor && anchor.status ? String(anchor.status) : '',
     confirmed: anchor && anchor.confirmed ? anchor.confirmed : null,
+    check: anchor && anchor.check ? String(anchor.check) : '',
     owner: anchor && anchor.owner ? String(anchor.owner) : '',
   })) : [];
   const approval = readJson(cfg.approval);

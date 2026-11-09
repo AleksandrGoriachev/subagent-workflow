@@ -1841,7 +1841,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 h(
                   "div",
                   { style: S.anchorMeta },
-                  h("span", null, h("b", null, "Область: "), fmt(anchor.scope)),
+                  h("span", null, h("b", null, "Слой: "), anchor.layer === "contour" ? "контур (движок workflow)" : anchor.layer === "project" ? "проект (этот воркспейс)" : fmt(anchor.layer)),
+                  h("span", null, h("b", null, "Проверяет: "), anchor.enforcedBy === "engine" ? "движок" : anchor.enforcedBy === "nodes" ? "узлы проекта" : anchor.enforcedBy === "both" ? "движок и узлы проекта" : fmt(anchor.enforcedBy)),
+                  h("span", null, h("b", null, "Область: "), fmt(anchor.sides || anchor.scope)),
                   h("span", null, h("b", null, "Проверка: "), fmt(anchor.check)),
                   h("span", null, h("b", null, "Владелец: "), fmt(anchor.owner)),
                   h("span", null, h("b", null, "Подтверждено: "), anchor.confirmed && anchor.confirmed.version ? anchor.confirmed.version + (anchor.confirmed.date ? " · " + anchor.confirmed.date : "") : "Нет данных"),
@@ -2424,7 +2426,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             h("h1", { style: S.title }, "Консоль workflow"),
             h("span", { style: S.subtitle }, title),
             h("span", { style: S.subtitle }, "Движок: " + (engineInstalled() ? "v" + engineInstalled() : "не найден")),
-            h("span", { style: S.subtitle }, "Последний выпуск: " + (status && status.latestRelease && status.latestRelease.engine ? fmt(status.latestRelease.at) + " · движок v" + fmt(status.latestRelease.engine) : "нет данных")),
+            h("span", { style: S.subtitle }, "Последний выпуск: " + (status && status.latestRelease && status.latestRelease.engine
+              ? fmt(status.latestRelease.at) + " · движок v" + fmt(status.latestRelease.engine) + (status.latestRelease.plugin ? ", панель " + fmt(status.latestRelease.plugin) : "")
+              : "нет данных")),
             h(
               "span",
               { style: S.subtitle },

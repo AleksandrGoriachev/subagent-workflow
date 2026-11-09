@@ -19,7 +19,7 @@ function makeRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-anchors-ui-'));
   const docs = path.join(root, 'subagent-workflow-v2', 'docs');
   fs.mkdirSync(docs, { recursive: true });
-  fs.writeFileSync(path.join(docs, 'anchors.json'), JSON.stringify({ version: 1, anchors: [{ id: 'A1', claim: 'x', scope: 'workflow', check: 'y', status: 'auto', confirmed: { version: '2.6.64', date: '2026-11-09' }, owner: 'user+coordinator' }] }));
+  fs.writeFileSync(path.join(docs, 'anchors.json'), JSON.stringify({ version: 2, anchors: [{ id: 'A1', claim: 'x', layer: 'contour', enforcedBy: 'engine', sides: 'workflow', scope: 'workflow', check: 'y', status: 'auto', confirmed: { version: '2.6.64', date: '2026-11-09' }, owner: 'user+coordinator' }] }));
   const keys = path.join(root, 'keys');
   fs.mkdirSync(keys, { recursive: true });
   const human = generateKeyPair();
@@ -145,4 +145,12 @@ test('c9: результат подписи виден верхними поля
   assert.equal(result.keyId, 'human-user');
   assert.match(String(result.hash), /^[0-9a-f]{64}$/u);
   assert.ok(result.at);
+});
+
+test('c10: список якорей несёт слой и исполнителя проверки (схема 0.3)', () => {
+  const parts = makeRoot();
+  const status = anchorsStatus(parts.root, configOf(parts));
+  assert.ok(Array.isArray(status.anchors));
+  assert.equal(status.anchors[0].layer, 'contour');
+  assert.equal(status.anchors[0].enforcedBy, 'engine');
 });
