@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { anchorsStatus, approveAnchors, hashFile } from '../lib/anchors.js';
+import { anchorsStatus, approveAnchors, hashFile, verifyApproval } from '../lib/anchors.js';
 import { generateKeyPair, signRecord } from '../../spec/scripts/sign.mjs';
 
 function makeRoot() {
@@ -153,4 +153,21 @@ test('c10: список якорей несёт слой и исполнител
   assert.ok(Array.isArray(status.anchors));
   assert.equal(status.anchors[0].layer, 'contour');
   assert.equal(status.anchors[0].enforcedBy, 'engine');
+});
+
+test('c11: подпись выпускается во вложенной форме 0.3 и проверяется', () => {
+  const parts = makeRoot();
+  const result = approveAnchors(parts.root, configOf(parts));
+  assert.equal(result.ok, true, JSON.stringify(result.problems));
+  const record = JSON.parse(fs.readFileSync(path.join(parts.root, 'subagent-workflow-v2', 'docs', 'anchors.approval.json'), 'utf8'));
+  assert.equal(typeof record.signature, 'object');
+  assert.equal(record.signature.covers, 'hash+by+at');
+  assert.equal(record.signature.keyId, 'human-user');
+  assert.equal(record.signature.algo, 'ed25519');
+  assert.equal(record.layer, 'contour');
+  assert.equal(record.sides, 'contour');
+  assert.equal(record.enforcedBy, 'both');
+  const acceptors = JSON.parse(fs.readFileSync(path.join(parts.root, 'docs', 'subagent-workflow', 'acceptors.json'), 'utf8')).acceptors;
+  const verified = verifyApproval(record, acceptors);
+  assert.equal(verified.ok, true, verified.reason);
 });

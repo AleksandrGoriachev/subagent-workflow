@@ -36,7 +36,28 @@ export function generateKeyPair() {
 
 const SIGNATURE_FIELDS = ['signature', 'signatureAlgorithm', 'keyId', 'publicKeyFingerprint'];
 
+/** Поля, которые покрывает утверждение 0.3: документ утверждает файл, автора и время. */
+export const APPROVAL_COVERS = 'hash+by+at';
+
+/** keyId из плоской (0.2) или вложенной (0.3) формы. */
+export function keyIdOf(record) {
+  if (!record || typeof record !== 'object') return '';
+  if (typeof record.keyId === 'string' && record.keyId !== '') return record.keyId;
+  if (record.signature && typeof record.signature === 'object' && typeof record.signature.keyId === 'string') return record.signature.keyId;
+  return '';
+}
+
+/**
+ * 0130: две формы утверждения.
+ * Плоская (0.2): signature — строка, покрывает весь документ без полей подписи.
+ * Вложенная (0.3): signature.covers = 'hash+by+at', покрывает ровно эти три поля.
+ * Обе проверяются своей формой — иначе подпись «покрывает» не то, что заявляет.
+ */
 export function signingBody(record) {
+  const nested = record && typeof record.signature === 'object' && record.signature !== null;
+  if (nested) {
+    return canonicalize({ hash: record.hash, by: record.by, at: record.at });
+  }
   const copy = { ...record };
   for (const field of SIGNATURE_FIELDS) delete copy[field];
   return canonicalize(copy);
@@ -58,15 +79,23 @@ export function signRecord(record, { privateKeyPem, keyId }) {
 }
 
 export function verifyRecord(record, publicKeyPem) {
-  if (record.signatureAlgorithm !== 'ed25519') return false;
-  if (typeof record.signature !== 'string' || record.signature.length === 0) return false;
+  const nested = record && typeof record.signature === 'object' && record.signature !== null;
+  if (nested) {
+    if (record.signature.covers !== APPROVAL_COVERS) return false;
+    if (typeof record.signature.value !== 'string' || record.signature.value.length === 0) return false;
+    if (String(record.signature.algo || 'ed25519').toLowerCase() !== 'ed25519') return false;
+  } else {
+    if (record.signatureAlgorithm !== 'ed25519') return false;
+    if (typeof record.signature !== 'string' || record.signature.length === 0) return false;
+  }
   try {
     const body = signingBody(record);
+    const value = nested ? record.signature.value : record.signature;
     return crypto.verify(
       null,
       Buffer.from(body, 'utf8'),
       crypto.createPublicKey(publicKeyPem),
-      Buffer.from(record.signature, 'base64'),
+      Buffer.from(value, 'base64'),
     );
   } catch {
     return false;

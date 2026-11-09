@@ -43,6 +43,10 @@ export function anchorsConfig(root, config) {
     keyId: typeof raw.keyId === 'string' && raw.keyId.trim() !== '' ? raw.keyId.trim() : 'human-user',
     acceptors: pick('acceptors', path.join('docs', 'subagent-workflow', 'acceptors.json')),
     scope: typeof raw.scope === 'string' && raw.scope.trim() !== '' ? raw.scope.trim() : 'project',
+    /* 0130: словарь гейта structure (0194/1.0.68): layer, sides (область), enforcedBy. */
+    layer: typeof raw.layer === 'string' && raw.layer.trim() !== '' ? raw.layer.trim() : 'contour',
+    sides: typeof raw.sides === 'string' && raw.sides.trim() !== '' ? raw.sides.trim() : 'contour',
+    enforcedBy: typeof raw.enforcedBy === 'string' && raw.enforcedBy.trim() !== '' ? raw.enforcedBy.trim() : 'both',
   };
 }
 
@@ -64,16 +68,21 @@ export function canonicalize(value) {
 /** Проверка подписи по публичному ключу из acceptors.json. */
 export function verifyApproval(approval, acceptors) {
   if (!approval || typeof approval !== 'object') return { ok: false, reason: 'нет утверждения' };
-  const keyId = approval.keyId || (approval.signature && approval.signature.keyId);
+  /* 0130: keyId и значение подписи — в плоской (0.2) или вложенной (0.3) форме. */
+  const nested = approval.signature && typeof approval.signature === 'object';
+  const keyId = approval.keyId || (nested ? approval.signature.keyId : '');
   if (!keyId) return { ok: false, reason: 'в утверждении нет keyId' };
   const key = (Array.isArray(acceptors) ? acceptors : []).find((item) => item && item.keyId === keyId);
   if (!key) return { ok: false, reason: 'ключ ' + keyId + ' не найден в acceptors.json' };
   if (key.kind !== 'human') return { ok: false, reason: 'якоря утверждает человек (kind=human), а ключ ' + keyId + ' — ' + key.kind };
   try {
-    const copy = { ...approval };
-    for (const field of ['signature', 'signatureAlgorithm', 'keyId', 'publicKeyFingerprint']) delete copy[field];
-    const body = canonicalize(copy);
-    const ok = crypto.verify(null, Buffer.from(body, 'utf8'), crypto.createPublicKey(key.publicKeyPem), Buffer.from(String(approval.signature || ''), 'base64'));
+    /* 0130: вложенная форма покрывает ровно hash+by+at, плоская — весь документ. */
+    const body = nested
+      ? canonicalize({ hash: approval.hash, by: approval.by, at: approval.at })
+      : canonicalize(Object.fromEntries(Object.entries(approval).filter(([field]) => !['signature', 'signatureAlgorithm', 'keyId', 'publicKeyFingerprint'].includes(field))));
+    const value = nested ? approval.signature.value : approval.signature;
+    if (nested && approval.signature.covers !== 'hash+by+at') return { ok: false, reason: 'signature.covers не покрывает hash+by+at' };
+    const ok = crypto.verify(null, Buffer.from(body, 'utf8'), crypto.createPublicKey(key.publicKeyPem), Buffer.from(String(value || ''), 'base64'));
     return ok ? { ok: true, keyId } : { ok: false, reason: 'подпись не сходится с ключом ' + keyId };
   } catch (error) {
     return { ok: false, reason: 'подпись не проверяется: ' + (error && error.message ? error.message : String(error)) };
@@ -133,7 +142,7 @@ export function anchorsStatus(root, config) {
     file: cfg.file,
     approvalFile: cfg.approval,
     anchors: list,
-    keyId: approval.keyId || null,
+    keyId: approval.keyId || (approval.signature && typeof approval.signature === 'object' ? approval.signature.keyId : null) || null,
     at: approval.at || null,
     scope: approval.scope || null,
     config: cfg,
@@ -157,30 +166,33 @@ export function approveAnchors(root, config) {
   const own = acceptors.find((item) => item && item.keyId === cfg.keyId);
   if (!own) return { ok: false, problems: ['ключ ' + cfg.keyId + ' не зарегистрирован в acceptors.json'] };
   if (own.kind !== 'human') return { ok: false, problems: ['ключ ' + cfg.keyId + ' имеет вид ' + own.kind + ': утверждать якоря может только человек'] };
-  const body = {
-    version: 1,
+  /*
+   * 0130: форма утверждения — общая с гейтом structure (0194/1.0.68):
+   * signature.covers = 'hash+by+at', подпись покрывает ровно эти три поля.
+   * Плоская форма 0.2 читается как раньше — старые утверждения не ломаются.
+   */
+  const payload = { hash: status.hash, by: ['пользователь'], at: new Date().toISOString() };
+  const privateKey = crypto.createPrivateKey(fs.readFileSync(cfg.keyFile, 'utf8'));
+  const value = crypto.sign(null, Buffer.from(canonicalize(payload), 'utf8'), privateKey).toString('base64');
+  const record = {
+    version: 2,
     anchors: path.relative(path.dirname(path.dirname(cfg.file)), cfg.file).split(path.sep).join('/'),
     algo: 'sha256',
-    hash: status.hash,
+    hash: payload.hash,
     bytes: fs.statSync(cfg.file).size,
-    scope: cfg.scope,
-    by: ['пользователь'],
-    at: new Date().toISOString(),
-  };
-  const privateKey = crypto.createPrivateKey(fs.readFileSync(cfg.keyFile, 'utf8'));
-  const signature = crypto.sign(null, Buffer.from(canonicalize(body), 'utf8'), privateKey).toString('base64');
-  const record = {
-    ...body,
-    signatureAlgorithm: 'ed25519',
-    keyId: cfg.keyId,
+    layer: cfg.layer,
+    sides: cfg.sides,
+    enforcedBy: cfg.enforcedBy,
+    by: payload.by,
+    at: payload.at,
     publicKeyFingerprint: crypto.createHash('sha256').update(crypto.createPublicKey(privateKey).export({ type: 'spki', format: 'der' })).digest('hex').slice(0, 16),
-    signature,
+    signature: { keyId: cfg.keyId, algo: 'ed25519', covers: 'hash+by+at', value },
   };
   fs.mkdirSync(path.dirname(cfg.approval), { recursive: true });
   fs.writeFileSync(cfg.approval, JSON.stringify(record, null, 2) + '\n');
   /* 0120: панель показывает состояние по верхним полям — отдаём их, а не только вложенный dashboard. */
   const dashboard = anchorsStatus(root, config);
-  return { ...dashboard, ok: true, signed: true, hash: record.hash, keyId: record.keyId, at: record.at, file: cfg.approval, dashboard };
+  return { ...dashboard, ok: true, signed: true, hash: record.hash, keyId: cfg.keyId, at: record.at, file: cfg.approval, dashboard };
 }
 
 /** Прогон релизной проверки движка, если она доступна рядом. */
