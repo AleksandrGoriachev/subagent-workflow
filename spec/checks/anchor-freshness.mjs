@@ -108,14 +108,21 @@ export function evaluateAnchors(input) {
 
   if (list.length === 0) problems.push('anchors.json: нет ни одного якоря');
   if (!input.approval) problems.push('нет ' + APPROVAL_FILE + ': якоря не утверждены');
-  else if (input.acceptors !== undefined) {
-    const signed = checkSignature(input.approval, input.acceptors);
-    if (!signed.ok) problems.push('approval: ' + signed.reason);
-    else notes.push('approval подписан ключом ' + signed.keyId);
-  }
-  else if (!input.sha || !input.approvalHash) problems.push('approval: нет hash — утверждение не проверяемо');
-  else if (input.sha !== input.approvalHash) {
-    problems.push('approval: hash не совпадает с anchors.json (' + String(input.approvalHash).slice(0, 12) + '… != ' + String(input.sha).slice(0, 12) + '…) — якоря правились после утверждения');
+  else {
+    /*
+     * 0116: подпись и хеш проверяются ОБА. Раньше ветка с ключами заменяла
+     * сравнение хеша, и правка anchors.json при старой подписи проходила —
+     * проверка говорила «утверждено», хотя файл уже другой.
+     */
+    if (input.acceptors !== undefined) {
+      const signed = checkSignature(input.approval, input.acceptors);
+      if (!signed.ok) problems.push('approval: ' + signed.reason);
+      else notes.push('approval подписан ключом ' + signed.keyId);
+    }
+    if (!input.sha || !input.approvalHash) problems.push('approval: нет hash — утверждение не проверяемо');
+    else if (input.sha !== input.approvalHash) {
+      problems.push('approval: hash не совпадает с anchors.json (' + String(input.approvalHash).slice(0, 12) + '… != ' + String(input.sha).slice(0, 12) + '…) — якоря правились после утверждения');
+    }
   }
 
   for (const anchor of list) {

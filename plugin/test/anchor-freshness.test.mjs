@@ -116,3 +116,12 @@ test('c7: утверждение принимается только с подп
   assert.equal(result.ok, false);
   assert.match(result.reason, /подпись/u);
 });
+
+test('c8: правка anchors.json при старой подписи не проходит (хеш и подпись — оба)', () => {
+  const result = evaluateAnchors(input(
+    [anchor('A1', 'auto', '2.6.71', '2026-11-09')],
+    { acceptors: [{ keyId: 'human-user', kind: 'human', publicKeyPem: 'x' }], approval: { keyId: 'human-user', hash: 'a'.repeat(64) }, sha: 'b'.repeat(64), approvalHash: 'a'.repeat(64) },
+  ));
+  assert.equal(result.ok, false);
+  assert.ok(result.problems.some((p) => /hash не совпадает/u.test(p)));
+});

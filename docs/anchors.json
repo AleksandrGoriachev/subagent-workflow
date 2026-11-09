@@ -25,7 +25,7 @@
       "check": "guard-acceptance",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "user+coordinator"
@@ -37,7 +37,7 @@
       "check": "task-lint, relock-policy",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
@@ -49,7 +49,7 @@
       "check": "model-source, release-check",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
@@ -61,7 +61,7 @@
       "check": "release-check c4",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
@@ -73,7 +73,7 @@
       "check": "gates-journal, relock-policy",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
@@ -85,14 +85,14 @@
       "check": "network-contract, outgoing-headers",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
     },
     {
       "id": "A7",
-      "claim": "Правка общего модуля перечисляет вызывающих и ожидания каждого; у каждого тест",
+      "claim": "Правка общего модуля перечисляет вызывающих и ожидания каждого; у каждого вызывающего есть тест или явное «не покрыт» с причиной",
       "scope": "workflow",
       "check": "spec/checks/shared-impact.mjs (WC-69)",
       "status": "inWork",
@@ -109,7 +109,7 @@
       "check": "процедура разбора дефекта",
       "status": "semi",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
@@ -121,7 +121,7 @@
       "check": "release-publish, release-smoke",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
@@ -133,7 +133,7 @@
       "check": "журнал exchange-decisions.jsonl",
       "status": "semi",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "user+coordinator"
@@ -145,7 +145,7 @@
       "check": "report-honesty",
       "status": "semi",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
@@ -157,7 +157,7 @@
       "check": "job-runner",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.58",
+        "version": "2.6.71",
         "date": "2026-11-09"
       },
       "owner": "coordinator"
