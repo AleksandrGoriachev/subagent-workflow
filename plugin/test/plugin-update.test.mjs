@@ -254,3 +254,17 @@ test('POST /api/plugin-update: link-установка отклоняется', 
   assert.match(response.json.hint, /рабочим деревом/u);
   fs.rmSync(parent, { recursive: true, force: true });
 });
+
+test('c9: локальный dev-link объясняет перезапуск, а не git pull', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-devhint-'));
+  const repo = path.join(dir, 'repo');
+  fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
+  fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({ name: 'dsh-workflow-console', version: '9.9.9' }));
+  const linked = path.join(dir, 'linked');
+  fs.symlinkSync(repo, linked, 'junction');
+  const mode = pluginInstallMode(linked);
+  assert.equal(mode.mode, 'linked');
+  assert.match(String(mode.hint), /Перезапустите DSH/u);
+  assert.match(String(mode.hint), /9\.9\.9/u);
+  fs.rmSync(dir, { recursive: true, force: true });
+});

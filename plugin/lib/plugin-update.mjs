@@ -127,6 +127,25 @@ export function pluginInstallMode(packageRoot) {
   try {
     const real = fs.realpathSync(root);
     if (path.resolve(real) !== root) {
+      /*
+       * 0123: для локального рабочего дерева «git pull» — ложная инструкция: код уже
+       * здесь и он свежий, нужен перезапуск DSH. Уточняем по .git и версии исходников.
+       */
+      const worktree = insideGitWorktree(real);
+      let sourceVersion = null;
+      try {
+        sourceVersion = String(JSON.parse(fs.readFileSync(path.join(real, 'package.json'), 'utf8')).version || '') || null;
+      } catch {
+        sourceVersion = null;
+      }
+      if (worktree) {
+        return {
+          mode: 'linked',
+          realPath: real,
+          hint: 'панель подключена к исходникам локального репозитория (' + real
+            + (sourceVersion ? ', версия ' + sourceVersion : '') + '). Пакетом не обновляется: код уже здесь. Перезапустите DSH, чтобы загрузить текущую версию; git pull нужен только если исходники на другой машине или в другом репозитории',
+        };
+      }
       return {
         mode: 'linked',
         realPath: real,
