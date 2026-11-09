@@ -10,6 +10,7 @@ import path from 'node:path';
 import * as fsSync from 'node:fs';
 import { createWorkflowRuntime, registerWorkflowWeb } from './api.js';
 import { registerWaitGuard } from './wait-guard.js';
+import { registerLoopGuard } from './loop-guard.js';
 
 export const name = 'dsh-workflow-console';
 
@@ -84,6 +85,16 @@ export function apply(ctx, config = {}) {
   } catch (error) {
     guardState = { error: String(error && error.message ? error.message : error) };
   }
+  /* 0127 (WC-80): отсечение зацикливания — рядом со сторожем, та же политика. */
+  let loopState = null;
+  try {
+    loopState = registerLoopGuard(ctx, {
+      limit: config && config.enforcement ? config.enforcement.loopLimit : undefined,
+      policy: config && config.enforcement ? config.enforcement.loopPolicy : undefined,
+    });
+  } catch (error) {
+    loopState = { error: String(error && error.message ? error.message : error) };
+  }
   probeApply(ctx, config, { guardState });
   const runtime = createWorkflowRuntime(config, {
     getWorkspaceRegistry: () => resolveWorkspaceRegistry(ctx),
@@ -104,6 +115,7 @@ export function apply(ctx, config = {}) {
         budgetMs: state.budgetMs,
         jobScript: state.jobScript,
         roots: state.roots,
+        loop: loopState && typeof loopState === 'object' ? { policy: loopState.policy, limit: loopState.limit, preExecute: loopState.preExecute === true } : null,
         via: registration.preExecute === true ? 'tools/pre-execute' : 'none',
         registration: {
           preExecute: registration.preExecute === true,

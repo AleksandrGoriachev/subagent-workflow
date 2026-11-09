@@ -317,6 +317,9 @@ config.logs = logs;
  */
 const ENFORCEMENT_DEFAULTS = {
   waitPolicy: 'fail',
+  /* 0127 (WC-80): отсечение зацикливания — тот же блок политики. */
+  loopPolicy: 'fail',
+  loopLimit: 3,
   waitBudgetMs: 120000,
   processPolicy: 'fail',
   structurePolicy: 'fail',
