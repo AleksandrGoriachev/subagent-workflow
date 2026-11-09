@@ -912,3 +912,27 @@ test('POST /workflow/api/release-check: сбой сети — 200, причин�
     fixture.cleanup();
   }
 });
+
+test('GET /workflow/api/anchors отвечает 200 и не падает на loadConfig', async () => {
+  const { fixture, handler } = setup();
+  try {
+    const response = await call(handler, '/workflow/api/anchors');
+    assert.equal(response.status, 200);
+    assert.equal(typeof response.json.ok, 'boolean');
+    assert.equal(typeof response.json.approved, 'boolean');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('POST /workflow/api/anchors/approve отвечает 200 и объясняет отказ без ключа', async () => {
+  const { fixture, handler } = setup();
+  try {
+    const response = await call(handler, '/workflow/api/anchors/approve', { method: 'POST', body: { confirm: true } });
+    assert.equal(response.status, 200);
+    assert.equal(typeof response.json.ok, 'boolean');
+    if (response.json.ok !== true) assert.ok(Array.isArray(response.json.problems) && response.json.problems.length > 0);
+  } finally {
+    fixture.cleanup();
+  }
+});

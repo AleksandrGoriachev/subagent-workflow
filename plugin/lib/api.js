@@ -36,6 +36,7 @@ import {
   readRepository,
   readTask,
   policyView,
+  loadConfig,
   TOOL,
 } from './state.js';
 import { compatView, PLUGIN_VERSION } from './compat.js';
