@@ -20,6 +20,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractTarGz } from '../plugin/lib/archive.mjs';
+import { githubToken } from './lib/github-token.mjs';
 import { checkLatestRelease } from '../plugin/lib/release-check.mjs';
 
 export const REPO = 'AleksandrGoriachev/subagent-workflow';
@@ -116,7 +117,10 @@ export async function smokeRelease(options = {}) {
     || JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '..', 'plugin', 'package.json'), 'utf8')).version;
   const assetsDir = options.assetsDir || path.join(import.meta.dirname, '..', 'dist');
 
-  const token = typeof options.token === 'string' && options.token.trim() !== '' ? options.token.trim() : '';
+  /* 0112: без токена черновик не найти (tags-endpoint отдаёт 404), поэтому берём токен по умолчанию. */
+  const token = typeof options.token === 'string' && options.token.trim() !== ''
+    ? options.token.trim()
+    : (githubToken() || '');
   /*
    * 0105: releases/tags/<tag> не отдаёт черновики (GitHub: 404). Для приёмки
    * ДО публикации ищем по списку релизов, где draft виден — с токеном.
