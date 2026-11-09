@@ -189,7 +189,7 @@ function run() {
       });
       if (!hasAccept) {
         warnings.push('в gates.jsonl нет строки accept для ' + record.task
-          + ': добавьте gates.jsonl в metadata-коммит, иначе журнал не подтвердит приёмку');
+          + ': строка пишется до кандидата и должна быть в нём; если её нет — приёмка не доказана');
       }
     }
   } catch {

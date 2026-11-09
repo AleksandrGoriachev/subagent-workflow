@@ -141,6 +141,25 @@ function restoreExecutableModes(repoRoot, candidateEnv) {
   }
 }
 
+/** Есть ли в журнале строка accept по заданию (доказательство внутри кандидата). */
+function gateHasAccept(taskDir, taskId) {
+  try {
+    const file = gateJournalFile(taskDir);
+    if (!exists(file)) return false;
+    return fs.readFileSync(file, 'utf8').split('\n').some((line) => {
+      if (!line.trim()) return false;
+      try {
+        const row = JSON.parse(line);
+        return row && row.kind === 'accept' && String(row.task) === String(taskId) && String(row.verdict) !== 'void';
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
+}
+
 function createCandidate(repoRoot, filesToAdd, message, pathsToRemove = []) {
   const indexPath = path.join(os.tmpdir(), 'task-accept-' + process.pid + '-' + Date.now() + '.index');
   const env = {
@@ -187,7 +206,14 @@ function createCandidate(repoRoot, filesToAdd, message, pathsToRemove = []) {
 
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
-  const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria);
+  /*
+   * 0119 (WC-79): доказательство приёмки теперь лежит в кандидатном коммите
+   * (строка accept в gates.jsonl). Если acceptance.json утерян — reset --hard,
+   * clean, смена ветки — повторная приёмка не должна упираться в замок: строка
+   * в журнале сама доказывает, что задание принимали. Запись восстанавливается.
+   */
+  const restoredAcceptance = !exists(files.acceptance) && gateHasAccept(taskDir, meta.id);
+  const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria, restoredAcceptance ? { acceptedTolerant: true } : {});
   if (!lockCheck.ok) {
     for (const e of lockCheck.errors) console.error('task-accept: lock: ' + e);
     process.exit(1);
@@ -684,9 +710,11 @@ try {
   const artifacts = ['red.json', 'red.log', 'verify.json', 'verify.log', 'report.md']
     .map((name) => taskRel + '/' + name)
     .filter((file) => exists(path.join(repo, file)));
+  const gatesRel = taskRel + '/gates.jsonl';
   const candidatePaths = [...new Set([
     ...(Array.isArray(verify.changedPaths) ? verify.changedPaths : []),
     ...artifacts,
+    gatesRel,
   ])].filter((file) => file !== acceptanceRel);
   const ignored = ignoredPaths(repo, candidatePaths);
   const candidateFiles = candidatePaths.filter((file) => !ignored.has(file));
@@ -695,12 +723,43 @@ try {
    * удаляет её из индекса после read-tree HEAD, чтобы metadata-коммит не
    * наследовался кандидатом. Записи других заданий не затрагиваются.
    */
-  const candidate = createCandidate(
-    repo,
-    candidateFiles,
+  /*
+   * 0119 (WC-79): строка accept пишется ДО кандидата и входит в него. Раньше она
+   * оставалась вне коммита и исчезала после reset --hard (случай 0133 в
+   * ws-school-app). Ложное «принято» без кандидата закрывается отзывом: при сбое
+   * создания кандидата в журнал дописывается строка void.
+   */
+  const journalPending = appendGateRecord(gateJournalFile(taskDir), gateRecord({
+    kind: 'accept',
+    task: String(meta.id),
+    head: verify.headSha || contractCommit,
+    criteria: gateCriteriaOf(verify.results || []),
+    verdict: 'accepted',
+    bypasses,
+    exitSummary: 'exit=0; accepted; checks=' + ((verify.results || []).length) + '; releaseReady=' + releaseReady,
+  }));
+  if (!journalPending.ok) console.log('WARN журнал ворот: ' + journalPending.error);
+  let candidate;
+  try {
+    candidate = createCandidate(
+      repo,
+      candidateFiles,
     'task ' + meta.id + ': accepted candidate; criteria=' + lockCheck.expected.criteriaJsonSha256 + '; contract=' + contractCommit + '; verify=' + (acceptorRun.nonce || 'reused'),
-    [acceptanceRel],
-  );
+      [acceptanceRel],
+    );
+  } catch (error) {
+    /* Кандидата нет — строка accept не должна оставаться доказательством: отзываем её. */
+    appendGateRecord(gateJournalFile(taskDir), gateRecord({
+      kind: 'accept',
+      task: String(meta.id),
+      head: verify.headSha || contractCommit,
+      criteria: [],
+      verdict: 'void',
+      bypasses,
+      exitSummary: 'void: кандидат не создан — ' + (error && error.message ? String(error.message).slice(0, 200) : 'сбой'),
+    }));
+    throw error;
+  }
   body.candidateCommit = candidate.commit;
   body.tree = candidate.tree;
 
@@ -716,16 +775,10 @@ try {
    * не должен утверждать то, чего нет. Критерии — из свежего прогона приёмщика.
    * Сбой журнала не валит приёмку: WARN, exit прежний.
    */
-  const journal = appendGateRecord(gateJournalFile(taskDir), gateRecord({
-    kind: 'accept',
-    task: String(meta.id),
-    head: verify.headSha || contractCommit,
-    criteria: gateCriteriaOf(verify.results || []),
-    verdict: 'accepted',
-    bypasses,
-    exitSummary: 'exit=0; accepted; checks=' + ((verify.results || []).length) + '; releaseReady=' + releaseReady,
-  }));
-  if (!journal.ok) console.log('WARN журнал ворот: ' + journal.error);
+  if (!journalPending.ok) {
+    /* Строка не записалась до кандидата — доказательства в коммите нет; сообщаем явно. */
+    console.log('WARN журнал ворот: строка accept не записана до кандидата (' + journalPending.error + ')');
+  }
 
   if (argv.json) {
     console.log(JSON.stringify(record, null, 2));
