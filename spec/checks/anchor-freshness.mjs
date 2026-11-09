@@ -242,6 +242,7 @@ function parseArgs(argv) {
     const arg = argv[i];
     if (arg === '--repo' && argv[i + 1]) { result.repo = argv[i + 1]; i += 1; continue; }
     if (arg === '--now' && argv[i + 1]) { result.now = new Date(argv[i + 1]); i += 1; continue; }
+    if (arg === '--project' && argv[i + 1]) { result.project = argv[i + 1]; i += 1; continue; }
     if (arg === '--releases' && argv[i + 1]) { result.tags = Array.from({ length: Number(argv[i + 1]) || 0 }, (_, index) => 'v99.' + index + '.0'); i += 1; continue; }
   }
   return result;
@@ -249,10 +250,137 @@ function parseArgs(argv) {
 
 if (process.argv[1] && new URL(import.meta.url).href.endsWith(new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href.split('/').pop())) {
   const args = parseArgs(process.argv.slice(2));
-  const result = checkRepo(args.repo, { now: args.now || undefined, tags: args.tags || undefined });
+  const result = args.project
+    ? checkProject(args.project, { now: args.now || undefined })
+    : checkRepo(args.repo, { now: args.now || undefined, tags: args.tags || undefined });
   for (const warning of result.warnings || []) console.log('ANCHORS WARN ' + warning);
   for (const note of result.notes) console.log('NOTE ' + note);
   for (const problem of result.problems) console.log('ANCHORS ERROR ' + problem);
-  if (result.ok) console.log('anchor-freshness: OK — якоря утверждены и не протухли');
+  if (result.ok && args.project) console.log('anchor-freshness: OK — проектные якоря утверждены' + (result.count ? ' (' + result.count + ')' : ' (слой пуст)'));
+  else if (result.ok) console.log('anchor-freshness: OK — якоря утверждены и не протухли');
   else process.exitCode = 1;
+}
+/**
+ * 0128: проектный слой якорей.
+ *
+ * Контурные якоря живут в репозитории движка и описаны выше. Проектные —
+ * в самом воркспейсе (docs/anchors.json): их заводит владелец проекта с
+ * координатором, а проверяют узлы. Правила другие: confirmed без версии
+ * (проект живёт без релизов движка), proof обязателен, потолок 15.
+ *
+ * Отсутствие файла — не отказ: по решению заказчика пустой проектный слой
+ * допустим, но о нём надо сказать вслух.
+ */
+export function evaluateProjectAnchors(input) {
+  const problems = [];
+  const warnings = [];
+  const notes = [];
+  const list = Array.isArray(input && input.list) ? input.list : [];
+  const approval = input ? input.approval : null;
+  const sha = input ? input.sha : null;
+  const approvalHash = input ? input.approvalHash : null;
+  const acceptors = input ? input.acceptors : null;
+  const now = input && input.now instanceof Date ? input.now : new Date();
+  const allowedCheck = new Set(['spec-check', 'plugin-test', 'tool', 'procedure', 'journal']);
+  const allowedStatus = new Set(['auto', 'semi', 'inWork', 'retired']);
+
+  if (list.length > 15) problems.push('якорей больше 15 (' + list.length + '): проектный слой не резиновый, сократите до проверяемых');
+  else if (list.length > 12) warnings.push('якорей ' + list.length + ': близко к потолку 15, часть лучше объединить');
+
+  if (list.length === 0) {
+    warnings.push('семантические якоря проекта не заданы — узлы проекта работают без критериев оценки');
+    return { ok: true, problems, warnings, notes, count: 0, layer: 'project' };
+  }
+
+  if (!approval) problems.push('нет docs/anchors.approval.json: якоря проекта не подписаны владельцем');
+  else {
+    if (acceptors !== null) {
+      const signed = checkSignature(approval, acceptors);
+      if (!signed.ok) problems.push('approval: ' + signed.reason);
+      else notes.push('approval подписан ключом ' + signed.keyId);
+    }
+    if (!sha || !approvalHash) problems.push('approval: нет hash — подпись не проверяема');
+    else if (sha !== approvalHash) problems.push('approval: hash не совпадает с anchors.json (' + String(approvalHash).slice(0, 12) + '… != ' + String(sha).slice(0, 12) + '…)');
+  }
+
+  const claims = new Map();
+  for (const anchor of list) {
+    const id = String(anchor && anchor.id ? anchor.id : '(без id)');
+    if (!/^P\d+$/u.test(id)) problems.push(id + ': id проектного якоря — P1…Pn');
+    const claim = String(anchor && anchor.claim ? anchor.claim : '').trim();
+    if (claim === '') problems.push(id + ': пустой claim — правило нечего проверять');
+    else {
+      const normalized = claim.toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/gu, ' ').trim();
+      if (claims.has(normalized)) problems.push(id + ': дубль формулировки с ' + claims.get(normalized));
+      else claims.set(normalized, id);
+    }
+    if (String(anchor && anchor.layer ? anchor.layer : '') !== 'project') problems.push(id + ': layer должен быть project');
+    const enforcedBy = String(anchor && anchor.enforcedBy ? anchor.enforcedBy : '');
+    if (enforcedBy !== 'nodes' && enforcedBy !== 'both') problems.push(id + ': enforcedBy проектного якоря — nodes (или both)');
+    const check = String(anchor && anchor.check ? anchor.check : '');
+    if (!allowedCheck.has(check)) problems.push(id + ': check должен быть ' + [...allowedCheck].join('|') + ' (сейчас «' + (check || 'пусто') + '»)');
+    const proof = anchor && anchor.proof ? anchor.proof : null;
+    const proofText = typeof proof === 'string' ? proof : proof && typeof proof === 'object' ? JSON.stringify(proof) : '';
+    if (proofText === '' || proofText === '{}') problems.push(id + ': нет proof — узлам нечем доказать выполнение правила');
+    const status = String(anchor && anchor.status ? anchor.status : '');
+    if (!allowedStatus.has(status)) problems.push(id + ': статус должен быть auto|semi|inWork|retired');
+    const confirmed = anchor && anchor.confirmed && typeof anchor.confirmed === 'object' ? anchor.confirmed : {};
+    if (status !== 'inWork' && !confirmed.date) problems.push(id + ': нет confirmed.date — непонятно, когда правило подтверждено');
+    if (confirmed.date) {
+      const ageDays = Math.floor((now.getTime() - Date.parse(confirmed.date)) / 86400000);
+      if (Number.isFinite(ageDays) && ageDays > 180) warnings.push(id + ': подтверждение старше 180 дней (' + ageDays + ') — список просрочен, оценка критериев может быть некорректной');
+    }
+    const expiresAt = anchor && anchor.expiresAt ? Date.parse(String(anchor.expiresAt)) : NaN;
+    if (Number.isFinite(expiresAt) && expiresAt < now.getTime()) warnings.push(id + ': срок действия истёк (' + anchor.expiresAt + ')');
+  }
+  return { ok: problems.length === 0, problems, warnings, notes, count: list.length, layer: 'project' };
+}
+
+/** Прочитать и проверить проектный слой воркспейса. */
+export function checkProject(root, options = {}) {
+  const workspace = path.resolve(String(root || '.'));
+  const anchorsFile = path.join(workspace, 'docs', 'anchors.json');
+  if (!fs.existsSync(anchorsFile)) {
+    return { ok: true, warnings: ['семантические якоря проекта не заданы (нет docs/anchors.json)'], problems: [], notes: [], count: 0, layer: 'project', file: anchorsFile };
+  }
+  let anchors;
+  try {
+    anchors = JSON.parse(fs.readFileSync(anchorsFile, 'utf8'));
+  } catch (error) {
+    return { ok: false, problems: ['docs/anchors.json не читается: ' + (error && error.message ? error.message : String(error))], warnings: [], notes: [], count: 0, layer: 'project' };
+  }
+  const bytes = fs.readFileSync(anchorsFile);
+  const problems = [];
+  if (bytes.length > 0 && bytes[bytes.length - 1] !== 0x0a) problems.push('docs/anchors.json не заканчивается переводом строки: канон требует LF в конце файла');
+  const approvalFile = path.join(workspace, 'docs', 'anchors.approval.json');
+  let approval = null;
+  try {
+    approval = JSON.parse(fs.readFileSync(approvalFile, 'utf8').replace(/^\uFEFF/u, ''));
+  } catch {
+    approval = null;
+  }
+  const candidates = [
+    process.env.WF_ACCEPTORS,
+    path.join(workspace, 'docs', 'subagent-workflow', 'acceptors.json'),
+    path.join(workspace, 'docs', 'acceptors.json'),
+  ].filter(Boolean);
+  let acceptors = null;
+  for (const candidate of candidates) {
+    try {
+      if (!fs.existsSync(candidate)) continue;
+      acceptors = loadAcceptors(candidate);
+      break;
+    } catch {
+      acceptors = null;
+    }
+  }
+  const result = evaluateProjectAnchors({
+    list: Array.isArray(anchors && anchors.anchors) ? anchors.anchors : [],
+    approval,
+    sha: sha256File(anchorsFile),
+    approvalHash: approval && approval.hash ? String(approval.hash) : null,
+    acceptors,
+    now: options.now instanceof Date ? options.now : new Date(),
+  });
+  return { ...result, problems: problems.concat(result.problems), file: anchorsFile };
 }
