@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { anchorsStatus, approveAnchors, hashFile } from '../lib/anchors.js';
-import { generateKeyPair } from '../../spec/scripts/sign.mjs';
+import { generateKeyPair, signRecord } from '../../spec/scripts/sign.mjs';
 
 function makeRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-anchors-ui-'));
@@ -88,6 +88,26 @@ test('c4: правка якорей после подписи ломает ут�
   const status = anchorsStatus(parts.root, config);
   assert.equal(status.approved, false);
   assert.ok(status.problems.join(' ').includes('хеш'));
+});
+
+test('c6: подпись движка (sign.mjs) принимается панелью — один канон', () => {
+  const parts = makeRoot();
+  const config = configOf(parts);
+  const file = path.join(parts.root, 'subagent-workflow-v2', 'docs', 'anchors.json');
+  const body = {
+    version: 1,
+    anchors: 'docs/anchors.json',
+    algo: 'sha256',
+    hash: hashFile(file),
+    bytes: fs.statSync(file).size,
+    scope: 'project',
+    by: ['пользователь'],
+    at: '2026-11-09T16:00:00.000Z',
+  };
+  const signed = signRecord(body, { privateKeyPem: parts.human.privateKeyPem, keyId: 'human-user' });
+  fs.writeFileSync(path.join(parts.root, 'subagent-workflow-v2', 'docs', 'anchors.approval.json'), JSON.stringify(signed, null, 2));
+  const status = anchorsStatus(parts.root, config);
+  assert.equal(status.approved, true, JSON.stringify(status.problems));
 });
 
 test('c5: без ключа — понятная ошибка', () => {

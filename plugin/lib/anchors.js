@@ -43,6 +43,16 @@ export function hashFile(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
+/** Канон подписи — как в spec/scripts/sign.mjs: ключи объектов отсортированы. */
+export function canonicalize(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']';
+  if (value !== null && typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return '{' + keys.map((key) => JSON.stringify(key) + ':' + canonicalize(value[key])).join(',') + '}';
+  }
+  return JSON.stringify(value);
+}
+
 /** Проверка подписи по публичному ключу из acceptors.json. */
 export function verifyApproval(approval, acceptors) {
   if (!approval || typeof approval !== 'object') return { ok: false, reason: 'нет утверждения' };
@@ -54,7 +64,7 @@ export function verifyApproval(approval, acceptors) {
   try {
     const copy = { ...approval };
     for (const field of ['signature', 'signatureAlgorithm', 'keyId', 'publicKeyFingerprint']) delete copy[field];
-    const body = JSON.stringify(copy);
+    const body = canonicalize(copy);
     const ok = crypto.verify(null, Buffer.from(body, 'utf8'), crypto.createPublicKey(key.publicKeyPem), Buffer.from(String(approval.signature || ''), 'base64'));
     return ok ? { ok: true, keyId } : { ok: false, reason: 'подпись не сходится с ключом ' + keyId };
   } catch (error) {
@@ -130,7 +140,7 @@ export function approveAnchors(root, config) {
     at: new Date().toISOString(),
   };
   const privateKey = crypto.createPrivateKey(fs.readFileSync(cfg.keyFile, 'utf8'));
-  const signature = crypto.sign(null, Buffer.from(JSON.stringify(body), 'utf8'), privateKey).toString('base64');
+  const signature = crypto.sign(null, Buffer.from(canonicalize(body), 'utf8'), privateKey).toString('base64');
   const record = {
     ...body,
     signatureAlgorithm: 'ed25519',
