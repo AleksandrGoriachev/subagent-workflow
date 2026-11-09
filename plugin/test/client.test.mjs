@@ -227,11 +227,11 @@ test('client bundle registers the Workflow conversation view', async () => {
   assert.equal(slot.options.name, 'conversation.view');
   assert.equal(slot.options.id, 'workflow');
   assert.equal(typeof slot.options.label, 'function');
-  assert.equal(slot.options.label(), 'Workflow');
+  assert.equal(slot.options.label(), 'Консоль workflow');
   assert.equal(typeof slot.component, 'function');
 
   const rendered = textOf(slot.component());
-  assert.match(rendered, /Workflow/);
+  assert.match(rendered, /Консоль workflow/u);
   assert.match(rendered, /Доска/);
   assert.match(rendered, /Политика/);
   assert.match(rendered, /Обновить/);
@@ -1158,7 +1158,8 @@ test('карточка absent: два действия, без ошибки', as
     assert.notEqual(deploy.props.disabled, true, 'развернуть можно сразу');
     assert.notEqual(link.props.disabled, true, 'подключить можно сразу');
     assert.ok(!/ошибк/iu.test(rendered), 'отсутствие движка не названо ошибкой');
-    assert.ok(!/не удалось|отказ/iu.test(rendered), 'карточка не показывает отказ');
+    assert.ok(rendered.includes("Движок не найден. Установка движка не выполняется автоматически."), 'показывается утверждённая строка отсутствующего движка');
+    assert.ok(!/Движок[^.]{0,60}(не удалось|отказ)|(?:не удалось|отказ)[^.]{0,60}движок/iu.test(rendered), 'отсутствие движка не представлено как отказ');
 
     const card = elements(tree).find(
       (element) => element.type === 'section' && textOf(element).includes('движок не подключён'),

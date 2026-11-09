@@ -27,7 +27,15 @@ export function expandPath(value) {
 export function anchorsConfig(root, config) {
   const base = path.resolve(String(root || '.'));
   const raw = config && typeof config.anchors === 'object' && config.anchors !== null ? config.anchors : {};
-  const pick = (key, fallback) => (typeof raw[key] === 'string' && raw[key].trim() !== '' ? expandPath(raw[key]) : path.join(base, fallback));
+  /*
+   * 0120: абсолютный fallback (ключ в профиле пользователя) нельзя склеивать с корнем
+   * воркспейса — получался несуществующий путь, подпись молча не проходила.
+   */
+  const pick = (key, fallback) => {
+    if (typeof raw[key] === 'string' && raw[key].trim() !== '') return expandPath(raw[key]);
+    const expanded = expandPath(fallback);
+    return path.isAbsolute(expanded) ? expanded : path.join(base, expanded);
+  };
   return {
     file: pick('file', path.join('subagent-workflow-v2', 'docs', 'anchors.json')),
     approval: pick('approval', path.join('subagent-workflow-v2', 'docs', 'anchors.approval.json')),
@@ -165,7 +173,9 @@ export function approveAnchors(root, config) {
   };
   fs.mkdirSync(path.dirname(cfg.approval), { recursive: true });
   fs.writeFileSync(cfg.approval, JSON.stringify(record, null, 2) + '\n');
-  return { ok: true, hash: record.hash, keyId: record.keyId, at: record.at, file: cfg.approval, dashboard: anchorsStatus(root, config) };
+  /* 0120: панель показывает состояние по верхним полям — отдаём их, а не только вложенный dashboard. */
+  const dashboard = anchorsStatus(root, config);
+  return { ...dashboard, ok: true, signed: true, hash: record.hash, keyId: record.keyId, at: record.at, file: cfg.approval, dashboard };
 }
 
 /** Прогон релизной проверки движка, если она доступна рядом. */

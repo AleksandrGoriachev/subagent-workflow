@@ -127,3 +127,22 @@ test('c5: без ключа — понятная ошибка', () => {
   assert.equal(result.ok, false);
   assert.match(result.problems.join(' '), /нет человеческого ключа/u);
 });
+
+test('c8: абсолютный путь ключа не склеивается с корнем воркспейса', () => {
+  const parts = makeRoot();
+  const config = { anchors: { file: path.join(parts.root, 'subagent-workflow-v2', 'docs', 'anchors.json'), approval: path.join(parts.root, 'subagent-workflow-v2', 'docs', 'anchors.approval.json'), keyFile: path.join(parts.keys, 'human-user.key.pem'), keyId: 'human-user', acceptors: path.join(parts.root, 'docs', 'subagent-workflow', 'acceptors.json') } };
+  delete config.anchors.keyFile.default;
+  const result = approveAnchors(parts.root, config);
+  assert.equal(result.ok, true, JSON.stringify(result.problems));
+});
+
+test('c9: результат подписи виден верхними полями (approved, keyId, at, hash)', () => {
+  const parts = makeRoot();
+  const result = approveAnchors(parts.root, configOf(parts));
+  assert.equal(result.ok, true);
+  assert.equal(result.approved, true);
+  assert.equal(result.signed, true);
+  assert.equal(result.keyId, 'human-user');
+  assert.match(String(result.hash), /^[0-9a-f]{64}$/u);
+  assert.ok(result.at);
+});

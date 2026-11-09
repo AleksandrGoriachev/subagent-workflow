@@ -21,7 +21,7 @@ window.__ModuleLoader__.load({
 
     const BASE = "/workflow";
     const VIEW_ID = "workflow";
-    const VIEW_LABEL = "Workflow";
+    const VIEW_LABEL = "Консоль workflow";
     const ORDER = 40;
 
     /*
@@ -397,6 +397,14 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         font: "inherit",
       },
       content: { flex: "1 1 auto", overflow: "auto", padding: "12px" },
+      summaryCard: { border: "1px solid " + T.border1, borderRadius: "8px", padding: "10px", marginBottom: "10px", background: T.bg1 },
+      summaryTitle: { margin: "0 0 8px", fontSize: "14px", fontWeight: "600" },
+      summaryGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "6px" },
+      summaryItem: { border: "1px solid " + T.border1, borderRadius: "6px", background: T.bg2, padding: "7px 8px", fontSize: "12px" },
+      anchorList: { maxHeight: "320px", overflowY: "auto", overscrollBehavior: "contain", border: "1px solid " + T.border1, borderRadius: "6px", padding: "6px", background: T.bg1 },
+      anchorRow: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: "4px 10px", alignItems: "start", padding: "8px 4px", borderBottom: "1px solid " + T.border1, fontSize: "12px" },
+      anchorMeta: { gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: "4px 14px", color: T.secondary, fontSize: "11px" },
+      summaryStatus: { fontWeight: "600", display: "block", marginBottom: "3px" },
       error: {
         margin: "0 0 10px",
         padding: "8px 10px",
@@ -912,6 +920,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         /* 0111 (WC-77): утверждение якорей — действие человека из панели, не из PowerShell. */
         const [anchors, setAnchors] = React.useState(null);
         const [anchorsBusy, setAnchorsBusy] = React.useState(false);
+        /* 0120: результат действия должен быть виден — и успех, и причина отказа. */
+        const [anchorsNote, setAnchorsNote] = React.useState(null);
+        const [anchorsError, setAnchorsError] = React.useState(null);
         /*
          * 0090 (WC-4): первая запись из панели. Панель не пишет тексты — она
          * зовёт штатные task-hash.mjs / new-task.mjs и показывает их вывод.
@@ -1744,111 +1755,143 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
          * поэтому панель показывает «последняя удачная 18:40», а не «aborted».
          */
         async function loadAnchors() {
+          setAnchorsError(null);
           try {
             const response = await fetch(BASE + "/api/anchors", { headers: { Accept: "application/json" } });
             setAnchors(await readJson(response));
           } catch (failure) {
-            setAnchors({ ok: false, approved: false, problems: [errorText(failure)] });
+            setAnchorsError(errorText(failure));
           }
         }
 
         async function approveAnchorsNow() {
           if (anchorsBusy) return;
           setAnchorsBusy(true);
+          setAnchorsError(null);
           try {
             const response = await fetch(BASE + "/api/anchors/approve", {
               method: "POST",
               headers: { "Content-Type": "application/json", Accept: "application/json" },
               body: JSON.stringify({ confirm: true }),
             });
-            setAnchors(await readJson(response));
+            const next = await readJson(response);
+            setAnchors(next);
+            if (next.ok !== true) setAnchorsError((next.problems || ["Не удалось проверить и утвердить якоря."])[0]);
           } catch (failure) {
-            setAnchors({ ok: false, approved: false, problems: [errorText(failure)] });
+            setAnchorsError(errorText(failure));
           } finally {
             setAnchorsBusy(false);
           }
         }
 
         function anchorsText() {
-          if (!anchors) return "якоря: состояние не загружено";
+          if (!anchors) return anchorsError
+            ? "Не удалось получить список якорей. Остальные данные оставлены без изменений. Повторите обновление данных."
+            : "Загружаем состояние…";
           if (anchors.approved === true) {
-            return "якоря утверждены ключом " + fmt(anchors.keyId) + " · " + fmt(anchors.at) + " · хеш " + String(anchors.hash || "").slice(0, 12) + "…";
+            return "Якоря утверждены: ключ " + fmt(anchors.keyId) + " · " + fmt(anchors.at) + " · хеш " + String(anchors.hash || "").slice(0, 12) + "…";
           }
           const reason = anchors.problems && anchors.problems.length ? anchors.problems[0] : "не утверждены";
-          return "якоря не утверждены: " + reason;
+          return "Якоря не утверждены: " + reason;
+        }
+
+        function anchorStatusLabel(status) {
+          if (status === "auto") return "Проверяется автоматически";
+          if (status === "semi") return "Проверяется частично";
+          if (status === "inWork") return "В работе";
+          return "Статус не указан";
+        }
+
+        function anchorStatusColor(status) {
+          if (status === "auto") return T.success;
+          if (status === "semi") return T.warn;
+          return T.tertiary;
+        }
+
+        function anchorTermExplanation(claim) {
+          let text = String(claim || "");
+          const explanations = [
+            [/commit\.ps1/gu, "commit.ps1 (скрипт безопасного коммита)"],
+            [/release-publish/gu, "release-publish (сценарий публикации релиза)"],
+            [/draft -> smoke -> publish/gu, "draft -> smoke -> publish (черновик -> проверка сборки -> публикация)"],
+            [/Reply-To/gu, "Reply-To (адрес для ответа)"],
+            [/Session/gu, "Session (идентификатор сессии)"],
+          ];
+          for (const [pattern, replacement] of explanations) text = text.replace(pattern, replacement);
+          return text;
         }
 
         function renderAnchorsCard() {
-          /*
-           * 0113: элемент панели обязан объяснять себя. Не все знают про
-           * семантические якоря, поэтому карточка говорит простыми словами:
-           * что это, что делает кнопка, что будет после нажатия и что ломается
-           * без утверждения.
-           */
+          /* Кнопки и карточки называют предмет, результат действия и цену бездействия. */
           const approved = Boolean(anchors && anchors.approved === true);
           const hint = approved
-            ? "Правила утверждены. Кнопка перечитывает состояние: если файл правил менялся, утверждение снова станет недействительным."
-            : "Кнопка ставит вашу подпись под текущей редакцией правил (файл docs/anchors.json). Это не «сохранить» и не «применить»: подпись фиксирует, что вы эти правила прочитали и приняли. Пока подписи нет, проверки считают правила неутверждёнными и релиз не проходит.";
+            ? "Якоря — общие правила контура, по которым проверяются задачи и выпуски. Утверждение уже есть; повторное утверждение не требуется, пока файл правил не менялся. Без действительной подписи проверки не принимают набор правил."
+            : "Якоря — общие правила контура, по которым проверяются задачи и выпуски. Кнопка проверяет список и ставит вашу человеческую подпись под его текущей редакцией (docs/anchors.json); сами формулировки и рабочие пространства не меняет. Без подписи проверки считают набор неутверждённым и релиз не проходит.";
+          const list = anchors && Array.isArray(anchors.anchors) ? anchors.anchors : null;
+          const approvalUnavailable = !anchors || anchors.ok !== true || !list || list.length === 0;
+          const approvalHint = anchorsBusy ? "Проверяем список и подпись…" : anchorsError ? "Утверждение недоступно: " + (anchors && anchors.problems && anchors.problems.length ? anchors.problems[0] : anchorsError) : approvalUnavailable && anchors ? "Утверждение недоступно: сначала проверьте целостность списка и подпись." : approvalUnavailable ? "Загружаем состояние…" : approved ? "Кнопка перечитывает состояние подписи; без обновления может быть показано устаревшее подтверждение." : "Кнопка ставит подпись под видимым набором правил; без подписи проверка выпуска не проходит.";
+          const approvedDate = approved && anchors.at ? anchors.at : "Нет данных";
+          const integrity = anchors && anchors.hash ? "SHA-256 " + String(anchors.hash).slice(0, 12) + "…" : "Нет данных";
+          const ruleRows = list && list.length > 0
+            ? list.map((anchor) => h(
+                "div",
+                { key: anchor.id, style: S.anchorRow },
+                h("div", null, h("b", { style: { marginRight: "6px" } }, anchor.id), anchorTermExplanation(anchor.claim)),
+                h("span", { style: Object.assign({}, S.badge, { color: anchorStatusColor(anchor.status), borderColor: anchorStatusColor(anchor.status) }) }, anchorStatusLabel(anchor.status)),
+                h(
+                  "div",
+                  { style: S.anchorMeta },
+                  h("span", null, h("b", null, "Область: "), fmt(anchor.scope)),
+                  h("span", null, h("b", null, "Проверка: "), fmt(anchor.check)),
+                  h("span", null, h("b", null, "Владелец: "), fmt(anchor.owner)),
+                  h("span", null, h("b", null, "Подтверждено: "), anchor.confirmed && anchor.confirmed.version ? anchor.confirmed.version + (anchor.confirmed.date ? " · " + anchor.confirmed.date : "") : "Нет данных"),
+                ),
+              ))
+            : h("div", { style: S.empty }, anchorsError
+                ? "Не удалось получить список якорей. Остальные данные оставлены без изменений. Повторите обновление данных."
+                : "Загружаем состояние…");
           return h(
-            "div",
-            { style: S.card },
-            h("div", { style: S.cardTitle }, "Семантические якоря"),
+            "section",
+            { style: S.section },
+            h("h3", { style: S.sectionTitle }, "Семантические якоря"),
+            h("div", { style: S.stageText }, hint),
             h(
               "div",
-              { style: S.note },
-              "Якоря — короткий список правил (сейчас 12), по которым контур проверяет задачи и выпуски: "
-              + "например «правки только в своей зоне», «сначала критерий, потом работа», «отчёт говорит только доказанное». "
-              + "Это правила самого контура (движка), одни и те же для всех воркспейсов: они не описывают проект в выбранном "
-              + "корне. Любая правка файла правил требует нового утверждения — иначе проверка не отличит согласованную "
-              + "редакцию от случайной правки.",
+              { style: Object.assign({}, S.summaryGrid, { margin: "8px 0" }) },
+              h("div", { style: S.summaryItem }, h("b", { style: S.summaryStatus }, approved ? "Якоря утверждены" : anchors ? "Якоря требуют внимания" : "Загружаем состояние…"), "Подтверждено: " + fmt(approvedDate)),
+              h("div", { style: S.summaryItem }, h("b", { style: S.summaryStatus }, "Целостность набора"), integrity),
             ),
-            h("div", { style: S.note }, anchorsText()),
-            /* 0114: правила надо прочитать до подписи — показываем список, а не только статус. */
-            anchors && Array.isArray(anchors.anchors) && anchors.anchors.length > 0
-              ? h(
-                  "details",
-                  { style: Object.assign({}, S.note, { marginTop: "4px" }) },
-                  h("summary", { style: { cursor: "pointer" } }, "Прочитать список правил (" + anchors.anchors.length + ")"),
-                  h(
-                    "ol",
-                    { style: { margin: "6px 0 0 18px", padding: 0 } },
-                    anchors.anchors.map((anchor) => h(
-                      "li",
-                      { key: anchor.id, style: { marginBottom: "4px" } },
-                      h("b", null, anchor.id + ". "),
-                      anchor.claim,
-                      h(
-                        "span",
-                        { style: { opacity: 0.7 } },
-                        " — " + (anchor.scope || "?") + ", " + (anchor.status || "?")
-                        + (anchor.confirmed && anchor.confirmed.version ? ", подтверждён в " + anchor.confirmed.version : ""),
-                      ),
-                    )),
-                  ),
-                  h(
-                    "div",
-                    { style: { marginTop: "6px", opacity: 0.8 } },
-                    "Файл: " + fmt(anchors.file) + " · хеш " + String(anchors.hash || "").slice(0, 12) + "…",
-                  ),
-                )
-              : null,
-            h("div", { style: S.note }, hint),
+            anchorsBusy ? h("div", { style: S.hint }, approved ? "Обновляем состояние подписи… Прежние данные оставлены на экране." : "Проверяем и утверждаем якоря… Прежние данные оставлены на экране.") : null,
+            anchorsError ? h("div", { style: Object.assign({}, S.error, { marginBottom: "8px" }) }, "Не удалось получить или утвердить якоря. Остальные данные оставлены без изменений. Причина: " + (anchors && anchors.problems && anchors.problems.length ? anchors.problems[0] : anchorsError) + ". Повторите обновление данных.") : null,
+            anchors && anchors.approved === true ? h("div", { style: Object.assign({}, S.hint, { borderColor: T.success, color: T.success, fontWeight: "600" }) }, "Якоря утверждены: ключ " + fmt(anchors.keyId) + " · " + fmt(anchors.at) + " · хеш " + String(anchors.hash || "").slice(0, 12) + "…") : null,
+            h("div", { style: S.anchorList, role: "region", "aria-label": "Список правил семантических якорей" }, ruleRows),
+            h("div", { style: Object.assign({}, S.stageText, { marginTop: "6px" }) }, "Файл: " + fmt(anchors && anchors.file) + " · хеш: " + integrity),
             h(
               "div",
-              { style: Object.assign({}, S.actions, { marginTop: "6px" }) },
+              { style: Object.assign({}, S.actions, { marginTop: "8px", marginBottom: 0 }) },
               h(
                 "button",
                 {
                   type: "button",
-                  style: anchorsBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
-                  disabled: anchorsBusy,
-                  onClick: () => void (anchors && anchors.approved === true ? loadAnchors() : approveAnchorsNow()),
-                  title: anchors && anchors.approved === true
-                    ? "Обновить состояние якорей"
-                    : "Подписать утверждение человеческим ключом human-user",
+                  style: anchorsBusy || approvalUnavailable || anchorsError ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
+                  disabled: anchorsBusy || approvalUnavailable || Boolean(anchorsError),
+                  onClick: () => {
+                    if (approved) void loadAnchors();
+                    else {
+                      setAnchorsError(null);
+                      setAnchors(null);
+                      void approveAnchorsNow();
+                    }
+                  },
+                  title: approvalUnavailable
+                    ? anchors ? "Утверждение недоступно: сначала проверьте целостность списка и подпись." : "Загружаем состояние…"
+                    : approved
+                      ? "Якоря уже утверждены; сначала измените файл правил и затем проверьте его заново."
+                      : "Подписывает текущий список правил человеческим ключом human-user; проверки требуют эту подпись.",
                 },
-                anchorsBusy ? "Подписываю…" : (anchors && anchors.approved === true ? "Обновить" : "Утвердить якоря"),
+                anchorsBusy ? "Подписываем…" : approved ? "Обновить состояние" : "Утвердить якоря",
               ),
+              h("span", { style: anchorsError ? S.error : S.stageText }, approvalHint),
             ),
           );
         }
@@ -1904,23 +1947,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 title: RELEASE_UPDATE_HINT,
                 "aria-label": RELEASE_UPDATE_LABEL,
               },
-              updateBusy ? "Скачиваю релиз…" : RELEASE_UPDATE_LABEL,
-            ),
-            /*
-             * 0079 (WC-52): выход из тупика «сборка панели старше движка» —
-             * обновить сам пакет панели, а не двигать движок ещё раз.
-             */
-            h(
-              "button",
-              {
-                type: "button",
-                style: updateBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
-                disabled: updateBusy,
-                onClick: () => void runPluginUpdate(),
-                title: PLUGIN_UPDATE_HINT,
-                "aria-label": PLUGIN_UPDATE_LABEL,
-              },
-              updateBusy ? "Обновляю панель…" : PLUGIN_UPDATE_LABEL,
+              updateBusy ? "Обновляем движок…" : RELEASE_UPDATE_LABEL,
             ),
             h("span", { style: S.hint }, RELEASE_UPDATE_HINT),
           );
@@ -2201,6 +2228,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "section",
             { style: S.section },
             h("h3", { style: S.sectionTitle }, "Версия движка"),
+            h("div", { style: S.stageText }, "Карточка показывает установленную и доступную версии движка. Обновление меняет файлы движка в его репозитории; без него останется текущая версия и могут сохраняться ограничения совместимости."),
             h(
               "div",
               { style: S.stageText },
@@ -2219,10 +2247,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   "Версия совпадает со сборкой панели — обновление не требуется.",
                 )
               : null,
-            /* 0111 (WC-77): утверждение якорей — карточка панели, ключ human остаётся вне репозитория. */
-            renderAnchorsCard(),
             /* 0067: сборка не новее движка — свежий движок можно взять из релиза GitHub. */
             upToDate || older ? renderReleaseAction() : null,
+            h("div", { style: S.stageText }, "«Обновить движок» устанавливает версию движка; без действия он останется прежним. «Обновить панель» меняет только пакет панели и требует перезапуска DSH; без действия интерфейс не обновится. Эти действия не обновляют данные, для этого есть «Обновить данные» в шапке."),
+            h("div", { style: Object.assign({}, S.actions, { marginTop: "6px" }) }, h("button", { type: "button", style: updateBusy ? Object.assign({}, S.button, S.buttonDisabled) : S.button, disabled: updateBusy, onClick: () => void runPluginUpdate(), title: PLUGIN_UPDATE_HINT }, updateBusy ? "Обновляем панель…" : "Обновить панель"), h("span", { style: S.stageText }, PLUGIN_UPDATE_HINT)),
             /*
              * 2.6.16 (0042): для внешнего движка кнопка не «недоступна» — она
              * обновляет репозиторий движка. Недоступно только понижение (0041).
@@ -2271,7 +2299,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                      сборку панели старше движка — обычная кнопка атрибута не получает. */
                   older ? { "aria-disabled": "true" } : {},
                 ),
-                updateBusy ? "Обновляю…" : external ? EXTERNAL_UPDATE_LABEL : UPDATE_LABEL,
+                updateBusy ? "Обновляем движок…" : external ? EXTERNAL_UPDATE_LABEL : UPDATE_LABEL,
               ),
               /*
                * 0038: причину видно на месте, а не только в tooltip.
@@ -2291,9 +2319,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               external
                 ? "Обновление внешнего движка выполняется в его репозитории: " + (externalRepo || "путь неизвестен")
                   + ". Воркспейс не меняется; ключи и задачи репозитория движка сохраняются."
-                : "Обновление выполняет init --force из вложенной спеки: версия движка берётся из сборки, "
-                  + "без сети. Ключи проекта не меняются; каждое обновление пишет строку в "
-                  + "docs/subagent-workflow/deploy.log. Пока идёт обновление, остальные запросы панели живы.",
+                : "Обновление выполняет init --force (принудительное обновление из сборки) из вложенной спеки. Версия движка берётся из сборки без сети. Ключи проекта не меняются; каждое обновление пишет строку в docs/subagent-workflow/deploy.log. Пока идёт обновление, остальные запросы панели живы.",
             ),
           );
         }
@@ -2360,8 +2386,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return list;
         })();
         const title = status && status.plugin
-          ? "Workflow · v" + status.plugin.version
-          : "Workflow";
+          ? "Панель: v" + status.plugin.version
+          : "Панель: версия не загружена";
 
         function optionLabel(item) {
           const isCurrent = Boolean(currentWorkspace && sameFsPath(item.path, currentWorkspace.path));
@@ -2395,8 +2421,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return h(
             "div",
             { style: S.header },
-            h("h1", { style: S.title }, "Workflow"),
+            h("h1", { style: S.title }, "Консоль workflow"),
             h("span", { style: S.subtitle }, title),
+            h("span", { style: S.subtitle }, "Движок: " + (engineInstalled() ? "v" + engineInstalled() : "не найден")),
+            h("span", { style: S.subtitle }, "Последний выпуск: " + (status && status.latestRelease && status.latestRelease.engine ? fmt(status.latestRelease.at) + " · движок v" + fmt(status.latestRelease.engine) : "нет данных")),
             h(
               "span",
               { style: S.subtitle },
@@ -2421,9 +2449,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   type: "button",
                   style: Object.assign({}, S.button, { marginLeft: "8px", padding: "1px 8px" }),
                   disabled: releaseCheckBusy,
+                  title: "Проверяет версии движка и панели по данным релиза. Без проверки дата актуальности может быть неизвестна.",
                   onClick: () => void runReleaseCheck(),
                 },
-                releaseCheckBusy ? "Проверяю…" : "Проверить актуальность",
+                releaseCheckBusy ? "Проверяем актуальность…" : "Проверить актуальность",
               ),
             ),
             h("span", { style: S.spacer }),
@@ -2452,9 +2481,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 style: busy ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
                 disabled: busy,
                 onClick: () => void load(root),
-                title: "Перечитать артефакты; ничего не запускается и не пишется",
+                title: "Обновляет данные панели из текущего пространства; без нажатия остаются показаны ранее загруженные сведения.",
               },
-              busy ? "Чтение…" : "Обновить",
+              busy ? "Обновляем данные…" : "Обновить данные",
             ),
           );
         }
@@ -2581,6 +2610,33 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           );
         }
 
+        function renderNowSummary(tasks, working, accepted, remarks) {
+          const engine = engineState();
+          const engineLabel = engine.source === "mapping" ? "Обнаружен внешний движок. Панель не будет его изменять."
+            : engine.installed ? "Движок: v" + fmt(engine.version || engineInstalled())
+              : "Движок не найден. Установка движка не выполняется автоматически.";
+          const panelLabel = status && status.plugin ? "Панель: v" + fmt(status.plugin.version) : "Загружаем состояние…";
+          const anchorLabel = !anchors ? (anchorsError ? "Не удалось получить состояние якорей. Остальные данные оставлены без изменений. Повторите обновление данных." : "Загружаем состояние…")
+            : anchors.approved ? "Якоря утверждены" : "Якоря требуют внимания";
+          const taskLabel = board ? tasks.length + " задач · в работе: " + working + " · принято: " + accepted + (remarks ? " · с замечаниями: " + remarks : "")
+            : "Данные ещё не загружены. Нажмите „Обновить данные“, чтобы запросить текущий статус.";
+          const issue = engine.source === "mapping" ? "Обнаружен внешний движок. Панель не будет его изменять."
+            : anchorsError && root ? "Не удалось получить состояние якорей. Остальные данные оставлены без изменений. Повторите обновление данных."
+              : error && !root ? "Не удалось получить состояние движка. Остальные данные оставлены без изменений. Повторите обновление данных." : null;
+          const item = (label, value, color) => h("div", { style: S.summaryItem }, h("b", { style: Object.assign({}, S.summaryStatus, color ? { color } : null) }, label), value);
+          return h("section", { style: S.summaryCard },
+            h("h2", { style: S.summaryTitle }, "Сейчас"),
+            h("div", { style: S.summaryGrid },
+              item("Движок", busy && engine.installed ? "Обновляем… · " + engineLabel : engineLabel, engine.source === "mapping" ? T.warn : engine.installed ? T.success : T.tertiary),
+              item("Панель / актуальность", releaseCheckBusy ? "Проверяем актуальность…" : releaseCheckText() || panelLabel, releaseCheck && releaseCheck.ok === false ? T.warn : null),
+              item("Якоря", anchorsBusy ? "Проверяем и утверждаем якоря…" : anchorLabel, anchors && anchors.approved ? T.success : anchors ? T.warn : T.tertiary),
+              item("Задачи", busy && !board ? "Загружаем состояние…" : taskLabel, null),
+              item("Сводка задач", remarks > 0 ? "Требует внимания · замечаний: " + remarks : "Всё актуально", remarks > 0 ? T.warn : T.success)),
+            busy ? h("div", { style: S.stageText }, "Обновляем состояние панели… Прежние значения оставлены на экране.") : null,
+            issue ? h("div", { style: Object.assign({}, S.hint, { margin: "8px 0 0", borderColor: engine.source === "mapping" ? T.warn : T.border1 }) }, issue) : null,
+            h("div", { style: Object.assign({}, S.stageText, { marginTop: "6px" }) }, "Сводка показывает состояние движка, панели, якорей и задач. Обновление данных только перечитывает сведения; без него останутся прежние значения."));
+        }
+
         function renderBoard() {
           if (!board) {
             if (status && status.error) return h("div", { style: S.empty }, status.error);
@@ -2641,7 +2697,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 : null,
             );
             /* Тупик «workflow не развёрнут»: карточка движка предлагает два пути. */
-            return h("div", null, renderEngineCard(), empty, renderDeploy());
+            return h("div", null, renderNowSummary([], 0, 0, 0), renderEngineCard(), renderAnchorsCard(), empty, renderDeploy());
           }
           const tasks = board.tasks || [];
           const skipped = board.skipped || [];
@@ -2663,8 +2719,13 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return h(
             "div",
             null,
+            renderNowSummary(tasks, working, accepted, remarks),
             renderEngineCard(),
             renderEngine(),
+            renderAnchorsCard(),
+            h("h2", { style: S.summaryTitle }, "Доска задач"),
+            h("div", { style: S.stageText }, "Доска группирует задачи по текущим состояниям. Откройте карточку задачи, чтобы увидеть её поля и действия; без этого обзора нельзя быстро понять, на каком шаге работа остановилась."),
+            h("div", { style: S.actions }, runButton("doctor", null), h("span", { style: Object.assign({}, S.stageText, { flex: "1 1 100%" }) }, "«Проверить настройку» читает готовность ворот, ключа и политики и ничего не меняет; без проверки можно не заметить неполадку настройки.")),
             /*
              * 0090: новое задание с доски. Панель не создаёт файлы сама —
              * вызывает new-task.mjs и показывает, что тот напечатал.
@@ -3112,15 +3173,20 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         }
 
         function renderCard() {
+          const summaryTasks = board && board.tasks ? board.tasks : [];
           return h(
             "div",
             null,
+            renderNowSummary(summaryTasks, summaryTasks.filter((task) => ["contract", "attack", "lock", "red", "green", "incomplete"].includes(task.stage)).length, summaryTasks.filter((task) => task.stage === "accepted").length, summaryTasks.filter((task) => task.stage === "remarks").length),
+            h("h2", { style: S.summaryTitle }, "Карточка задачи"),
+            h("div", { style: S.stageText }, "Карточка показывает идентификатор, состояние и материалы выбранного задания. Используйте кнопки ниже для чтения проверок или подготовки замка; без действий переход по этапам задания не подтверждается."),
             h("button", { type: "button", style: Object.assign({}, S.button, S.back), onClick: () => setCard(null) }, "← Доска"),
             h(
               "div",
               { style: S.actions },
               runButton("lint", card.id),
               runButton("check-acceptance", card.id),
+              h("div", { style: Object.assign({}, S.stageText, { flex: "1 1 100%" }) }, "«Проверить задание» и «Проверить запись» выполняют только чтение и показывают результат ниже. Без проверки можно пропустить дефекты задания или непригодную для выпуска запись."),
               /*
                * 0090: замок контракта. Кнопка есть всегда — отказ скрипта
                * («контракт не закоммичен») печатается как есть, без догадок.
@@ -3136,6 +3202,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 },
                 lockBusy ? "Собираю замок…" : "Собрать замок",
               ),
+              h("div", { style: Object.assign({}, S.stageText, { flex: "1 1 100%" }) }, "«Собрать замок» фиксирует хеши контракта в criteria.lock после коммита и успешной атаки. Без замка красная проверка не подтвердит, что критерии зафиксированы заранее."),
             ),
             lockNote
               ? h(
@@ -3175,7 +3242,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
 
         function renderPolicy() {
           if (!root) return h("div", { style: S.empty }, "Корень не настроен: добавьте roots в cordis.patch.yml.");
-          if (!policy) return h("div", { style: S.empty }, "Чтение политики…");
+          if (busy && !policy) return h("div", { style: S.empty }, "Загружаем состояние…");
+          if (error && !policy) return h("div", { style: S.error }, "Не удалось получить политику. Остальные данные оставлены без изменений. Повторите обновление данных: " + error);
+          if (busy) return h("div", { style: S.empty }, "Обновляем состояние панели… Прежние значения оставлены на экране.");
+          if (!policy) return h("div", { style: S.empty }, "Данные ещё не загружены. Нажмите „Обновить данные“, чтобы запросить текущий статус.");
           const effective = policy.policy || {};
           const rows = [
             ["decisions", effective.decisions, "Насколько строго проверять решения, которые нельзя проверить командой."],
@@ -3186,7 +3256,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return h(
             "div",
             null,
-            h("div", { style: S.hint }, "fail — запрещать, warn — предупреждать, off — не проверять. Эффективная политика (как её видит doctor). Правка политики из панели не делается: измените workflow.config.json и перечитайте. Исключение одно — флаг guard в разделе «Проверка коммитов»."),
+            h("h2", { style: S.summaryTitle }, "Политика"),
+            h("div", { style: S.hint }, "Политика — действующие правила проверки задач. fail — запрещать, warn — предупреждать, off — не проверять. Панель только показывает настройки; без их просмотра можно не заметить, какие проверки отключены или только предупреждают. Править политику из панели нельзя: измените workflow.config.json в своём проекте и перечитайте данные. Исключение — флаг guard в разделе «Проверка коммитов»."),
             h("div", { style: S.pre }, policy.line || "—"),
             h("div", { style: S.kv }, h("span", { style: S.kvLabel }, "config"), h("span", { style: S.mono }, fmt(policy.configPath))),
             section(
@@ -3606,7 +3677,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             renderLocation(),
             renderRun(),
             renderDeployNote(),
-            error ? h("p", { style: S.error }, error) : null,
+            error && !root ? h("p", { style: S.error }, "Не удалось получить состояние движка. Остальные данные оставлены без изменений. Повторите обновление данных: " + error) : null,
             status && status.error && !status.repo
               ? h(
                   "p",
