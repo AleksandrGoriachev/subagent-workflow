@@ -87,11 +87,25 @@ export function anchorsStatus(root, config) {
     return { ok: false, approved: false, config: cfg, problems: ['якоря не найдены: ' + cfg.file] };
   }
   const hash = hashFile(cfg.file);
+  /*
+   * 0114: подписывать вслепую нельзя — панель отдаёт сам список, чтобы человек
+   * прочитал его перед подписью. Плюс явно говорим, чьи это правила: они
+   * принадлежат движку контура, а не проекту в корне.
+   */
+  const parsed = readJson(cfg.file) || {};
+  const list = Array.isArray(parsed.anchors) ? parsed.anchors.map((anchor) => ({
+    id: anchor && anchor.id ? String(anchor.id) : '',
+    claim: anchor && anchor.claim ? String(anchor.claim) : '',
+    scope: anchor && anchor.scope ? String(anchor.scope) : '',
+    status: anchor && anchor.status ? String(anchor.status) : '',
+    confirmed: anchor && anchor.confirmed ? anchor.confirmed : null,
+    owner: anchor && anchor.owner ? String(anchor.owner) : '',
+  })) : [];
   const approval = readJson(cfg.approval);
   const acceptorsRaw = readJson(cfg.acceptors);
   const acceptors = acceptorsRaw && Array.isArray(acceptorsRaw.acceptors) ? acceptorsRaw.acceptors : [];
   if (!approval) {
-    return { ok: true, approved: false, hash, file: cfg.file, approvalFile: cfg.approval, config: cfg, problems: ['якоря не утверждены: нет ' + path.basename(cfg.approval)] };
+    return { ok: true, approved: false, hash, file: cfg.file, approvalFile: cfg.approval, anchors: list, config: cfg, problems: ['якоря не утверждены: нет ' + path.basename(cfg.approval)] };
   }
   const signed = verifyApproval(approval, acceptors);
   const hashMatches = String(approval.hash || '') === hash;
@@ -105,6 +119,7 @@ export function anchorsStatus(root, config) {
     hash,
     file: cfg.file,
     approvalFile: cfg.approval,
+    anchors: list,
     keyId: approval.keyId || null,
     at: approval.at || null,
     scope: approval.scope || null,

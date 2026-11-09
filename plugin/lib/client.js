@@ -1779,11 +1779,60 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         }
 
         function renderAnchorsCard() {
+          /*
+           * 0113: элемент панели обязан объяснять себя. Не все знают про
+           * семантические якоря, поэтому карточка говорит простыми словами:
+           * что это, что делает кнопка, что будет после нажатия и что ломается
+           * без утверждения.
+           */
+          const approved = Boolean(anchors && anchors.approved === true);
+          const hint = approved
+            ? "Правила утверждены. Кнопка перечитывает состояние: если файл правил менялся, утверждение снова станет недействительным."
+            : "Кнопка ставит вашу подпись под текущей редакцией правил (файл docs/anchors.json). Это не «сохранить» и не «применить»: подпись фиксирует, что вы эти правила прочитали и приняли. Пока подписи нет, проверки считают правила неутверждёнными и релиз не проходит.";
           return h(
             "div",
             { style: S.card },
-            h("div", { style: S.cardTitle }, "Якоря"),
+            h("div", { style: S.cardTitle }, "Семантические якоря"),
+            h(
+              "div",
+              { style: S.note },
+              "Якоря — короткий список правил (сейчас 12), по которым контур проверяет задачи и выпуски: "
+              + "например «правки только в своей зоне», «сначала критерий, потом работа», «отчёт говорит только доказанное». "
+              + "Это правила самого контура (движка), одни и те же для всех воркспейсов: они не описывают проект в выбранном "
+              + "корне. Любая правка файла правил требует нового утверждения — иначе проверка не отличит согласованную "
+              + "редакцию от случайной правки.",
+            ),
             h("div", { style: S.note }, anchorsText()),
+            /* 0114: правила надо прочитать до подписи — показываем список, а не только статус. */
+            anchors && Array.isArray(anchors.anchors) && anchors.anchors.length > 0
+              ? h(
+                  "details",
+                  { style: Object.assign({}, S.note, { marginTop: "4px" }) },
+                  h("summary", { style: { cursor: "pointer" } }, "Прочитать список правил (" + anchors.anchors.length + ")"),
+                  h(
+                    "ol",
+                    { style: { margin: "6px 0 0 18px", padding: 0 } },
+                    anchors.anchors.map((anchor) => h(
+                      "li",
+                      { key: anchor.id, style: { marginBottom: "4px" } },
+                      h("b", null, anchor.id + ". "),
+                      anchor.claim,
+                      h(
+                        "span",
+                        { style: { opacity: 0.7 } },
+                        " — " + (anchor.scope || "?") + ", " + (anchor.status || "?")
+                        + (anchor.confirmed && anchor.confirmed.version ? ", подтверждён в " + anchor.confirmed.version : ""),
+                      ),
+                    )),
+                  ),
+                  h(
+                    "div",
+                    { style: { marginTop: "6px", opacity: 0.8 } },
+                    "Файл: " + fmt(anchors.file) + " · хеш " + String(anchors.hash || "").slice(0, 12) + "…",
+                  ),
+                )
+              : null,
+            h("div", { style: S.note }, hint),
             h(
               "div",
               { style: Object.assign({}, S.actions, { marginTop: "6px" }) },

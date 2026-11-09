@@ -90,6 +90,16 @@ test('c4: правка якорей после подписи ломает ут�
   assert.ok(status.problems.join(' ').includes('хеш'));
 });
 
+test('c7: статус отдаёт список правил — подписывать вслепую нельзя', () => {
+  const parts = makeRoot();
+  const status = anchorsStatus(parts.root, configOf(parts));
+  assert.ok(Array.isArray(status.anchors));
+  assert.equal(status.anchors.length, 1);
+  assert.equal(status.anchors[0].id, 'A1');
+  assert.ok(status.anchors[0].claim.length > 0);
+  assert.equal(status.anchors[0].status, 'auto');
+});
+
 test('c6: подпись движка (sign.mjs) принимается панелью — один канон', () => {
   const parts = makeRoot();
   const config = configOf(parts);
