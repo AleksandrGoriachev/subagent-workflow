@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "approvedHashRule": "hash(anchors.json) фиксируется в anchors.approval.json; любая правка требует переутверждения подписью",
+  "freshness": {
+    "auto": {
+      "maxAgeDays": 14,
+      "maxReleases": 5
+    },
+    "semi": {
+      "maxAgeDays": 30,
+      "maxReleases": 10
+    },
+    "inWork": {
+      "maxAgeDays": null,
+      "maxReleases": null
+    },
+    "reminderLeadDays": 7,
+    "remindedBy": "critic -> coordinator"
+  },
+  "anchors": [
+    {
+      "id": "A1",
+      "claim": "Правки только в своей зоне; чужая зона — письмом; выпуск только через commit.ps1 и release-publish",
+      "scope": "both",
+      "check": "guard-acceptance",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "user+coordinator"
+    },
+    {
+      "id": "A2",
+      "claim": "Задача начинается с проверяемого результата в контракте",
+      "scope": "workflow",
+      "check": "task-lint, relock-policy",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A3",
+      "claim": "Каждый факт с источником; кэш не выдаётся за свежесть (время + пометка)",
+      "scope": "workflow",
+      "check": "model-source, release-check",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A4",
+      "claim": "Отказ называет что упало, где и безопасный следующий шаг",
+      "scope": "workflow",
+      "check": "release-check c4",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A5",
+      "claim": "Контракт зафиксирован до красного; правка после красного — отдельным решением",
+      "scope": "workflow",
+      "check": "gates-journal, relock-policy",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A6",
+      "claim": "Тест проверяет разговор (URL/метод/заголовки/отказ), а не только ответ",
+      "scope": "workflow",
+      "check": "network-contract, outgoing-headers",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A7",
+      "claim": "Правка общего модуля перечисляет вызывающих и ожидания каждого; у каждого тест",
+      "scope": "workflow",
+      "check": "spec/checks/shared-impact.mjs (WC-69)",
+      "status": "inWork",
+      "confirmed": {
+        "version": null,
+        "date": null
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A8",
+      "claim": "Дефект превращается в гейт на класс и доказывается мутационно (гейт падает на старом коде)",
+      "scope": "workflow",
+      "check": "процедура разбора дефекта",
+      "status": "semi",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A9",
+      "claim": "Выпуск: draft -> smoke -> publish -> анонимная приёмка",
+      "scope": "workflow",
+      "check": "release-publish, release-smoke",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A10",
+      "claim": "«лежит» != «прочитан» != «доставлено с пробуждением»; ответ с Reply-To и Session",
+      "scope": "both",
+      "check": "журнал exchange-decisions.jsonl",
+      "status": "semi",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "user+coordinator"
+    },
+    {
+      "id": "A11",
+      "claim": "Отчёт говорит только доказанное; флейк среды не вердикт; вердикт — с развёрнутой копии",
+      "scope": "workflow",
+      "check": "report-honesty",
+      "status": "semi",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    },
+    {
+      "id": "A12",
+      "claim": "Долгие ожидания — сторожем (job start/wait), не сном внутри инструмента",
+      "scope": "workflow",
+      "check": "job-runner",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.58",
+        "date": "2026-11-09"
+      },
+      "owner": "coordinator"
+    }
+  ]
+}
