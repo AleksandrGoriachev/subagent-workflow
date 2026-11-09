@@ -663,6 +663,15 @@ try {
   report('doctor: задача risk: high включает предупреждение о human-*',
     /WARN\s+ключи: human-\* для high-risk/.test(warnedDoctor.stdout) && /задач risk: high: 1/.test(warnedDoctor.stdout),
     warnedDoctor.stdout + warnedDoctor.stderr);
+  /*
+   * W5 (0115): вход в чужой воркспейс — строгая проверка. Смотрим только сегодняшние
+   * обращения и только к объявленным чужим корням; разрешение — coordination/permits.
+   * Нет docs/foreign-roots.json — правило не объявлено, шаг пропускается.
+   */
+  const foreign = await import('./checks/foreign-workspace.mjs');
+  const result = foreign.checkWorkspace(process.cwd(), { sessionLimit: 5 });
+  report('W5: обращений в чужие воркспейсы без разрешения нет', result.ok === true || result.skipped === true,
+    (result.problems || []).join('; ') + (result.skipped ? ' (' + result.reason + ')' : ''));
 } catch (err) {
   failed += 1;
   console.error('SELFTEST ERROR: ' + err.stack);
