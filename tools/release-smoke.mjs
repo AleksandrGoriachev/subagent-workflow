@@ -197,6 +197,24 @@ export async function smokeRelease(options = {}) {
   const receiptFile = path.join(assetsDir, '.smoke-' + tag + '.json');
   fs.mkdirSync(assetsDir, { recursive: true });
   fs.writeFileSync(receiptFile, JSON.stringify(receipt, null, 2) + '\n');
+  /*
+   * 0108 (WC-74): квитанция кладётся в САМ релиз. Пока она только локальная,
+   * обход «создать релиз сразу опубликованным» ничем не виден; ассет делает
+   * публикацию без приёмки обнаружимой по артефакту, а не по памяти агента.
+   */
+  if (token) {
+    const body = Buffer.from(JSON.stringify(receipt, null, 2) + '\n', 'utf8');
+    const uploaded = await fetchImpl('https://uploads.github.com/repos/' + repo + '/releases/' + release.id + '/assets?name=' + encodeURIComponent('SMOKE-' + tag + '.json'), {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'workflow-release-smoke', 'Content-Type': 'application/octet-stream' },
+      body,
+    });
+    if (!uploaded.ok) {
+      const error = new Error('квитанция приёмки не приложена к релизу: HTTP ' + uploaded.status + ' — публиковать нельзя');
+      error.problems = [String(error.message)];
+      throw error;
+    }
+  }
   return { ok: true, tag, receipt, receiptFile };
 }
 

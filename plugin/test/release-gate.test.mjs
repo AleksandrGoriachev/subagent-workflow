@@ -79,8 +79,12 @@ function fixture() {
     html_url: 'https://github.com/o/r/releases/tag/' + TAG,
     assets: assets.map(([name]) => ({ name, browser_download_url: 'https://dl.test/' + encodeURIComponent(name) })),
   };
-  const fetchImpl = serve((url) => {
-    if (url.endsWith('/releases/tags/' + TAG)) return { body: release };
+  const fetchImpl = serve((url, init = {}) => {
+    /* 0108 (WC-74): приёмка прикладывает квитанцию к релизу — мок принимает загрузку. */
+    if (url.startsWith('https://uploads.github.com/')) {
+      return { body: { id: 1, name: 'SMOKE-' + TAG + '.json' } };
+    }
+    if (url.endsWith('/releases/tags/' + TAG) || url.includes('/releases?per_page=')) return { body: release };
     if (url.startsWith('https://dl.test/')) {
       const name = decodeURIComponent(url.slice('https://dl.test/'.length));
       return byName.has(name) ? { body: byName.get(name) } : null;
@@ -122,14 +126,21 @@ test('c4: публикация без квитанции запрещена, с 
   const noReceipt = { ok: false, reason: 'нет квитанции' };
   assert.equal(readReceipt(TAG, dir).ok, false);
   let patched = false;
+  /* 0108 (WC-74): публикация требует квитанцию и в локальном файле, и в релизе. */
+  let withAsset = false;
   const fetchImpl = async (url, init = {}) => {
     if (init.method === 'PATCH') patched = true;
-    const body = url.includes('/releases/tags/') ? { id: 7, draft: true, html_url: 'u' } : { id: 7, draft: false, html_url: 'u' };
+    const draft = { id: 7, draft: true, html_url: 'u', assets: withAsset ? [{ name: 'SMOKE-' + TAG + '.json' }] : [{ name: 'subagent-workflow-2.6.56.tar.gz' }] };
+    const body = url.includes('/releases/tags/') ? draft : { id: 7, draft: false, html_url: 'u' };
     return { ok: true, status: 200, arrayBuffer: async () => Buffer.from(JSON.stringify(body)) };
   };
   await assert.rejects(() => publishRelease({ tag: TAG, assetsDir: dir, fetchImpl, token: 't' }), /нет квитанции/u);
   assert.equal(patched, false);
   fs.writeFileSync(path.join(dir, '.smoke-' + TAG + '.json'), JSON.stringify({ ok: true, tag: TAG, checkedAt: new Date().toISOString() }));
+  /* локальная квитанция есть, но к релизу не приложена — отказ */
+  await assert.rejects(() => publishRelease({ tag: TAG, assetsDir: dir, fetchImpl, token: 't' }), /нет квитанции SMOKE/u);
+  assert.equal(patched, false);
+  withAsset = true;
   const result = await publishRelease({ tag: TAG, assetsDir: dir, fetchImpl, token: 't' });
   assert.equal(result.ok, true);
   assert.equal(patched, true);

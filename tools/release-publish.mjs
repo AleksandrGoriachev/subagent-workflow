@@ -58,6 +58,16 @@ export async function publishRelease(options = {}) {
     return found;
   }
   const release = await findRelease();
+  /*
+   * 0108 (WC-74): публикуем только то, что несёт квитанцию приёмки. Локальная
+   * квитанция — не доказательство для релиза: при креплении ассета SMOKE-<tag>.json
+   * его видно и через API, и любому потребителю.
+   */
+  const assets = Array.isArray(release.assets) ? release.assets : [];
+  const hasReceipt = assets.some((asset) => /^SMOKE-.*\.json$/u.test(String(asset && asset.name)));
+  if (!hasReceipt) {
+    throw new Error('в релизе нет квитанции SMOKE-<tag>.json: приёмка не приложена к релизу — публиковать нельзя. Сначала tools/release-smoke.mjs ' + tag + ' с токеном');
+  }
   if (release.draft !== true) return { ok: true, already: true, url: release.html_url || null };
 
   const patched = await fetchImpl(API_BASE + '/repos/' + repo + '/releases/' + release.id, {
