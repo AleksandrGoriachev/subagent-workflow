@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 
-export const TOOL = 'subagent-workflow/2.6.62';
+export const TOOL = 'subagent-workflow/2.6.63';
 export const TASK_ARTIFACTS = new Set([
   'task.md', 'criteria.json', 'criteria.lock', 'red.json', 'red.log',
   'verify.json', 'verify.executor.json', 'verify.log', 'acceptance.json', 'report.md', 'report.json',
@@ -512,6 +512,74 @@ export function gateRecord(record) {
   return entry;
 }
 
+/** sha256 строки; для пустого/отсутствующего журнала — нули. */
+function sha256Text(text) {
+  return crypto.createHash('sha256').update(String(text), 'utf8').digest('hex');
+}
+
+/** Хвост цепочки: хеш последней непустой строки журнала или 64 нуля. */
+export function chainTip(file) {
+  const target = path.resolve(String(file));
+  const zeros = '0'.repeat(64);
+  try {
+    if (!exists(target)) return zeros;
+    const text = fs.readFileSync(target, 'utf8');
+    const lines = text.split(String.fromCharCode(10)).filter((line) => line.trim() !== '');
+    if (lines.length === 0) return zeros;
+    return sha256Text(lines[lines.length - 1]);
+  } catch {
+    return zeros;
+  }
+}
+
+/** Проверка цепочки журнала: [{ ok, problems }]. */
+export function verifyChain(file) {
+  const target = path.resolve(String(file));
+  const problems = [];
+  let raw;
+  try {
+    raw = exists(target) ? fs.readFileSync(target, 'utf8') : '';
+  } catch (error) {
+    return { ok: false, problems: ['журнал не читается: ' + String(error && error.message ? error.message : error)] };
+  }
+  const lines = raw.split(String.fromCharCode(10)).filter((line) => line.trim() !== '');
+  const zeros = '0'.repeat(64);
+  let start = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    try {
+      const probe = JSON.parse(lines[index]);
+      if (probe && probe.prev !== undefined && probe.prev !== null) { start = index; break; }
+    } catch { /* строка вне цепочки */ }
+  }
+  if (start === -1) return { ok: true, problems: [], lines: lines.length, legacy: true };
+  /* Вершина из .tip: ловит правку или обрезку последней строки. */
+  try {
+    const tipFile = target + '.tip';
+    if (exists(tipFile)) {
+      const declared = fs.readFileSync(tipFile, 'utf8').trim();
+      const actual = sha256Text(lines[lines.length - 1] + String.fromCharCode(10));
+      if (declared !== actual) problems.push('вершина цепочки не совпадает: последняя строка журнала изменена или журнал обрезан');
+    }
+  } catch { /* нет вершины — проверим саму цепочку */ }
+  let expected = null;
+  for (let index = start; index < lines.length; index += 1) {
+    let entry;
+    try {
+      entry = JSON.parse(lines[index]);
+    } catch {
+      problems.push('строка ' + (index + 1) + ': не JSON');
+      expected = sha256Text(lines[index]);
+      continue;
+    }
+    const prev = entry.prev === undefined || entry.prev === null ? null : String(entry.prev);
+    if (index === start) expected = prev;
+    if (prev === null) problems.push('строка ' + (index + 1) + ': нет prev — запись вне цепочки');
+    else if (prev !== expected) problems.push('строка ' + (index + 1) + ': цепочка разорвана (prev не совпадает)');
+    expected = sha256Text(lines[index]);
+  }
+  return { ok: problems.length === 0, problems, lines: lines.length, legacy: false };
+}
+
 /**
  * Append-only запись одной строки JSONL. Каталог и файл создаются при первом
  * прогоне, прежние строки не читаются и не переписываются. Ошибка записи НЕ
@@ -522,6 +590,13 @@ export function appendGateRecord(file, record) {
   try {
     const target = path.resolve(String(file));
     const entry = gateRecord(record);
+    /*
+     * 0109 (WC-75): журнал ворот — хеш-цепочка. Каждая строка несёт prev —
+     * sha256 предыдущей строки, поэтому удаление или правка записи ломает
+     * цепочку и обнаруживается проверкой journal-integrity. Без этого строка
+     * accept исчезала бесследно (замер 09.11 на 0171–0177 у structure).
+     */
+    entry.prev = chainTip(target);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     /*
      * Файл, дописанный не нами и оборванный без перевода строки, склеил бы две
@@ -543,6 +618,16 @@ export function appendGateRecord(file, record) {
     }
     const line = prefix + JSON.stringify(entry) + String.fromCharCode(10);
     fs.appendFileSync(target, line, 'utf8');
+    /*
+     * 0109: вершина цепочки пишется рядом с журналом. Без неё последняя строка
+     * не защищена: правку вердикта в ней цепочка не замечает (у неё нет
+     * последователя). Файл .tip фиксирует хеш последней строки, поэтому правка
+     * хвоста или обрезка журнала обнаруживаются.
+     */
+    try {
+      const tipLine = JSON.stringify(entry) + String.fromCharCode(10);
+      fs.writeFileSync(target + '.tip', sha256Text(tipLine) + String.fromCharCode(10), 'utf8');
+    } catch { /* вершина — удобство проверки, не условие записи */ }
     return { ok: true, file: target, kind: entry.kind, at: entry.at, bytes: Buffer.byteLength(line, 'utf8') };
   } catch (error) {
     return { ok: false, error: error && error.message ? String(error.message) : String(error) };

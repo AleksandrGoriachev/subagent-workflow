@@ -55,6 +55,18 @@ import {
 } from './lib/common.mjs';
 
 const DEFAULT_BYPASS_MARKER = 'workflow-bypass';
+
+/** Защищённые пути: код и проверки — только контракт и артефакты, без метки. */
+export const PROTECTED_ROOTS = ['lib/', 'checks/', 'spec/', 'tools/', 'structure/', 'plugin/lib/', 'plugin/test/'];
+
+/** Нарушение метки обхода: защищённые пути под меткой. Чистая функция — ею же пользуется проверка. */
+export function bypassViolation(paths, protectedRoots = PROTECTED_ROOTS) {
+  const risky = (Array.isArray(paths) ? paths : []).filter((rel) => {
+    const normalized = String(rel).replace(/\\/gu, '/').replace(/^\.\//u, '');
+    return protectedRoots.some((root) => normalized.startsWith(root));
+  });
+  return { ok: risky.length === 0, risky };
+}
 const GUARD_MODES = ['fail', 'warn', 'off'];
 const HERE = fileURLToPath(import.meta.url);
 
@@ -272,6 +284,23 @@ function evaluateCommit(repo, config, guard, rev, cache) {
   const message = commitMessage(repo, rev);
   const paths = commitPaths(repo, rev);
   if (hasMarker(message, guard.bypassMarker)) {
+    /*
+     * 0109 (WC-75): метка обхода действует только на документацию. Коммит,
+     * который ею прикрывает lib/check/spec/tools/structure, отклоняется: это
+     * ровно тот путь, которым 2.6.51–2.6.61 выходили мимо контракта.
+     */
+    const verdict = bypassViolation(paths);
+    const risky = verdict.risky;
+    if (!verdict.ok) {
+      return {
+        rev,
+        message,
+        bypass: true,
+        covered: [],
+        uncovered: risky,
+        bypassViolation: 'метка ' + guard.bypassMarker + ' не действует на защищённые пути: ' + risky.slice(0, 3).join(', '),
+      };
+    }
     return { rev, message, bypass: true, covered: paths.map((p) => ({ path: p, by: 'bypass' })), uncovered: [] };
   }
   const result = evaluate(paths, coverageFromCommit(repo, config, rev, cache), guard);
@@ -409,6 +438,14 @@ function main() {
      */
     const message = typeof argv.message === 'string' ? argv.message : '';
     if (hasMarker(message, guard.bypassMarker)) {
+      /* 0109 (WC-75): та же проверка, что и для готовых коммитов: метка не прикрывает код. */
+      const staged = stagedPaths(repo);
+      const verdict = bypassViolation(staged);
+      if (!verdict.ok) {
+        console.error('task-guard: метка "' + guard.bypassMarker + '" не действует на защищённые пути: ' + verdict.risky.slice(0, 3).join(', '));
+        console.error('task-guard: нужен контракт задачи (allowedPaths) и артефакты ворот, а не метка');
+        return 1;
+      }
       console.log('task-guard: обход по метке "' + guard.bypassMarker + '" — коммит допущен, след остаётся в аудите');
       return 0;
     }
@@ -421,9 +458,12 @@ function main() {
   return checkRange(repo, config, guard, range);
 }
 
-try {
-  process.exit(main());
-} catch (error) {
-  console.error('task-guard: ' + (error && error.message ? error.message : error));
-  process.exit(error && error.exitCode ? error.exitCode : 2);
+/* CLI запускается только при прямом вызове: модуль импортируют проверки. */
+if (import.meta.url === new URL('file://' + path.resolve(process.argv[1] || '').split(path.sep).join('/')).href) {
+  try {
+    process.exit(main());
+  } catch (error) {
+    console.error('task-guard: ' + (error && error.message ? error.message : error));
+    process.exit(error && error.exitCode ? error.exitCode : 2);
+  }
 }
