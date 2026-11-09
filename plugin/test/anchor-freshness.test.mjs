@@ -26,7 +26,8 @@ import { generateKeyPair, signRecord } from '../../spec/scripts/sign.mjs';
 const NOW = new Date('2026-11-09T12:00:00Z');
 
 function anchor(id, status, version, date) {
-  return { id, claim: 'x', scope: 'workflow', check: 'y', status, confirmed: { version, date }, owner: 'user+coordinator' };
+  /* 0117: слой и исполнитель проверки обязательны. */
+  return { id, claim: 'x', layer: 'contour', enforcedBy: 'engine', sides: 'workflow', check: 'y', status, confirmed: { version, date }, owner: 'user+coordinator' };
 }
 
 function input(list, extra = {}) {
@@ -53,27 +54,27 @@ test('c2: hash не совпал — отказ', () => {
   assert.ok(result.problems.some((p) => /hash не совпадает/u.test(p)));
 });
 
-test('c3: auto старше 14 дней и semi старше 30 — отказ', () => {
+test('c3: просрочка — предупреждение, а не отказ (решение заказчика 09.11)', () => {
   const result = evaluateAnchors(input([
     anchor('A1', 'auto', '2.6.58', '2026-10-01'),
     anchor('A2', 'semi', '2.6.58', '2026-09-01'),
   ]));
-  assert.equal(result.ok, false);
-  assert.ok(result.problems.some((p) => /A1: подтверждение старше 14/u.test(p)));
-  assert.ok(result.problems.some((p) => /A2: подтверждение старше 30/u.test(p)));
+  assert.equal(result.ok, true, JSON.stringify(result.problems));
+  assert.ok(result.warnings.some((p) => /A1: подтверждение старше 14/u.test(p)));
+  assert.ok(result.warnings.some((p) => /A2: подтверждение старше 30/u.test(p)));
 });
 
-test('c4: релизов после подтверждения больше порога — отказ', () => {
+test('c4: релизов больше порога — предупреждение', () => {
   const tags = ['v2.6.50', 'v2.6.51', 'v2.6.52', 'v2.6.53', 'v2.6.54', 'v2.6.55', 'v2.6.56'];
   const result = evaluateAnchors(input([anchor('A1', 'auto', '2.6.50', '2026-11-08')], { tags }));
-  assert.equal(result.ok, false);
-  assert.ok(result.problems.some((p) => /A1: после подтверждения вышло 6 релизов/u.test(p)));
+  assert.equal(result.ok, true, JSON.stringify(result.problems));
+  assert.ok(result.warnings.some((p) => /A1: после подтверждения вышло 6 релизов/u.test(p)));
 });
 
 test('c5: inWork не в счёте, валидный набор — OK', () => {
   const result = evaluateAnchors(input([
     anchor('A1', 'auto', '2.6.58', '2026-11-08'),
-    { id: 'A7', claim: 'x', scope: 'workflow', check: 'y', status: 'inWork', confirmed: { version: null, date: null }, owner: 'user+coordinator' },
+    { id: 'A7', claim: 'x', layer: 'contour', enforcedBy: 'engine', sides: 'workflow', check: 'y', status: 'inWork', confirmed: { version: null, date: null }, owner: 'user+coordinator' },
   ]));
   assert.equal(result.ok, true, JSON.stringify(result.problems));
   assert.ok(result.notes.some((n) => /A7: в работе/u.test(n)));
@@ -124,4 +125,18 @@ test('c8: правка anchors.json при старой подписи не пр
   ));
   assert.equal(result.ok, false);
   assert.ok(result.problems.some((p) => /hash не совпадает/u.test(p)));
+});
+
+test('c9: слой и исполнитель проверки обязательны и согласованы', () => {
+  const bad = evaluateAnchors(input([
+    { id: 'A1', claim: 'x', check: 'y', status: 'auto', confirmed: { version: '2.6.71', date: '2026-11-09' }, owner: 'c' },
+  ]));
+  assert.equal(bad.ok, false);
+  assert.ok(bad.problems.some((pr) => /layer должен быть/u.test(pr)));
+
+  const mismatch = evaluateAnchors(input([
+    { id: 'A2', claim: 'x', layer: 'project', enforcedBy: 'engine', check: 'y', status: 'auto', confirmed: { version: '2.6.71', date: '2026-11-09' }, owner: 'c' },
+  ]));
+  assert.equal(mismatch.ok, false);
+  assert.ok(mismatch.problems.some((pr) => /проектное правило не может проверяться только движком/u.test(pr)));
 });

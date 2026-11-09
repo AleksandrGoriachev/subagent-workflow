@@ -99,6 +99,7 @@ export function checkSignature(approval, acceptors) {
 export function evaluateAnchors(input) {
   const problems = [];
   const notes = [];
+  const warnings = [];
   const stale = [];
   const unconfirmed = [];
   const anchors = input && input.anchors ? input.anchors : {};
@@ -128,6 +129,24 @@ export function evaluateAnchors(input) {
   for (const anchor of list) {
     const id = String(anchor && anchor.id ? anchor.id : '(без id)');
     const status = String(anchor && anchor.status ? anchor.status : '').trim();
+    /*
+     * 0117: слой и исполнитель проверки — обязательные поля. Правило без них
+     * нельзя проверить: непонятно, чей это инвариант и кто ловит нарушение.
+     */
+    const layer = String(anchor && anchor.layer ? anchor.layer : '');
+    const enforcedBy = String(anchor && anchor.enforcedBy ? anchor.enforcedBy : '');
+    if (layer !== 'contour' && layer !== 'project') {
+      problems.push(id + ': layer должен быть contour или project (сейчас «' + (layer || 'пусто') + '»)');
+    }
+    if (enforcedBy !== 'engine' && enforcedBy !== 'nodes' && enforcedBy !== 'both') {
+      problems.push(id + ': enforcedBy должен быть engine, nodes или both (сейчас «' + (enforcedBy || 'пусто') + '»)');
+    }
+    if (layer === 'contour' && enforcedBy === 'nodes') {
+      problems.push(id + ': контурное правило не может проверяться только узлами проекта');
+    }
+    if (layer === 'project' && enforcedBy === 'engine') {
+      problems.push(id + ': проектное правило не может проверяться только движком — он не знает домен проекта');
+    }
     const confirmed = anchor && anchor.confirmed && typeof anchor.confirmed === 'object' ? anchor.confirmed : {};
     if (status === 'inWork') {
       notes.push(id + ': в работе, в счёт свежести не идёт');
@@ -146,15 +165,16 @@ export function evaluateAnchors(input) {
     const ageDays = Math.floor((now.getTime() - Date.parse(confirmed.date)) / 86400000);
     if (Number.isFinite(rules.maxAgeDays) && ageDays > rules.maxAgeDays) {
       stale.push(id + ': ' + ageDays + ' дней > ' + rules.maxAgeDays);
-      problems.push(id + ': подтверждение старше ' + rules.maxAgeDays + ' дней (' + ageDays + ')');
+      /* 0118: решение заказчика 09.11 — просрочка не блокирует, но видна и записывается. */
+      warnings.push(id + ': подтверждение старше ' + rules.maxAgeDays + ' дней (' + ageDays + ') — список просрочен, оценка может быть некорректной');
     }
     const since = releasesSince(input.tags || [], confirmed.version);
     if (Number.isFinite(rules.maxReleases) && since !== null && since > rules.maxReleases) {
       stale.push(id + ': ' + since + ' релизов > ' + rules.maxReleases);
-      problems.push(id + ': после подтверждения вышло ' + since + ' релизов (порог ' + rules.maxReleases + ')');
+      warnings.push(id + ': после подтверждения вышло ' + since + ' релизов (порог ' + rules.maxReleases + ') — список просрочен');
     }
   }
-  return { ok: problems.length === 0, problems, notes, stale, unconfirmed };
+  return { ok: problems.length === 0, problems, warnings, notes, stale, unconfirmed };
 }
 
 /** Прочитать набор и утверждение из репозитория. */
@@ -230,6 +250,7 @@ function parseArgs(argv) {
 if (process.argv[1] && new URL(import.meta.url).href.endsWith(new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href.split('/').pop())) {
   const args = parseArgs(process.argv.slice(2));
   const result = checkRepo(args.repo, { now: args.now || undefined, tags: args.tags || undefined });
+  for (const warning of result.warnings || []) console.log('ANCHORS WARN ' + warning);
   for (const note of result.notes) console.log('NOTE ' + note);
   for (const problem of result.problems) console.log('ANCHORS ERROR ' + problem);
   if (result.ok) console.log('anchor-freshness: OK — якоря утверждены и не протухли');
