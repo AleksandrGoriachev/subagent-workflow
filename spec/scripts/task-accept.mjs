@@ -89,10 +89,17 @@ const VERIFY_SCRIPT = path.join(SCRIPT_DIR, 'task-verify.mjs');
  * 0152 (P2a): теневой прогон движка ограничений. Ничего не блокирует и не меняет
  * вердикт: конвертирует задачу в факты, оценивает C1–C10 и записывает сравнение
  * с фактической приёмкой. Цель — статистика расхождений до переключения.
- * Отключается WF_ENGINE_SHADOW=0.
+ * По умолчанию выключена (чужой воркспейс не трогаем).
  */
 function engineShadow(repo, taskDir, meta, record) {
-  if (String(process.env.WF_ENGINE_SHADOW || '1') === '0') return;
+  /*
+   * 0153: тень по умолчанию ВЫКЛЮЧЕНА. Приёмка живёт в чужих воркспейсах, и
+   * молча создавать там docs/facts/ и engine-shadow.json нельзя. Включается
+   * явно: WF_ENGINE_SHADOW=1 или "engineShadow": true в workflow.config.json.
+   */
+  const config = readJson(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json')) || {};
+  const enabled = String(process.env.WF_ENGINE_SHADOW || '') === '1' || config.engineShadow === true;
+  if (!enabled) return;
   try {
     const converted = convertToWorkspace(taskDir, repo, { repoRoot: repo, force: true });
     if (!converted.ok) {

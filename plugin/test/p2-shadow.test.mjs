@@ -19,6 +19,7 @@ test('тень вызывает конвертер и движок, пишет e
   assert.match(text, /evaluateWorkspaceTask\(repo, meta\.id/u);
   assert.match(text, /engine-shadow\.json/u);
   assert.match(text, /WF_ENGINE_SHADOW/u);
+  assert.match(text, /engineShadow === true/u, 'тень обязана включаться явно');
 });
 
 test('тень не влияет на приёмку: вызов после записи acceptance.json', () => {
