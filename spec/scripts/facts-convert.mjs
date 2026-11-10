@@ -97,7 +97,16 @@ export function convertTask(taskDir, options = {}) {
     rows.push({ kind: 'ruleset', version: ruleset.version, anchors_hash: ruleset.anchors_hash, presets_hash: ruleset.presets_hash, seal: ruleset.seal, policy: ruleset.policy, signature: ruleset.signature });
   }
   rows.push({ kind: 'task', id: taskId, contract_hash: contractHash, risk: String((acceptance && acceptance.risk) || 'unknown'), writer: 'workflow', at });
-  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, writer: 'workflow', at });
+  /* 0140: контракт может объявлять запечатанный тест (WC-81) — хеш закрепляется в факте. */
+  let seal = null;
+  if (fs.existsSync(taskMd)) {
+    const meta = parseTaskMeta(fs.readFileSync(taskMd, 'utf8')) || {};
+    const sealedTest = meta.sealedTest;
+    if (sealedTest && typeof sealedTest === 'object' && typeof sealedTest.path === 'string' && /^[0-9a-f]{64}$/u.test(String(sealedTest.hash || '').toLowerCase())) {
+      seal = { path: sealedTest.path, hash: String(sealedTest.hash).toLowerCase() };
+    }
+  }
+  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, seal, writer: 'workflow', at });
   rows.push({ kind: 'run', id: runId, task: taskId, commit, ruleset_hash: 'unknown', command: 'task-accept', writer: 'acceptor' });
   const changedPaths = Array.isArray(verify && verify.changedPaths) ? verify.changedPaths : [];
   rows.push({ kind: 'diff', task: taskId, run: runId, commit, paths: changedPaths, diff_hash: diffHash || 'unknown', writer: 'acceptor' });

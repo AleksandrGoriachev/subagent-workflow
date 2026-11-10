@@ -32,6 +32,19 @@ export function evaluateTask(read, options = {}) {
   const c1 = Boolean(t && c && r && t.contract_hash === c.hash);
   report.push({ id: 'C1', status: c1 ? 'pass' : 'fail', detail: c1 ? 'контракт и запуск согласованы' : 'контракт/запуск не согласованы или отсутствуют' });
 
+  /*
+   * C2: запечатанный прогон (WC-81). Применим только когда контракт объявил seal;
+   * тогда нужен evidence(gate=sealed, seal_hash=контрактный, exit=0) в этом run.
+   */
+  const seal = c && c.seal && typeof c.seal === 'object' ? c.seal : null;
+  const sealed = evidence.find((row) => row.gate === 'sealed' && row.seal_hash && row.seal_hash === (seal && seal.hash));
+  const c2 = seal === null
+    ? { status: 'not-applicable', detail: 'контракт не объявляет sealedTest — запечатанного прогона нет' }
+    : (sealed && sealed.exit === 0
+      ? { status: 'pass', detail: 'запечатанный прогон пройден (' + String(seal.hash).slice(0, 12) + '…)' }
+      : { status: 'fail', detail: sealed ? 'запечатанный прогон упал' : 'контракт объявляет seal, но доказательства sealed_run нет' });
+  report.push({ id: 'C2', status: c2.status, detail: c2.detail });
+
   /* C4: суждение о том же артефакте, что в accept, вердикт accepted. */
   const c4 = Boolean(j && a && j.artifact_hash === a.diff_hash && j.verdict === 'accepted');
   report.push({ id: 'C4', status: c4 ? 'pass' : 'fail', detail: c4 ? 'суждение совпадает с диффом' : 'суждение отсутствует или привязано к другому артефакту' });
@@ -59,7 +72,6 @@ export function evaluateTask(read, options = {}) {
   report.push({ id: 'C5', status: c5.status, detail: c5.detail });
 
   /* Не применимо сегодня: честно называем отсутствие источника данных. */
-  report.push({ id: 'C2', status: 'not-applicable', detail: 'sealed_run не производится текущим процессом' });
   report.push({ id: 'C8', status: 'not-applicable', detail: 'planned(t) не записывается' });
   const c9 = rulesetPresent
     ? (ruleset.signature && ruleset.signature.covers === 'hash+by+at' && /^human-/u.test(String(ruleset.signature.keyId || ''))
