@@ -43,7 +43,7 @@ function buildTask(ws, diffPaths, forbidden) {
 test('c3: дифф в запрещённом пути — C3 fail, вердикт rejected', () => {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-c3-'));
   const file = buildTask(ws, ['plugin/lib/api.js'], ['plugin/lib/**']);
-  const result = evaluateTask(readFactFile(file));
+  const result = evaluateTask(readFactFile(file), { signatures: false });
   const c3 = result.report.find((item) => item.id === 'C3');
   assert.equal(c3.status, 'fail');
   assert.equal(result.verdict, 'rejected');
@@ -52,7 +52,7 @@ test('c3: дифф в запрещённом пути — C3 fail, вердик�
 test('c4: пустой forbidden — not-applicable', () => {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-c3-'));
   const file = buildTask(ws, ['a.js'], []);
-  const result = evaluateTask(readFactFile(file));
+  const result = evaluateTask(readFactFile(file), { signatures: false });
   const c3 = result.report.find((item) => item.id === 'C3');
   assert.equal(c3.status, 'not-applicable');
 });

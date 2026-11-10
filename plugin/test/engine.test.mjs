@@ -32,7 +32,7 @@ function buildTask(ws, options = {}) {
 test('c1: полный набор — accepted', () => {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-engine-'));
   const file = buildTask(ws);
-  const result = evaluateTask(readFactFile(file));
+  const result = evaluateTask(readFactFile(file), { signatures: false });
   assert.equal(result.verdict, 'accepted', JSON.stringify(result.report));
   assert.equal(result.passed, result.applicable);
 });
@@ -40,7 +40,7 @@ test('c1: полный набор — accepted', () => {
 test('c2: суждение на чужой артефакт — rejected, C4 fail', () => {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-engine-'));
   const file = buildTask(ws, { otherArtifact: true });
-  const result = evaluateTask(readFactFile(file));
+  const result = evaluateTask(readFactFile(file), { signatures: false });
   assert.equal(result.verdict, 'rejected');
   const c4 = result.report.find((item) => item.id === 'C4');
   assert.equal(c4.status, 'fail');

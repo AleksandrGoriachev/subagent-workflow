@@ -82,15 +82,15 @@ test('c4: C2 — pass / fail / not-applicable', () => {
   const seal = { path: 'x', hash: 'a'.repeat(64) };
   const ws1 = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-c2-'));
   buildFacts(ws1, { seal, sealedEvidence: true });
-  const pass = evaluateTask(readFactFile(factFileOf(ws1, '0050')));
+  const pass = evaluateTask(readFactFile(factFileOf(ws1, '0050')), { signatures: false });
   assert.equal(pass.report.find((i) => i.id === 'C2').status, 'pass');
   const ws2 = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-c2-'));
   buildFacts(ws2, { seal });
-  const fail = evaluateTask(readFactFile(factFileOf(ws2, '0050')));
+  const fail = evaluateTask(readFactFile(factFileOf(ws2, '0050')), { signatures: false });
   assert.equal(fail.report.find((i) => i.id === 'C2').status, 'fail');
   assert.equal(fail.verdict, 'rejected');
   const ws3 = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-c2-'));
   buildFacts(ws3, {});
-  const na = evaluateTask(readFactFile(factFileOf(ws3, '0050')));
+  const na = evaluateTask(readFactFile(factFileOf(ws3, '0050')), { signatures: false });
   assert.equal(na.report.find((i) => i.id === 'C2').status, 'not-applicable');
 });

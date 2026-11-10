@@ -155,12 +155,19 @@ export function evaluateTask(read, options = {}) {
   const unsignedDecisions = [];
   const badSignatures = [];
   /* Включается, когда переданы acceptors (даже пустые): CLI и selftest делают это всегда. */
-  const signatureEnforced = Array.isArray(options.acceptors);
+  /*
+   * 0150 (Luna): проверка подписей включена по умолчанию. Отключить можно только
+   * явно — options.signatures === false (для тестов, которые проверяют другие
+   * ограничения), иначе API молча терял проверку.
+   */
+  const signatureEnforced = options.signatures !== false;
   for (const row of (signatureEnforced ? [...evidence, ...(j ? [j] : []), ...(a ? [a] : [])] : [])) {
     if (!SIGNED_KINDS.includes(row.kind)) continue;
     const keyId = String(row.keyId || '');
     const key = (options.acceptors || []).find((item) => item && item.keyId === keyId);
     if (!row.signature || keyId === '') unsignedDecisions.push(row.kind + '@' + String(row.run || '?'));
+    /* 0150: домен цепи — подпись не переносится на другую задачу. */
+    else if (String(row.task || '') !== String(t ? t.id : '')) badSignatures.push(row.kind + '@другая задача');
     else if (!key) badSignatures.push(keyId + ' (ключ не зарегистрирован)');
     else if (!verifyFactSignature(row, key.publicKeyPem)) badSignatures.push(row.kind + '@' + keyId);
   }

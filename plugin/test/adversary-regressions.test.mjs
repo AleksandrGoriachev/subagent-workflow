@@ -50,7 +50,7 @@ function facts(ws, options = {}) {
 test('c2: факты другого run — C10 fail', () => {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-run-'));
   facts(ws, { extraRun: true });
-  const result = evaluateTask(readFactFile(factFileOf(ws, '0050')));
+  const result = evaluateTask(readFactFile(factFileOf(ws, '0050')), { signatures: false });
   assert.equal(result.report.find((i) => i.id === 'C10').status, 'fail');
   assert.equal(result.verdict, 'rejected');
 });
@@ -59,26 +59,26 @@ test('c3: конфликтные доказательства гейта — C5 
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-run-'));
   /* ruleset нужен: без политики обязательных гейтов нет, и сравнивать нечего. */
   facts(ws, { verifyConflict: true, ruleset: true, sigVerified: true });
-  const result = evaluateTask(readFactFile(factFileOf(ws, '0050')));
+  const result = evaluateTask(readFactFile(factFileOf(ws, '0050')), { signatures: false });
   assert.equal(result.report.find((i) => i.id === 'C5').status, 'fail');
 });
 
 test('c4: пустой объявленный план запрещает действия', () => {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-run-'));
   facts(ws, { planned: [] });
-  const result = evaluateTask(readFactFile(factFileOf(ws, '0050')));
+  const result = evaluateTask(readFactFile(factFileOf(ws, '0050')), { signatures: false });
   assert.equal(result.report.find((i) => i.id === 'C8').status, 'fail');
   const ws2 = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-run-'));
   facts(ws2, { plannedDeclared: false });
-  const na = evaluateTask(readFactFile(factFileOf(ws2, '0050')));
+  const na = evaluateTask(readFactFile(factFileOf(ws2, '0050')), { signatures: false });
   assert.equal(na.report.find((i) => i.id === 'C8').status, 'not-applicable');
 });
 
 test('c5: C9 требует проверенной подписи', () => {
   const bad = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-run-'));
   facts(bad, { ruleset: true, sigVerified: false });
-  assert.equal(evaluateTask(readFactFile(factFileOf(bad, '0050'))).report.find((i) => i.id === 'C9').status, 'fail');
+  assert.equal(evaluateTask(readFactFile(factFileOf(bad, '0050')), { signatures: false }).report.find((i) => i.id === 'C9').status, 'fail');
   const good = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-run-'));
   facts(good, { ruleset: true, sigVerified: true });
-  assert.equal(evaluateTask(readFactFile(factFileOf(good, '0050'))).report.find((i) => i.id === 'C9').status, 'pass');
+  assert.equal(evaluateTask(readFactFile(factFileOf(good, '0050')), { signatures: false }).report.find((i) => i.id === 'C9').status, 'pass');
 });

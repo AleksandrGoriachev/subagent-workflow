@@ -49,8 +49,20 @@ export function repairFactsFile(file) {
     }
   }
   if (brokenInMiddle) return { ok: false, problems: ['разрыв в середине файла — это не сбой записи, нужен разбор: ' + file] };
+  /*
+   * 0150 (Luna): подписанную строку нельзя «убрать в карантин». Иначе достаточно
+   * повредить неуспешный sealed-факт, и repair отрежет его как хвост — движок
+   * увидит только успешные. Подпись = решение, а не мусор.
+   */
+  for (const line of quarantined) {
+    try {
+      const row = JSON.parse(line);
+      if (row && row.signature) return { ok: false, problems: ['в карантин попала подписанная строка (' + row.kind + ') — это не сбой записи, нужен разбор'] };
+    } catch { /* не JSON — обычный мусор, карантин допустим */ }
+  }
   if (quarantined.length === 0) return { ok: true, quarantined: 0, problems: [] };
   const stamp = new Date().toISOString().replace(/[:.]/gu, '-');
+  /* 0150: бэкап пересборки — с меткой времени, чтобы не затирать предыдущий. */
   const quarantineFile = file + '.quarantine-' + stamp;
   fs.writeFileSync(quarantineFile, quarantined.join('\n') + '\n');
   fs.writeFileSync(file, kept.join('\n') + (kept.length > 0 ? '\n' : ''));
@@ -67,6 +79,16 @@ export function rebuildAll(workspace, options = {}) {
     .sort();
   const results = [];
   for (const task of tasks) {
+    /* 0150: sealed-доказательство не восстанавливается из источников — пересборка его потеряет. */
+    const factsFile = factFileOf(workspace, task);
+    if (fs.existsSync(factsFile)) {
+      const lines = fs.readFileSync(factsFile, 'utf8').split('\n').filter((line) => line.trim() !== '');
+      const sealed = lines.some((line) => { try { const row = JSON.parse(line); return row && row.gate === 'sealed' && row.signature; } catch { return false; } });
+      if (sealed) {
+        results.push({ task, ok: false, problems: ['есть подписанный sealed-факт: пересборка его не воспроизводит — прогоните sealed-run заново'] });
+        continue;
+      }
+    }
     const result = convertToWorkspace(path.join(tasksDir, task), workspace, { ...options, force: true });
     results.push({ task, ok: result.ok, rows: result.rows, problems: result.problems });
   }

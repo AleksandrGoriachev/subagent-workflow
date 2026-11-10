@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { factFileOf, readFactFile } from '../../spec/lib/facts.mjs';
 import { evaluateTask, loadAcceptors } from '../../spec/engine.mjs';
+import { repairFactsFile } from '../../spec/scripts/facts-repair.mjs';
 
 const SOURCE = path.join(process.cwd(), 'docs', 'facts', '0076.jsonl');
 const acceptors = loadAcceptors(process.cwd());
@@ -55,6 +56,37 @@ test('мутация: запрещённый путь в diff → rejected', () 
   const rows = lines(file).map((line) => (line.includes('"kind":"diff"') ? line.replace('"paths":[', '"paths":["tests/pwn.mjs",') : line));
   write(file, rows);
   assert.equal(verdictOf(ws), 'rejected');
+});
+
+test('мутация: удалили успешный sealed, оставив неуспешный → rejected', () => {
+  const { ws, file } = copyFacts();
+  const rows = lines(file);
+  const failed = JSON.stringify({ kind: 'evidence', task: '0076', run: '0076:1', gate: 'sealed', artifact_hash: 'f1', exit: 1, seal_hash: 'x', writer: 'acceptor' });
+  write(file, rows.concat([failed]));
+  assert.equal(verdictOf(ws), 'rejected');
+});
+
+test('мутация: снятие подписи с accept → rejected (C10)', () => {
+  const { ws, file } = copyFacts();
+  const rows = lines(file).map((line) => {
+    if (!line.includes('"kind":"accept"')) return line;
+    const row = JSON.parse(line);
+    delete row.signature;
+    delete row.keyId;
+    return JSON.stringify(row);
+  });
+  write(file, rows);
+  const result = evaluateTask(readFactFile(factFileOf(ws, '0076')), { acceptors });
+  assert.equal(result.report.find((item) => item.id === 'C10').status, 'fail');
+  assert.equal(result.verdict, 'rejected');
+});
+
+test('мутация: подписанная строка не уходит в карантин', () => {
+  const { ws, file } = copyFacts();
+  const signed = lines(file).find((line) => line.includes('"gate":"verify"'));
+  fs.appendFileSync(file, signed + '\nпорча');
+  const repaired = repairFactsFile(file);
+  assert.equal(repaired.ok, false);
 });
 
 test('свойство: добавление мусора не улучшает вердикт', () => {

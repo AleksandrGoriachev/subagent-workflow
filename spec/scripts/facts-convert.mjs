@@ -257,7 +257,8 @@ export function convertToWorkspace(taskDir, workspace, options = {}) {
      * 0144: --force не должен молча стирать дописанные факты (sealed-run, accept).
      * Поэтому сначала backup, и только потом пересборка; путь к копии — в отчёте.
      */
-    const backup = file + '.bak';
+    /* 0150: бэкап с меткой времени — фиксированный .bak затирал предыдущую копию. */
+    const backup = file + '.bak-' + new Date().toISOString().replace(/[:.]/gu, '-');
     fs.copyFileSync(file, backup);
     fs.rmSync(file, { force: true });
     converted.backup = backup;

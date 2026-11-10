@@ -57,11 +57,11 @@ function buildFacts(ws, planned, actionPaths) {
 test('c4: C8 падает на действии вне плана и проходит внутри', () => {
   const ws1 = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-c8-'));
   buildFacts(ws1, ['a.js'], ['other/secret.js']);
-  const bad = evaluateTask(readFactFile(factFileOf(ws1, '0050')));
+  const bad = evaluateTask(readFactFile(factFileOf(ws1, '0050')), { signatures: false });
   assert.equal(bad.report.find((i) => i.id === 'C8').status, 'fail');
   assert.equal(bad.verdict, 'rejected');
   const ws2 = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-c8-'));
   buildFacts(ws2, ['a.js', 'docs/**'], ['docs/x.md']);
-  const good = evaluateTask(readFactFile(factFileOf(ws2, '0050')));
+  const good = evaluateTask(readFactFile(factFileOf(ws2, '0050')), { signatures: false });
   assert.equal(good.report.find((i) => i.id === 'C8').status, 'pass');
 });
