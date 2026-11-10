@@ -10,7 +10,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { factFileOf, readFactFile } from './lib/facts.mjs';
+import { factFileOf, readFactFile, pathForbidden } from './lib/facts.mjs';
 import { mandatoryGates, evaluateGates } from './lib/policy.mjs';
 
 function rowsOf(read, kind) {
@@ -36,6 +36,14 @@ export function evaluateTask(read, options = {}) {
   const c4 = Boolean(j && a && j.artifact_hash === a.diff_hash && j.verdict === 'accepted');
   report.push({ id: 'C4', status: c4 ? 'pass' : 'fail', detail: c4 ? 'суждение совпадает с диффом' : 'суждение отсутствует или привязано к другому артефакту' });
 
+  /* C3: дифф не касается запрещённых путей контракта. */
+  const forbidden = c && Array.isArray(c.forbidden) ? c.forbidden : [];
+  const c3hits = (d && Array.isArray(d.paths) ? d.paths : []).filter((p) => pathForbidden(p, forbidden));
+  const c3 = forbidden.length === 0
+    ? { status: 'not-applicable', detail: 'запрещённые пути не объявлены в контракте' }
+    : { status: c3hits.length === 0 ? 'pass' : 'fail', detail: c3hits.length === 0 ? 'дифф не касается запрещённых путей' : 'запрещённые пути в диффе: ' + c3hits.join(', ') };
+  report.push({ id: 'C3', status: c3.status, detail: c3.detail });
+
   /* C7: цепь фактов цела. */
   report.push({ id: 'C7', status: read.ok ? 'pass' : 'fail', detail: read.ok ? 'цепь цела' : read.problems.join('; ') });
 
@@ -53,7 +61,6 @@ export function evaluateTask(read, options = {}) {
   report.push({ id: 'C2', status: 'not-applicable', detail: 'sealed_run не производится текущим процессом' });
   report.push({ id: 'C8', status: 'not-applicable', detail: 'planned(t) не записывается' });
   report.push({ id: 'C9', status: 'not-applicable', detail: 'ruleset не подписывается в P0' });
-  report.push({ id: 'C3', status: 'not-applicable', detail: 'запрещённые пути задаются правилами (ruleset), которых ещё нет' });
   report.push({ id: 'C6', status: 'not-applicable', detail: 'release-факты для задачи не применимы' });
 
   const applicable = report.filter((item) => item.status !== 'not-applicable');

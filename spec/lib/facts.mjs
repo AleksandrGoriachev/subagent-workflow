@@ -27,7 +27,7 @@ export const REQUIRED_FIELDS = {
   action: ['task', 'run', 'cmd', 'paths', 'writer', 'at'],
 };
 
-/** Нормализация пути (C3): NTFS без учёта регистра, слеши прямые, ./ снят. */
+/** Нормализация пути (C3): NTFS без учёта регистра, слеши прямые, ./ и ведущий / снят. */
 export function normalizePath(value) {
   return String(value || '').replace(/\\/gu, '/').replace(/^\.\//u, '').replace(/^\/+/u, '').toLowerCase();
 }
@@ -82,6 +82,32 @@ export function readFactFile(file) {
   }
   const chain = verifyFactChain(rows);
   return { ok: problems.length === 0 && chain.ok, rows, problems: problems.concat(chain.problems) };
+}
+
+/** Мини-глоб для запрещённых путей: * — в пределах сегмента, ** — любые символы. */
+function globToRegExp(pattern) {
+  let re = '';
+  for (let index = 0; index < pattern.length; index += 1) {
+    const c = pattern[index];
+    if (c === '*') {
+      if (pattern[index + 1] === '*') { re += '[\\s\\S]*'; index += 1; }
+      else re += '[^/]*';
+    } else if (c === '?') {
+      re += '[^/]';
+    } else {
+      re += c.replace(/[.+^${}()|[\]\\]/gu, '\\$&');
+    }
+  }
+  return new RegExp('^' + re + '$');
+}
+
+/**
+ * C3: попадает ли путь под запрещённый шаблон? Оба нормализуются (регистр, слеши),
+ * чтобы NTFS без учёта регистра и прямые/обратные слеши не обходили правило.
+ */
+export function pathForbidden(file, patterns) {
+  const normalized = normalizePath(file);
+  return (Array.isArray(patterns) ? patterns : []).some((pattern) => globToRegExp(normalizePath(pattern)).test(normalized));
 }
 
 /** Файл фактов задачи: docs/subagent-workflow/facts/<task>.jsonl (короткие имена, Windows 260). */

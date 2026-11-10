@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { appendFact, factFileOf, sha256Text } from '../lib/facts.mjs';
+import { parseTaskMeta } from './lib/common.mjs';
 
 function readJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, '')); } catch { return null; }
@@ -41,6 +42,13 @@ export function convertTask(taskDir) {
   const diffHash = (acceptance && acceptance.worktreeDigest) || '';
   const at = (verify && verify.createdAt) || (acceptance && acceptance.issuedAt) || new Date().toISOString();
   const actor = (acceptance && acceptance.actor) || {};
+  /* C3: запрещённые пути — protectedPaths из TASK-META (task.md), не из acceptance. */
+  const taskMd = path.join(dir, 'task.md');
+  let forbidden = [];
+  if (fs.existsSync(taskMd)) {
+    const meta = parseTaskMeta(fs.readFileSync(taskMd, 'utf8')) || {};
+    forbidden = Array.isArray(meta.protectedPaths) ? meta.protectedPaths.map(String) : [];
+  }
   const runId = taskId + ':1';
   const rows = [];
   if (contractHash === '' || commit === '') {
@@ -49,7 +57,7 @@ export function convertTask(taskDir) {
   }
   rows.push({ kind: 'genesis', task: taskId, contract_hash: contractHash, at, writer: 'converter' });
   rows.push({ kind: 'task', id: taskId, contract_hash: contractHash, risk: String((acceptance && acceptance.risk) || 'unknown'), writer: 'workflow', at });
-  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', writer: 'workflow', at });
+  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, writer: 'workflow', at });
   rows.push({ kind: 'run', id: runId, task: taskId, commit, ruleset_hash: 'unknown', command: 'task-accept', writer: 'acceptor' });
   const changedPaths = Array.isArray(verify && verify.changedPaths) ? verify.changedPaths : [];
   rows.push({ kind: 'diff', task: taskId, run: runId, commit, paths: changedPaths, diff_hash: diffHash || 'unknown', writer: 'acceptor' });
