@@ -101,7 +101,16 @@ function engineShadow(repo, taskDir, meta, record) {
   const enabled = String(process.env.WF_ENGINE_SHADOW || '') === '1' || config.engineShadow === true;
   if (!enabled) return;
   try {
-    const converted = convertToWorkspace(taskDir, repo, { repoRoot: repo, force: true });
+    /*
+     * 0158: если факты уже есть и цепь цела — не пересобираем. Пересборка с --force
+     * стёрла бы подписанный sealed-факт (его не восстановить из источников), а для
+     * теневого прогона достаточно прочитать существующую цепь.
+     */
+    const factsFile = path.join(repo, 'docs', 'facts', String(meta.id) + '.jsonl');
+    const existing = fs.existsSync(factsFile) ? readFactFile(factsFile) : null;
+    const converted = existing && existing.ok
+      ? { ok: true, rows: existing.rows.length, signed: existing.rows.filter((row) => row.signature).length }
+      : convertToWorkspace(taskDir, repo, { repoRoot: repo, force: true });
     if (!converted.ok) {
       writeJson(path.join(taskDir, 'engine-shadow.json'), { at: new Date().toISOString(), task: meta.id, status: 'not-checked', problems: converted.problems });
       console.log('engine (тень): не проверено — ' + (converted.problems || []).join('; '));

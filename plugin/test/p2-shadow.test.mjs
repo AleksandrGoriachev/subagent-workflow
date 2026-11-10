@@ -29,6 +29,12 @@ test('тень не влияет на приёмку: вызов после за
   assert.ok(write > 0 && shadow > write, 'тень должна идти после записи приёмки');
 });
 
+test('тень не пересобирает факты, если цепь уже цела', () => {
+  const text = fs.readFileSync(SOURCE, 'utf8');
+  assert.match(text, /existing && existing\.ok/u, 'должна читать существующую цепь');
+  assert.match(text, /readFactFile/u);
+});
+
 test('тень не бросает: ошибки перехвачены', () => {
   const text = fs.readFileSync(SOURCE, 'utf8');
   const start = text.indexOf('function engineShadow(');
