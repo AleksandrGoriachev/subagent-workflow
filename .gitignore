@@ -9,3 +9,5 @@ reports/
 .dsh-plugin-backup-*/
 docs/facts/*.bak
 docs/facts/*.bak*
+docs/facts/*.lock
+docs/facts/*.quarantine-*
