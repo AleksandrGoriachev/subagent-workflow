@@ -23,7 +23,8 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
-$staged = @(git diff --cached --name-only --diff-filter=ACMRT)
+# 0131: удаления (D) тоже коммитятся — иначе файл, попавший в индекс случайно, из репозитория не убрать штатным путём.
+$staged = @(git diff --cached --name-only --diff-filter=ACMRTD)
 if ($staged.Count -eq 0 -and -not $Push -and $Tag -eq '') {
   Write-Host 'КОММИТ НЕ НУЖЕН: индекс пуст. Сначала: git add <пути>' -ForegroundColor Yellow
   exit 2
