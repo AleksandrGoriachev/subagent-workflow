@@ -1,16 +1,21 @@
 {
-  "version": 1,
+  "version": 2,
   "anchors": "docs/anchors.json",
   "algo": "sha256",
-  "hash": "a3944c0840e44111cb44c59d42a8a54ebb0ac4d1b9c7662439217fefe3553873",
-  "bytes": 6246,
-  "scope": "project",
+  "hash": "9cfeaa9c98e155986d3bdfacbe05feb27dc92f093794e76ea084dc30e594e214",
+  "bytes": 6236,
+  "layer": "contour",
+  "sides": "contour",
+  "enforcedBy": "both",
   "by": [
     "пользователь"
   ],
-  "at": "2026-11-09T17:59:10.619Z",
-  "signatureAlgorithm": "ed25519",
-  "keyId": "human-user",
+  "at": "2026-11-10T08:53:50.511Z",
   "publicKeyFingerprint": "556312a6aeef0ad5",
-  "signature": "gv1puV4E3LnNjqcmkdx4Xu8QbOT/+l/seUBU1pFjY0oxAlfJ6zlwlOtOuqF36edAC3Ea2OtOoHc6/xOVFr+oCg=="
+  "signature": {
+    "keyId": "human-user",
+    "algo": "ed25519",
+    "covers": "hash+by+at",
+    "value": "O04k+LFZUXIDhsB0xXB8Zb8ED2htOsrXy3zGfdUrXhlPyerqHqdA5F6KkHlli2nUEoiuqRy94fJ2VASAMWemDQ=="
+  }
 }
