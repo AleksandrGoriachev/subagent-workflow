@@ -30,6 +30,8 @@ import {
 import { reportReadGuard, reportReadRecord, actorModel } from './lib/acceptance-policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
 import { detectActor, assessIndependence } from './actor.mjs';
+import { convertToWorkspace } from './facts-convert.mjs';
+import { evaluateWorkspaceTask, loadAcceptors as loadEngineAcceptors } from '../engine.mjs';
 import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
 import { validateReview } from './lib/review.mjs';
 
@@ -83,6 +85,38 @@ const VERIFY_SCRIPT = path.join(SCRIPT_DIR, 'task-verify.mjs');
  * вердикт — приёмка проверяет ровно тот прогон, который прошли ворота.
  */
 
+/**
+ * 0152 (P2a): теневой прогон движка ограничений. Ничего не блокирует и не меняет
+ * вердикт: конвертирует задачу в факты, оценивает C1–C10 и записывает сравнение
+ * с фактической приёмкой. Цель — статистика расхождений до переключения.
+ * Отключается WF_ENGINE_SHADOW=0.
+ */
+function engineShadow(repo, taskDir, meta, record) {
+  if (String(process.env.WF_ENGINE_SHADOW || '1') === '0') return;
+  try {
+    const converted = convertToWorkspace(taskDir, repo, { repoRoot: repo, force: true });
+    if (!converted.ok) {
+      writeJson(path.join(taskDir, 'engine-shadow.json'), { at: new Date().toISOString(), task: meta.id, status: 'not-checked', problems: converted.problems });
+      console.log('engine (тень): не проверено — ' + (converted.problems || []).join('; '));
+      return;
+    }
+    const result = evaluateWorkspaceTask(repo, meta.id, { acceptors: loadEngineAcceptors(repo) });
+    const agree = String(record.status || 'accepted') === (result.verdict === 'accepted' ? 'accepted' : 'rejected');
+    writeJson(path.join(taskDir, 'engine-shadow.json'), {
+      at: new Date().toISOString(),
+      task: meta.id,
+      run: result.run,
+      engineVerdict: result.verdict,
+      acceptanceStatus: record.status || 'accepted',
+      agree,
+      report: result.report.map((item) => ({ id: item.id, status: item.status, detail: item.detail })),
+    });
+    console.log('engine (тень): ' + result.verdict + ' — ' + (agree ? 'совпадает с приёмкой' : 'РАСХОЖДЕНИЕ с приёмкой') + ' (' + result.passed + '/' + result.applicable + ')');
+  } catch (error) {
+    try { writeJson(path.join(taskDir, 'engine-shadow.json'), { at: new Date().toISOString(), task: meta.id, status: 'error', problem: String(error && error.message ? error.message : error) }); } catch { /* тень не ломает приёмку */ }
+    console.log('engine (тень): ошибка — ' + String(error && error.message ? error.message : error));
+  }
+}
 function fail(message) { console.error('task-accept: ' + message); process.exit(1); }
 
 function validateVerify(verify, lockCheck, contractCommit, nonce) {
@@ -765,6 +799,7 @@ try {
 
   const record = signRecord(body, { privateKeyPem, keyId });
   writeJson(files.acceptance, record);
+  engineShadow(repo, taskDir, meta, record);
 
   /*
    * 0052 (WC-30, замечание приёмщика 0051): строка accept в gates.jsonl пишется
