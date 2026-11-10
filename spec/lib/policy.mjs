@@ -1,0 +1,71 @@
+/**
+ * 0137 (P1): политика гейтов — чистая функция из спецификации v0.2, C5.
+ *
+ * policy(ruleset, task.risk) → множество обязательных гейтов. Каждый гейт обязан
+ * иметь факт evidence(kind=gate_run, gate=g, exit=0). Это и есть адаптивная
+ * строгость: обязательность набора зависит от риска, но механизм один.
+ *
+ * Инвариант (решение заказчика, 10.11): decisions/red и verify НИКОГДА не
+ * понижаются — это базовая связность приёмки. Понижаться могут только attack и
+ * modelFamily, и только явно, через ruleset.policy.
+ */
+
+/** Классы риска, которые понимает политика. */
+export const RISK_CLASSES = ['low', 'medium', 'high', 'critical'];
+
+/** Гейты, производимые текущим процессом и записываемые в журнал. */
+export const GATE_NAMES = ['red', 'verify', 'attack', 'modelFamily'];
+
+/** Нормализовать уровень строгости: warn → off для набора обязательных гейтов. */
+function isFail(level) {
+  return String(level || '').toLowerCase() === 'fail';
+}
+
+/**
+ * Обязательные гейты для класса риска при данных правилах.
+ *
+ * @param {object|null} ruleset — { policy?: { attack?, roles?: { modelFamily? } } }
+ * @param {string} risk — low|medium|high|critical
+ * @returns {string[]} имена гейтов в порядке применения.
+ */
+export function mandatoryGates(ruleset, risk) {
+  const r = RISK_CLASSES.includes(String(risk)) ? String(risk) : 'medium';
+  const policy = ruleset && ruleset.policy && typeof ruleset.policy === 'object' ? ruleset.policy : {};
+  /* База: red (доказательство, что критерий умеет падать) и verify (свежий прогон приёмщика). */
+  const gates = ['red', 'verify'];
+  /* Атака спецификации: обязательна для высокого риска, только если policy.attack=fail. */
+  if ((r === 'high' || r === 'critical') && isFail(policy.attack)) gates.push('attack');
+  /* Независимость модели приёмщика: обязательна для высокого риска при fail. */
+  const modelFamily = policy.roles && policy.roles.modelFamily ? policy.roles.modelFamily : 'warn';
+  if ((r === 'high' || r === 'critical') && isFail(modelFamily)) gates.push('modelFamily');
+  return gates;
+}
+
+/**
+ * Оценка C5: все обязательные гейты покрыты успешным фактом evidence.
+ * @param {object[]} evidence — строки facts (kind=evidence).
+ * @param {string[]} gates — из mandatoryGates.
+ * @returns {{status: 'pass'|'fail'|'not-applicable', detail: string, missing: string[]}}
+ */
+export function evaluateGates(evidence, gates, rulesetPresent) {
+  if (rulesetPresent !== true) {
+    return { status: 'not-applicable', detail: 'ruleset не задан — политику оценивать не из чего', missing: [] };
+  }
+  if (gates.length === 0) {
+    return { status: 'pass', detail: 'обязательных гейтов нет', missing: [] };
+  }
+  const byGate = new Map();
+  for (const row of evidence) {
+    const gate = String(row.gate || '');
+    if (gate !== '' && !byGate.has(gate)) byGate.set(gate, row);
+    else if (gate !== '' && row.exit === 0 && (byGate.get(gate) || {}).exit !== 0) byGate.set(gate, row);
+  }
+  const missing = gates.filter((gate) => {
+    const row = byGate.get(gate);
+    return !row || row.exit !== 0;
+  });
+  if (missing.length > 0) {
+    return { status: 'fail', detail: 'гейты без успешного доказательства: ' + missing.join(', '), missing };
+  }
+  return { status: 'pass', detail: 'все обязательные гейты покрыты: ' + gates.join(', '), missing: [] };
+}

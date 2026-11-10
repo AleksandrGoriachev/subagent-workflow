@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { factFileOf, readFactFile } from './lib/facts.mjs';
+import { mandatoryGates, evaluateGates } from './lib/policy.mjs';
 
 function rowsOf(read, kind) {
   return read.rows.filter((row) => row.kind === kind);
@@ -43,9 +44,13 @@ export function evaluateTask(read, options = {}) {
   const c10 = accepts.length === 1 && Boolean(a && c && d && a.contract_hash === c.hash && a.diff_hash === d.diff_hash);
   report.push({ id: 'C10', status: c10 ? 'pass' : 'fail', detail: c10 ? 'свидетельство единственно и согласовано' : 'свидетельств ' + accepts.length + ' или хеши разошлись' });
 
+  /* C5: политика гейтов — применима, когда в фактах есть ruleset. */
+  const ruleset = rowsOf(read, 'ruleset')[0] || null;
+  const c5 = evaluateGates(evidence, mandatoryGates(ruleset, t ? t.risk : 'medium'), Boolean(ruleset));
+  report.push({ id: 'C5', status: c5.status, detail: c5.detail });
+
   /* Не применимо сегодня: честно называем отсутствие источника данных. */
   report.push({ id: 'C2', status: 'not-applicable', detail: 'sealed_run не производится текущим процессом' });
-  report.push({ id: 'C5', status: 'not-applicable', detail: 'policy(ruleset, risk) ещё не определена; доказательства гейтов есть: ' + evidence.length });
   report.push({ id: 'C8', status: 'not-applicable', detail: 'planned(t) не записывается' });
   report.push({ id: 'C9', status: 'not-applicable', detail: 'ruleset не подписывается в P0' });
   report.push({ id: 'C3', status: 'not-applicable', detail: 'запрещённые пути задаются правилами (ruleset), которых ещё нет' });
