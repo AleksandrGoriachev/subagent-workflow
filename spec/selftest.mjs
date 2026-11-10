@@ -711,6 +711,19 @@ try {
   console.error('SELFTEST ERROR: ' + err.stack);
 }
 
+/*
+ * 0157: теневые отчёты не должны расходиться. Если появился DIFF — это повод
+ * разобраться до включения блокировки, а не после.
+ */
+try {
+  const shadow = await import('./scripts/engine-shadow-summary.mjs');
+  const summary = shadow.summarize(shadow.collectShadow(process.cwd()).rows);
+  report('SHADOW: теневые прогоны совпадают с приёмкой', summary.disagree.length === 0,
+    summary.disagree.length === 0 ? '' : 'расходятся: ' + summary.disagree.map((row) => row.task).join(', '));
+} catch (err) {
+  failed += 1;
+  console.error('SELFTEST ERROR: ' + err.stack);
+}
 if (failed) {
   console.log('\nSELFTEST FAILED: ' + failed);
   process.exit(1);
