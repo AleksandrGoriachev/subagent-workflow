@@ -14,6 +14,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { appendFact, factFileOf, sha256Text } from '../lib/facts.mjs';
 import { parseTaskMeta } from './lib/common.mjs';
+import { verifyRecord } from './sign.mjs';
+import { fileURLToPath } from 'node:url';
 import { actionsFromJournal, sessionFileOf } from '../lib/actions.mjs';
 
 /**
@@ -23,6 +25,11 @@ import { actionsFromJournal, sessionFileOf } from '../lib/actions.mjs';
  * workflow.config.json. Подпись берётся из docs/anchors.approval.json: если она
  * есть и подписана человеческим ключом — факт несёт её, иначе signature=null,
  * а C9 честно скажет «правила не подписаны».
+ */
+/**
+ * 0143: подпись правил проверяется криптографически, а не по префиксу ключа.
+ * Подпись покрывает canonical({hash, by, at}); берём публичный ключ из acceptors.json
+ * и сверяем значение. Возвращаем verified=true только при успехе.
  */
 export function readRuleset(repoRoot) {
   const root = path.resolve(String(repoRoot));
@@ -37,9 +44,32 @@ export function readRuleset(repoRoot) {
   const config = readJson(configFile) || {};
   const policy = config.policy && typeof config.policy === 'object' ? config.policy : {};
   const version = anchorsText === '' ? 0 : 1;
-  const signature = approval && approval.signature && typeof approval.signature === 'object'
-    ? { keyId: approval.signature.keyId || null, covers: approval.signature.covers || null, hash: approval.hash || null, at: approval.at || null }
-    : null;
+  let signature = null;
+  if (approval && approval.signature && typeof approval.signature === 'object') {
+    let verified = false;
+    let reason = 'подпись не проверена';
+    try {
+      const acceptorsFile = path.join(root, '..', 'docs', 'subagent-workflow', 'acceptors.json');
+      const acceptors = readJson(acceptorsFile);
+      const list = acceptors && Array.isArray(acceptors.acceptors) ? acceptors.acceptors : [];
+      const keyId = String(approval.signature.keyId || approval.keyId || '');
+      const key = list.find((item) => item && item.keyId === keyId);
+      if (!key) reason = 'ключ ' + keyId + ' не найден в acceptors.json';
+      else if (key.kind !== 'human') reason = 'ключ ' + keyId + ' не человеческий';
+      else if (verifyRecord(approval, key.publicKeyPem)) { verified = true; reason = null; }
+      else reason = 'подпись не сходится с ключом ' + keyId;
+    } catch (error) {
+      reason = 'ошибка проверки: ' + String(error && error.message ? error.message : error);
+    }
+    signature = {
+      keyId: approval.signature.keyId || approval.keyId || null,
+      covers: approval.signature.covers || null,
+      hash: approval.hash || null,
+      at: approval.at || null,
+      verified,
+      reason,
+    };
+  }
   return {
     version,
     anchors_hash: anchorsText === '' ? 'none' : sha256Text(anchorsText),
@@ -108,12 +138,13 @@ export function convertTask(taskDir, options = {}) {
     }
   }
   /* 0141: план — allowedPaths контракта; фактические записи — из журнала сессии исполнителя. */
-  let planned = [];
+  let planned = null;
   if (fs.existsSync(taskMd)) {
     const meta = parseTaskMeta(fs.readFileSync(taskMd, 'utf8')) || {};
-    planned = Array.isArray(meta.allowedPaths) ? meta.allowedPaths.map(String) : [];
+    if (Array.isArray(meta.allowedPaths)) planned = meta.allowedPaths.map(String);
   }
-  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, planned, seal, writer: 'workflow', at });
+  /* plannedDeclared отличает «плана нет» от «план пуст»: пустой план запрещает любые действия. */
+  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, planned, plannedDeclared: planned !== null, seal, writer: 'workflow', at });
   rows.push({ kind: 'run', id: runId, task: taskId, commit, ruleset_hash: 'unknown', command: 'task-accept', writer: 'acceptor' });
   const changedPaths = Array.isArray(verify && verify.changedPaths) ? verify.changedPaths : [];
   rows.push({ kind: 'diff', task: taskId, run: runId, commit, paths: changedPaths, diff_hash: diffHash || 'unknown', writer: 'acceptor' });
@@ -129,11 +160,15 @@ export function convertTask(taskDir, options = {}) {
        * зелёный прогон. Поэтому exit в факте означает «гейт достиг своего
        * назначения», а сырой verdict сохраняется рядом для аудита.
        */
+      /*
+       * 0143: успех гейта — только явный вердикт или явный зелёный итог.
+       * Отсутствие failed=N раньше считалось «зелено» — неполная запись могла стать успехом.
+       */
       const verdict = String(row.verdict || '');
-      const failed = /failed=([0-9]+)\//u.exec(String(row.exitSummary || ''));
-      const green = !failed || Number(failed[1]) === 0;
+      const exitSummary = String(row.exitSummary || '');
+      const failed = /failed=([0-9]+)\//u.exec(exitSummary);
       const gate = String(row.kind || 'gate');
-      const achieved = verdict === 'red-proven' || verdict === 'passed' || (verdict === '' && green);
+      const achieved = verdict === 'red-proven' || verdict === 'passed' || (verdict === '' && failed !== null && Number(failed[1]) === 0);
       const exit = achieved ? 0 : 1;
       const artifactHash = sha256Text(line);
       evidenceHashes.push(artifactHash);
@@ -180,7 +215,19 @@ export function convertToWorkspace(taskDir, workspace, options = {}) {
   }
   const converted = convertTask(taskDir, { repoRoot: options.repoRoot, workspace });
   if (converted.rows.length === 0) return { ok: false, file, problems: converted.problems };
-  if (options.force === true) fs.rmSync(file, { force: true });
+  if (options.force === true && fs.existsSync(file)) {
+    /*
+     * 0143: --force не должен молча стирать дописанные факты (sealed-run, accept).
+     * Делаем копию и отказываем, если в файле есть строки не от конвертера.
+     */
+    const lines = fs.readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '');
+    const foreign = lines.filter((line) => { try { const row = JSON.parse(line); return row.writer !== 'converter' && row.kind !== 'genesis'; } catch { return true; } });
+    if (foreign.length > 0) {
+      return { ok: false, file, problems: ['в файле фактов есть строки не от конвертера (' + foreign.length + '): пересборка стёрла бы доказательства — сделайте backup вручную'] };
+    }
+    fs.copyFileSync(file, file + '.bak');
+    fs.rmSync(file, { force: true });
+  }
   for (const row of converted.rows) appendFact(file, row);
   return { ok: true, file, rows: converted.rows.length, problems: converted.problems };
 }
@@ -190,10 +237,9 @@ if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(proc
   const value = (flag) => { const index = argv.indexOf(flag); return index >= 0 ? argv[index + 1] : undefined; };
   const taskDir = value('--task') || process.cwd();
   const workspace = value('--workspace') || path.resolve(taskDir, '..', '..', '..');
-  const result = convertToWorkspace(taskDir, workspace, {
-    force: argv.includes('--force'),
-    repoRoot: value('--repo') || path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/u, '$1')), '..', '..'),
-  });
+  /* 0143: путь через fileURLToPath — new URL().pathname ломался на пробелах и ~1. */
+  const repoRoot = value('--repo') || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const result = convertToWorkspace(taskDir, workspace, { force: argv.includes('--force'), repoRoot });
   for (const problem of result.problems) console.log('CONVERT PROBLEM ' + problem);
   if (result.ok) console.log('facts-convert: OK — ' + result.file + ' (' + result.rows + ' фактов)');
   else process.exitCode = 1;

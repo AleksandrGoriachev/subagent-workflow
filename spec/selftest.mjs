@@ -694,6 +694,22 @@ try {
   console.error('SELFTEST ERROR: ' + err.stack);
 }
 
+/*
+ * 0143 (P1): регрессия корпуса. Пять закреплённых задач обязаны оставаться
+ * accepted: правка движка, меняющая вердикт задним числом, видна сразу, а не
+ * в чужом ревью (находка эксплуатанта).
+ */
+try {
+  const engine = await import('./engine.mjs');
+  const corpus = ['0004', '0030', '0061', '0074', '0076'];
+  const bad = corpus.filter((task) => engine.evaluateWorkspaceTask(process.cwd(), task).verdict !== 'accepted');
+  report('CORPUS: пять закреплённых задач остаются accepted', bad.length === 0,
+    bad.length === 0 ? '' : 'расходятся: ' + bad.join(', '));
+} catch (err) {
+  failed += 1;
+  console.error('SELFTEST ERROR: ' + err.stack);
+}
+
 if (failed) {
   console.log('\nSELFTEST FAILED: ' + failed);
   process.exit(1);

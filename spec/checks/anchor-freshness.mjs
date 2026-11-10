@@ -22,6 +22,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { verifyRecord, loadAcceptors } from '../scripts/sign.mjs';
+import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
 
 export const ANCHORS_FILE = 'docs/anchors.json';
 export const APPROVAL_FILE = 'docs/anchors.approval.json';
@@ -60,12 +61,10 @@ export function compareVersions(left, right) {
 
 /** Теги релизов из git: без сети, без догадок. */
 export function releaseTags(root) {
-  try {
-    const out = execFileSync('git', ['tag', '--list', 'v*'], { cwd: root, encoding: 'utf8' });
-    return out.split('\n').map((line) => line.trim()).filter(Boolean);
-  } catch {
-    return [];
-  }
+  /* 0143: без пайпов — в ограниченной сессии DSH spawn с pipe даёт EPERM (WC-37/39). */
+  const result = spawnSyncPipeFree('git', ['tag', '--list', 'v*'], { cwd: root, encoding: 'utf8' });
+  if (result.status !== 0) return [];
+  return String(result.stdout || '').split('\n').map((line) => line.trim()).filter(Boolean);
 }
 
 /** Сколько релизов вышло после указанной версии. */

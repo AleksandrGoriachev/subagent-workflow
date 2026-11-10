@@ -132,21 +132,27 @@ export function spawnSyncPipeFree(command, args, options = {}) {
   const errFile = path.join(dir, 'stderr');
   let ofd;
   let efd;
+  let ifd;
   let res = null;
   let launchError = null;
+  /* 0143: stdin тоже через файл — иначе git credential fill без пайпа не ответит. */
+  const inFile = path.join(dir, 'stdin');
+  if (typeof opts.input === 'string') fs.writeFileSync(inFile, opts.input);
   try {
     ofd = fs.openSync(outFile, 'w');
     efd = fs.openSync(errFile, 'w');
+    ifd = typeof opts.input === 'string' ? fs.openSync(inFile, 'r') : null;
     res = spawnSync(command, list, {
       cwd: opts.cwd || process.cwd(),
       env: opts.env && typeof opts.env === 'object' ? opts.env : process.env,
       timeout: opts.timeout,
       windowsHide: opts.windowsHide === true,
-      stdio: ['ignore', ofd, efd],
+      stdio: [ifd === null ? 'ignore' : ifd, ofd, efd],
     });
   } catch (error) {
     launchError = error;
   } finally {
+    if (ifd !== null && ifd !== undefined) { try { fs.closeSync(ifd); } catch { /* ignore */ } }
     if (ofd !== undefined) { try { fs.closeSync(ofd); } catch { /* ignore */ } }
     if (efd !== undefined) { try { fs.closeSync(efd); } catch { /* ignore */ } }
   }

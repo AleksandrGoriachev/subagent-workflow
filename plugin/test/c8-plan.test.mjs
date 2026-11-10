@@ -42,7 +42,7 @@ function buildFacts(ws, planned, actionPaths) {
   const file = factFileOf(ws, '0050');
   appendFact(file, { kind: 'genesis', task: '0050', contract_hash: 'h', at: 't', writer: 'w' });
   appendFact(file, { kind: 'task', id: '0050', contract_hash: 'h', risk: 'medium', writer: 'w', at: 't' });
-  appendFact(file, { kind: 'contract', task: '0050', hash: 'h', criteria: 'c', forbidden: [], planned, seal: null, writer: 'w', at: 't' });
+  appendFact(file, { kind: 'contract', task: '0050', hash: 'h', criteria: 'c', forbidden: [], planned, plannedDeclared: true, seal: null, writer: 'w', at: 't' });
   appendFact(file, { kind: 'run', id: '0050:1', task: '0050', commit: 'h', ruleset_hash: 'u', command: 'x', writer: 'a' });
   appendFact(file, { kind: 'diff', task: '0050', run: '0050:1', commit: 'h', paths: ['a.js'], diff_hash: 'd', writer: 'a' });
   if (actionPaths) appendFact(file, { kind: 'action', task: '0050', run: '0050:1', cmd: 'journal', paths: actionPaths, writer: 'executor', at: 't' });

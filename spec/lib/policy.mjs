@@ -54,11 +54,22 @@ export function evaluateGates(evidence, gates, rulesetPresent) {
   if (gates.length === 0) {
     return { status: 'pass', detail: 'обязательных гейтов нет', missing: [] };
   }
+  /*
+   * 0143: конфликтные доказательства одного гейта (и pass, и fail) — отказ.
+   * «Выбрать успешный дубль» — это и есть способ пройти гейт задним числом.
+   */
   const byGate = new Map();
+  const conflicted = new Set();
   for (const row of evidence) {
     const gate = String(row.gate || '');
-    if (gate !== '' && !byGate.has(gate)) byGate.set(gate, row);
-    else if (gate !== '' && row.exit === 0 && (byGate.get(gate) || {}).exit !== 0) byGate.set(gate, row);
+    if (gate === '') continue;
+    const previous = byGate.get(gate);
+    if (!previous) { byGate.set(gate, row); continue; }
+    if (previous.exit !== row.exit) conflicted.add(gate);
+    else if (row.exit === 0 && previous.exit !== 0) byGate.set(gate, row);
+  }
+  if (conflicted.size > 0) {
+    return { status: 'fail', detail: 'конфликтные доказательства гейтов: ' + [...conflicted].join(', '), missing: [...conflicted] };
   }
   const missing = gates.filter((gate) => {
     const row = byGate.get(gate);

@@ -27,9 +27,40 @@ export const REQUIRED_FIELDS = {
   action: ['task', 'run', 'cmd', 'paths', 'writer', 'at'],
 };
 
-/** Нормализация пути (C3): NTFS без учёта регистра, слеши прямые, ./ и ведущий / снят. */
+/**
+ * 0143: канонизация пути для C3/C8.
+ *
+ * Ревью адвоката (10.11) показало обход: `src/../tests/pwn.mjs` не считался
+ * запрещённым, а `C:/abs/tests/x.mjs` проходил мимо глоба. Поэтому:
+ *  - снимаем диск/UNC и ведущие слеши;
+ *  - раскрываем `.` и `..` по-сегментно;
+ *  - выход выше корня помечаем escaped: такой путь никогда не «внутри плана»;
+ *  - регистр и слеши нормализуются (NTFS без учёта регистра).
+ *
+ * @returns {{path: string, escaped: boolean, absolute: boolean}}
+ */
+export function canonicalPath(value) {
+  let text = String(value || '').replace(/\\/gu, '/');
+  /* Абсолютный путь не «внутри» ничего: диск, UNC и ведущий слеш — отдельный признак. */
+  const absolute = /^[a-zA-Z]:/u.test(text) || /^\//u.test(text) || /^\/\//u.test(text);
+  text = text.replace(/^[a-zA-Z]:/u, '').replace(/^\/+/u, '');
+  const segments = [];
+  let escaped = false;
+  for (const raw of text.split('/')) {
+    if (raw === '' || raw === '.') continue;
+    if (raw === '..') {
+      if (segments.length === 0) escaped = true;
+      else segments.pop();
+      continue;
+    }
+    segments.push(raw.replace(/[. ]+$/u, ''));
+  }
+  return { path: segments.join('/').toLowerCase(), escaped, absolute };
+}
+
+/** Нормализация пути (совместимость с прежними вызовами): строка без пометки escaped. */
 export function normalizePath(value) {
-  return String(value || '').replace(/\\/gu, '/').replace(/^\.\//u, '').replace(/^\/+/u, '').toLowerCase();
+  return canonicalPath(value).path;
 }
 
 export function sha256Text(text) {
@@ -72,7 +103,8 @@ export function readFactFile(file) {
   if (!fs.existsSync(file)) return { ok: false, rows: [], problems: ['нет файла фактов: ' + file] };
   const problems = [];
   const rows = [];
-  const rawLines = fs.readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '');
+  /* 0143: BOM от «Блокнота» убивал генезис-строку — снимаем до разбора. */
+  const rawLines = fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, '').split('\n').filter((line) => line.trim() !== '');
   for (const line of rawLines) {
     let parsed;
     try { parsed = JSON.parse(line); } catch { problems.push('строка не JSON: ' + line.slice(0, 80)); continue; }
@@ -106,24 +138,59 @@ function globToRegExp(pattern) {
  * чтобы NTFS без учёта регистра и прямые/обратные слеши не обходили правило.
  */
 export function pathMatches(file, patterns) {
-  const normalized = normalizePath(file);
-  return (Array.isArray(patterns) ? patterns : []).some((pattern) => globToRegExp(normalizePath(pattern)).test(normalized));
+  const target = canonicalPath(file);
+  /* Путь вне корня (escaped) или абсолютный не принадлежит плану — это не «внутри». */
+  if (target.escaped || target.absolute) return false;
+  return (Array.isArray(patterns) ? patterns : []).some((pattern) => {
+    const normalized = canonicalPath(pattern);
+    return !normalized.escaped && globToRegExp(normalized.path).test(target.path);
+  });
 }
 
-/** Синоним для читаемости в ограничении C3. */
+/**
+ * C3: путь запрещён? Отдельно от pathMatches: escaped-путь запрещён всегда —
+ * иначе `../tests/x` выходит из своего дерева и «не попадает» под запрет.
+ */
 export function pathForbidden(file, patterns) {
+  const target = canonicalPath(file);
+  if (target.escaped || target.absolute) return true;
   return pathMatches(file, patterns);
 }
 
-/** Файл фактов задачи: docs/subagent-workflow/facts/<task>.jsonl (короткие имена, Windows 260). */
+/**
+ * 0143: факты живут в репозитории рядом с задачами (docs/facts), а не в игнорируемом
+ * каталоге воркспейса: иначе их нет в истории и после сбоя цепь не восстановить.
+ * Короткий путь — Windows 260.
+ */
 export function factFileOf(workspace, taskId) {
-  return path.join(String(workspace), 'docs', 'subagent-workflow', 'facts', String(taskId).replace(/[^0-9a-zA-Z._-]+/gu, '_') + '.jsonl');
+  return path.join(String(workspace), 'docs', 'facts', String(taskId).replace(/[^0-9a-zA-Z._-]+/gu, '_') + '.jsonl');
 }
 
 /** Дописать факт в цепь (единственный писатель файла — владелец задачи). */
 export function appendFact(file, row) {
   const form = validateFact(row);
   if (!form.ok) throw new Error('факт не проходит схему: ' + form.problem);
+  /* 0143: один писатель — lock-файл; read-modify-write без него рвётся при гонке. */
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const lockFile = file + '.lock';
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    try {
+      fs.writeFileSync(lockFile, String(process.pid), { flag: 'wx' });
+      break;
+    } catch {
+      if (attempt === 199) throw new Error('не удалось взять lock фактов: ' + lockFile);
+      const started = Date.now();
+      while (Date.now() - started < 20) { /* короткая пауза: без sleep в песочнице */ }
+    }
+  }
+  try {
+    return appendFactLocked(file, row);
+  } finally {
+    try { fs.rmSync(lockFile, { force: true }); } catch { /* lock переживёт */ }
+  }
+}
+
+function appendFactLocked(file, row) {
   const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '') : [];
   if (existing.length === 0 && row.kind !== 'genesis') throw new Error('первая запись обязана быть genesis');
   const prev = existing.length === 0 ? null : lineHash(existing[existing.length - 1]);

@@ -15,7 +15,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { execFileSync } from 'node:child_process';
+import { spawnSyncPipeFree } from './lib/common.mjs';
 import { appendFact, factFileOf, sha256Text } from '../lib/facts.mjs';
 import { parseTaskMeta } from './lib/common.mjs';
 
@@ -58,18 +58,33 @@ export function runSealed(taskDir, workspace, options = {}) {
   if (!relInside.startsWith('..') && !path.isAbsolute(relInside)) {
     return { ok: false, problems: ['запечатанный тест лежит внутри воркспейса (' + sealFile + '): это не held-out, вынесите файл за пределы дерева'] };
   }
+  /*
+   * 0143: seal берётся из task.md, а task.md — изменяемый файл. Связываем его с
+   * контрактом: хеш task.md должен совпадать с acceptance.taskFileSha256. Иначе
+   * seal «подписывается» тем, кто может править контракт после приёмки.
+   */
+  const acceptanceFile = path.join(dir, 'acceptance.json');
+  if (fs.existsSync(acceptanceFile)) {
+    const acceptance = JSON.parse(fs.readFileSync(acceptanceFile, 'utf8').replace(/^\uFEFF/u, ''));
+    if (acceptance && typeof acceptance.taskFileSha256 === 'string' && acceptance.taskFileSha256 !== '') {
+      const taskMdFile = path.join(dir, 'task.md');
+      const actualTaskHash = sha256File(taskMdFile);
+      if (actualTaskHash !== acceptance.taskFileSha256) {
+        return { ok: false, problems: ['task.md изменён после приёмки контракта: seal не может быть подтверждён (ожидался ' + acceptance.taskFileSha256.slice(0, 12) + '…, сейчас ' + actualTaskHash.slice(0, 12) + '…)'] };
+      }
+    }
+  }
   const actual = sha256File(sealFile);
   if (actual !== sealRead.seal.hash) {
     return { ok: false, problems: ['хеш запечатанного теста не совпадает с контрактом (' + actual.slice(0, 12) + '… != ' + sealRead.seal.hash.slice(0, 12) + '…)'] };
   }
-  let exit = 0;
-  let output = '';
-  try {
-    output = execFileSync(process.execPath, [sealFile], { cwd: workspacePath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: options.timeoutMs || 600000 });
-  } catch (error) {
-    exit = typeof error.status === 'number' ? error.status : 1;
-    output = String(error.stdout || '') + String(error.stderr || '');
-  }
+  /*
+   * 0143: без пайпов — иначе в ограниченной сессии DSH будет EPERM (WC-37/39),
+   * и C2 получит ложный отказ «нет доказательства» вместо честного прогона.
+   */
+  const spawned = spawnSyncPipeFree(process.execPath, [sealFile], { cwd: workspacePath, timeout: options.timeoutMs || 600000 });
+  const exit = typeof spawned.status === 'number' ? spawned.status : 1;
+  const output = String(spawned.stdout || '') + String(spawned.stderr || '');
   const logFile = path.join(dir, 'sealed.log');
   fs.writeFileSync(logFile, output || '(без вывода)\n');
   const runId = taskId + ':1';

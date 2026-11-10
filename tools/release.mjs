@@ -16,7 +16,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { spawnSyncPipeFree } from '../spec/scripts/lib/common.mjs';
 import { createDraft } from './release-draft.mjs';
 import { smokeRelease, localAssets } from './release-smoke.mjs';
 import { publishRelease } from './release-publish.mjs';
@@ -77,8 +77,20 @@ export function expectedNames(version, panelVersion) {
   ];
 }
 
+/**
+ * 0143: запуск без пайпов (WC-37/39). Возвращает stdout, как execFileSync, но
+ * бросает ту же ошибку на ненулевом статусе — поведение вызывающих не меняется.
+ */
 function run(command, args, cwd = ROOT) {
-  return execFileSync(command, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const result = spawnSyncPipeFree(command, args, { cwd, encoding: 'utf8' });
+  if (result.status !== 0) {
+    const error = new Error(String(result.stderr || result.stdout || 'команда завершилась с кодом ' + result.status));
+    error.status = result.status;
+    error.stdout = result.stdout;
+    error.stderr = result.stderr;
+    throw error;
+  }
+  return String(result.stdout || '');
 }
 
 /** Полный выпуск: сборка -> архивы -> коммит/тег -> draft -> smoke -> publish. */
