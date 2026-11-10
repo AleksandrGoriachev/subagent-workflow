@@ -52,8 +52,18 @@ export function decodeJournal(file) {
 
 /** Чужие корни: из docs/foreign-roots.json или переданные явно. */
 export function loadForeignRoots(root, options = {}) {
+  /*
+   * 0132: запуск из каталога движка молча давал SKIP — файл конфигурации ищется
+   * в docs воркспейса, а не рядом с репозиторием. Это делало проверку
+   * обходимой: достаточно запустить её не из того каталога. Теперь ищем рядом
+   * с репозиторием (../docs) до того, как объявить SKIP.
+   */
   if (Array.isArray(options.roots)) return options.roots;
-  const file = path.join(String(root), 'docs', 'foreign-roots.json');
+  const candidates = [
+    path.join(String(root), 'docs', 'foreign-roots.json'),
+    path.resolve(String(root), '..', 'docs', 'foreign-roots.json'),
+  ];
+  const file = candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
   try {
     const parsed = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, ''));
     const list = Array.isArray(parsed) ? parsed : parsed.roots;
@@ -147,8 +157,14 @@ export function scanLines(lines, foreignRoots, options = {}) {
 
 /** Один воркспейс: журналы его сессий + разрешения. */
 export function checkWorkspace(root, options = {}) {
-  const workspace = path.resolve(String(root));
-  const roots = loadForeignRoots(workspace, options);
+  /* 0132: конфиг может лежать рядом с репозиторием (../docs) — тогда и журналы
+   * берём из воркспейса-родителя, а не из каталога движка. */
+  const startedAt = path.resolve(String(root));
+  const parentRoot = path.resolve(startedAt, '..');
+  const ownConfig = path.join(startedAt, 'docs', 'foreign-roots.json');
+  const parentConfig = path.join(parentRoot, 'docs', 'foreign-roots.json');
+  const workspace = !fs.existsSync(ownConfig) && fs.existsSync(parentConfig) ? parentRoot : startedAt;
+  const roots = loadForeignRoots(startedAt, options);
   if (roots.length === 0) return { ok: true, skipped: true, reason: 'нет docs/foreign-roots.json — чужие корни не объявлены', hits: [], problems: [] };
   const key = sessionKey(workspace);
   const dir = path.join(options.sessionsDir || path.join(os.homedir(), '.dsh', 'sessions'), key);
