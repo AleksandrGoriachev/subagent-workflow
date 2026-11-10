@@ -14,9 +14,10 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import { spawnSyncPipeFree } from './lib/common.mjs';
-import { appendFact, factFileOf, sha256Text } from '../lib/facts.mjs';
+import { appendFact, factFileOf, sha256Text, signFact } from '../lib/facts.mjs';
 import { parseTaskMeta } from './lib/common.mjs';
 
 function sha256File(file) {
@@ -95,7 +96,11 @@ export function runSealed(taskDir, workspace, options = {}) {
     if (existing.length === 0) {
       return { ok: false, problems: ['нет файла фактов задачи — сначала facts-convert: ' + file], log: logFile };
     }
-    appendFact(file, { kind: 'evidence', task: taskId, run: runId, gate: 'sealed', artifact_hash: artifactHash, exit, seal_hash: sealRead.seal.hash, verdict: exit === 0 ? 'passed' : 'failed', writer: 'acceptor' });
+    const row = { kind: 'evidence', task: taskId, run: runId, gate: 'sealed', artifact_hash: artifactHash, exit, seal_hash: sealRead.seal.hash, verdict: exit === 0 ? 'passed' : 'failed', writer: 'acceptor' };
+    /* 0145: доказательство подписывается в appendFact — когда prev уже известен. */
+    const keyFile = options.factsKey || path.join(os.homedir(), '.wf-keys', path.basename(workspacePath), 'agent-facts.key.pem');
+    const signed = fs.existsSync(keyFile) ? { ...row, signRequest: { keyId: options.factsKeyId || 'agent-facts', privateKeyPem: fs.readFileSync(keyFile, 'utf8') } } : row;
+    appendFact(file, signed);
   }
   return { ok: exit === 0, exit, problems: exit === 0 ? [] : ['запечатанный тест упал с кодом ' + exit], log: logFile, hash: sealRead.seal.hash };
 }

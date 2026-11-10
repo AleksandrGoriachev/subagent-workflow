@@ -11,7 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { factFileOf, readFactFile, pathForbidden, sha256Text } from './lib/facts.mjs';
+import { factFileOf, readFactFile, pathForbidden, sha256Text, verifyFactSignature, SIGNED_KINDS } from './lib/facts.mjs';
 import { mandatoryGates, evaluateGates } from './lib/policy.mjs';
 import { pathsOutsidePlan } from './lib/actions.mjs';
 
@@ -146,6 +146,25 @@ export function evaluateTask(read, options = {}) {
   const manifestOk = Boolean(a && a.evidence_manifest_hash && a.evidence_manifest_hash === manifestHash);
   /* 0144 (Grok): манифест доказательств обязан совпадать с фактическим набором этого run. */
   const c10problems = [];
+  /*
+   * 0145: решения (evidence, judgment, accept) обязаны быть подписаны, и подпись
+   * должна сходиться с зарегистрированным ключом. Иначе доказательство — это
+   * просто строка в файле, которую может дописать кто угодно.
+   */
+  const unsignedDecisions = [];
+  const badSignatures = [];
+  /* Включается, когда переданы acceptors (даже пустые): CLI и selftest делают это всегда. */
+  const signatureEnforced = Array.isArray(options.acceptors);
+  for (const row of (signatureEnforced ? [...evidence, ...(j ? [j] : []), ...(a ? [a] : [])] : [])) {
+    if (!SIGNED_KINDS.includes(row.kind)) continue;
+    const keyId = String(row.keyId || '');
+    const key = (options.acceptors || []).find((item) => item && item.keyId === keyId);
+    if (!row.signature || keyId === '') unsignedDecisions.push(row.kind + '@' + String(row.run || '?'));
+    else if (!key) badSignatures.push(keyId + ' (ключ не зарегистрирован)');
+    else if (!verifyFactSignature(row, key.publicKeyPem)) badSignatures.push(row.kind + '@' + keyId);
+  }
+  if (unsignedDecisions.length > 0) c10problems.push('не подписаны: ' + unsignedDecisions.slice(0, 4).join(', '));
+  if (badSignatures.length > 0) c10problems.push('подпись не сходится: ' + badSignatures.slice(0, 4).join(', '));
   if (accepts.length !== 1) c10problems.push('свидетельств accept: ' + accepts.length + ' (нужно ровно одно)');
   if (tasks.length !== 1) c10problems.push('фактов task: ' + tasks.length);
   if (!hashesOk) c10problems.push('хеши свидетельства не совпадают с контрактом/диффом');

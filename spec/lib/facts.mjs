@@ -6,8 +6,8 @@
  * один файл на задачу; писатель — владелец задачи. Чтение — чистая функция.
  */
 import fs from 'node:fs';
-import path from 'node:path';
 import crypto from 'node:crypto';
+import path from 'node:path';
 
 /** Виды фактов из §2 спецификации. */
 export const FACT_KINDS = ['genesis', 'task', 'contract', 'run', 'diff', 'evidence', 'judgment', 'accept', 'release', 'ruleset', 'action'];
@@ -209,8 +209,62 @@ function appendFactLocked(file, row) {
   const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '') : [];
   if (existing.length === 0 && row.kind !== 'genesis') throw new Error('первая запись обязана быть genesis');
   const prev = existing.length === 0 ? null : lineHash(existing[existing.length - 1]);
-  const line = JSON.stringify(prev === null ? row : { ...row, prev });
+  /*
+   * 0145: подпись ставится ПОСЛЕ того, как известен prev — иначе подпись покрывает
+   * тело без prev, а проверка считает с prev, и любая подпись «не сходится».
+   * row.signRequest = {keyId, privateKeyPem} — служебное поле, в файл не попадает.
+   */
+  let signedRow = prev === null ? row : { ...row, prev };
+  if (row && row.signRequest && typeof row.signRequest.privateKeyPem === 'string') {
+    const { keyId, privateKeyPem } = row.signRequest;
+    const base = { ...row, prev };
+    delete base.signRequest;
+    signedRow = signFact(base, keyId, privateKeyPem);
+  }
+  const line = JSON.stringify(signedRow);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.appendFileSync(file, line + '\n');
   return line;
+}
+/** Канонизация для подписи: ключи по алфавиту, без пробелов. */
+export function canonicalFactBody(row) {
+  const copy = { ...row };
+  delete copy.signature;
+  /* readFactFile добавляет служебную строку источника — она не часть тела подписи. */
+  delete copy.line;
+  return canonicalize(copy);
+}
+
+export function canonicalize(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']';
+  if (value !== null && typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return '{' + keys.map((key) => JSON.stringify(key) + ':' + canonicalize(value[key])).join(',') + '}';
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * 0145: подпись факта. Подписываются решения (evidence, judgment, accept), а не
+ * вся цепь: цель — чтобы доказательство нельзя было дописать чужим пером.
+ * Тело включает prev, поэтому перенос факта в другое место цепи ломает подпись.
+ */
+export const SIGNED_KINDS = ['evidence', 'judgment', 'accept'];
+
+export function signFact(row, keyId, privateKeyPem) {
+  /* keyId входит в тело подписи: подмена ключа ломает подпись, а не выглядит «другой подписью». */
+  const base = { ...row, keyId };
+  const body = canonicalFactBody(base);
+  const value = crypto.sign(null, Buffer.from(body, 'utf8'), crypto.createPrivateKey(privateKeyPem)).toString('base64');
+  return { ...base, signature: { algo: 'ed25519', covers: 'fact', value } };
+}
+
+export function verifyFactSignature(row, publicKeyPem) {
+  if (!row || !row.signature || typeof row.signature.value !== 'string') return false;
+  try {
+    const body = canonicalFactBody(row);
+    return crypto.verify(null, Buffer.from(body, 'utf8'), crypto.createPublicKey(publicKeyPem), Buffer.from(row.signature.value, 'base64'));
+  } catch {
+    return false;
+  }
 }

@@ -702,7 +702,8 @@ try {
 try {
   const engine = await import('./engine.mjs');
   const corpus = ['0004', '0030', '0061', '0074', '0076'];
-  const bad = corpus.filter((task) => engine.evaluateWorkspaceTask(process.cwd(), task).verdict !== 'accepted');
+  const acceptors = engine.loadAcceptors(process.cwd());
+  const bad = corpus.filter((task) => engine.evaluateWorkspaceTask(process.cwd(), task, { acceptors }).verdict !== 'accepted');
   report('CORPUS: пять закреплённых задач остаются accepted', bad.length === 0,
     bad.length === 0 ? '' : 'расходятся: ' + bad.join(', '));
 } catch (err) {

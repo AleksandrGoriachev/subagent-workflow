@@ -12,10 +12,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { appendFact, factFileOf, sha256Text } from '../lib/facts.mjs';
+import { appendFact, factFileOf, sha256Text, signFact, SIGNED_KINDS } from '../lib/facts.mjs';
 import { parseTaskMeta } from './lib/common.mjs';
 import { verifyRecord } from './sign.mjs';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
 import { actionsFromJournal, sessionFileOf } from '../lib/actions.mjs';
 
 /**
@@ -31,6 +33,20 @@ import { actionsFromJournal, sessionFileOf } from '../lib/actions.mjs';
  * Подпись покрывает canonical({hash, by, at}); берём публичный ключ из acceptors.json
  * и сверяем значение. Возвращаем verified=true только при успехе.
  */
+function signDecisions(rows, options) {
+  const keyFile = options && options.factsKey ? options.factsKey : null;
+  const keyId = options && options.factsKeyId ? options.factsKeyId : 'agent-facts';
+  if (!keyFile || !fs.existsSync(keyFile)) return { rows, signed: 0, reason: 'ключ подписи фактов не найден: ' + String(keyFile) };
+  const privateKeyPem = fs.readFileSync(keyFile, 'utf8');
+  let signed = 0;
+  const out = rows.map((row) => {
+    if (!SIGNED_KINDS.includes(row.kind)) return row;
+    signed += 1;
+    return { ...row, signRequest: { keyId, privateKeyPem } };
+  });
+  return { rows: out, signed, reason: null };
+}
+
 export function readRuleset(repoRoot) {
   const root = path.resolve(String(repoRoot));
   const readJson = (file) => { try { return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, '')); } catch { return null; } };
@@ -228,8 +244,9 @@ export function convertToWorkspace(taskDir, workspace, options = {}) {
     fs.rmSync(file, { force: true });
     converted.backup = backup;
   }
-  for (const row of converted.rows) appendFact(file, row);
-  return { ok: true, file, rows: converted.rows.length, problems: converted.problems };
+  const signed = signDecisions(converted.rows, options);
+  for (const row of signed.rows) appendFact(file, row);
+  return { ok: true, file, rows: signed.rows.length, signed: signed.signed, problems: signed.reason ? [...converted.problems, signed.reason] : converted.problems };
 }
 
 if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href) {
@@ -239,7 +256,8 @@ if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(proc
   const workspace = value('--workspace') || path.resolve(taskDir, '..', '..', '..');
   /* 0143: путь через fileURLToPath — new URL().pathname ломался на пробелах и ~1. */
   const repoRoot = value('--repo') || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const result = convertToWorkspace(taskDir, workspace, { force: argv.includes('--force'), repoRoot });
+  const factsKey = value('--facts-key') || path.join(require('node:os').homedir(), '.wf-keys', path.basename(path.resolve(repoRoot)), 'agent-facts.key.pem');
+  const result = convertToWorkspace(taskDir, workspace, { force: argv.includes('--force'), repoRoot, factsKey });
   for (const problem of result.problems) console.log('CONVERT PROBLEM ' + problem);
   if (result.ok) console.log('facts-convert: OK — ' + result.file + ' (' + result.rows + ' фактов)');
   else process.exitCode = 1;

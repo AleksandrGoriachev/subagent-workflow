@@ -15,6 +15,15 @@
       "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAl7PuyJGSfUPwr8fKnz9Y7wX2Y4ANsc+oF4tVc1fvDms=\n-----END PUBLIC KEY-----\n",
       "createdAt": "2026-11-09T12:08:27.163Z",
       "fingerprint": "556312a6aeef0ad5"
+    },
+    {
+      "keyId": "agent-facts",
+      "kind": "agent",
+      "owner": "engine",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAanI3TqyAvlJfluKcn19wptLa1OkkBPXk2fjOZ72ruDc=\n-----END PUBLIC KEY-----\n",
+      "fingerprint": "a3d15e9c1ec06716",
+      "createdAt": "2026-11-10T21:14:03.808Z",
+      "purpose": "подпись фактов-решений (evidence, judgment, accept)"
     }
   ]
 }
