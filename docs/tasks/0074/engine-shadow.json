@@ -1,0 +1,60 @@
+{
+  "at": "2026-11-10T22:55:39.257Z",
+  "task": "0074",
+  "run": "0074:1",
+  "engineVerdict": "accepted",
+  "acceptanceStatus": "accepted",
+  "agree": true,
+  "report": [
+    {
+      "id": "C1",
+      "status": "pass",
+      "detail": "контракт и запуск согласованы"
+    },
+    {
+      "id": "C2",
+      "status": "not-applicable",
+      "detail": "контракт не объявляет sealedTest — обязанности нет"
+    },
+    {
+      "id": "C3",
+      "status": "pass",
+      "detail": "дифф не касается запрещённых путей"
+    },
+    {
+      "id": "C4",
+      "status": "pass",
+      "detail": "суждение совпадает с диффом этого run"
+    },
+    {
+      "id": "C5",
+      "status": "pass",
+      "detail": "все обязательные гейты покрыты: red, verify"
+    },
+    {
+      "id": "C7",
+      "status": "pass",
+      "detail": "цепь цела"
+    },
+    {
+      "id": "C8",
+      "status": "pass",
+      "detail": "действия не выходят за план (6 путей; журнал исполнителя отсутствует — контроль сужен до диффа)"
+    },
+    {
+      "id": "C9",
+      "status": "pass",
+      "detail": "правила подписаны и проверены: human-user"
+    },
+    {
+      "id": "C10",
+      "status": "pass",
+      "detail": "свидетельство единственно и согласовано"
+    },
+    {
+      "id": "C6",
+      "status": "not-applicable",
+      "detail": "release-факты к задаче не относятся"
+    }
+  ]
+}
