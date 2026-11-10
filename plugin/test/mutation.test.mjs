@@ -89,6 +89,27 @@ test('мутация: подписанная строка не уходит в �
   assert.equal(repaired.ok, false);
 });
 
+test('мутация: второй genesis → rejected', () => {
+  const { ws, file } = copyFacts();
+  const rows = lines(file);
+  const genesis = rows.find((line) => line.includes('"kind":"genesis"'));
+  rows.push(genesis);
+  write(file, rows);
+  assert.equal(verdictOf(ws), 'rejected');
+});
+
+test('мутация: accept помечен void → rejected', () => {
+  const { ws, file } = copyFacts();
+  const rows = lines(file).map((line) => {
+    if (!line.includes('"kind":"accept"')) return line;
+    const row = JSON.parse(line);
+    row.verdict = 'void';
+    return JSON.stringify(row);
+  });
+  write(file, rows);
+  assert.equal(verdictOf(ws), 'rejected');
+});
+
 test('свойство: добавление мусора не улучшает вердикт', () => {
   const { ws, file } = copyFacts();
   const rows = lines(file);

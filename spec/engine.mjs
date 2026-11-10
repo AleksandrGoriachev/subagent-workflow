@@ -58,6 +58,7 @@ export function evaluateTask(read, options = {}) {
   const contracts = rowsOf(read, 'contract');
   const runs = rowsOf(read, 'run');
   const accepts = rowsOf(read, 'accept');
+  const geneses = rowsOf(read, 'genesis');
   const t = tasks[0] || null;
   const c = contracts[0] || null;
   const a = accepts[0] || null;
@@ -174,6 +175,8 @@ export function evaluateTask(read, options = {}) {
   if (unsignedDecisions.length > 0) c10problems.push('не подписаны: ' + unsignedDecisions.slice(0, 4).join(', '));
   if (badSignatures.length > 0) c10problems.push('подпись не сходится: ' + badSignatures.slice(0, 4).join(', '));
   if (accepts.length !== 1) c10problems.push('свидетельств accept: ' + accepts.length + ' (нужно ровно одно)');
+  if (geneses.length !== 1) c10problems.push('фактов genesis: ' + geneses.length + ' (нужно ровно один)');
+  if (a && String(a.verdict || '') === 'void') c10problems.push('свидетельство помечено void');
   if (tasks.length !== 1) c10problems.push('фактов task: ' + tasks.length);
   if (!hashesOk) c10problems.push('хеши свидетельства не совпадают с контрактом/диффом');
   if (!manifestOk) c10problems.push('evidence_manifest_hash не совпадает с фактическим набором доказательств run');
