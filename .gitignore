@@ -8,3 +8,4 @@ reports/
 .DS_Store
 .dsh-plugin-backup-*/
 docs/facts/*.bak
+docs/facts/*.bak*
