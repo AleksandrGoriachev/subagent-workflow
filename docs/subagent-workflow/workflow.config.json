@@ -18,5 +18,6 @@
   },
   "models": {},
   "roles": {},
-  "verifyTimeoutMs": 1800000
+  "verifyTimeoutMs": 1800000,
+  "engineShadow": true
 }
