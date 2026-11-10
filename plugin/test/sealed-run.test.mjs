@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { appendFact, factFileOf, readFactFile } from '../../spec/lib/facts.mjs';
+import { appendFact, factFileOf, readFactFile, sha256Text } from '../../spec/lib/facts.mjs';
 import { evaluateTask } from '../../spec/engine.mjs';
 import { runSealed } from '../../spec/scripts/sealed-run.mjs';
 
@@ -71,9 +71,10 @@ function buildFacts(ws, options = {}) {
   appendFact(file, { kind: 'diff', task: '0050', run: '0050:1', commit: 'h', paths: ['a.js'], diff_hash: 'd', writer: 'a' });
   appendFact(file, { kind: 'evidence', task: '0050', run: '0050:1', gate: 'red', artifact_hash: 'e1', exit: 0, writer: 'a' });
   appendFact(file, { kind: 'evidence', task: '0050', run: '0050:1', gate: 'verify', artifact_hash: 'e2', exit: 0, writer: 'a' });
+  const manifest = sha256Text(['e1', 'e2'].sort().join(','));
   if (options.sealedEvidence) appendFact(file, { kind: 'evidence', task: '0050', run: '0050:1', gate: 'sealed', artifact_hash: 'e3', exit: options.sealedExit || 0, seal_hash: options.seal.hash, writer: 'a' });
   appendFact(file, { kind: 'judgment', task: '0050', run: '0050:1', artifact_hash: 'd', by: 'j', role: 'judge', model: 'x', verdict: 'accepted', writer: 'a' });
-  appendFact(file, { kind: 'accept', task: '0050', run: '0050:1', contract_hash: 'h', diff_hash: 'd', ruleset_hash: 'u', evidence_manifest_hash: 'm', by: 'j', at: 't' });
+  appendFact(file, { kind: 'accept', task: '0050', run: '0050:1', contract_hash: 'h', diff_hash: 'd', ruleset_hash: 'u', evidence_manifest_hash: manifest, by: 'j', at: 't' });
   return file;
 }
 

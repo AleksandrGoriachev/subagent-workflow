@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { appendFact, factFileOf, readFactFile, pathForbidden, pathMatches } from '../../spec/lib/facts.mjs';
+import { appendFact, factFileOf, readFactFile, pathForbidden, pathMatches, sha256Text } from '../../spec/lib/facts.mjs';
 import { evaluateTask } from '../../spec/engine.mjs';
 
 test('c1: traversal и абсолютный путь не проходят', () => {
@@ -33,13 +33,17 @@ function facts(ws, options = {}) {
   appendFact(file, { kind: 'diff', task: '0050', run, commit: 'h', paths: options.diffPaths || ['src/a.js'], diff_hash: 'd', writer: 'a' });
   if (options.extraRun) appendFact(file, { kind: 'evidence', task: '0050', run: '0050:0', gate: 'verify', artifact_hash: 'old', exit: 0, writer: 'a' });
   appendFact(file, { kind: 'evidence', task: '0050', run, gate: 'red', artifact_hash: 'e1', exit: 0, writer: 'a' });
+  const evidenceHashes = ['e1', 'e2'];
+  if (options.extraRun) evidenceHashes.push('old');
+  if (options.verifyConflict) evidenceHashes.push('e3');
+  const manifest = sha256Text([...evidenceHashes].sort().join(','));
   appendFact(file, { kind: 'evidence', task: '0050', run, gate: 'verify', artifact_hash: 'e2', exit: options.verifyExit === undefined ? 0 : options.verifyExit, writer: 'a' });
   if (options.verifyConflict) appendFact(file, { kind: 'evidence', task: '0050', run, gate: 'verify', artifact_hash: 'e3', exit: 1, writer: 'a' });
   if (options.ruleset) {
     appendFact(file, { kind: 'ruleset', version: 1, anchors_hash: 'ah', presets_hash: 'p', seal: 's', policy: {}, signature: { keyId: 'human-user', covers: 'hash+by+at', hash: options.sigHash || 'ah', verified: options.sigVerified === true, reason: 'x' } });
   }
   appendFact(file, { kind: 'judgment', task: '0050', run, artifact_hash: 'd', by: 'j', role: 'judge', model: 'x', verdict: 'accepted', writer: 'a' });
-  appendFact(file, { kind: 'accept', task: '0050', run, contract_hash: 'h', diff_hash: 'd', ruleset_hash: 'u', evidence_manifest_hash: 'm', by: 'j', at: 't' });
+  appendFact(file, { kind: 'accept', task: '0050', run, contract_hash: 'h', diff_hash: 'd', ruleset_hash: 'u', evidence_manifest_hash: manifest, by: 'j', at: 't' });
   return file;
 }
 

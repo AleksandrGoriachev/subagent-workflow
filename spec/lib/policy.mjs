@@ -48,6 +48,22 @@ export function mandatoryGates(ruleset, risk) {
  * @returns {{status: 'pass'|'fail'|'not-applicable', detail: string, missing: string[]}}
  */
 export function evaluateGates(evidence, gates, rulesetPresent) {
+  /*
+   * 0144 (находка Grok): конфликт доказательств проверяется ДО ruleset. Иначе без
+   * политики «pass и fail одновременно» проходили как not-applicable, а итог был
+   * accepted. Конфликт — это факт о данных, а не о политике.
+   */
+  const byGateAny = new Map();
+  const conflictedAny = new Set();
+  for (const row of Array.isArray(evidence) ? evidence : []) {
+    const gate = String(row.gate || '');
+    if (gate === '') continue;
+    if (!byGateAny.has(gate)) byGateAny.set(gate, row);
+    else if (byGateAny.get(gate).exit !== row.exit) conflictedAny.add(gate);
+  }
+  if (conflictedAny.size > 0) {
+    return { status: 'fail', detail: 'конфликтные доказательства гейтов: ' + [...conflictedAny].join(', '), missing: [...conflictedAny] };
+  }
   if (rulesetPresent !== true) {
     return { status: 'not-applicable', detail: 'ruleset не задан — политику оценивать не из чего', missing: [] };
   }

@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { writePathsOf, pathsOutsidePlan } from '../../spec/lib/actions.mjs';
-import { appendFact, factFileOf, readFactFile } from '../../spec/lib/facts.mjs';
+import { appendFact, factFileOf, readFactFile, sha256Text } from '../../spec/lib/facts.mjs';
 import { evaluateTask } from '../../spec/engine.mjs';
 
 test('c1: записи ловятся, чтение — нет', () => {
@@ -48,8 +48,9 @@ function buildFacts(ws, planned, actionPaths) {
   if (actionPaths) appendFact(file, { kind: 'action', task: '0050', run: '0050:1', cmd: 'journal', paths: actionPaths, writer: 'executor', at: 't' });
   appendFact(file, { kind: 'evidence', task: '0050', run: '0050:1', gate: 'red', artifact_hash: 'e1', exit: 0, writer: 'a' });
   appendFact(file, { kind: 'evidence', task: '0050', run: '0050:1', gate: 'verify', artifact_hash: 'e2', exit: 0, writer: 'a' });
+  const manifest = sha256Text(['e1', 'e2'].sort().join(','));
   appendFact(file, { kind: 'judgment', task: '0050', run: '0050:1', artifact_hash: 'd', by: 'j', role: 'judge', model: 'x', verdict: 'accepted', writer: 'a' });
-  appendFact(file, { kind: 'accept', task: '0050', run: '0050:1', contract_hash: 'h', diff_hash: 'd', ruleset_hash: 'u', evidence_manifest_hash: 'm', by: 'j', at: 't' });
+  appendFact(file, { kind: 'accept', task: '0050', run: '0050:1', contract_hash: 'h', diff_hash: 'd', ruleset_hash: 'u', evidence_manifest_hash: manifest, by: 'j', at: 't' });
   return file;
 }
 

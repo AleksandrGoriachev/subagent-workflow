@@ -66,6 +66,9 @@ export function readRuleset(repoRoot) {
       covers: approval.signature.covers || null,
       hash: approval.hash || null,
       at: approval.at || null,
+      /* 0144 (Grok): движок проверяет подпись сам — нужны сырые поля, а не флаг. */
+      by: approval.by || null,
+      value: approval.signature.value || null,
       verified,
       reason,
     };
@@ -217,16 +220,13 @@ export function convertToWorkspace(taskDir, workspace, options = {}) {
   if (converted.rows.length === 0) return { ok: false, file, problems: converted.problems };
   if (options.force === true && fs.existsSync(file)) {
     /*
-     * 0143: --force не должен молча стирать дописанные факты (sealed-run, accept).
-     * Делаем копию и отказываем, если в файле есть строки не от конвертера.
+     * 0144: --force не должен молча стирать дописанные факты (sealed-run, accept).
+     * Поэтому сначала backup, и только потом пересборка; путь к копии — в отчёте.
      */
-    const lines = fs.readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '');
-    const foreign = lines.filter((line) => { try { const row = JSON.parse(line); return row.writer !== 'converter' && row.kind !== 'genesis'; } catch { return true; } });
-    if (foreign.length > 0) {
-      return { ok: false, file, problems: ['в файле фактов есть строки не от конвертера (' + foreign.length + '): пересборка стёрла бы доказательства — сделайте backup вручную'] };
-    }
-    fs.copyFileSync(file, file + '.bak');
+    const backup = file + '.bak';
+    fs.copyFileSync(file, backup);
     fs.rmSync(file, { force: true });
+    converted.backup = backup;
   }
   for (const row of converted.rows) appendFact(file, row);
   return { ok: true, file, rows: converted.rows.length, problems: converted.problems };

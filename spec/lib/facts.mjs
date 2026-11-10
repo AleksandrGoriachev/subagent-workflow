@@ -47,13 +47,28 @@ export function canonicalPath(value) {
   const segments = [];
   let escaped = false;
   for (const raw of text.split('/')) {
-    if (raw === '' || raw === '.') continue;
-    if (raw === '..') {
+    /*
+     * 0144 (находка Grok): хвостовые точки/пробелы снимаются до сравнения с '..',
+     * иначе `.. ` на Windows схлопывался в запрещённый путь уже после проверки.
+     * Но сегмент из одних точек — это родитель, а не пустая строка.
+     */
+    const dotsOnly = /^[. ]+$/u.test(raw);
+    if (dotsOnly) {
+      const dots = (raw.match(/\./gu) || []).length;
+      if (dots >= 2) {
+        if (segments.length === 0) escaped = true;
+        else segments.pop();
+      }
+      continue;
+    }
+    const segment = raw.replace(/[ .]+$/u, '');
+    if (segment === '') continue;
+    if (segment === '..') {
       if (segments.length === 0) escaped = true;
       else segments.pop();
       continue;
     }
-    segments.push(raw.replace(/[. ]+$/u, ''));
+    segments.push(segment);
   }
   return { path: segments.join('/').toLowerCase(), escaped, absolute };
 }

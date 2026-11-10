@@ -8,8 +8,10 @@
  * доказательства) — не «проходит», а C10 fail: добавление лишнего факта не улучшает
  * вердикт (монотонность).
  */
+import fs from 'node:fs';
 import path from 'node:path';
-import { factFileOf, readFactFile, pathForbidden } from './lib/facts.mjs';
+import crypto from 'node:crypto';
+import { factFileOf, readFactFile, pathForbidden, sha256Text } from './lib/facts.mjs';
 import { mandatoryGates, evaluateGates } from './lib/policy.mjs';
 import { pathsOutsidePlan } from './lib/actions.mjs';
 
@@ -19,6 +21,33 @@ function rowsOf(read, kind) {
 
 function push(report, id, status, detail) {
   report.push({ id, status, detail });
+}
+
+/**
+ * 0144 (Grok): движок не должен верить полю verified из факта — он проверяет
+ * подпись сам, если ему передали acceptors. Иначе самодекларация проходит C9.
+ */
+export function verifyRulesSignature(ruleset, acceptors) {
+  try {
+    const signature = ruleset && ruleset.signature ? ruleset.signature : null;
+    if (!signature || typeof signature.value !== 'string') return false;
+    const keyId = String(signature.keyId || '');
+    const key = (Array.isArray(acceptors) ? acceptors : []).find((item) => item && item.keyId === keyId);
+    if (!key || key.kind !== 'human') return false;
+    const body = canonicalizeRules({ hash: signature.hash, by: signature.by, at: signature.at });
+    return crypto.verify(null, Buffer.from(body, 'utf8'), crypto.createPublicKey(key.publicKeyPem), Buffer.from(signature.value, 'base64'));
+  } catch {
+    return false;
+  }
+}
+
+function canonicalizeRules(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonicalizeRules).join(',') + ']';
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return '{' + keys.map((key) => JSON.stringify(key) + ':' + canonicalizeRules(value[key])).join(',') + '}';
+  }
+  return JSON.stringify(value);
 }
 
 /** Оценка всех ограничений по фактам задачи. */
@@ -45,11 +74,15 @@ export function evaluateTask(read, options = {}) {
 
   /* C2: запечатанный прогон. Это обязанность, только если её объявил контракт. */
   const seal = c && c.seal && typeof c.seal === 'object' ? c.seal : null;
-  const sealed = evidence.find((row) => row.gate === 'sealed' && row.seal_hash && row.seal_hash === (seal && seal.hash));
+  /* 0144 (Grok): «первый успешный» из нескольких sealed — не доказательство; конфликт = отказ. */
+  const sealedRows = evidence.filter((row) => row.gate === 'sealed');
+  const sealed = sealedRows.find((row) => row.seal_hash && row.seal_hash === (seal && seal.hash) && row.exit === 0) || null;
+  const sealedConflict = sealedRows.some((row) => row.exit !== 0);
   let c2;
   if (seal === null) c2 = { status: 'not-applicable', detail: 'контракт не объявляет sealedTest — обязанности нет' };
-  else if (sealed && sealed.exit === 0) c2 = { status: 'pass', detail: 'запечатанный прогон пройден (' + String(seal.hash).slice(0, 12) + '…)' };
-  else c2 = { status: 'fail', detail: sealed ? 'запечатанный прогон упал' : 'контракт объявляет seal, а доказательства sealed в этом run нет' };
+  else if (sealedConflict) c2 = { status: 'fail', detail: 'противоречивые доказательства sealed: есть и успешный, и неуспешный прогон' };
+  else if (sealed) c2 = { status: 'pass', detail: 'запечатанный прогон пройден (' + String(seal.hash).slice(0, 12) + '…)' };
+  else c2 = { status: 'fail', detail: 'контракт объявляет seal, а доказательства sealed в этом run нет' };
   push(report, 'C2', c2.status, c2.detail);
 
   /* C3: дифф не касается запрещённых путей. Пустой forbidden — запретов не объявлено. */
@@ -96,6 +129,7 @@ export function evaluateTask(read, options = {}) {
   else if (ruleset.signature.verified !== true) c9 = { status: 'fail', detail: 'подпись правил не подтверждена: ' + String(ruleset.signature.reason || 'причина не указана') };
   else if (ruleset.signature.covers !== 'hash+by+at') c9 = { status: 'fail', detail: 'подпись правил не покрывает hash+by+at' };
   else if (ruleset.signature.hash !== ruleset.anchors_hash) c9 = { status: 'fail', detail: 'подпись правил относится к другому anchors.json' };
+  else if (options.acceptors && !verifyRulesSignature(ruleset, options.acceptors)) c9 = { status: 'fail', detail: 'подпись правил не сходится с ключом (проверено движком)' };
   else c9 = { status: 'pass', detail: 'правила подписаны и проверены: ' + ruleset.signature.keyId };
   push(report, 'C9', c9.status, c9.detail);
 
@@ -107,10 +141,15 @@ export function evaluateTask(read, options = {}) {
   const crossRun = [...rowsOf(read, 'evidence'), ...rowsOf(read, 'judgment'), ...rowsOf(read, 'diff'), ...rowsOf(read, 'action')]
     .filter((row) => String(row.run || '') !== targetRun);
   const hashesOk = Boolean(a && c && d && a.contract_hash === c.hash && a.diff_hash === d.diff_hash);
+  /* 0144 (Grok): манифест доказательств обязан совпадать с фактическим набором этого run. */
+  const manifestHash = sha256Text([...evidence].map((row) => String(row.artifact_hash || '')).sort().join(','));
+  const manifestOk = Boolean(a && a.evidence_manifest_hash && a.evidence_manifest_hash === manifestHash);
+  /* 0144 (Grok): манифест доказательств обязан совпадать с фактическим набором этого run. */
   const c10problems = [];
   if (accepts.length !== 1) c10problems.push('свидетельств accept: ' + accepts.length + ' (нужно ровно одно)');
   if (tasks.length !== 1) c10problems.push('фактов task: ' + tasks.length);
   if (!hashesOk) c10problems.push('хеши свидетельства не совпадают с контрактом/диффом');
+  if (!manifestOk) c10problems.push('evidence_manifest_hash не совпадает с фактическим набором доказательств run');
   if (crossRun.length > 0) c10problems.push('факты другого run: ' + crossRun.length);
   push(report, 'C10', c10problems.length === 0 ? 'pass' : 'fail', c10problems.length === 0 ? 'свидетельство единственно и согласовано' : c10problems.join('; '));
 
@@ -124,10 +163,21 @@ export function evaluateTask(read, options = {}) {
 }
 
 /** Оценить задачу воркспейса по id. */
-export function evaluateWorkspaceTask(workspace, taskId) {
+export function evaluateWorkspaceTask(workspace, taskId, options = {}) {
   const file = factFileOf(workspace, taskId);
   const read = readFactFile(file);
-  return evaluateTask(read);
+  return evaluateTask(read, options);
+}
+
+/** Публичные ключи доверенных лиц: движок проверяет подпись правил сам. */
+export function loadAcceptors(workspace) {
+  const file = path.join(String(workspace), 'docs', 'subagent-workflow', 'acceptors.json');
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, ''));
+    return Array.isArray(data && data.acceptors) ? data.acceptors : [];
+  } catch {
+    return [];
+  }
 }
 
 if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href) {
@@ -138,7 +188,8 @@ if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(proc
   /* 0143: коды выхода — контракт автоматизации: 0 accepted, 1 rejected, 2 usage. */
   if (!task) { console.log('нужен --task <id>'); process.exitCode = 2; }
   else {
-    const result = evaluateWorkspaceTask(workspace, task);
+    const acceptors = loadAcceptors(workspace);
+    const result = evaluateWorkspaceTask(workspace, task, { acceptors });
     console.log('engine: ' + result.task + ' — вердикт ' + result.verdict + ' (run ' + (result.run || '?') + ', применимо ' + result.applicable + ', pass ' + result.passed + ')');
     for (const item of result.report) console.log('  ' + item.id + ' ' + item.status + ': ' + item.detail);
     if (result.verdict !== 'accepted') process.exitCode = 1;
