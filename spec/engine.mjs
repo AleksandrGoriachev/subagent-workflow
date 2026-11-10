@@ -54,13 +54,19 @@ export function evaluateTask(read, options = {}) {
 
   /* C5: политика гейтов — применима, когда в фактах есть ruleset. */
   const ruleset = rowsOf(read, 'ruleset')[0] || null;
-  const c5 = evaluateGates(evidence, mandatoryGates(ruleset, t ? t.risk : 'medium'), Boolean(ruleset));
+  const rulesetPresent = Boolean(ruleset);
+  const c5 = evaluateGates(evidence, mandatoryGates(ruleset, t ? t.risk : 'medium'), rulesetPresent);
   report.push({ id: 'C5', status: c5.status, detail: c5.detail });
 
   /* Не применимо сегодня: честно называем отсутствие источника данных. */
   report.push({ id: 'C2', status: 'not-applicable', detail: 'sealed_run не производится текущим процессом' });
   report.push({ id: 'C8', status: 'not-applicable', detail: 'planned(t) не записывается' });
-  report.push({ id: 'C9', status: 'not-applicable', detail: 'ruleset не подписывается в P0' });
+  const c9 = rulesetPresent
+    ? (ruleset.signature && ruleset.signature.covers === 'hash+by+at' && /^human-/u.test(String(ruleset.signature.keyId || ''))
+      ? { status: 'pass', detail: 'правила подписаны ' + ruleset.signature.keyId }
+      : { status: 'fail', detail: 'правила не подписаны человеческим ключом' })
+    : { status: 'not-applicable', detail: 'ruleset отсутствует' };
+  report.push({ id: 'C9', status: c9.status, detail: c9.detail });
   report.push({ id: 'C6', status: 'not-applicable', detail: 'release-факты для задачи не применимы' });
 
   const applicable = report.filter((item) => item.status !== 'not-applicable');
