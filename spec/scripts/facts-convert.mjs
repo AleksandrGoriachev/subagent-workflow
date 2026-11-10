@@ -11,6 +11,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { isMainModule } from './lib/common.mjs';
 import crypto from 'node:crypto';
 import { appendFact, factFileOf, sha256Text, signFact, SIGNED_KINDS } from '../lib/facts.mjs';
@@ -34,8 +35,13 @@ import { actionsFromJournal, sessionFileOf } from '../lib/actions.mjs';
  * Подпись покрывает canonical({hash, by, at}); берём публичный ключ из acceptors.json
  * и сверяем значение. Возвращаем verified=true только при успехе.
  */
+function defaultFactsKey(options) {
+  const repo = path.resolve((options && (options.repoRoot || options.workspace)) || '.');
+  return path.join(os.homedir(), '.wf-keys', path.basename(repo), 'agent-facts.key.pem');
+}
+
 function signDecisions(rows, options) {
-  const keyFile = options && options.factsKey ? options.factsKey : null;
+  const keyFile = options && options.factsKey ? options.factsKey : defaultFactsKey(options);
   const keyId = options && options.factsKeyId ? options.factsKeyId : 'agent-facts';
   if (!keyFile || !fs.existsSync(keyFile)) return { rows, signed: 0, reason: 'ключ подписи фактов не найден: ' + String(keyFile) };
   const privateKeyPem = fs.readFileSync(keyFile, 'utf8');
@@ -257,6 +263,9 @@ export function convertToWorkspace(taskDir, workspace, options = {}) {
     converted.backup = backup;
   }
   const signed = signDecisions(converted.rows, options);
+  if (signed.signed === 0 && converted.rows.some((row) => SIGNED_KINDS.includes(row.kind))) {
+    return { ok: false, file, problems: [signed.reason || 'решения не подписаны: ключ не найден'] };
+  }
   for (const row of signed.rows) appendFact(file, row);
   return { ok: true, file, rows: signed.rows.length, signed: signed.signed, problems: signed.reason ? [...converted.problems, signed.reason] : converted.problems };
 }
