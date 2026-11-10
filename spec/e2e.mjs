@@ -142,7 +142,7 @@ try {
   );
   report('2.5.0: --audit показывает метку обхода',
     guardAudit.status === 0 && /workflow-bypass/.test((guardAudit.stdout || '') + (guardAudit.stderr || '')),
-    (guardAudit.stdout || '') + (guardAudit.stderr || ''));
+    'audit-status=' + guardAudit.status + ' script=' + guardScript + ' err=' + String(guardAudit.error && guardAudit.error.message || '') + ' out=' + ((guardAudit.stdout || '') + (guardAudit.stderr || '')).slice(0, 200));
 
   /*
    * pre-push: тот же guard на диапазоне, который уезжает. Ветка новая, поэтому

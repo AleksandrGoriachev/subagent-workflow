@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 export const TOOL = 'subagent-workflow/2.6.81';
 export const TASK_ARTIFACTS = new Set([
@@ -124,6 +125,20 @@ export function runSync(command, opts = {}) {
  * 'buffer' или отсутствие encoding — Buffer, как у spawnSync по умолчанию.
  * Отсутствующий бинарник не бросает: status: null и заполненный error.
  */
+/**
+ * 0146: запущен ли файл как CLI. Сравнение через realpath + pathToFileURL — иначе
+ * на Windows короткое имя каталога (GORYAC~1) не совпадает с import.meta.url, и
+ * скрипт молча выходит с кодом 0, ничего не сделав (находка: e2e --audit).
+ */
+export function isMainModule(metaUrl, argvPath = process.argv[1]) {
+  if (!argvPath) return false;
+  try {
+    return metaUrl === pathToFileURL(fs.realpathSync(argvPath)).href;
+  } catch {
+    return false;
+  }
+}
+
 export function spawnSyncPipeFree(command, args, options = {}) {
   const opts = options && typeof options === 'object' ? options : {};
   const list = Array.isArray(args) ? args : [];

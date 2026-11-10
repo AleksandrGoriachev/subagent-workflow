@@ -11,6 +11,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { isMainModule } from './lib/common.mjs';
 import crypto from 'node:crypto';
 import { appendFact, factFileOf, sha256Text, signFact, SIGNED_KINDS } from '../lib/facts.mjs';
 import { parseTaskMeta } from './lib/common.mjs';
@@ -152,8 +153,19 @@ export function convertTask(taskDir, options = {}) {
   if (fs.existsSync(taskMd)) {
     const meta = parseTaskMeta(fs.readFileSync(taskMd, 'utf8')) || {};
     const sealedTest = meta.sealedTest;
-    if (sealedTest && typeof sealedTest === 'object' && typeof sealedTest.path === 'string' && /^[0-9a-f]{64}$/u.test(String(sealedTest.hash || '').toLowerCase())) {
-      seal = { path: sealedTest.path, hash: String(sealedTest.hash).toLowerCase() };
+    const sealDeclared = sealedTest && typeof sealedTest === 'object' && typeof sealedTest.path === 'string' && /^[0-9a-f]{64}$/u.test(String(sealedTest.hash || '').toLowerCase());
+    if (sealDeclared) {
+      /* 0148: seal — обязанность только если task.md не правили после приёмки. */
+      const acceptanceFile = path.join(dir, 'acceptance.json');
+      let bound = true;
+      if (fs.existsSync(acceptanceFile)) {
+        const acceptance = readJson(acceptanceFile) || {};
+        const actualTaskHash = sha256Text(fs.readFileSync(taskMd, 'utf8'));
+        if (typeof acceptance.taskFileSha256 !== 'string' || acceptance.taskFileSha256 === '') bound = false;
+        else if (acceptance.taskFileSha256 !== actualTaskHash) bound = false;
+      }
+      if (bound) seal = { path: sealedTest.path, hash: String(sealedTest.hash).toLowerCase() };
+      else problems.push('sealedTest объявлен, но task.md не совпадает с acceptance.taskFileSha256 — seal не принимается');
     }
   }
   /* 0141: план — allowedPaths контракта; фактические записи — из журнала сессии исполнителя. */
@@ -249,7 +261,7 @@ export function convertToWorkspace(taskDir, workspace, options = {}) {
   return { ok: true, file, rows: signed.rows.length, signed: signed.signed, problems: signed.reason ? [...converted.problems, signed.reason] : converted.problems };
 }
 
-if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href) {
+if (isMainModule(import.meta.url)) {
   const argv = process.argv.slice(2);
   const value = (flag) => { const index = argv.indexOf(flag); return index >= 0 ? argv[index + 1] : undefined; };
   const taskDir = value('--task') || process.cwd();

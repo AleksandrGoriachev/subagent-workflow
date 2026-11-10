@@ -10,6 +10,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { isMainModule } from './scripts/lib/common.mjs';
 import crypto from 'node:crypto';
 import { factFileOf, readFactFile, pathForbidden, sha256Text, verifyFactSignature, SIGNED_KINDS } from './lib/facts.mjs';
 import { mandatoryGates, evaluateGates } from './lib/policy.mjs';
@@ -199,7 +200,7 @@ export function loadAcceptors(workspace) {
   }
 }
 
-if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href) {
+if (isMainModule(import.meta.url)) {
   const argv = process.argv.slice(2);
   const value = (flag) => { const index = argv.indexOf(flag); return index >= 0 ? argv[index + 1] : undefined; };
   const task = value('--task');

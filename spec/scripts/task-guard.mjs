@@ -41,6 +41,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { isMainModule } from './lib/common.mjs';
 import { fileURLToPath } from 'node:url';
 import {
   exists,
@@ -463,7 +464,7 @@ function main() {
 }
 
 /* CLI запускается только при прямом вызове: модуль импортируют проверки. */
-if (import.meta.url === new URL('file://' + path.resolve(process.argv[1] || '').split(path.sep).join('/')).href) {
+if (isMainModule(import.meta.url)) {
   try {
     process.exit(main());
   } catch (error) {

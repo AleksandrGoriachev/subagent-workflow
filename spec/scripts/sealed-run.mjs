@@ -14,6 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { isMainModule } from './lib/common.mjs';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import { spawnSyncPipeFree } from './lib/common.mjs';
@@ -67,12 +68,17 @@ export function runSealed(taskDir, workspace, options = {}) {
   const acceptanceFile = path.join(dir, 'acceptance.json');
   if (fs.existsSync(acceptanceFile)) {
     const acceptance = JSON.parse(fs.readFileSync(acceptanceFile, 'utf8').replace(/^\uFEFF/u, ''));
-    if (acceptance && typeof acceptance.taskFileSha256 === 'string' && acceptance.taskFileSha256 !== '') {
-      const taskMdFile = path.join(dir, 'task.md');
-      const actualTaskHash = sha256File(taskMdFile);
-      if (actualTaskHash !== acceptance.taskFileSha256) {
-        return { ok: false, problems: ['task.md изменён после приёмки контракта: seal не может быть подтверждён (ожидался ' + acceptance.taskFileSha256.slice(0, 12) + '…, сейчас ' + actualTaskHash.slice(0, 12) + '…)'] };
-      }
+    const taskMdFile = path.join(dir, 'task.md');
+    const actualTaskHash = sha256File(taskMdFile);
+    /*
+     * 0148: если приёмка есть, хеш контракта обязателен. Раньше пустое поле
+     * пропускало проверку — и seal можно было объявить в правленом task.md.
+     */
+    if (!acceptance || typeof acceptance.taskFileSha256 !== 'string' || acceptance.taskFileSha256 === '') {
+      return { ok: false, problems: ['acceptance.json без taskFileSha256: связь seal с контрактом не доказать'] };
+    }
+    if (actualTaskHash !== acceptance.taskFileSha256) {
+      return { ok: false, problems: ['task.md изменён после приёмки контракта: seal не может быть подтверждён (ожидался ' + acceptance.taskFileSha256.slice(0, 12) + '…, сейчас ' + actualTaskHash.slice(0, 12) + '…)'] };
     }
   }
   const actual = sha256File(sealFile);
@@ -105,7 +111,7 @@ export function runSealed(taskDir, workspace, options = {}) {
   return { ok: exit === 0, exit, problems: exit === 0 ? [] : ['запечатанный тест упал с кодом ' + exit], log: logFile, hash: sealRead.seal.hash };
 }
 
-if (process.argv[1] && import.meta.url === new URL('file://' + path.resolve(process.argv[1]).split(path.sep).join('/')).href) {
+if (isMainModule(import.meta.url)) {
   const argv = process.argv.slice(2);
   const value = (flag) => { const index = argv.indexOf(flag); return index >= 0 ? argv[index + 1] : undefined; };
   const taskDir = value('--task') || process.cwd();
