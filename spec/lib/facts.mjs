@@ -105,9 +105,14 @@ function globToRegExp(pattern) {
  * C3: попадает ли путь под запрещённый шаблон? Оба нормализуются (регистр, слеши),
  * чтобы NTFS без учёта регистра и прямые/обратные слеши не обходили правило.
  */
-export function pathForbidden(file, patterns) {
+export function pathMatches(file, patterns) {
   const normalized = normalizePath(file);
   return (Array.isArray(patterns) ? patterns : []).some((pattern) => globToRegExp(normalizePath(pattern)).test(normalized));
+}
+
+/** Синоним для читаемости в ограничении C3. */
+export function pathForbidden(file, patterns) {
+  return pathMatches(file, patterns);
 }
 
 /** Файл фактов задачи: docs/subagent-workflow/facts/<task>.jsonl (короткие имена, Windows 260). */

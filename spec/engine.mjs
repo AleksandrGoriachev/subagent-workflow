@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { factFileOf, readFactFile, pathForbidden } from './lib/facts.mjs';
 import { mandatoryGates, evaluateGates } from './lib/policy.mjs';
+import { pathsOutsidePlan } from './lib/actions.mjs';
 
 function rowsOf(read, kind) {
   return read.rows.filter((row) => row.kind === kind);
@@ -72,7 +73,21 @@ export function evaluateTask(read, options = {}) {
   report.push({ id: 'C5', status: c5.status, detail: c5.detail });
 
   /* Не применимо сегодня: честно называем отсутствие источника данных. */
-  report.push({ id: 'C8', status: 'not-applicable', detail: 'planned(t) не записывается' });
+  /*
+   * C8: план против фактических действий. План — allowedPaths контракта (planned),
+   * фактические действия — записи исполнителя (action) плюс пути диффа.
+   */
+  const planned = c && Array.isArray(c.planned) ? c.planned : [];
+  const actions = rowsOf(read, 'action').flatMap((row) => (Array.isArray(row.paths) ? row.paths : []));
+  const diffPaths = d && Array.isArray(d.paths) ? d.paths : [];
+  const actual = [...new Set([...actions, ...diffPaths])];
+  const outside = pathsOutsidePlan(actual, planned);
+  const c8 = outside === null
+    ? { status: 'not-applicable', detail: 'план (allowedPaths) не объявлен в контракте' }
+    : (outside.length === 0
+      ? { status: 'pass', detail: 'действия не выходят за план (' + actual.length + ' путей)' }
+      : { status: 'fail', detail: 'вне плана: ' + outside.slice(0, 6).join(', ') });
+  report.push({ id: 'C8', status: c8.status, detail: c8.detail });
   const c9 = rulesetPresent
     ? (ruleset.signature && ruleset.signature.covers === 'hash+by+at' && /^human-/u.test(String(ruleset.signature.keyId || ''))
       ? { status: 'pass', detail: 'правила подписаны ' + ruleset.signature.keyId }

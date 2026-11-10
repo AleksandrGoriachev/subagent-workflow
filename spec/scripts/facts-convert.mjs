@@ -14,6 +14,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { appendFact, factFileOf, sha256Text } from '../lib/facts.mjs';
 import { parseTaskMeta } from './lib/common.mjs';
+import { actionsFromJournal, sessionFileOf } from '../lib/actions.mjs';
 
 /**
  * 0139: факт ruleset — правила как данные (C5, C9).
@@ -106,7 +107,13 @@ export function convertTask(taskDir, options = {}) {
       seal = { path: sealedTest.path, hash: String(sealedTest.hash).toLowerCase() };
     }
   }
-  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, seal, writer: 'workflow', at });
+  /* 0141: план — allowedPaths контракта; фактические записи — из журнала сессии исполнителя. */
+  let planned = [];
+  if (fs.existsSync(taskMd)) {
+    const meta = parseTaskMeta(fs.readFileSync(taskMd, 'utf8')) || {};
+    planned = Array.isArray(meta.allowedPaths) ? meta.allowedPaths.map(String) : [];
+  }
+  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, planned, seal, writer: 'workflow', at });
   rows.push({ kind: 'run', id: runId, task: taskId, commit, ruleset_hash: 'unknown', command: 'task-accept', writer: 'acceptor' });
   const changedPaths = Array.isArray(verify && verify.changedPaths) ? verify.changedPaths : [];
   rows.push({ kind: 'diff', task: taskId, run: runId, commit, paths: changedPaths, diff_hash: diffHash || 'unknown', writer: 'acceptor' });
@@ -152,6 +159,14 @@ export function convertTask(taskDir, options = {}) {
     }
   }
   rows.push({ kind: 'judgment', task: taskId, run: runId, artifact_hash: diffHash || 'unknown', by: String(actor.keyId || 'agent-judge'), role: String(actor.node || 'judge'), model: String(actor.model || 'unknown'), verdict: String((acceptance && acceptance.status) || 'unknown'), writer: 'acceptor' });
+  /* 0141: действия исполнителя из журнала сессии — только записи, чтение не считается. */
+  const sessionId = actor && actor.session ? String(actor.session) : '';
+  if (sessionId !== '' && options.workspace) {
+    const actions = actionsFromJournal(sessionFileOf(options.workspace, sessionId));
+    if (actions.paths.length > 0) {
+      rows.push({ kind: 'action', task: taskId, run: runId, cmd: 'journal', paths: actions.paths, writer: 'executor', at });
+    }
+  }
   rows.push({ kind: 'accept', task: taskId, run: runId, contract_hash: contractHash, diff_hash: diffHash || 'unknown', ruleset_hash: 'unknown', evidence_manifest_hash: sha256Text(evidenceHashes.sort().join(',')), by: String(actor.keyId || 'agent-judge'), at });
   return { rows, problems };
 }
@@ -163,7 +178,7 @@ export function convertToWorkspace(taskDir, workspace, options = {}) {
   if (fs.existsSync(file) && options.force !== true) {
     return { ok: false, file, problems: ['файл фактов уже существует: ' + file + ' — append-only, повторно не конвертируем (нужен --force)'] };
   }
-  const converted = convertTask(taskDir, { repoRoot: options.repoRoot });
+  const converted = convertTask(taskDir, { repoRoot: options.repoRoot, workspace });
   if (converted.rows.length === 0) return { ok: false, file, problems: converted.problems };
   if (options.force === true) fs.rmSync(file, { force: true });
   for (const row of converted.rows) appendFact(file, row);
