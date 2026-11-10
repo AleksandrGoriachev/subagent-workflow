@@ -44,6 +44,19 @@ export function preflight(version, options = {}) {
     const pkg = readJson(pkgFile);
     if (String(pkg.version || '') !== version) problems.push('package.json: ' + pkg.version + ' != ' + version);
   }
+  /*
+   * 0133: квитанции — часть предполёта, а не отдельная проверка «когда вспомнят».
+   * Без этого релиз, сделанный руками, обнаруживался только задним числом.
+   */
+  if (options.receipts !== false) {
+    try {
+      const output = run(process.execPath, ['spec/checks/release-receipt.mjs', '--online'], root);
+      if (!/release-receipt: OK/u.test(output)) problems.push('release-receipt --online: нет подтверждения квитанций — ' + String(output).trim().split('\n').pop());
+    } catch (error) {
+      const text = String((error && (error.stdout || error.message)) || error).trim().split('\n').slice(-2).join(' / ');
+      problems.push('release-receipt --online не прошёл: ' + text);
+    }
+  }
   const assets = expectedNames(version, options.panelVersion);
   const missing = assets.filter((name) => !fs.existsSync(path.join(root, 'dist', name)) && !fs.existsSync(path.join(root, 'dist', name + '.sha256')));
   return { ok: problems.length === 0, problems, assets, missing };

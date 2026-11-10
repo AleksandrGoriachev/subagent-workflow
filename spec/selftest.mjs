@@ -679,6 +679,21 @@ try {
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
+/*
+ * 0133: пресеты узлов. Ограничения узла (пайплайн выпуска, онлайн-квитанции,
+ * запреты обхода) живут в presets/ репозитория и закреплены хешем: правка без
+ * обновления замка ломает selftest, а не тихо меняет правила игры.
+ */
+try {
+  const presets = await import('./checks/node-presets.mjs');
+  const result = presets.checkPresets(process.cwd());
+  report('PRESETS: пресеты узлов закреплены и не противоречат промптам', result.ok === true,
+    (result.problems || []).join('; '));
+} catch (err) {
+  failed += 1;
+  console.error('SELFTEST ERROR: ' + err.stack);
+}
+
 if (failed) {
   console.log('\nSELFTEST FAILED: ' + failed);
   process.exit(1);

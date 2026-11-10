@@ -57,7 +57,11 @@ import {
 const DEFAULT_BYPASS_MARKER = 'workflow-bypass';
 
 /** Защищённые пути: код и проверки — только контракт и артефакты, без метки. */
-export const PROTECTED_ROOTS = ['lib/', 'checks/', 'spec/', 'tools/', 'structure/', 'plugin/lib/', 'plugin/test/'];
+/*
+ * 0133: presets/ — зона автора плагина. Узел не правит свой пресет: иначе
+ * ограничение (guard, пайплайн, запреты) становится тем, что он сам себе разрешил.
+ */
+export const PROTECTED_ROOTS = ['lib/', 'checks/', 'spec/', 'tools/', 'structure/', 'presets/', 'plugin/lib/', 'plugin/test/'];
 
 /** Нарушение метки обхода: защищённые пути под меткой. Чистая функция — ею же пользуется проверка. */
 export function bypassViolation(paths, protectedRoots = PROTECTED_ROOTS) {
