@@ -1,0 +1,49 @@
+{
+  "task": "0216",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [],
+    "reasons": {
+      "C1": "регресс не подключён",
+      "C2": "нет блокирующей ветки",
+      "C3": "нет ночного пути",
+      "C4": "нет поведенческого теста",
+      "C5": "модуль не покрыт"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "C1",
+      "command": "node checks/0207-regress-gate.mjs c1"
+    },
+    {
+      "id": "C2",
+      "title": "C2",
+      "command": "node checks/0207-regress-gate.mjs c2"
+    },
+    {
+      "id": "C3",
+      "title": "C3",
+      "command": "node checks/0207-regress-gate.mjs c3"
+    },
+    {
+      "id": "C4",
+      "title": "C4",
+      "command": "node checks/0207-regress-gate.mjs c4"
+    },
+    {
+      "id": "C5",
+      "title": "C5",
+      "command": "node checks/0207-regress-gate.mjs c5"
+    }
+  ]
+}
