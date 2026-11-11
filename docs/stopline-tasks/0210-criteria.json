@@ -5,7 +5,9 @@
   "redExpect": {
     "mustFail": [
       "C1",
-      "C2"
+      "C2",
+      "C5",
+      "C6"
     ],
     "mustPass": [
       "C3",
@@ -13,7 +15,9 @@
     ],
     "reasons": {
       "C1": "нет heartbeat",
-      "C2": "нет состояний вручения"
+      "C2": "нет состояний вручения",
+      "C5": "тест не исполняется",
+      "C6": "нет негативной проверки хука"
     }
   },
   "criteria": [
@@ -36,6 +40,16 @@
       "id": "C4",
       "title": "тест: доставка при занятой сессии",
       "command": "node checks/0210-exchange-delivery.mjs c4"
+    },
+    {
+      "id": "C5",
+      "title": "поведенческий тест исполняется",
+      "command": "node checks/0210-exchange-delivery.mjs c5"
+    },
+    {
+      "id": "C6",
+      "title": "негатив: без хука в index.js критерий падает",
+      "command": "node checks/0210-exchange-delivery.mjs c6"
     }
   ]
 }
