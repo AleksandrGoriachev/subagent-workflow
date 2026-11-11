@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 /**
- * T3 (стоп-линия): одна правда политики якорей и честный реестр.
+ * T3 (v2): якоря — глобальные, у узла — гейты; consumes удаляется.
  *
- *  1) A8 в docs/anchors.json не утверждает того, чего нет в коде (отказ без consumes);
- *  2) role-policy — исполняемый источник, а не второй текст;
- *  3) в реестре нет фантомных open-задач (дубли принятого).
+ * Модель заказчика (11.11): якоря пишутся для всей структуры, а к конкретному
+ * узлу применяются гейты. Значит:
+ *  1) в манифесте якорей больше нет утверждения про consumes у узла;
+ *  2) узел объявляет gates, а не anchors.consumes;
+ *  3) проверяющая/релизная роль с пустыми gates — отказ;
+ *  4) role-policy больше не раздаёт all-auto (костыль вокруг consumes не нужен);
+ *  5) в реестре нет фантомных open.
  */
 import path from 'node:path';
 import { read, report } from './common.mjs';
@@ -20,19 +24,30 @@ function phantomCount(registryText) {
 export function checkT3(root) {
   const anchorsText = read(root, 'docs/anchors.json') || '';
   const policy = read(root, 'lib/role-policy.js') || '';
+  const validator = read(root, 'lib/structure-validator.js') || '';
+  const anchorsCode = read(root, 'lib/anchors.js') || '';
   const registry = read(root, 'docs/tasks/REGISTRY.json') || '';
   const checks = [];
-  const a8Refuses = /A8[\s\S]{0,400}?без непустого consumes[\s\S]{0,80}?отказ/iu.test(anchorsText);
-  const policyDefaults = /all-auto|defaultConsumes/u.test(policy);
+
   checks.push({
-    name: 'A8 и role-policy не противоречат',
-    ok: !(a8Refuses && policyDefaults),
-    detail: 'A8 обещает отказ без consumes, а role-policy раздаёт все auto — два ответа на один вопрос',
+    name: 'A8 больше не требует consumes у узла',
+    ok: !/A8[\s\S]{0,500}?consumes/iu.test(anchorsText),
+    detail: 'в манифесте якорей всё ещё утверждается правило про consumes',
   });
   checks.push({
-    name: 'политика роли — исполняемый источник',
-    ok: /export function rolePolicy/u.test(policy),
-    detail: 'role-policy.js отсутствует или не экспортирует rolePolicy',
+    name: 'узел объявляет gates (а не consumes)',
+    ok: /gates/iu.test(validator) || /gates/iu.test(anchorsCode),
+    detail: 'ни валидатор, ни anchors.js не знают про gates — механизма гейтов нет',
+  });
+  checks.push({
+    name: 'пустые gates у проверяющей/релизной роли — отказ',
+    ok: /(gates[\s\S]{0,200}?(пуст|empty|length\s*===?\s*0))|((пуст|empty)[\s\S]{0,80}?gates)/iu.test(validator + anchorsCode),
+    detail: 'нет проверки «у проверяющего/релизного узла список гейтов не пуст»',
+  });
+  checks.push({
+    name: 'role-policy не раздаёт all-auto',
+    ok: !/all-auto|defaultConsumes/iu.test(policy),
+    detail: 'role-policy.js всё ещё подставляет consumes по умолчанию',
   });
   const phantoms = phantomCount(registry);
   checks.push({
