@@ -151,12 +151,24 @@ if (root) {
        */
       const home = process.env.USERPROFILE || process.env.HOME || os.homedir();
       const keyDirs = [];
-      for (const dir of [path.join(root, '.wf-keys'), path.join(home, '.wf-keys')]) {
+      /*
+       * 0163: ключи могут лежать в подкаталоге проекта (~/.wf-keys/<repo>/), а не только
+       * в корне: так несколько репозиториев не смешивают ключи. Ищем оба уровня.
+       */
+      const repoName = path.basename(path.resolve(root));
+      const candidates = [
+        path.join(root, '.wf-keys'),
+        path.join(home, '.wf-keys'),
+        path.join(root, '.wf-keys', repoName),
+        path.join(home, '.wf-keys', repoName),
+      ];
+      for (const dir of candidates) {
         if (!keyDirs.some((known) => path.resolve(known) === path.resolve(dir))) keyDirs.push(dir);
       }
       const keyDirsExist = keyDirs.some((dir) => { try { return fs.statSync(dir).isDirectory(); } catch { return false; } });
       const { keys: privateKeys, badFiles } = readPrivateKeys(keyDirs);
-      const pins = list.filter((key) => !key.revokedAt);
+      /* 0163: legacy-эпоха без приватного ключа — это история, а не поломка. */
+      const pins = list.filter((key) => !key.revokedAt && key.legacy !== true);
       const unreadablePins = [];
       const signable = [];
       const unusable = [];
