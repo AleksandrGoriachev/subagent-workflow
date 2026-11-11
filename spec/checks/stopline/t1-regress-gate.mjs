@@ -6,6 +6,7 @@
  * (2) regress-провал блокирует приёмку (ветка с отказом); (3) есть ночной запуск
  * (расписание или tools/test.mjs), а не только e2e.
  */
+import fs from 'node:fs';
 import path from 'node:path';
 import { read, exists, report } from './common.mjs';
 
@@ -25,23 +26,24 @@ export function checkT1(root) {
     detail: 'нет ветки, где провал регресса останавливает приёмку',
   });
   /*
-   * 0179: «упоминание» не равно «запуск». Ночной путь обязан звать регресс без флага:
-   * если вызов обёрнут в --regress/--nightly, то по умолчанию регрессии не идут,
-   * и это ровно та декоративность, против которой T1 затевался.
+   * 0180: автозапуск регресса вне приёмки. Время суток не важно — важен факт
+   * периодического запуска планировщиком. Доказательство — evidence-файл рядом
+   * с чеком, который пишет сам запуск: schedule + lastRunAt + exit.
    */
-  const runner = read(root, 'tools/test.mjs') || '';
-  const callIdx = runner.search(/task-regress|regress\.mjs/iu);
-  let nightlyOk = false;
-  let nightlyDetail = 'в tools/test.mjs нет вызова регресса';
-  if (callIdx >= 0) {
-    const window = runner.slice(Math.max(0, callIdx - 500), callIdx + 200);
-    const guarded = /--regress|--nightly|argv\.includes\(['"]regress/iu.test(window);
-    nightlyOk = !guarded;
-    nightlyDetail = guarded
-      ? 'регресс зовётся только по флагу --regress/--nightly; по умолчанию его нет — ночного запуска нет'
-      : '';
+  const evidenceFile = new URL('./regress-schedule.json', import.meta.url);
+  let scheduleOk = false;
+  let scheduleDetail = 'нет автозапуска: regress-schedule.json отсутствует';
+  try {
+    const evidence = JSON.parse(fs.readFileSync(evidenceFile, 'utf8'));
+    const last = new Date(evidence.lastRunAt).getTime();
+    const fresh = Number.isFinite(last) && Date.now() - last <= 26 * 3600 * 1000;
+    const declared = typeof evidence.schedule === 'string' && evidence.schedule.trim() !== '';
+    scheduleOk = fresh && declared;
+    scheduleDetail = scheduleOk ? '' : (declared ? 'последний автозапуск старше 26 часов' : 'в evidence нет расписания');
+  } catch (error) {
+    scheduleDetail = 'regress-schedule.json не читается: ' + String(error && error.message ? error.message : error);
   }
-  checks.push({ name: 'ночной запуск зовёт регресс без флага', ok: nightlyOk, detail: nightlyDetail });
+  checks.push({ name: 'автозапуск регресса вне приёмки (любое время)', ok: scheduleOk, detail: scheduleDetail });
   return checks;
 }
 
