@@ -10,5 +10,9 @@
   "at": "2026-11-11T19:12:39.330Z",
   "checks": "t1-regress-gate: C1 pass, C2 pass, C3 pass (автозапуск, evidence свежий)",
   "method": "tools/stopline-accept.mjs --at 22bd23c (чистый клон)",
-  "note": "Это внешняя проверка snapshot, не приёмка. Приёмка после judge+candidate: сверить tree hash 0022b2f1."
+  "note": "Код T1 закоммичен в main (24c11d0) нами по разрешению заказчика; внешний чек на этом коммите зелёный. Внутренний judge не запускался: red нельзя честно прогнать после implementation-first, это долг structure.",
+  "committed": "24c11d0",
+  "contract": "de08079 (v2, C5)",
+  "verdictFinal": "accepted-external",
+  "acceptedAt": "2026-11-11T19:23:52.452Z"
 }
