@@ -1,0 +1,41 @@
+{
+  "task": "0210",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasons": {
+      "C1": "нет heartbeat",
+      "C2": "нет состояний вручения"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "heartbeat сканера",
+      "command": "node checks/0210-exchange-delivery.mjs c1"
+    },
+    {
+      "id": "C2",
+      "title": "состояния scanned/delivered/pending/error",
+      "command": "node checks/0210-exchange-delivery.mjs c2"
+    },
+    {
+      "id": "C3",
+      "title": "скан и доставка при старте сессии",
+      "command": "node checks/0210-exchange-delivery.mjs c3"
+    },
+    {
+      "id": "C4",
+      "title": "тест: доставка при занятой сессии",
+      "command": "node checks/0210-exchange-delivery.mjs c4"
+    }
+  ]
+}
