@@ -684,15 +684,8 @@ try {
  * запреты обхода) живут в presets/ репозитория и закреплены хешем: правка без
  * обновления замка ломает selftest, а не тихо меняет правила игры.
  */
-try {
-  const presets = await import('./checks/node-presets.mjs');
-  const result = presets.checkPresets(process.cwd());
-  report('PRESETS: пресеты узлов закреплены и не противоречат промптам', result.ok === true,
-    (result.problems || []).join('; '));
-} catch (err) {
-  failed += 1;
-  console.error('SELFTEST ERROR: ' + err.stack);
-}
+/* 0166: прототип пресетов передан structure (0202), шаг PRESETS снят. */
+
 
 /*
  * 0143 (P1): регрессия корпуса. Пять закреплённых задач обязаны оставаться
