@@ -1,0 +1,15 @@
+{
+  "task": "0210",
+  "title": "доставка писем обмена (T4)",
+  "candidate": "5882668fe491ea4b575c5532decf4da06d33c32e",
+  "head": "18b4dc7",
+  "verdict": "accepted",
+  "by": "workflow (внешний чек)",
+  "at": "2026-11-11T18:51:06.962Z",
+  "checks": "t4-exchange-delivery: 4/4",
+  "method": "tools/stopline-accept.mjs --at <candidate> (чистый клон)",
+  "residual": [
+    "producer/pid в живом heartbeat появится после перезапуска DSH",
+    "живой хост пока старая сборка"
+  ]
+}

@@ -17,6 +17,7 @@ const CHECKS = {
   '0207': 't1-regress-gate.mjs',
   '0208': 't2-graph-noloss.mjs',
   '0209': 't3-policy-truth.mjs',
+  '0210': 't4-exchange-delivery.mjs',
 };
 
 if (process.argv[1] && process.argv[1].endsWith('stopline-accept.mjs')) {
