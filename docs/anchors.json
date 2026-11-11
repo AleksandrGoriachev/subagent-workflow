@@ -185,6 +185,20 @@
       "layer": "contour",
       "enforcedBy": "engine",
       "sides": "contour"
+    },
+    {
+      "id": "A13",
+      "claim": "Приёмка — только исполнением на закоммиченном snapshot: вердикт даёт доверенный runner, а не переписка. Структура (узлы/рёбра/пресеты) — заменяемые данные владельца: агент не диктует маршрут и не привязан к id; проверяются инварианты. Заморозка структуры запрещена: либо она используется, либо её артефакты удаляются",
+      "check": "stopline-accept",
+      "status": "auto",
+      "confirmed": {
+        "version": "2.6.81",
+        "date": "2026-11-11"
+      },
+      "owner": "user+coordinator",
+      "layer": "contour",
+      "enforcedBy": "both",
+      "sides": "both"
     }
   ],
   "note": "Контурные якоря (layer: contour). Проектные наборы живут в воркспейсах (layer: project). enforcedBy: engine — проверяет движок, both — движок и узлы проекта."

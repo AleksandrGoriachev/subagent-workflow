@@ -717,6 +717,18 @@ try {
   failed += 1;
   console.error('SELFTEST ERROR: ' + err.stack);
 }
+/*
+ * 0190: A13 действует только если его проверяет наш же selftest. Раньше selftest
+ * был зелёным при красном anchor-freshness — то есть правило обходилось нами же.
+ */
+try {
+  const anchors = await import('./checks/anchor-freshness.mjs');
+  const result = anchors.checkRepo(process.cwd());
+  report('ANCHORS: якоря утверждены и не протухли', result.ok === true, (result.problems || []).join('; '));
+} catch (err) {
+  failed += 1;
+  console.error('SELFTEST ERROR: ' + err.stack);
+}
 if (failed) {
   console.log('\nSELFTEST FAILED: ' + failed);
   process.exit(1);

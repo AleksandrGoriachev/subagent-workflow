@@ -2,20 +2,20 @@
   "version": 2,
   "anchors": "docs/anchors.json",
   "algo": "sha256",
-  "hash": "9cfeaa9c98e155986d3bdfacbe05feb27dc92f093794e76ea084dc30e594e214",
-  "bytes": 6236,
+  "hash": "b91aa66f49ac9899881a6f2d532509f61aafc51d43748732a6cb0d23ce17468d",
+  "bytes": 7110,
   "layer": "contour",
   "sides": "contour",
   "enforcedBy": "both",
   "by": [
     "пользователь"
   ],
-  "at": "2026-11-10T08:53:50.511Z",
+  "at": "2026-11-11T18:10:08.687Z",
   "publicKeyFingerprint": "556312a6aeef0ad5",
   "signature": {
     "keyId": "human-user",
     "algo": "ed25519",
     "covers": "hash+by+at",
-    "value": "O04k+LFZUXIDhsB0xXB8Zb8ED2htOsrXy3zGfdUrXhlPyerqHqdA5F6KkHlli2nUEoiuqRy94fJ2VASAMWemDQ=="
+    "value": "Gk02+eSKap29EzV7bsyl9+Ht9c/F6+tWwD26AL/z4hDWrLDsBa2co03vTfK+QbS6oZuLUOE4AckWqkbp4g9WDw=="
   }
 }
