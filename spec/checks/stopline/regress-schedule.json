@@ -1,0 +1,15 @@
+{
+  "schedule": "DAILY (MSK, автозапуск стоп-линии T1)",
+  "lastRunAt": "2026-11-11T15:01:04.155Z",
+  "exit": 1,
+  "by": "scheduler",
+  "mode": "clean-clone",
+  "head": "1cec3eb622aa9350f19e37008f1a1f5f78d2d484",
+  "summary": {
+    "total": 155,
+    "ok": 125,
+    "untrusted": 2,
+    "regressed": 28
+  },
+  "note": "Валидный прогон на чистом клоне HEAD: allowlist не закоммичен (untracked), untrusted 0002/0011 валят всегда; 28 регрессий = фактический долг."
+}
