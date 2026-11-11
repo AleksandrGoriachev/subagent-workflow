@@ -199,6 +199,20 @@
       "layer": "contour",
       "enforcedBy": "both",
       "sides": "both"
+    },
+    {
+      "id": "A14",
+      "claim": "Работу выполняет назначенный узел: сессия-исполнитель совпадает с объявленным executor, diff/кандидат подписан ключом исполнителя, координатор не пишет код, executor/reviewer/acceptor — разные сессии и ключи",
+      "check": "role-binding",
+      "status": "inWork",
+      "confirmed": {
+        "version": "2.6.81",
+        "date": "2026-11-11"
+      },
+      "owner": "user+coordinator",
+      "layer": "contour",
+      "enforcedBy": "both",
+      "sides": "both"
     }
   ],
   "note": "Контурные якоря (layer: contour). Проектные наборы живут в воркспейсах (layer: project). enforcedBy: engine — проверяет движок, both — движок и узлы проекта."

@@ -183,8 +183,14 @@ export function convertTask(taskDir, options = {}) {
     if (Array.isArray(meta.allowedPaths)) planned = meta.allowedPaths.map(String);
   }
   /* plannedDeclared отличает «плана нет» от «план пуст»: пустой план запрещает любые действия. */
-  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, planned, plannedDeclared: planned !== null, seal, writer: 'workflow', at });
-  rows.push({ kind: 'run', id: runId, task: taskId, commit, ruleset_hash: 'unknown', command: 'task-accept', writer: 'acceptor' });
+  /* 0191: C11 — объявленный исполнитель из TASK-META (subagent:worker → worker). */
+  let executorNode = null;
+  if (fs.existsSync(taskMd)) {
+    const meta = parseTaskMeta(fs.readFileSync(taskMd, 'utf8')) || {};
+    executorNode = String(meta.executor || '').replace(/^subagent:/u, '') || null;
+  }
+  rows.push({ kind: 'contract', task: taskId, hash: contractHash, criteria: criteriaJsonHash || 'unknown', forbidden, planned, plannedDeclared: planned !== null, seal, executor_node: executorNode, writer: 'workflow', at });
+  rows.push({ kind: 'run', id: runId, task: taskId, commit, ruleset_hash: 'unknown', executor_node: (() => { try { const f = path.join(dir, 'report.worker.json'); return fs.existsSync(f) ? (String((readJson(f) || {}).node || '') || null) : null; } catch { return null; } })(), command: 'task-accept', writer: 'acceptor' });
   const changedPaths = Array.isArray(verify && verify.changedPaths) ? verify.changedPaths : [];
   rows.push({ kind: 'diff', task: taskId, run: runId, commit, paths: changedPaths, diff_hash: diffHash || 'unknown', writer: 'acceptor' });
   /* Доказательства — из журнала гейтов (gates.jsonl), иначе один факт от verify.json. */
@@ -232,7 +238,12 @@ export function convertTask(taskDir, options = {}) {
       rows.push({ kind: 'evidence', task: taskId, run: runId, gate: 'red', artifact_hash: redHash, exit: proven ? 0 : 1, verdict: proven ? 'red-proven' : 'red-unproven', writer: 'acceptor' });
     }
   }
-  rows.push({ kind: 'judgment', task: taskId, run: runId, artifact_hash: diffHash || 'unknown', by: String(actor.keyId || 'agent-judge'), role: String(actor.node || 'judge'), model: String(actor.model || 'unknown'), verdict: String((acceptance && acceptance.status) || 'unknown'), writer: 'acceptor' });
+  let reviewerNode = null;
+  try {
+    const reviewFile = path.join(dir, 'review.json');
+    if (fs.existsSync(reviewFile)) reviewerNode = String((readJson(reviewFile) || {}).reviewer || '') || null;
+  } catch { reviewerNode = null; }
+  rows.push({ kind: 'judgment', reviewer_node: reviewerNode, task: taskId, run: runId, artifact_hash: diffHash || 'unknown', by: String(actor.keyId || 'agent-judge'), role: String(actor.node || 'judge'), model: String(actor.model || 'unknown'), verdict: String((acceptance && acceptance.status) || 'unknown'), writer: 'acceptor' });
   /* 0141: действия исполнителя из журнала сессии — только записи, чтение не считается. */
   const sessionId = actor && actor.session ? String(actor.session) : '';
   if (sessionId !== '' && options.workspace) {
@@ -241,7 +252,7 @@ export function convertTask(taskDir, options = {}) {
       rows.push({ kind: 'action', task: taskId, run: runId, cmd: 'journal', paths: actions.paths, writer: 'executor', at });
     }
   }
-  rows.push({ kind: 'accept', task: taskId, run: runId, contract_hash: contractHash, diff_hash: diffHash || 'unknown', ruleset_hash: 'unknown', evidence_manifest_hash: sha256Text(evidenceHashes.sort().join(',')), by: String(actor.keyId || 'agent-judge'), at });
+  rows.push({ kind: 'accept', task: taskId, run: runId, contract_hash: contractHash, diff_hash: diffHash || 'unknown', ruleset_hash: 'unknown', evidence_manifest_hash: sha256Text(evidenceHashes.sort().join(',')), by: String(actor.keyId || 'agent-judge'), actor_node: String(actor.node || '') || null, at });
   return { rows, problems };
 }
 

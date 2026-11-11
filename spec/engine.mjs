@@ -183,6 +183,28 @@ export function evaluateTask(read, options = {}) {
   if (crossRun.length > 0) c10problems.push('факты другого run: ' + crossRun.length);
   push(report, 'C10', c10problems.length === 0 ? 'pass' : 'fail', c10problems.length === 0 ? 'свидетельство единственно и согласовано' : c10problems.join('; '));
 
+  /*
+   * C11 (0191, A14): работу выполняет назначенный узел, роли не слипаются.
+   * Проверяем по фактам: объявленный executor (contract), фактический (run),
+   * ревьюер (judgment), приёмщик (accept). Сессии пока не записываются —
+   * проверяются узлы; это честная граница, а не «доказано».
+   */
+  const declaredExecutor = c && c.executor_node ? String(c.executor_node) : null;
+  const actualExecutor = r && r.executor_node ? String(r.executor_node) : null;
+  const reviewerNode = j && j.reviewer_node ? String(j.reviewer_node) : null;
+  const acceptorNode = a && a.actor_node ? String(a.actor_node) : null;
+  let c11;
+  if (!declaredExecutor || !actualExecutor || !reviewerNode || !acceptorNode) {
+    c11 = { status: 'not-applicable', detail: 'роли записаны не полностью: executor=' + declaredExecutor + ', факт=' + actualExecutor + ', reviewer=' + reviewerNode + ', acceptor=' + acceptorNode };
+  } else {
+    const sameExec = declaredExecutor === actualExecutor;
+    const distinct = new Set([actualExecutor, reviewerNode, acceptorNode]).size === 3;
+    c11 = sameExec && distinct
+      ? { status: 'pass', detail: 'исполнитель ' + actualExecutor + ', ревьюер ' + reviewerNode + ', приёмщик ' + acceptorNode }
+      : { status: 'fail', detail: (sameExec ? '' : 'исполнитель в отчёте (' + actualExecutor + ') не совпадает с объявленным (' + declaredExecutor + '); ') + (distinct ? '' : 'роли слиплись: ' + [actualExecutor, reviewerNode, acceptorNode].join(', ')) };
+  }
+  push(report, 'C11', c11.status, c11.detail);
+
   /* C6: выпуски к задаче не относятся — честно «не применимо». */
   push(report, 'C6', 'not-applicable', 'release-факты к задаче не относятся');
 
