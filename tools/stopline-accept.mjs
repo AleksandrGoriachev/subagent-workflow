@@ -27,7 +27,23 @@ if (process.argv[1] && process.argv[1].endsWith('stopline-accept.mjs')) {
   let head = '?';
   try { head = execFileSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { /* не git */ }
   const dirty = (() => { try { return execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).length; } catch { return -1; } })();
-  console.log('проект: ' + path.resolve(root));
+  /* 0189: приёмка по КОДУ, а не по тексту: клон на указанный коммит, чеки на клоне. */
+  const at = value('--at');
+  let target = path.resolve(root);
+  let tempClone = null;
+  if (at) {
+    const { execFileSync } = await import('node:child_process');
+    tempClone = path.join(process.env.TEMP || '/tmp', 'wf-accept-' + Date.now());
+    execFileSync('git', ['clone', '--quiet', '--no-hardlinks', root, tempClone], { stdio: 'ignore' });
+    execFileSync('git', ['-C', tempClone, 'checkout', '--quiet', at], { stdio: 'ignore' });
+    const nm = path.join(root, 'node_modules');
+    if (fs.existsSync(nm)) {
+      try { execFileSync('cmd', ['/c', 'mklink', '/J', path.join(tempClone, 'node_modules'), nm], { stdio: 'ignore' }); } catch { /* без junction */ }
+    }
+    target = tempClone;
+    console.log('приёмка на клоне: ' + tempClone + ' @ ' + at);
+  }
+  console.log('проект: ' + path.resolve(root) + (at ? ' | на коммите ' + at : ''));
   console.log('HEAD: ' + head + ' | изменённых путей: ' + (dirty < 0 ? 'нет git' : dirty));
   const want = value('--task');
   const tasks = want ? [want] : Object.keys(CHECKS);
@@ -37,7 +53,7 @@ if (process.argv[1] && process.argv[1].endsWith('stopline-accept.mjs')) {
     if (!file) { console.log('неизвестная задача: ' + task); failures += 1; continue; }
     const script = path.join(HERE, '..', 'spec', 'checks', 'stopline', file);
     try {
-      execFileSync(process.execPath, [script, path.resolve(root)], { stdio: 'inherit' });
+      execFileSync(process.execPath, [script, target], { stdio: 'inherit' });
       console.log(task + ': OK');
     } catch (error) {
       failures += 1;
@@ -46,5 +62,6 @@ if (process.argv[1] && process.argv[1].endsWith('stopline-accept.mjs')) {
   }
   console.log('');
   console.log(failures === 0 ? 'ПРИЁМКА: все запрошенные чеки зелёные' : 'ПРИЁМКА: красных чеков ' + failures);
+  if (tempClone) { try { fs.rmSync(tempClone, { recursive: true, force: true }); } catch { /* останется */ } }
   process.exit(failures === 0 ? 0 : 1);
 }
