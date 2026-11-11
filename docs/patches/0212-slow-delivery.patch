@@ -1,0 +1,73 @@
+diff --git a/lib/exchange-watch.js b/lib/exchange-watch.js
+index fd4dc01..8d7920d 100644
+--- a/lib/exchange-watch.js
++++ b/lib/exchange-watch.js
+@@ -3385,16 +3385,34 @@ export function createExchangeWatcher(options = {}) {
+     return heartbeatTimer;
+   }
+ 
+-  /** Heartbeat-only mode: the plugin is active, but the fast scan timer is off. */
++  /**
++   * Slow mode (0212): plugin is active, fast scan timer off, but delivery must NOT
++   * stop. Раньше здесь был «heartbeat-only» таймер — он писал живость и не сканировал,
++   * из-за чего письма не доставлялись, а чек оставался зелёным (инцидент 11.11:
++   * scanned застыл, workflow--62 не доставлен, structure--51/52 не дошли).
++   *
++   * Теперь режим медленный, но рабочий: heartbeat + скан/вручение по тому же таймеру.
++   */
+   function startHeartbeat() {
+     if (stopped) return () => {};
++    loadSeen();
++    watchSince = Date.now();
+     createHeartbeatTimer();
+     writeTelemetry({
+       event: 'heartbeat-start',
+       intervalMs: heartbeatMs,
+       file: heartbeatFile,
+-      source: 'heartbeat-only',
++      source: 'slow-scan',
+     });
++    beat(clockNow(), lastScanned);
++    const id = setInterval(() => {
++      tick()
++        .then(() => beat(clockNow(), lastScanned))
++        .catch((error) => {
++          writeTelemetry({ event: 'tick-error', message: error && error.message ? error.message : String(error) });
++        });
++    }, heartbeatMs);
++    if (id && typeof id.unref === 'function') id.unref();
+     return () => {
+       stopped = true;
+       if (heartbeatTimer) clearInterval(heartbeatTimer);
+diff --git a/test/exchange-delivery.test.mjs b/test/exchange-delivery.test.mjs
+index 099ed9b..d0b42c4 100644
+--- a/test/exchange-delivery.test.mjs
++++ b/test/exchange-delivery.test.mjs
+@@ -351,7 +351,7 @@ await atest('0210 c6: перезапуск сторожа не теряет пи
+ /* ------------------------------------------------------------------ */
+ /* c7: поведение lib/index.js — session/event turn/start и heartbeat-only */
+ /* ------------------------------------------------------------------ */
+-await atest('0210 c7: turn/start в lib/index.js запускает скан и доставку; heartbeat-only живёт при exchangeWatch:false', async () => {
++await atest('0212 c7: turn/start запускает скан и доставку; slow-режим доставляет при exchangeWatch:false', async () => {
+   const box = host();
+   const runsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pg-0210-apply-runs-'));
+   const target = agent(box, { running: false });
+@@ -392,9 +392,15 @@ await atest('0210 c7: turn/start в lib/index.js запускает скан и
+     const beat = readHeartbeat(heartbeatFile);
+     assert.equal(beat.producer, 'exchange-watch', 'heartbeat называет производителя');
+     assert.ok(Number.isInteger(beat.pid) && beat.pid > 0, 'heartbeat называет pid');
+-    await sleep(140);
+-    assert.equal(target.inbox.length, 0, 'heartbeat-only не сканирует: до события вручений нет');
+-    assert.equal(fs.existsSync(journal), false, 'до старта сессии журнала решений нет');
++    /*
++     * 0212: медленный режим обязан доставлять, а не только писать живость.
++     * Инцидент 11.11: heartbeat был свежим, scanned замер, письма не доходили.
++     */
++    assert.ok(await waitFor(() => target.inbox.length === 1, 3000),
++      'exchangeWatch:false — медленный скан доставляет письмо');
++    assert.ok(await waitFor(() => fs.existsSync(journal)
++      && readDecisionRows(journal).some((row) => row.state === 'delivered'
++        && String(row.letter || '').endsWith('start-hook.md'))), 'журнал: письмо доставлено медленным сканом');
+ 
+     const hook = listeners.find((item) => item.event === 'session/event');
+     assert.ok(hook, 'lib/index.js подписан на session/event');
