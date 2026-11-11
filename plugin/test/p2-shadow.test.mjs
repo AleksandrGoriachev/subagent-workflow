@@ -10,7 +10,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const SOURCE = path.join(process.cwd(), 'spec', 'scripts', 'task-accept.mjs');
+/* 0177: путь от файла теста, а не от cwd. */
+const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/u, '$1')), '..', '..');
+const SOURCE = path.join(REPO_ROOT, 'spec', 'scripts', 'task-accept.mjs');
 
 test('тень вызывает конвертер и движок, пишет engine-shadow.json', () => {
   const text = fs.readFileSync(SOURCE, 'utf8');

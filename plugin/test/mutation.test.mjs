@@ -14,8 +14,10 @@ import { factFileOf, readFactFile } from '../../spec/lib/facts.mjs';
 import { evaluateTask, loadAcceptors } from '../../spec/engine.mjs';
 import { repairFactsFile } from '../../spec/scripts/facts-repair.mjs';
 
-const SOURCE = path.join(process.cwd(), 'docs', 'facts', '0076.jsonl');
-const acceptors = loadAcceptors(process.cwd());
+/* 0177: путь от файла теста, а не от cwd — nightly гоняет из другого каталога. */
+const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/u, '$1')), '..', '..');
+const SOURCE = path.join(REPO_ROOT, 'docs', 'facts', '0076.jsonl');
+const acceptors = loadAcceptors(REPO_ROOT);
 
 function copyFacts() {
   const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-mut-'));
