@@ -12,6 +12,7 @@
  */
 import path from 'node:path';
 import { read, report } from './common.mjs';
+import { structureHash } from '../../../tools/structure-approve.mjs';
 
 function phantomCount(registryText) {
   let data; try { data = JSON.parse(registryText); } catch { return -1; }
@@ -63,6 +64,28 @@ export function checkT3(root) {
     ok: missing.length === 0,
     detail: 'нет в реестре: ' + missing.join(', '),
   });
+  /* 0173: подпись структуры должна проверяться В РАНТАЙМЕ, а не только в чеке 0204. */
+  const runtimeFiles = ['lib/spawn.js', 'lib/api.js', 'lib/structure-policy.js', 'lib/graph.js']
+    .map((rel) => read(root, rel) || '').join('\n');
+  checks.push({
+    name: 'approval проверяется в рантайме (запись структуры/активация)',
+    ok: /verifyStructureApproval/u.test(runtimeFiles),
+    detail: 'verifyStructureApproval вызывается только в чеке 0204/тестах — структуру можно менять без подписи',
+  });
+  const approvalText = read(root, 'structure/approval.json');
+  let approvalOk = false;
+  let approvalDetail = 'structure/approval.json отсутствует';
+  if (approvalText) {
+    try {
+      const approval = JSON.parse(approvalText);
+      const actual = structureHash(root);
+      approvalOk = approval && approval.hash === actual;
+      approvalDetail = approvalOk ? '' : 'хеш подписи не совпадает с текущей структурой';
+    } catch (error) {
+      approvalDetail = 'approval.json не читается: ' + String(error && error.message ? error.message : error);
+    }
+  }
+  checks.push({ name: 'подпись структуры актуальна', ok: approvalOk, detail: approvalDetail });
   const phantoms = phantomCount(registry);
   checks.push({
     name: 'в реестре нет фантомных open-задач',
