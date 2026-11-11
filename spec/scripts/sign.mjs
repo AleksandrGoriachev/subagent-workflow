@@ -107,6 +107,29 @@ export function readJsonFile(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
 }
 
+/**
+ * 0162: выбор ключа эпохи. При ротации у одного keyId несколько записей:
+ * старая (retiredAt + legacy) и новая (activeFrom). Подпись проверяется ключом,
+ * действовавшим на дату подписи, а не «текущим». Если приватная часть утеряна,
+ * историческая запись помечается legacy — это WARN, а не подделка.
+ */
+export function selectAcceptorEntry(acceptors, keyId, at) {
+  const list = (Array.isArray(acceptors) ? acceptors : []).filter((item) => item && item.keyId === keyId);
+  if (list.length === 0) return { entry: null, legacy: false, reason: 'ключ не закреплён' };
+  const time = at ? new Date(at).getTime() : NaN;
+  if (Number.isFinite(time)) {
+    const until = (item) => (item.retiredAt ? new Date(item.retiredAt).getTime() : Number.POSITIVE_INFINITY);
+    const from = (item) => (item.activeFrom ? new Date(item.activeFrom).getTime() : Number.NEGATIVE_INFINITY);
+    const applicable = list.filter((item) => time >= from(item) && time <= until(item));
+    if (applicable.length > 0) {
+      const entry = applicable.sort((a, b) => from(b) - from(a))[0];
+      return { entry, legacy: entry.legacy === true, reason: entry.legacy === true ? 'ключ эпохи утерян' : null };
+    }
+    const legacy = list.find((item) => item.legacy === true);
+    if (legacy) return { entry: legacy, legacy: true, reason: 'ключ эпохи утерян' };
+  }
+  return { entry: list[0], legacy: list[0].legacy === true, reason: list[0].legacy === true ? 'ключ эпохи утерян' : null };
+}
 export function loadAcceptors(file) {
   const parsed = readJsonFile(file);
   const list = Array.isArray(parsed) ? parsed : parsed.acceptors;

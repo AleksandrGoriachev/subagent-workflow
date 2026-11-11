@@ -16,7 +16,7 @@ import { isMainModule } from './lib/common.mjs';
 import crypto from 'node:crypto';
 import { appendFact, factFileOf, sha256Text, signFact, SIGNED_KINDS } from '../lib/facts.mjs';
 import { parseTaskMeta } from './lib/common.mjs';
-import { verifyRecord } from './sign.mjs';
+import { verifyRecord, selectAcceptorEntry } from './sign.mjs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -76,7 +76,9 @@ export function readRuleset(repoRoot) {
       const acceptors = readJson(acceptorsFile);
       const list = acceptors && Array.isArray(acceptors.acceptors) ? acceptors.acceptors : [];
       const keyId = String(approval.signature.keyId || approval.keyId || '');
-      const key = list.find((item) => item && item.keyId === keyId);
+      /* 0162: ключ выбирается по дате подписи — при ротации у keyId несколько эпох. */
+      const picked = selectAcceptorEntry(list, keyId, approval.at || approval.signature.at);
+      const key = picked.entry;
       if (!key) reason = 'ключ ' + keyId + ' не найден в acceptors.json';
       else if (key.kind !== 'human') reason = 'ключ ' + keyId + ' не человеческий';
       else if (verifyRecord(approval, key.publicKeyPem)) { verified = true; reason = null; }

@@ -6,7 +6,10 @@
       "owner": "acceptor",
       "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADtWnWP6StEW0+hTUr/qG8ofTCr48nVTs66mdYlViUmc=\n-----END PUBLIC KEY-----\n",
       "createdAt": "2026-10-27T20:53:41.224Z",
-      "fingerprint": "d8b2d1bad69e228a"
+      "fingerprint": "d8b2d1bad69e228a",
+      "retiredAt": "2026-11-11T04:01:58.710Z",
+      "legacy": true,
+      "legacyReason": "приватная часть утеряна (ротация 11.11.2026)"
     },
     {
       "keyId": "human-user",
@@ -24,6 +27,16 @@
       "fingerprint": "a3d15e9c1ec06716",
       "createdAt": "2026-11-10T21:14:03.808Z",
       "purpose": "подпись фактов-решений (evidence, judgment, accept)"
+    },
+    {
+      "keyId": "agent-judge",
+      "kind": "agent",
+      "owner": "acceptor",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA7jCA6O2hFuNkD3wwwn+FsUkiN78oEAOH0cnmFkWsVb0=\n-----END PUBLIC KEY-----\n",
+      "fingerprint": "90abeb0b5a9124b5",
+      "createdAt": "2026-11-11T04:01:58.710Z",
+      "activeFrom": "2026-11-11T04:01:58.710Z",
+      "note": "ротация 11.11.2026: старый приватный ключ утерян"
     }
   ]
 }

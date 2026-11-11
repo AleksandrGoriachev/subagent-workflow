@@ -12,7 +12,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadAcceptors, verifyRecord, publicKeyFingerprint, readJsonFile } from './sign.mjs';
+import { loadAcceptors, verifyRecord, publicKeyFingerprint, readJsonFile, selectAcceptorEntry } from './sign.mjs';
 import { canonicalize, sha256 as sha256Text, loadConfig, summarizeDecisions, evaluateEffects, spawnSyncPipeFree, attributionGap } from './lib/common.mjs';
 import { policyOf, modelLevel, familyOf, applyLevel } from './lib/policy.mjs';
 import { assessIndependence, LEVEL_RANK, requiredLevel } from './actor.mjs';
@@ -144,7 +144,9 @@ function run() {
     warnings.push('legacy-запись v' + record.version + ' без подписи (нет keyId/signature): аудит неполон,'
       + ' проверка ключа и подписи пропущена');
   }
-  const entry = signed ? acceptors.find((item) => item.keyId === record.keyId) : null;
+  /* 0162: ключ выбирается по времени подписи — при ротации у keyId несколько эпох. */
+  const picked = signed ? selectAcceptorEntry(acceptors, record.keyId, record.acceptedAt || record.at) : null;
+  const entry = picked ? picked.entry : null;
   if (!signed) {
     /* Ключ и подпись не проверяются: поля отсутствуют по формату, а не по ошибке. */
   } else if (!entry) {
@@ -162,7 +164,11 @@ function run() {
     if (record.actor && record.actor.keyId !== record.keyId) {
       note('actor.keyId не совпадает с keyId записи');
     }
-    if (!verifyRecord(record, entry.publicKeyPem)) note('подпись Ed25519 не совпадает');
+    if (picked.legacy === true) {
+      warnings.push('историческая подпись ключом ' + entry.keyId + ' (эпоха ' + (entry.fingerprint || '?') + '): приватная часть утеряна, подпись не проверяется');
+    } else if (!verifyRecord(record, entry.publicKeyPem)) {
+      note('подпись Ed25519 не совпадает');
+    }
     if (publicKeyFingerprint(entry.publicKeyPem) !== record.publicKeyFingerprint) {
       note('publicKeyFingerprint не совпадает с закреплённым ключом');
     }
