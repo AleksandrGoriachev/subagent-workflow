@@ -1,0 +1,40 @@
+{
+  "task": "0208",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [],
+    "reasons": {
+      "C1": "whitelist-сборка",
+      "C2": "состояние в graph.json",
+      "C3": "spawn не проверяет воркспейс"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "пересборка не теряет поля",
+      "command": "node checks/0208-graph-noloss.mjs c1"
+    },
+    {
+      "id": "C2",
+      "title": "состояние панели отделено",
+      "command": "node checks/0208-graph-noloss.mjs c2"
+    },
+    {
+      "id": "C3",
+      "title": "активация в воркспейсе узла",
+      "command": "node checks/0208-graph-noloss.mjs c3"
+    },
+    {
+      "id": "C4",
+      "title": "конкурентные update не теряют рёбра",
+      "command": "node checks/0208-graph-noloss.mjs c4"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "task": "0207",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [],
+    "reasons": {
+      "C1": "гейт не подключён",
+      "C2": "нет блокирующей ветки",
+      "C3": "нет ночного запуска"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "регресс вызывается в приёмке",
+      "command": "node checks/0207-regress-gate.mjs c1"
+    },
+    {
+      "id": "C2",
+      "title": "провал блокирует accepted",
+      "command": "node checks/0207-regress-gate.mjs c2"
+    },
+    {
+      "id": "C3",
+      "title": "ночной запуск зовёт регресс",
+      "command": "node checks/0207-regress-gate.mjs c3"
+    },
+    {
+      "id": "C4",
+      "title": "сломанная старая проверка валит приёмку",
+      "command": "node checks/0207-regress-gate.mjs c4"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "task": "0209",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [],
+    "reasons": {
+      "C1": "consumes в A8",
+      "C2": "gates нет",
+      "C3": "пустые gates не ловятся",
+      "C4": "role-policy all-auto",
+      "C5": "approval не enforced"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "A8 без consumes",
+      "command": "node checks/0209-gates.mjs c1"
+    },
+    {
+      "id": "C2",
+      "title": "реестр gates и обязательные id",
+      "command": "node checks/0209-gates.mjs c2"
+    },
+    {
+      "id": "C3",
+      "title": "пустые gates — отказ",
+      "command": "node checks/0209-gates.mjs c3"
+    },
+    {
+      "id": "C4",
+      "title": "role-policy без all-auto",
+      "command": "node checks/0209-gates.mjs c4"
+    },
+    {
+      "id": "C5",
+      "title": "approval enforced + подпись",
+      "command": "node checks/0209-gates.mjs c5"
+    }
+  ]
+}
