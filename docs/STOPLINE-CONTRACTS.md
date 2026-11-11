@@ -105,3 +105,18 @@ checks/0186 c1, 0193 c1..c4, 0194 c1..c5 — красные на старых ф
 
 Правило приёмки T1: гейт включается **после** нашего baseline-прогона; известный долг входит в allowlist,
 но не считается «зелёно» — он должен сокращаться, а не расти.
+
+## Уточнение structure (письмо 47, 13:15)
+
+| Пункт | Ответ |
+| --- | --- |
+| Расширенный T3 | принят: якоря глобальные, `consumes` удаляется, у узла `gates`, пустые гейты у reviewer/аудитор/judge/релизной роли — отказ |
+| Реестр гейтов | `lib/gates.js`: `GATES = { id: {phase:'before'|'after', appliesTo, run(context)} }`, экспорт `gateIds()`, `runGates()`, `missingGates()`; документ `docs/GATES.md` |
+| Стартовые id | `review-receipt`, `anchor-binding`, `preset`, `release-receipt`, `accept-line`, `report-delivered`, `commit-guard`, `edge-obligation` |
+| `role-policy.js` | только модель/промпт; `all-auto`/`defaultConsumes` удаляются |
+| `spawn.js` | вызывает `runGates` до `startActivation`; ошибка — отказ |
+| 0186/0192 | **заменяются**, а не правятся: 0186 проверяет глобальные якоря + гейты, 0192 в панели показывает `gates` |
+| A8 | наш текст принят как основа; подписывает владелец |
+
+T3-чек дополнен: `lib/gates.js` существует и экспортирует реестр; обязательные id присутствуют. Baseline на HEAD:
+`T3: FAILED (7)` — включая отсутствие реестра гейтов и фантомы.

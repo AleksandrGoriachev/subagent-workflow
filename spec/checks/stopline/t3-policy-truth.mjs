@@ -27,6 +27,8 @@ export function checkT3(root) {
   const validator = read(root, 'lib/structure-validator.js') || '';
   const anchorsCode = read(root, 'lib/anchors.js') || '';
   const registry = read(root, 'docs/tasks/REGISTRY.json') || '';
+  const gatesCode = read(root, 'lib/gates.js') || '';
+  const gatesDoc = read(root, 'docs/GATES.md') || '';
   const checks = [];
 
   checks.push({
@@ -48,6 +50,18 @@ export function checkT3(root) {
     name: 'role-policy не раздаёт all-auto',
     ok: !/all-auto|defaultConsumes/iu.test(policy),
     detail: 'role-policy.js всё ещё подставляет consumes по умолчанию',
+  });
+  checks.push({
+    name: 'реестр гейтов lib/gates.js существует',
+    ok: /export\s+(function\s+gateIds|const\s+GATES)/u.test(gatesCode) && /runGates|missingGates/u.test(gatesCode),
+    detail: 'нет lib/gates.js с реестром (GATES/gateIds/runGates/missingGates)',
+  });
+  const required = ['review-receipt', 'anchor-binding', 'preset', 'release-receipt', 'accept-line'];
+  const missing = required.filter((id) => !(gatesCode.includes(id) || gatesDoc.includes(id)));
+  checks.push({
+    name: 'обязательные гейты в реестре',
+    ok: missing.length === 0,
+    detail: 'нет в реестре: ' + missing.join(', '),
   });
   const phantoms = phantomCount(registry);
   checks.push({
