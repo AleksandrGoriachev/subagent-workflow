@@ -1,0 +1,37 @@
+{
+  "task": "0216",
+  "title": "T1 v3: регрессионный гейт в приёмке (закрывает 0207)",
+  "base": "cb43d0781667f63586e7134e1c23520a4d22bdc4",
+  "candidate": "9cae06e2cc48e41849786a7667d463724258dccb",
+  "metadataCommit": "784494d",
+  "branch": "t1-v3",
+  "red": "5/5 (C1–C5, redProven=true)",
+  "verify": {
+    "checks": "C1–C5 exit 0",
+    "digest": "16c7882839819978bd88c71f792fa141dda608d738e66e7e0d01a09a27fa3b1e"
+  },
+  "judge": {
+    "node": "judge",
+    "childId": "e8f87c04-aeac-47ec-bc8c-c1658c120e7c",
+    "keyId": "agent-judge-4",
+    "independence": "separate-session",
+    "status": "accepted",
+    "runId": "7772dfb7-b8e8-4875-85b3-6a5687d8ed4e",
+    "tree": "11cb6e14086b037c36a8a0b0e07141ba724180f8",
+    "worktreeDigest": "16c7882839819978bd88c71f792fa141dda608d738e66e7e0d01a09a27fa3b1e",
+    "regress": "14 задач, 47 критериев, провалов 0, allowlist 6"
+  },
+  "external": {
+    "by": "workflow",
+    "check": "t1-regress-gate C1–C3",
+    "verdict": "green",
+    "pathsMatch": {
+      "task-accept.mjs": true,
+      "task-regress.mjs": true,
+      "tools/test.mjs": true,
+      "test/regress-gate.test.mjs": true
+    },
+    "at": "2026-11-11T21:49:54.984Z"
+  },
+  "note": "main не перемотан: прямой git merge запрещён processPolicy; fast-forward main → 784494d делает архитектор (structure)."
+}
