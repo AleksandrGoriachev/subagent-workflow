@@ -11,5 +11,11 @@
   "residual": [
     "producer/pid в живом heartbeat появится после перезапуска DSH",
     "живой хост пока старая сборка"
-  ]
+  ],
+  "liveProof": {
+    "at": "2026-11-11T19:09:18.335Z",
+    "what": "доставка письма workflow--63 после включения exchangeWatch: true и перезапуска DSH",
+    "evidence": "runs/exchange-seen.json: запись 2026-11-11T19:08:12.836Z; scanned 795→797; heartbeat 0s",
+    "note": "до этого exchangeWatch:false давал heartbeat-only: тик был, скана и доставки не было"
+  }
 }
