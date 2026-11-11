@@ -24,15 +24,24 @@ export function checkT1(root) {
     ok: Boolean(acc && /regress[\s\S]{0,400}?(fail|exit\(1\)|process\.exit\(1\)|rejected|блок)/iu.test(acc)),
     detail: 'нет ветки, где провал регресса останавливает приёмку',
   });
-  /* Ночной запуск должен звать именно регресс, а не просто «есть test.mjs». */
+  /*
+   * 0179: «упоминание» не равно «запуск». Ночной путь обязан звать регресс без флага:
+   * если вызов обёрнут в --regress/--nightly, то по умолчанию регрессии не идут,
+   * и это ровно та декоративность, против которой T1 затевался.
+   */
   const runner = read(root, 'tools/test.mjs') || '';
-  const schedule = read(root, 'docs/subagent-workflow/scripts/task-regress.mjs') ? (read(root, 'tools/test.mjs') || '') : '';
-  const callsRegress = /task-regress|regress\.mjs/iu.test(runner) || /task-regress|regress\.mjs/iu.test(schedule);
-  checks.push({
-    name: 'ночной запуск зовёт регресс (не только e2e)',
-    ok: callsRegress,
-    detail: 'task-regress вызывается только из e2e — вне приёмки регрессии не перезапускаются',
-  });
+  const callIdx = runner.search(/task-regress|regress\.mjs/iu);
+  let nightlyOk = false;
+  let nightlyDetail = 'в tools/test.mjs нет вызова регресса';
+  if (callIdx >= 0) {
+    const window = runner.slice(Math.max(0, callIdx - 500), callIdx + 200);
+    const guarded = /--regress|--nightly|argv\.includes\(['"]regress/iu.test(window);
+    nightlyOk = !guarded;
+    nightlyDetail = guarded
+      ? 'регресс зовётся только по флагу --regress/--nightly; по умолчанию его нет — ночного запуска нет'
+      : '';
+  }
+  checks.push({ name: 'ночной запуск зовёт регресс без флага', ok: nightlyOk, detail: nightlyDetail });
   return checks;
 }
 
