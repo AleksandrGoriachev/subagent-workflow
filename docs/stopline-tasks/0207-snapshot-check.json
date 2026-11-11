@@ -1,0 +1,14 @@
+{
+  "task": "0207",
+  "title": "T1: регрессионный гейт в приёмке",
+  "snapshot": "22bd23c",
+  "ref": "0207-snapshot",
+  "tree": "0022b2f1",
+  "base": "18b4dc7",
+  "verdict": "external-ok",
+  "by": "workflow (внешний чек)",
+  "at": "2026-11-11T19:12:39.330Z",
+  "checks": "t1-regress-gate: C1 pass, C2 pass, C3 pass (автозапуск, evidence свежий)",
+  "method": "tools/stopline-accept.mjs --at 22bd23c (чистый клон)",
+  "note": "Это внешняя проверка snapshot, не приёмка. Приёмка после judge+candidate: сверить tree hash 0022b2f1."
+}
