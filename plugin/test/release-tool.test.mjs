@@ -69,3 +69,29 @@ test('c6: несколько релизов по тегу — нужен --id', 
   assert.equal(result.ok, false);
   assert.match(result.problems.join(' '), /--id/u);
 });
+
+/*
+ * 0230: c2 проходил только потому, что в фейковом корне нет spec/. Проверка
+ * квитанций там пропускается — но не должна пропускаться молча везде: если
+ * инструмент в корне есть и отказывает, preflight обязан упасть. Иначе фикс
+ * «нет скрипта — не проверяем» стал бы способом выключить гейт.
+ */
+test('c7: preflight проверяет квитанции, когда инструмент есть в корне', () => {
+  const root = fakeRepo('2.6.66', true);
+  fs.mkdirSync(path.join(root, 'spec', 'checks'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'spec', 'checks', 'release-receipt.mjs'),
+    "console.error('RELEASE-RECEIPT ERROR: релиз без SMOKE'); process.exit(1);\n",
+  );
+  const result = preflight('2.6.66', { root });
+  assert.equal(result.ok, false);
+  assert.equal(result.receipts, 'checked');
+  assert.ok(result.problems.some((problem) => /release-receipt/u.test(problem)));
+});
+
+test('c8: preflight без инструмента квитанций не выдумывает проверку', () => {
+  const root = fakeRepo('2.6.66', true);
+  const result = preflight('2.6.66', { root });
+  assert.equal(result.receipts, 'skipped');
+  assert.equal(result.ok, true);
+});

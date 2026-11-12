@@ -47,8 +47,17 @@ export function preflight(version, options = {}) {
   /*
    * 0133: квитанции — часть предполёта, а не отдельная проверка «когда вспомнят».
    * Без этого релиз, сделанный руками, обнаруживался только задним числом.
+   *
+   * 0230: проверка квитанций описывает ЭТОТ репозиторий, а не произвольный
+   * каталог. options.root задают тесты и чужие корни; в них нет spec/checks, и
+   * запуск скрипта по относительному пути падал MODULE_NOT_FOUND, давая ложный
+   * fail (c2 в plugin/test/release-tool.test.mjs). Поэтому сначала смотрим, есть
+   * ли инструмент в корне: нет — проверять нечего; есть — проверяем (c7 держит
+   * обратное: при наличии инструмента отказ обязан красить preflight).
    */
-  if (options.receipts !== false) {
+  const receiptScript = path.join(root, 'spec', 'checks', 'release-receipt.mjs');
+  const receipts = options.receipts === false ? 'off' : (fs.existsSync(receiptScript) ? 'checked' : 'skipped');
+  if (receipts === 'checked') {
     try {
       const output = run(process.execPath, ['spec/checks/release-receipt.mjs', '--online'], root);
       if (!/release-receipt: OK/u.test(output)) problems.push('release-receipt --online: нет подтверждения квитанций — ' + String(output).trim().split('\n').pop());
@@ -59,7 +68,7 @@ export function preflight(version, options = {}) {
   }
   const assets = expectedNames(version, options.panelVersion);
   const missing = assets.filter((name) => !fs.existsSync(path.join(root, 'dist', name)) && !fs.existsSync(path.join(root, 'dist', name + '.sha256')));
-  return { ok: problems.length === 0, problems, assets, missing };
+  return { ok: problems.length === 0, problems, assets, missing, receipts };
 }
 
 /** Имена ассетов выпуска: без них публикация не начинается. */
