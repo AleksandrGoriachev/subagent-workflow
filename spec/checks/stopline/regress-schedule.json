@@ -1,15 +1,7 @@
 {
   "schedule": "DAILY (MSK, автозапуск стоп-линии T1)",
-  "lastRunAt": "2026-11-11T15:01:04.155Z",
-  "exit": 1,
+  "lastRunAt": "2026-11-12T14:46:54.178Z",
+  "exit": 124,
   "by": "scheduler",
-  "mode": "clean-clone",
-  "head": "1cec3eb622aa9350f19e37008f1a1f5f78d2d484",
-  "summary": {
-    "total": 155,
-    "ok": 125,
-    "untrusted": 2,
-    "regressed": 28
-  },
-  "note": "Валидный прогон на чистом клоне HEAD: allowlist не закоммичен (untracked), untrusted 0002/0011 валят всегда; 28 регрессий = фактический долг."
+  "note": "task-regress --json запущен в dsh-project-graph, прерван после ~12 мин без вывода: полный регресс зависает на тяжёлых проверках (известное поведение; в приёмке используется changed-режим ~5 мин). Exit не получен, зафиксирован таймаут."
 }
