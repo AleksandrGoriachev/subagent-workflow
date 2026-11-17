@@ -2,20 +2,18 @@
   "version": 2,
   "anchors": "docs/anchors.json",
   "algo": "sha256",
-  "hash": "1a5f43425a91a5adacb37bb1e4e77054503ee8eec4b28ca4b2366938edaea07a",
-  "bytes": 7766,
+  "hash": "fe5c4e10375f16d9896b323eae964abde90069f27a61ae756a9a6fd984b61b11",
+  "bytes": 8098,
   "layer": "contour",
   "sides": "contour",
   "enforcedBy": "both",
   "by": [
     "пользователь"
   ],
-  "at": "2026-11-11T18:11:49.889Z",
-  "publicKeyFingerprint": "556312a6aeef0ad5",
-  "signature": {
-    "keyId": "human-user",
-    "algo": "ed25519",
-    "covers": "hash+by+at",
-    "value": "x4vHj4vsIpCXuRKX+3Xf2L+O36Zs0P2llTGty7pbJFOv2tl+vWe018dYrfojpus4mHzCIG9keLXK6Ae8g7neDw=="
-  }
+  "at": "2026-11-18T00:57:40+03:00",
+  "signature": "M9ypsnMP6Wkg6YBXTp/xfcMn+RDUMDm/ydzd+8ngPwMaZ03ZfkXiHRhn1BMalHjuEQ65wCWNNStefuon3OHjDw==",
+  "keyId": "human-user",
+  "note": "Черновик: подпись только человеческим ключом. at выставлен в момент подготовки; подпись покрывает hash+by+at.",
+  "signatureAlgorithm": "ed25519",
+  "publicKeyFingerprint": "556312a6aeef0ad5"
 }

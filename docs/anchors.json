@@ -24,8 +24,8 @@
       "check": "guard-acceptance",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "user+coordinator",
       "layer": "contour",
@@ -38,8 +38,8 @@
       "check": "task-lint, relock-policy",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -52,8 +52,8 @@
       "check": "model-source, release-check",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -66,8 +66,8 @@
       "check": "release-check c4",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -80,8 +80,8 @@
       "check": "gates-journal, relock-policy",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -94,8 +94,8 @@
       "check": "network-contract, outgoing-headers",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -105,11 +105,11 @@
     {
       "id": "A7",
       "claim": "Правка общего модуля перечисляет вызывающих и ожидания каждого; у каждого вызывающего есть тест или явное «не покрыт» с причиной",
-      "check": "spec/checks/shared-impact.mjs (WC-69)",
-      "status": "inWork",
+      "check": "процедура: импорт общего модуля → перечень вызывающих и ожидания каждого в отчёте задания",
+      "status": "semi",
       "confirmed": {
-        "version": null,
-        "date": null
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -122,8 +122,8 @@
       "check": "процедура разбора дефекта",
       "status": "semi",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -136,8 +136,8 @@
       "check": "release-publish, release-smoke",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -150,8 +150,8 @@
       "check": "журнал exchange-decisions.jsonl",
       "status": "semi",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "user+coordinator",
       "layer": "contour",
@@ -164,8 +164,8 @@
       "check": "report-honesty",
       "status": "semi",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -178,8 +178,8 @@
       "check": "job-runner",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.71",
-        "date": "2026-11-09"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "coordinator",
       "layer": "contour",
@@ -192,8 +192,8 @@
       "check": "stopline-accept",
       "status": "auto",
       "confirmed": {
-        "version": "2.6.81",
-        "date": "2026-11-11"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "user+coordinator",
       "layer": "contour",
@@ -203,11 +203,11 @@
     {
       "id": "A14",
       "claim": "Работу выполняет назначенный узел: сессия-исполнитель совпадает с объявленным executor, diff/кандидат подписан ключом исполнителя, координатор не пишет код, executor/reviewer/acceptor — разные сессии и ключи",
-      "check": "role-binding",
-      "status": "inWork",
+      "check": "plugin-test: test/c11-role-binding.test.mjs + engine C11",
+      "status": "auto",
       "confirmed": {
-        "version": "2.6.81",
-        "date": "2026-11-11"
+        "version": "2.6.82",
+        "date": "2026-11-18"
       },
       "owner": "user+coordinator",
       "layer": "contour",
@@ -215,5 +215,5 @@
       "sides": "both"
     }
   ],
-  "note": "Контурные якоря (layer: contour). Проектные наборы живут в воркспейсах (layer: project). enforcedBy: engine — проверяет движок, both — движок и узлы проекта."
+  "note": "Контурные якоря (layer: contour). Проектные наборы живут в воркспейсах (layer: project). enforcedBy: engine — проверяет движок, both — движок и узлы проекта. Переоценка 2.6.82: подтверждения обновлены по прогонам 18.11.2026 (см. docs/ANCHORS-REVIEW-2026-11-18.md)."
 }
