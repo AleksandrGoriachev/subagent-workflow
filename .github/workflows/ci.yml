@@ -45,6 +45,8 @@ jobs:
         run: node spec/checks/closure-accounting.mjs
       - name: regress-allowlist — проектный allowlist регресса (2.6.82)
         run: node spec/checks/regress-allowlist.mjs
+      - name: job-runner — сторож, heartbeat и STALE (2.6.82)
+        run: node spec/checks/job-runner.mjs c1 && node spec/checks/job-runner.mjs c2 && node spec/checks/job-runner.mjs c3 && node spec/checks/job-runner.mjs c4 && node spec/checks/job-runner.mjs c5
       - name: panel-deploy — развёртывание движка из панели (0015)
         run: node spec/checks/panel-deploy.mjs
       - name: engine-root — внешний движок для воркспейса без спеки (0034)

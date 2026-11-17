@@ -14,14 +14,19 @@
  *
  * Вывод (вердикт в stdout, не кодом — харнесс нормализует нестандартные коды
  * фоновых заданий в 1 и шумит «ошибкой»):
- *   start  -- <cmd...>                    -> JOB <id>
- *   wait   <id> [--timeout с] [--interval с] -> DONE <id> exit=<код> <мс>ms | TIMEOUT <мс>ms <id>
- *   status <id>                           -> RUNNING <id> | DONE <id> exit=<код>
+ *   start  -- <cmd...>                    -> JOB <id> | FAILED <id> <причина>
+ *   wait   <id> [--timeout с] [--interval с] -> DONE <id> exit=<код> <мс>ms | TIMEOUT <мс>ms <id> | STALE <id> <причина>
+ *   status <id>                           -> RUNNING <id> | DONE <id> exit=<код> | STALE <id> <причина>
  *   list                                  -> <id> <состояние> <команда>
  *   kill   <id>                           -> KILLED <id>
  *
- * Коды выхода: 0 — штатная работа wait/status/list/kill (включая TIMEOUT);
- * 2 — ошибка аргументов; 3 — нет такого задания.
+ * Коды выхода: 0 — штатная работа wait/status/list/kill (включая TIMEOUT и STALE);
+ * 1 — start не смог запустить сторожа; 2 — ошибка аргументов; 3 — нет такого задания.
+ *
+ * 2.6.82: сторож пишет heartbeat ({@link HEARTBEAT_MS}) и pid. wait/status/list
+ * проверяют живость pid и свежесть heartbeat; мёртвый сторож переводит задание в
+ * STALE с причиной, а не оставляет RUNNING навсегда. wait без --timeout ждёт
+ * 30 минут (--timeout 0 — без лимита).
  *
  * Пайпов нет: и сторож, и ребёнок получают файловые дескрипторы
  * (см. spawnSyncPipeFree и runCommand в lib/common.mjs) — в ограниченной
@@ -42,9 +47,19 @@ const JOBS = path.join(PKG, '.tmp', 'jobs');
 /* Минимум 0,1 с: ожидание не должно крутить процессор. */
 const DEFAULT_INTERVAL_SEC = 1;
 const MIN_INTERVAL_SEC = 0.1;
+/*
+ * 2.6.82: сторож обязан быть видимым. Heartbeat пишется сторожем каждые 5 с;
+ * wait/status считают задание STALE, если сторож мёртв или heartbeat устарел.
+ * Без этого убитый сторож оставлял RUNNING навсегда (инцидент: judge ждал час).
+ */
+const HEARTBEAT_MS = 5000;
+const HEARTBEAT_STALE_MS = HEARTBEAT_MS * 3;
+const SUPERVISOR_PROBE_MS = 1200;
+/* Ожидание wait по умолчанию: без --timeout оно больше не бесконечное. */
+const DEFAULT_WAIT_TIMEOUT_SEC = 1800;
 
 /* Терминальные состояния: дальше задание не меняется (кроме кода возврата). */
-const TERMINAL = new Set(['DONE', 'KILLED', 'FAILED']);
+const TERMINAL = new Set(['DONE', 'KILLED', 'FAILED', 'STALE']);
 
 function die(message, code = 2) {
   process.stderr.write('job: ' + message + String.fromCharCode(10));
@@ -97,6 +112,40 @@ function durationMs(state, fallbackFrom) {
   return Math.max(0, Date.now() - (Number.isInteger(from) ? from : Date.now()));
 }
 
+/* Живость pid: на Windows process.kill(pid, 0) даёт ESRCH для завершённого. */
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try { process.kill(pid, 0); return true; } catch (error) { return Boolean(error && error.code === 'EPERM'); }
+}
+
+/** Причина, по которой RUNNING-задание уже не идёт (или null). */
+function staleReason(state) {
+  if (!state || String(state.status) !== 'RUNNING') return null;
+  if (Number.isInteger(state.pid) && state.pid > 0 && !pidAlive(state.pid)) {
+    return 'сторож не жив (pid ' + state.pid + ')';
+  }
+  const beat = typeof state.heartbeatAt === 'string' ? Date.parse(state.heartbeatAt) : NaN;
+  if (Number.isFinite(beat) && Date.now() - beat > HEARTBEAT_STALE_MS) {
+    return 'нет heartbeat ' + Math.round((Date.now() - beat) / 1000) + ' с (порог ' + Math.round(HEARTBEAT_STALE_MS / 1000) + ' с)';
+  }
+  return null;
+}
+
+/** Перевести задание в STALE, если сторож умер; вернуть актуальное состояние. */
+function resolveStale(id, state) {
+  const reason = staleReason(state);
+  if (!reason) return state;
+  const next = {
+    ...state,
+    status: 'STALE',
+    staleReason: reason,
+    endedAt: new Date().toISOString(),
+    durationMs: durationMs(state, Date.now()),
+  };
+  writeState(id, next);
+  return next;
+}
+
 /*
  * Разбор аргументов в духе lib/common.mjs: «--ключ значение» и «--ключ=значение».
  * Всё после «--» — команда ребёнка, без разбора: у неё свои ключи.
@@ -126,7 +175,7 @@ function commandOf(argv) {
   return at === -1 ? argv.slice() : argv.slice(at + 1);
 }
 
-function cmdStart(argv) {
+async function cmdStart(argv) {
   const cmd = commandOf(argv);
   if (cmd.length === 0) die('usage: job.mjs start -- <команда...>', 2);
   const id = newId();
@@ -143,6 +192,7 @@ function cmdStart(argv) {
     childPid: null,
     startedAt: new Date(startedMs).toISOString(),
     startedMs,
+    heartbeatAt: new Date(startedMs).toISOString(),
     endedAt: null,
     durationMs: null,
     exitCode: null,
@@ -164,6 +214,24 @@ function cmdStart(argv) {
   try { supervisor.unref(); } catch { /* ignore */ }
   state.pid = supervisor.pid === undefined ? null : supervisor.pid;
   writeState(id, state);
+  /*
+   * 2.6.82: проверка, что сторож действительно стартовал. Раньше сбой спавна
+   * оставлял RUNNING до таймаута, и ожидание висело впустую.
+   */
+  await sleep(SUPERVISOR_PROBE_MS);
+  const probe = readState(id) || state;
+  if (String(probe.status) === 'RUNNING' && !pidAlive(probe.pid)) {
+    const failed = {
+      ...probe,
+      status: 'FAILED',
+      staleReason: 'сторож не стартовал (pid ' + String(probe.pid) + ')',
+      endedAt: new Date().toISOString(),
+      durationMs: durationMs(probe, startedMs),
+    };
+    writeState(id, failed);
+    process.stdout.write('FAILED ' + id + ' ' + failed.staleReason + String.fromCharCode(10));
+    return 1;
+  }
   process.stdout.write('JOB ' + id + String.fromCharCode(10));
   return 0;
 }
@@ -216,13 +284,30 @@ function cmdRun(argv) {
   }
 
   const current = readState(id) || state;
-  writeState(id, { ...current, childPid: child.pid === undefined ? null : child.pid, pid: process.pid });
+  writeState(id, {
+    ...current,
+    childPid: child.pid === undefined ? null : child.pid,
+    pid: process.pid,
+    heartbeatAt: new Date().toISOString(),
+  });
+  /* Heartbeat: пока сторож жив и ребёнок идёт — состояние свежее. */
+  const beat = setInterval(() => {
+    const seen = readState(id);
+    if (!seen || TERMINAL.has(String(seen.status))) return;
+    writeState(id, {
+      ...seen,
+      childPid: child.pid === undefined ? null : child.pid,
+      pid: process.pid,
+      heartbeatAt: new Date().toISOString(),
+    });
+  }, HEARTBEAT_MS);
 
   return new Promise((resolve) => {
     let done = false;
     const settle = (code, signal) => {
       if (done) return;
       done = true;
+      clearInterval(beat);
       try { fs.closeSync(fd); } catch { /* ignore */ }
       finish(code, signal);
       resolve(0);
@@ -240,11 +325,13 @@ async function cmdWait(argv) {
   if (!id) die('usage: job.mjs wait <id> [--timeout <сек>] [--interval <сек>]', 2);
   if (!fs.existsSync(stateFile(id))) die('нет задания ' + id, 3);
 
-  let timeoutSec = null;
+  /* 2.6.82: без --timeout ожидание ограничено 30 мин; --timeout 0 — явно без лимита. */
+  let timeoutSec = DEFAULT_WAIT_TIMEOUT_SEC;
   if (parsed.opts.timeout !== undefined) {
     const raw = typeof parsed.opts.timeout === 'string' ? parsed.opts.timeout.trim() : '';
-    timeoutSec = raw === '' ? NaN : Number(raw);
-    if (!Number.isFinite(timeoutSec) || timeoutSec < 0) die('--timeout: нужно число секунд ≥ 0', 2);
+    const value = raw === '' ? NaN : Number(raw);
+    if (!Number.isFinite(value) || value < 0) die('--timeout: нужно число секунд ≥ 0', 2);
+    timeoutSec = value === 0 ? null : value;
   }
   let intervalSec = DEFAULT_INTERVAL_SEC;
   if (parsed.opts.interval !== undefined) {
@@ -258,8 +345,14 @@ async function cmdWait(argv) {
   const deadline = timeoutSec === null ? Infinity : began + Math.round(timeoutSec * 1000);
 
   for (;;) {
-    const state = readState(id);
+    const raw = readState(id);
+    /* Мёртвый сторож — это вердикт STALE, а не вечное RUNNING. */
+    const state = raw ? resolveStale(id, raw) : null;
     if (state && TERMINAL.has(String(state.status))) {
+      if (String(state.status) === 'STALE') {
+        process.stdout.write('STALE ' + id + ' ' + (state.staleReason || 'сторож не жив') + String.fromCharCode(10));
+        return 0;
+      }
       process.stdout.write('DONE ' + id + ' exit=' + exitLabel(state) + ' ' + durationMs(state, began) + 'ms' + String.fromCharCode(10));
       return 0;
     }
@@ -278,8 +371,13 @@ async function cmdWait(argv) {
 function cmdStatus(argv) {
   const id = argv[0];
   if (!id) die('usage: job.mjs status <id>', 2);
-  const state = readState(id);
+  const raw = readState(id);
+  const state = raw ? resolveStale(id, raw) : null;
   if (!state) die('нет задания ' + id, 3);
+  if (String(state.status) === 'STALE') {
+    process.stdout.write('STALE ' + id + ' ' + (state.staleReason || 'сторож не жив') + String.fromCharCode(10));
+    return 0;
+  }
   if (!TERMINAL.has(String(state.status))) {
     process.stdout.write('RUNNING ' + id + String.fromCharCode(10));
   } else {
@@ -295,7 +393,11 @@ function cmdList() {
   try { names = fs.readdirSync(JOBS); } catch { return 0; }
   const states = names
     .filter((name) => name.endsWith('.json'))
-    .map((name) => readState(name.slice(0, -5)))
+    .map((name) => {
+      const id = name.slice(0, -5);
+      const state = readState(id);
+      return state ? resolveStale(id, state) : null;
+    })
     .filter(Boolean)
     .sort((left, right) => (left.startedMs || 0) - (right.startedMs || 0));
   for (const state of states) {

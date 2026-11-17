@@ -12,7 +12,9 @@
  *        ребёнка не теряется;
  *  - c2: job wait --timeout на незавершённом задании печатает "TIMEOUT" и выходит
  *        с 0 (вердикт в stdout, не кодом — код фоновых заданий харнесс нормализует);
- *  - c3: job kill переводит задание в терминальное состояние (не RUNNING).
+ *  - c3: job kill переводит задание в терминальное состояние (не RUNNING);
+ *  - c4: убитый сторож даёт вердикт STALE (wait и status), а не вечное RUNNING;
+ *  - c5: живой pid, но устаревший heartbeat — тоже STALE с причиной.
  *
  * Вне пакета — SKIP (конвенция deployed-copy).
  */
@@ -30,6 +32,7 @@ if (!fs.existsSync(path.join(PKG, 'spec'))) {
 }
 
 const JOB = path.join(PKG, 'spec', 'scripts', 'job.mjs');
+const JOBS = path.join(PKG, '.tmp', 'jobs');
 const truthy = (value, label) => { if (!value) throw new Error(label); };
 
 function job(args, timeout = 60000) {
@@ -85,10 +88,61 @@ function c3() {
   console.log('JOBRUN OK c3');
 }
 
-const table = { c1, c2, c3 };
+function readJobState(id) {
+  return JSON.parse(fs.readFileSync(path.join(JOBS, id + '.json'), 'utf8'));
+}
+
+/* c4: сторож убит — задание обязано стать STALE, а не RUNNING навсегда. */
+function c4() {
+  const started = Date.now();
+  const s = job(['start', '--', process.execPath, '-e', 'setTimeout(()=>{},30000)']);
+  truthy(s.code === 0, 'start exit ' + s.code + ': ' + s.out.trim().slice(0, 300));
+  const id = startId(s.out);
+  const state = readJobState(id);
+  truthy(Number.isInteger(state.pid), 'в состоянии нет pid сторожа: ' + JSON.stringify(state).slice(0, 200));
+  try { process.kill(state.pid); } catch { /* уже завершён */ }
+  const w = job(['wait', id, '--timeout', '15', '--interval', '0.2'], 40000);
+  const wall = Date.now() - started;
+  truthy(w.code === 0, 'wait exit ' + w.code + ': ' + w.out.trim().slice(0, 300));
+  truthy(new RegExp('STALE\\s+' + id).test(w.out), 'нет вердикта STALE: ' + w.out.trim().slice(0, 300));
+  truthy(/сторож не жив|heartbeat/.test(w.out), 'STALE без причины: ' + w.out.trim().slice(0, 300));
+  truthy(wall < 15000, 'STALE пришёл слишком поздно: ' + wall + ' мс');
+  const st = job(['status', id], 30000);
+  truthy(/STALE/.test(st.out), 'status не показал STALE: ' + st.out.trim().slice(0, 300));
+  try { process.kill(state.childPid); } catch { /* ребёнок уже завершён или недоступен */ }
+  console.log('JOBRUN OK c4');
+}
+
+/* c5: heartbeat устарел при живом pid — тоже STALE. */
+function c5() {
+  fs.mkdirSync(JOBS, { recursive: true });
+  const id = 'checkstale' + Date.now().toString(16);
+  const now = Date.now();
+  fs.writeFileSync(path.join(JOBS, id + '.json'), JSON.stringify({
+    id,
+    command: 'проверка heartbeat',
+    cwd: PKG,
+    status: 'RUNNING',
+    pid: process.pid,
+    childPid: null,
+    startedAt: new Date(now - 3600000).toISOString(),
+    startedMs: now - 3600000,
+    heartbeatAt: new Date(now - 3600000).toISOString(),
+  }, null, 2) + '\n');
+  try {
+    const st = job(['status', id], 30000);
+    truthy(new RegExp('STALE\\s+' + id).test(st.out), 'status не показал STALE по heartbeat: ' + st.out.trim().slice(0, 300));
+    truthy(/heartbeat/.test(st.out), 'причина STALE не называет heartbeat: ' + st.out.trim().slice(0, 300));
+  } finally {
+    fs.rmSync(path.join(JOBS, id + '.json'), { force: true });
+  }
+  console.log('JOBRUN OK c5');
+}
+
+const table = { c1, c2, c3, c4, c5 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/job-runner.mjs c1|c2|c3');
+  console.log('usage: node spec/checks/job-runner.mjs c1|c2|c3|c4|c5');
   process.exit(2);
 }
 try {

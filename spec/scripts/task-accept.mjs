@@ -58,6 +58,7 @@ const config = loadConfig(repo);
 if (exists(path.join(taskDir, 'closure.json'))) {
   fail('задание закрыто без приёмки (closure.json): приёмка не применяется — закрытие окончательное, переоткрытие новым id');
 }
+writeProgress('start');
 
 /*
  * F-8 (2.6.4): verify.json исполнителя не теряется. Свежий прогон приёмщика
@@ -141,7 +142,28 @@ function engineShadow(repo, taskDir, meta, record) {
     console.log('engine (тень): ошибка — ' + String(error && error.message ? error.message : error));
   }
 }
-function fail(message) { console.error('task-accept: ' + message); process.exit(1); }
+function fail(message) { writeProgress('failed', { message: String(message).slice(0, 500) }); console.error('task-accept: ' + message); process.exit(1); }
+
+/*
+ * 2.6.82: маркер стадии ВНЕ репозитория. Убитый прогон перестаёт выглядеть как
+ * «ничего не начиналось»: видно, до какой стадии дошли. Ошибка маркера приёмку
+ * не ломает.
+ */
+function progressFile() {
+  const dir = process.env.WF_PROGRESS_DIR || path.join(os.homedir(), '.dsh', 'workflow', 'progress');
+  const key = crypto.createHash('sha256').update(String(repo)).digest('hex').slice(0, 12);
+  return path.join(dir, key, path.basename(taskDir) + '.json');
+}
+function writeProgress(stage, extra = {}) {
+  try {
+    const file = progressFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const tmp = file + '.' + process.pid + '.tmp';
+    const body = { task: path.basename(taskDir), repo, stage, at: new Date().toISOString(), pid: process.pid, ...extra };
+    fs.writeFileSync(tmp, JSON.stringify(body, null, 2) + String.fromCharCode(10), 'utf8');
+    fs.renameSync(tmp, file);
+  } catch { /* маркер не имеет права ломать приёмку */ }
+}
 
 function validateVerify(verify, lockCheck, contractCommit, nonce) {
   if (verify.version !== 4) fail('verify.json: версия ' + verify.version + ' устарела, нужна 4 — прогоните task-verify заново');
@@ -568,8 +590,10 @@ try {
   let verify;
   let acceptorRun;
   const fresh = !argv['reuse-verify'];
+  writeProgress('preflight-ok');
 
   if (fresh) {
+    writeProgress('verify');
     const nonce = crypto.randomBytes(16).toString('hex');
     const args = [VERIFY_SCRIPT, '--task', taskDir, '--repo', repo, '--json'];
     if (argv['allow-missing-red']) args.push('--allow-missing-red');
@@ -600,6 +624,7 @@ try {
       verifySha256: sha256File(files.verify),
       verifyLogSha256: logsCommitted && exists(files.verifyLog) ? sha256File(files.verifyLog) : null,
     };
+    writeProgress('verify-ok', { nonce });
   } else {
     if (meta.risk !== 'low') fail('--reuse-verify разрешён только для risk=low: для medium/high нужен свежий прогон приёмщика');
     if (!argv.note) fail('--reuse-verify требует --note с причиной');
@@ -787,6 +812,7 @@ try {
    * ws-school-app). Ложное «принято» без кандидата закрывается отзывом: при сбое
    * создания кандидата в журнал дописывается строка void.
    */
+  writeProgress('candidate');
   const journalPending = appendGateRecord(gateJournalFile(taskDir), gateRecord({
     kind: 'accept',
     task: String(meta.id),
@@ -823,6 +849,7 @@ try {
 
   const record = signRecord(body, { privateKeyPem, keyId });
   writeJson(files.acceptance, record);
+  writeProgress('accepted', { candidate: candidate.commit, keyId });
   engineShadow(repo, taskDir, meta, record);
 
   /*
