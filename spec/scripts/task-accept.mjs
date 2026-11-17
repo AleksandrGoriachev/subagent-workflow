@@ -50,6 +50,14 @@ if (argv.help) {
 const taskDir = path.resolve(argv.task || argv._[0] || '.');
 const repo = path.resolve(argv.repo || repoRoot(taskDir));
 const config = loadConfig(repo);
+/*
+ * 2.6.82: закрытое без приёмки задание принять нельзя. closure.json — это
+ * окончательный отказ от приёмки; переоткрытие идёт новым id, а не приёмкой
+ * старого каталога.
+ */
+if (exists(path.join(taskDir, 'closure.json'))) {
+  fail('задание закрыто без приёмки (closure.json): приёмка не применяется — закрытие окончательное, переоткрытие новым id');
+}
 
 /*
  * F-8 (2.6.4): verify.json исполнителя не теряется. Свежий прогон приёмщика

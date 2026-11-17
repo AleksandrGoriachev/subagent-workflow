@@ -31,6 +31,10 @@ node docs/subagent-workflow/scripts/task-accept.mjs --task docs/tasks/0001 \
   --acceptor judge --key ~/.wf-keys/agent-judge.key.pem --key-id agent-judge
 node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
   --file docs/tasks/0001/acceptance.json --repo .
+
+# задание не будет принято (заменено/брошено) — закрыть без приёмки, а не «принять»
+node docs/subagent-workflow/scripts/task-close.mjs --task docs/tasks/0001 \
+  --status superseded --reason "заменено 0002" --successor 0002 --by coordinator
 ~~~
 
 ## Что внутри
@@ -42,7 +46,7 @@ node docs/subagent-workflow/scripts/task-check-acceptance.mjs \
 | `spec/templates/` | Задание, критерии, схема записи, разбор замечаний, атака, отчёт, владение |
 | `spec/scripts/init.mjs` | Развернуть пространство в проекте |
 | `spec/scripts/new-task.mjs` | Создать задание |
-| `spec/scripts/task-*.mjs` | Ворота: attack, hash, lint, red, verify, accept, check, regress |
+| `spec/scripts/task-*.mjs` | Ворота: attack, hash, lint, red, verify, accept, close, check, regress |
 | `spec/scripts/task-guard.mjs` | Коммит без задания: покрытие индекса и диапазона, аудит обходов (2.5.0) |
 | `spec/hooks/` | Хуки git: `init` ставит их локальным `core.hooksPath` |
 | `spec/scripts/actor.mjs` | Аттестация актора, уровень независимости |

@@ -70,6 +70,27 @@ function stepSectionPaths(taskMd) {
 
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
+
+/*
+ * 2.6.82: закрытие без приёмки — отдельный факт (closure.json). Задание с ним
+ * не должно нести acceptance.json (одно поле не может значить и «принято», и
+ * «брошено»); причина закрытия обязательна.
+ */
+if (exists(path.join(taskDir, 'closure.json'))) {
+  let closure = null;
+  try { closure = readJson(path.join(taskDir, 'closure.json')); } catch { closure = null; }
+  if (!closure || typeof closure !== 'object' || Array.isArray(closure)) {
+    error('closure.json: не читается или не объект');
+  } else if (!['closed', 'superseded'].includes(String(closure.status))) {
+    error('closure.json: status должен быть closed или superseded');
+  } else if (typeof closure.reason !== 'string' || closure.reason.trim() === '') {
+    error('closure.json: нет reason');
+  } else if (exists(path.join(taskDir, 'acceptance.json'))) {
+    error('closure.json и acceptance.json одновременно: закрытие без приёмки несовместимо с приёмкой');
+  } else {
+    warn('задание закрыто без приёмки (' + closure.status + '): ' + closure.reason);
+  }
+}
   const config = loadConfig(repo);
   const policy = policyOf(config);
 

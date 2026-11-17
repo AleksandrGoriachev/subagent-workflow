@@ -85,6 +85,8 @@ const CLOSED_TASK_ARTIFACTS = new Set([
   'acceptance.json', 'report.md', 'report.json',
   'verify.json', 'verify.log', 'red.json', 'red.log',
   'criteria.lock', 'attack.json',
+  /* 2.6.82: запись закрытия — факт закрытого задания, а не приёмка. */
+  'closure.json',
 ]);
 
 const USAGE = [
@@ -123,18 +125,25 @@ function parseTaskMetaSafe(text) {
   }
 }
 
-function taskFromMeta(id, dir, meta, { hasLock, hasAcceptance }) {
+function taskFromMeta(id, dir, meta, { hasLock, hasAcceptance, hasClosure }) {
+  /*
+   * 2.6.82: закрытое без приёмки задание — не работа. Оно не расширяет
+   * allowedPaths (active=false) и не покрывает свой каталог (open=false);
+   * в каталоге остаются только артефакты (см. CLOSED_TASK_ARTIFACTS).
+   */
+  const closed = hasClosure === true;
   return {
     id: String(meta.id || id),
     dir,
     allowedPaths: Array.isArray(meta.allowedPaths) ? meta.allowedPaths.map(String) : [],
-    active: hasLock && !hasAcceptance,
-    open: !hasAcceptance,
+    active: hasLock && !hasAcceptance && !closed,
+    open: !hasAcceptance && !closed,
+    closed,
   };
 }
 
 /** Состояние заданий в рабочем дереве — для проверки индекса. */
-function coverageFromWorktree(repo, config) {
+export function coverageFromWorktree(repo, config) {
   const tasksDirRel = toPosix(config.tasksDir || 'docs/tasks');
   const tasksDir = path.join(repo, tasksDirRel);
   const tasks = [];
@@ -154,6 +163,7 @@ function coverageFromWorktree(repo, config) {
     tasks.push(taskFromMeta(entry.name, tasksDirRel + '/' + entry.name, meta, {
       hasLock: exists(path.join(dir, 'criteria.lock')),
       hasAcceptance: exists(path.join(dir, 'acceptance.json')),
+      hasClosure: exists(path.join(dir, 'closure.json')),
     }));
   }
   return { tasksDirRel, tasks };
@@ -201,6 +211,7 @@ function coverageFromCommit(repo, config, rev, cache) {
       tasks.push(taskFromMeta(id, prefix + id, meta, {
         hasLock: files.has('criteria.lock'),
         hasAcceptance: files.has('acceptance.json'),
+        hasClosure: files.has('closure.json'),
       }));
     }
   }

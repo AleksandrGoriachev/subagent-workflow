@@ -24,6 +24,11 @@ delete process.env.TASK_ACCEPT_KEY;
 
 function fail(message) { reportFatal('task-verify', message, { json: Boolean(argv.json) }); process.exit(1); }
 
+/* 2.6.82: закрытое без приёмки задание не верифицируется — это не работа. */
+if (exists(path.join(taskDir, 'closure.json'))) {
+  fail('задание закрыто без приёмки (closure.json): верификация не применяется');
+}
+
 function printSummary(title, rows) {
   console.log(title);
   for (const r of rows) {
