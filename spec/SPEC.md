@@ -1,6 +1,6 @@
 # Спецификация: делегирование субагентам с проверяемой приёмкой
 
-Версия: 2.6.81. Дата: 2026-11-10.
+Версия: 2.6.82. Дата: 2026-11-18.
 Статус: проект-независимая, готова к разворачиванию в новом репозитории.
 Основание: редакция 1.3 (роли, риск-уровни, контракт, свежий прогон, redExpect) плюс
 исправление главного дефекта — роль приёмщика проверяется машиной, а не декларацией.
@@ -708,6 +708,19 @@
    `selftest`, `deployed-copy`. Версии пакета и плагина этой задачей не
    двигаются — их двигает релиз архитектора после приёмки.
 
+Версия 2.6.82:
+
+- **Закрытие задания без приёмки.** `task-close.mjs`: `docs/tasks/<id>/closure.json` (`closed|superseded`, причина, кто,
+  successor, evidence), аудит `docs/subagent-workflow/audit/task-closures.jsonl`, `--delete-contract`/`--full`; принятое
+  и уже закрытое отвергаются; закрытое не активно для `task-guard`, `task-accept`/`task-verify` ему отказывают,
+  `task-lint` предупреждает; переоткрытие — новым id (см. §7.1). Проверка `closure-accounting` c1–c7.
+- **Проектный allowlist регресса.** `docs/subagent-workflow/regress.allowlist.json`, `--allowlist`, `workflow.config.json →
+  regress.allowlist`, legacy `docs/tasks/<id>/regress.allowlist.json`; известный провал критерия попадает в отчёт как
+  `allowed` с причиной и сроком; `--strict` и просроченный `reviewBy` не подавляют (см. §6.2). Проверка `regress-allowlist` c1–c10.
+- **Сторож `job.mjs`: heartbeat и `STALE`.** Мёртвый сторож даёт вердикт `STALE` с причиной вместо вечного `RUNNING`;
+  `wait` без `--timeout` ограничен 30 минутами; `start` проверяет, что сторож жив, и печатает `FAILED`. `task-accept` пишет
+  маркер стадий в `~/.dsh/workflow/progress/<sha12>/<task>.json`. Проверка `job-runner` c1–c5.
+- **Перезапуск DSH не требуется** (изменения движка); панель не менялась (0.9.35).
 Версия 2.6.81: неизменяемые пресеты узлов (0133) — presets/<id>.json с хешем в presets/lock.json, зона автора плагина; spec/checks/node-presets.mjs проверяет целостность, обязательные требования (пайплайн release.mjs, release-receipt --online, запреты push/gh/publish-public) и отсутствие обхода в промпте; preflight релиза теперь включает онлайн-квитанции; presets/ в защищённых путях task-guard.
 Версия 2.6.80: единая форма утверждения (0130) — signature{keyId,algo,covers:'hash+by+at',value}, подпись по canonical({hash,by,at}); плоская форма 0.2 читается по-прежнему; панель выпускает вложенную форму; словарь области sides project|contour|both.
 Версия 2.6.79: проектный слой якорей (0128) — anchor-freshness --project: обязательные layer=project, enforcedBy=nodes, check из списка, proof, потолок 15, дубль claim по нормализации, LF в конце файла, подпись владельца; пустой слой — предупреждение, а не отказ.

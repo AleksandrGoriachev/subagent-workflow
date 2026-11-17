@@ -1,5 +1,13 @@
 # Изменения
 
+## 2.6.82 — 2026-11-18 (панель 0.9.35)
+
+- **Закрытие задания без приёмки (task-close).** `docs/tasks/<id>/closure.json` (`closed|superseded`, reason, by, at, successor, evidence); строка аудита в `docs/subagent-workflow/audit/task-closures.jsonl`; `--delete-contract` и `--full`. Закрытое задание не активно для `task-guard` (не расширяет `allowedPaths`), `task-accept`/`task-verify` отказывают, `task-lint` предупреждает «закрыто без приёмки»; переоткрытие — новым id. Проверка `closure-accounting` c1–c7.
+- **Проектный allowlist регресса.** `docs/subagent-workflow/regress.allowlist.json`, `--allowlist`, `workflow.config.json → regress.allowlist`, legacy `docs/tasks/<id>/regress.allowlist.json`. Известный провал критерия — `allowed` с причиной и `reviewBy`; `--strict` и просрочка не подавляют. Отчёт: `report.allowlist`, `summary.allowed`, `summary.allowlistExpired`. Проверка `regress-allowlist` c1–c10.
+- **Сторож `job.mjs`: heartbeat и `STALE`.** Мёртвый сторож переводит задание в `STALE` (wait/status/list), а не оставляет `RUNNING`; `wait` без `--timeout` — 30 мин (`--timeout 0` — без лимита); `start` проверяет живость сторожа и печатает `FAILED`. `task-accept` пишет маркер стадий в `~/.dsh/workflow/progress/` (`WF_PROGRESS_DIR` переопределяет). Проверка `job-runner` c1–c5 (c4–c5 в CI).
+- CI: шаги `closure-accounting`, `regress-allowlist`, `job-runner c1–c5`.
+- **Перезапуск DSH не требуется** (проверки движка); панель не менялась (0.9.35).
+
 ## 2.6.81 — 2026-11-10 (панель 0.9.35)
 
 - **Неизменяемые пресеты узлов (0133).** `presets/<id>.json` + `presets/lock.json`: ограничения узла — данные, а не текст промпта. Проверка `spec/checks/node-presets.mjs` сверяет хеш, требует пайплайн `tools/release.mjs`, `release-receipt --online` в предполёте, запреты `git push`/`gh release`/`publish-public` и отсутствие обхода в промпте. Подмена пресета без замка — отказ; он же падает в selftest.
