@@ -21,17 +21,23 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  parseArgv, readTask, loadConfig, exists, writeJson,
+  parseArgv, readTask, loadConfig, exists, writeJson, relPosix,
   runCommand, evaluateExpectation, isManual, formatMs, headCommit,
 } from './lib/common.mjs';
 import { loadAcceptors, verifyRecord } from './sign.mjs';
-import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './lib/regress.mjs';
+import {
+  classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail,
+  parseAllowlist, allowlistCandidates, applyAllowlistToResults, ALLOWLIST_PROJECT_PATH,
+} from './lib/regress.mjs';
 
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
   console.log('Usage: node task-regress.mjs --repo <dir> [--task <dir>] [--strict] [--json] [--out <file>]');
   console.log('       [--baseline <file>] [--write-baseline <file>] [--include-violations] [--timeout <ms>]');
+  console.log('       [--allowlist <file>]');
   console.log('Перезапускает критерии принятых заданий; ничего не принимает и не пишет в задачи.');
+  console.log('--allowlist: известные провалы критериев (по умолчанию ' + ALLOWLIST_PROJECT_PATH + ').');
+  console.log('  Порядок: --allowlist → workflow.config.json → regress.allowlist → проект → docs/tasks/<id>/regress.allowlist.json.');
   console.log('--strict: unproven-lawful и просроченный baseline тоже дают exit 1.');
   console.log('--include-violations: писать в baseline и unproven-violation (по умолчанию — только законный долг).');
   process.exit(0);
@@ -49,6 +55,68 @@ if (!exists(keysFile)) {
   process.exit(1);
 }
 const acceptors = loadAcceptors(keysFile);
+
+/*
+ * Проектный allowlist (2.6.82): известный провал критерия не выдаётся за регресс,
+ * но и не исчезает — попадает в отчёт как allowed с причиной и сроком.
+ * Порядок источников: --allowlist → config regress.allowlist → проект → legacy
+ * docs/tasks/<id>/regress.allowlist.json (у каждой задачи свой).
+ */
+const allowlistState = {
+  global: null,
+  source: null,
+  files: [],
+  problems: [],
+};
+
+function loadAllowlistFrom(file, source) {
+  const parsed = parseAllowlist(fs.readFileSync(file, 'utf8'), source);
+  allowlistState.files.push({ file: relPosix(repo, file), source, entries: parsed.entries.length });
+  for (const problem of parsed.problems) allowlistState.problems.push(source + ': ' + problem);
+  if (parsed.fatal) {
+    console.error('task-regress: allowlist не разобран (' + relPosix(repo, file) + '): ' + parsed.problems.join('; '));
+    process.exit(1);
+  }
+  return parsed;
+}
+
+(function resolveGlobalAllowlist() {
+  const configured = config.regress && typeof config.regress === 'object' ? config.regress.allowlist : undefined;
+  const candidates = allowlistCandidates({ repo, argvAllowlist: argv.allowlist, configAllowlist: configured });
+  for (const candidate of candidates) {
+    if (!exists(candidate.file)) {
+      if (candidate.required) {
+        console.error('task-regress: allowlist не найден (' + candidate.source + '): ' + relPosix(repo, candidate.file));
+        process.exit(1);
+      }
+      continue;
+    }
+    allowlistState.global = loadAllowlistFrom(candidate.file, candidate.source);
+    allowlistState.source = candidate.source;
+    break;
+  }
+})();
+
+const legacyAllowlists = new Map();
+
+/** Allowlist для конкретной задачи: глобальный файл, иначе legacy в каталоге задачи. */
+function allowlistForTask(taskDir, taskId, criteriaIds) {
+  if (allowlistState.global) {
+    for (const entry of allowlistState.global.entries) {
+      if (entry.task !== taskId) continue;
+      for (const criterion of entry.criteria) {
+        if (!criteriaIds.includes(criterion)) {
+          allowlistState.problems.push('allowlist: ' + taskId + '/' + criterion + ' — такого критерия нет в criteria.json задания');
+        }
+      }
+    }
+    return allowlistState.global;
+  }
+  const legacy = path.join(taskDir, 'regress.allowlist.json');
+  if (!exists(legacy)) return null;
+  if (!legacyAllowlists.has(legacy)) legacyAllowlists.set(legacy, loadAllowlistFrom(legacy, 'legacy задачи ' + taskId));
+  return legacyAllowlists.get(legacy);
+}
 
 function readRecord(file) {
   const buffer = fs.readFileSync(file);
@@ -70,8 +138,11 @@ function taskDirs() {
     .filter((dir) => exists(path.join(dir, 'acceptance.json')) && exists(path.join(dir, 'task.md')));
 }
 
-async function regressTask(taskDir) {
+async function regressTask(taskDir, allowlistForTask) {
   const { meta, criteria } = readTask(taskDir);
+  const taskAllowlist = typeof allowlistForTask === 'function'
+    ? allowlistForTask(taskDir, String(meta.id), criteria.criteria.map((criterion) => String(criterion.id)))
+    : null;
   const record = readRecord(path.join(taskDir, 'acceptance.json'));
   const entry = acceptors.find((item) => item.keyId === record.keyId);
   const signatureOk = Boolean(entry) && verifyRecord(record, entry.publicKeyPem);
@@ -94,6 +165,7 @@ async function regressTask(taskDir) {
     failedIds: [],
     timedOutIds: [],
     results: [],
+    allowed: [],
     baseline: null,
     expiredBaseline: false,
   };
@@ -134,8 +206,14 @@ async function regressTask(taskDir) {
     }
   }
 
+  /*
+   * Известный провал (allowlist) не становится регрессом, но остаётся в отчёте:
+   * строка allowed несёт причину, владельца и срок. При --strict просроченная
+   * запись не подавляет провал — долг обязан быть починен или переутверждён.
+   */
+  result.allowed.push(...applyAllowlistToResults(results, taskAllowlist, String(meta.id), { strict }));
   const executed = results.filter((item) => item.passed !== null);
-  const failed = executed.filter((item) => item.passed === false);
+  const failed = executed.filter((item) => item.passed === false && !item.allowedBy);
   result.executed = executed.length;
   result.failed = failed.length;
   result.failedIds = failed.map((item) => item.id);
@@ -171,7 +249,7 @@ if (tasks.length === 0) {
 
 for (const taskDir of tasks) {
   try {
-    report.tasks.push(await regressTask(taskDir));
+    report.tasks.push(await regressTask(taskDir, allowlistForTask));
   } catch (err) {
     report.tasks.push({
       task: path.basename(taskDir),
@@ -183,6 +261,15 @@ for (const taskDir of tasks) {
     });
   }
 }
+
+report.allowlist = {
+  source: allowlistState.source,
+  files: allowlistState.files,
+  entries: allowlistState.global
+    ? allowlistState.global.entries.length
+    : allowlistState.files.reduce((sum, item) => sum + item.entries, 0),
+  problems: allowlistState.problems,
+};
 
 /* Baseline: осознанный долг, зафиксированный в репозитории. */
 const baselinePath = argv.baseline ? path.resolve(repo, String(argv.baseline)) : null;
@@ -209,7 +296,15 @@ if (baseline) {
 const counts = {};
 for (const item of report.tasks) counts[item.status] = (counts[item.status] || 0) + 1;
 const timeouts = report.tasks.filter((item) => (item.timedOutIds || []).length > 0).length;
-report.summary = { total: report.tasks.length, ...counts, ...(timeouts > 0 ? { timeout: timeouts } : {}) };
+const allowedCount = report.tasks.reduce((sum, item) => sum + (item.allowed || []).length, 0);
+const allowedExpired = report.tasks.reduce((sum, item) => sum + (item.allowed || []).filter((entry) => entry.expired).length, 0);
+report.summary = {
+  total: report.tasks.length,
+  ...counts,
+  ...(allowedCount > 0 ? { allowed: allowedCount } : {}),
+  ...(allowedExpired > 0 ? { allowlistExpired: allowedExpired } : {}),
+  ...(timeouts > 0 ? { timeout: timeouts } : {}),
+};
 
 const writeBaselinePath = argv['write-baseline'] ? path.resolve(repo, String(argv['write-baseline'])) : null;
 if (writeBaselinePath) {
@@ -227,14 +322,26 @@ if (argv.json) {
   console.log(JSON.stringify(report, null, 2));
 } else {
   console.log('task-regress: ' + report.summary.total + ' задач(и)' + (strict ? ' [strict]' : ''));
+  if (report.allowlist && report.allowlist.entries > 0) {
+    console.log('  allowlist: ' + report.allowlist.entries + ' записей (' + (report.allowlist.source || 'legacy') + ')');
+  }
+  for (const problem of report.allowlist && report.allowlist.problems ? report.allowlist.problems : []) {
+    console.log('  WARN allowlist: ' + problem);
+  }
   for (const item of report.tasks) {
     const mark = item.status.toUpperCase();
     const extra = item.baseline
       ? '  baseline' + (item.expiredBaseline ? ' ПРОСРОЧЕН (' + item.baseline.reviewBy + ')' : ' до ' + (item.baseline.reviewBy || '—'))
       : '';
     console.log('  ' + mark.padEnd(20) + ' ' + item.task + '  ' + (item.reason || '') + extra);
+    for (const allowed of item.allowed || []) {
+      const term = allowed.reviewBy
+        ? (allowed.expired ? ' ПРОСРОЧЕН ' + allowed.reviewBy : ' до ' + allowed.reviewBy)
+        : ' без срока';
+      console.log('      ДОПУЩЕНО ' + allowed.id + term + '  ' + allowed.reason);
+    }
     for (const result of item.results || []) {
-      if (result.passed === false) {
+      if (result.passed === false && !result.allowedBy) {
         console.log('      ' + result.id + (result.timedOut ? ' (таймаут)' : '') + '  '
           + formatMs(result.durationMs) + '  ' + (result.reasons || []).join('; '));
       }

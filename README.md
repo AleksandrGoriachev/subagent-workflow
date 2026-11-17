@@ -47,6 +47,7 @@ node docs/subagent-workflow/scripts/task-close.mjs --task docs/tasks/0001 \
 | `spec/scripts/init.mjs` | Развернуть пространство в проекте |
 | `spec/scripts/new-task.mjs` | Создать задание |
 | `spec/scripts/task-*.mjs` | Ворота: attack, hash, lint, red, verify, accept, close, check, regress |
+| `docs/subagent-workflow/regress.allowlist.json` | Проектный allowlist регресса: известные провалы критериев с причиной и сроком (2.6.82) |
 | `spec/scripts/task-guard.mjs` | Коммит без задания: покрытие индекса и диапазона, аудит обходов (2.5.0) |
 | `spec/hooks/` | Хуки git: `init` ставит их локальным `core.hooksPath` |
 | `spec/scripts/actor.mjs` | Аттестация актора, уровень независимости |

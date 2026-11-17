@@ -1394,6 +1394,25 @@ measuredBy}`: `measuredBy` обязателен и обязан указыват
 защита от владельца машины. Панель переключает только `guard.enabled` и
 дописывает строку в `guard.log` (I-29).
 
+### 6.2. Проектный allowlist регресса (2.6.82)
+
+Известный провал критерия принятого задания не объявляется регрессом, но и не исчезает: он
+попадает в отчёт как `allowed` с причиной и сроком.
+
+Файл: `docs/subagent-workflow/regress.allowlist.json` (массив записей или `{ "entries": [...] }`):
+`{ "task": "0111", "criteria": ["C2"], "reason": "почему провал известен",`
+`  "reviewBy": "2026-12-12", "owner": "coordinator" }`.
+
+1. Порядок источников (первый найденный побеждает): `--allowlist <файл>` → `workflow.config.json →`
+   `regress.allowlist` → проектный файл → legacy `docs/tasks/<id>/regress.allowlist.json`.
+2. Запись без `task`/`criteria`/`reason` не принимается и попадает в `problems`; `owner` и
+   `reviewBy` желательны (отсутствие фиксируется предупреждением). Битый JSON или чужой формат —
+   отказ `task-regress` (exit 1), а не молчаливое отключение подавления.
+3. `--strict`: просроченный `reviewBy` не подавляет провал (долг чинится или переутверждается).
+   Без strict — подавляет, но отчёт помечает `ПРОСРОЧЕН`, а `summary.allowlistExpired` считает такие записи.
+4. Отчёт: `report.allowlist { source, files, entries, problems }`; у задания — `allowed[]`
+   (`id`, `reason`, `reviewBy`, `owner`, `expired`); в `summary` — `allowed` и `allowlistExpired`.
+
 ## 7. Запись о приёмке (версия 6)
 
 Версии 4 и 5 остаются проверяемыми: исторические записи не ломаются. Новые записи —
