@@ -923,6 +923,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         /* 0120: результат действия должен быть виден — и успех, и причина отказа. */
         const [anchorsNote, setAnchorsNote] = React.useState(null);
         const [anchorsError, setAnchorsError] = React.useState(null);
+        /* 2.6.82: какой набор человек видит в предпросмотре и подписывает — контур или проект. */
+        const [anchorsLayer, setAnchorsLayer] = React.useState("contour");
         /*
          * 0090 (WC-4): первая запись из панели. Панель не пишет тексты — она
          * зовёт штатные task-hash.mjs / new-task.mjs и показывает их вывод.
@@ -1754,22 +1756,22 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
          * на сбое сети ответ всё равно 200 и несёт последнюю удачную пару —
          * поэтому панель показывает «последняя удачная 18:40», а не «aborted».
          */
-        async function loadAnchors() {
+        async function loadAnchors(layer = anchorsLayer) {
           setAnchorsError(null);
           try {
-            const response = await fetch(BASE + "/api/anchors", { headers: { Accept: "application/json" } });
+            const response = await fetch(BASE + "/api/anchors?layer=" + encodeURIComponent(layer), { headers: { Accept: "application/json" } });
             setAnchors(await readJson(response));
           } catch (failure) {
             setAnchorsError(errorText(failure));
           }
         }
 
-        async function approveAnchorsNow() {
+        async function approveAnchorsNow(layer = anchorsLayer) {
           if (anchorsBusy) return;
           setAnchorsBusy(true);
           setAnchorsError(null);
           try {
-            const response = await fetch(BASE + "/api/anchors/approve", {
+            const response = await fetch(BASE + "/api/anchors/approve?layer=" + encodeURIComponent(layer), {
               method: "POST",
               headers: { "Content-Type": "application/json", Accept: "application/json" },
               body: JSON.stringify({ confirm: true }),
@@ -1824,6 +1826,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         function renderAnchorsCard() {
           /* Кнопки и карточки называют предмет, результат действия и цену бездействия. */
           const approved = Boolean(anchors && anchors.approved === true);
+          /* 2.6.82: переключатель только когда в корне есть оба набора. */
+          const showLayerSwitch = Boolean(anchors && anchors.available && anchors.available.contour && anchors.available.project);
+          const layerLabel = anchorsLayer === "project" ? "проект (этот воркспейс)" : "контур (движок workflow)";
           const hint = approved
             ? "Якоря — общие правила контура, по которым проверяются задачи и выпуски. Утверждение уже есть; повторное утверждение не требуется, пока файл правил не менялся. Без действительной подписи проверки не принимают набор правил."
             : "Якоря — общие правила контура, по которым проверяются задачи и выпуски. Кнопка проверяет список и ставит вашу человеческую подпись под его текущей редакцией (docs/anchors.json); сами формулировки и рабочие пространства не меняет. Без подписи проверки считают набор неутверждённым и релиз не проходит.";
@@ -1856,7 +1861,28 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "section",
             { style: S.section },
             h("h3", { style: S.sectionTitle }, "Семантические якоря"),
-            h("div", { style: S.stageText }, hint),
+            showLayerSwitch ? h(
+              "div",
+              { style: Object.assign({}, S.actions, { marginBottom: "4px", marginTop: 0 }) },
+              ["contour", "project"].map((layer) => h(
+                "button",
+                {
+                  key: layer,
+                  type: "button",
+                  style: anchorsLayer === layer ? S.button : Object.assign({}, S.button, { opacity: 0.6 }),
+                  disabled: anchorsBusy,
+                  onClick: () => {
+                    if (anchorsLayer === layer) return;
+                    setAnchorsLayer(layer);
+                    setAnchors(null);
+                    setAnchorsError(null);
+                    void loadAnchors(layer);
+                  },
+                },
+                layer === "contour" ? "Контур (движок)" : "Проект (этот воркспейс)",
+              )),
+            ) : null,
+            h("div", { style: S.stageText }, hint + " Набор в предпросмотре: " + layerLabel + "."),
             h(
               "div",
               { style: Object.assign({}, S.summaryGrid, { margin: "8px 0" }) },
@@ -1867,7 +1893,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             anchorsError ? h("div", { style: Object.assign({}, S.error, { marginBottom: "8px" }) }, "Не удалось получить или утвердить якоря. Остальные данные оставлены без изменений. Причина: " + (anchors && anchors.problems && anchors.problems.length ? anchors.problems[0] : anchorsError) + ". Повторите обновление данных.") : null,
             anchors && anchors.approved === true ? h("div", { style: Object.assign({}, S.hint, { borderColor: T.success, color: T.success, fontWeight: "600" }) }, "Якоря утверждены: ключ " + fmt(anchors.keyId) + " · " + fmt(anchors.at) + " · хеш " + String(anchors.hash || "").slice(0, 12) + "…") : null,
             h("div", { style: S.anchorList, role: "region", "aria-label": "Список правил семантических якорей" }, ruleRows),
-            h("div", { style: Object.assign({}, S.stageText, { marginTop: "6px" }) }, "Файл: " + fmt(anchors && anchors.file) + " · хеш: " + integrity),
+            h("div", { style: Object.assign({}, S.stageText, { marginTop: "6px" }) }, "Набор: " + layerLabel + " · файл: " + fmt(anchors && anchors.file) + " · хеш: " + integrity),
             h(
               "div",
               { style: Object.assign({}, S.actions, { marginTop: "8px", marginBottom: 0 }) },
@@ -1878,11 +1904,11 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                   style: anchorsBusy || approvalUnavailable || anchorsError ? Object.assign({}, S.button, S.buttonDisabled) : S.button,
                   disabled: anchorsBusy || approvalUnavailable || Boolean(anchorsError),
                   onClick: () => {
-                    if (approved) void loadAnchors();
+                    if (approved) void loadAnchors(anchorsLayer);
                     else {
                       setAnchorsError(null);
                       setAnchors(null);
-                      void approveAnchorsNow();
+                      void approveAnchorsNow(anchorsLayer);
                     }
                   },
                   title: approvalUnavailable

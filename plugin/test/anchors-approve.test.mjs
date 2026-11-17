@@ -50,6 +50,29 @@ function configOf(parts, overrides = {}) {
   };
 }
 
+test('c6: проектный слой утверждается отдельно и не подменяет контур', () => {
+  const parts = makeRoot();
+  fs.writeFileSync(path.join(parts.root, 'docs', 'anchors.json'), JSON.stringify({
+    version: 1,
+    anchors: [{
+      id: 'P1', claim: 'правило проекта', layer: 'project', enforcedBy: 'nodes', check: 'tool',
+      proof: { command: 'node x.mjs', artifact: 'OK' }, status: 'auto',
+      confirmed: { version: '2.6.82', date: '2026-11-18' }, owner: 'пользователь',
+    }],
+  }));
+  const before = anchorsStatus(parts.root, configOf(parts), 'project');
+  assert.equal(before.ok, true);
+  assert.equal(before.approved, false);
+  assert.equal(before.layer, 'project');
+  const approved = approveAnchors(parts.root, configOf(parts), 'project');
+  assert.equal(approved.approved, true);
+  assert.equal(approved.layer, 'project');
+  assert.ok(fs.existsSync(path.join(parts.root, 'docs', 'anchors.approval.json')));
+  const contour = anchorsStatus(parts.root, configOf(parts), 'contour');
+  assert.equal(contour.approved, false, 'проектная подпись не должна утверждать контур');
+  fs.rmSync(parts.root, { recursive: true, force: true });
+});
+
 test('c1: без утверждения статус — не утверждены', () => {
   const parts = makeRoot();
   const status = anchorsStatus(parts.root, configOf(parts));

@@ -561,15 +561,19 @@ export function createWebHandler(runtime) {
         return;
       }
 
-      /* 0111 (WC-77): утверждение якорей из панели — человек нажимает, ключ лежит вне репозитория. */
+      /*
+       * 0111 (WC-77): утверждение якорей из панели — человек нажимает, ключ лежит вне репозитория.
+       * 2.6.82: слой выбирает человек в предпросмотре — контур (движок) или проект (воркспейс).
+       */
+      const anchorsLayer = url.searchParams.get('layer') === 'project' ? 'project' : 'contour';
       if (rel === '/api/anchors') {
-        sendJson(res, 200, anchorsStatus(selection.root, loadConfig(selection.root)));
+        sendJson(res, 200, anchorsStatus(selection.root, loadConfig(selection.root), anchorsLayer));
         return;
       }
 
       if (rel === '/api/anchors/approve') {
         try {
-          sendJson(res, 200, approveAnchors(selection.root, loadConfig(selection.root)));
+          sendJson(res, 200, approveAnchors(selection.root, loadConfig(selection.root), anchorsLayer));
         } catch (error) {
           sendJson(res, 200, { ok: false, problems: [error && error.message ? error.message : String(error)] });
         }

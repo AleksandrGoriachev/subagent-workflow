@@ -24,7 +24,7 @@ export function expandPath(value) {
 }
 
 /** Где лежат якоря: конфиг панели перекрывает умолчания. */
-export function anchorsConfig(root, config) {
+export function anchorsConfig(root, config, layer = 'contour') {
   const base = path.resolve(String(root || '.'));
   const raw = config && typeof config.anchors === 'object' && config.anchors !== null ? config.anchors : {};
   /*
@@ -36,17 +36,36 @@ export function anchorsConfig(root, config) {
     const expanded = expandPath(fallback);
     return path.isAbsolute(expanded) ? expanded : path.join(base, expanded);
   };
+  /*
+   * 2.6.82: два набора — контурный (движок) и проектный (воркспейс). Панель
+   * утверждает тот, который человек видит в предпросмотре; по умолчанию контур,
+   * как раньше.
+   */
+  const target = layer === 'project'
+    ? {
+      file: pick('projectFile', path.join('docs', 'anchors.json')),
+      approval: pick('projectApproval', path.join('docs', 'anchors.approval.json')),
+      scope: 'project', layer: 'project', sides: 'project', enforcedBy: 'nodes',
+    }
+    : {
+      file: pick('file', path.join('subagent-workflow-v2', 'docs', 'anchors.json')),
+      approval: pick('approval', path.join('subagent-workflow-v2', 'docs', 'anchors.approval.json')),
+      scope: typeof raw.scope === 'string' && raw.scope.trim() !== '' ? raw.scope.trim() : 'project',
+      /* 0130: словарь гейта structure (0194/1.0.68): layer, sides (область), enforcedBy. */
+      layer: typeof raw.layer === 'string' && raw.layer.trim() !== '' ? raw.layer.trim() : 'contour',
+      sides: typeof raw.sides === 'string' && raw.sides.trim() !== '' ? raw.sides.trim() : 'contour',
+      enforcedBy: typeof raw.enforcedBy === 'string' && raw.enforcedBy.trim() !== '' ? raw.enforcedBy.trim() : 'both',
+    };
   return {
-    file: pick('file', path.join('subagent-workflow-v2', 'docs', 'anchors.json')),
-    approval: pick('approval', path.join('subagent-workflow-v2', 'docs', 'anchors.approval.json')),
+    file: target.file,
+    approval: target.approval,
     keyFile: pick('keyFile', path.join(os.homedir(), '.dsh', 'keys', 'human-user.key.pem')),
     keyId: typeof raw.keyId === 'string' && raw.keyId.trim() !== '' ? raw.keyId.trim() : 'human-user',
     acceptors: pick('acceptors', path.join('docs', 'subagent-workflow', 'acceptors.json')),
-    scope: typeof raw.scope === 'string' && raw.scope.trim() !== '' ? raw.scope.trim() : 'project',
-    /* 0130: словарь гейта structure (0194/1.0.68): layer, sides (область), enforcedBy. */
-    layer: typeof raw.layer === 'string' && raw.layer.trim() !== '' ? raw.layer.trim() : 'contour',
-    sides: typeof raw.sides === 'string' && raw.sides.trim() !== '' ? raw.sides.trim() : 'contour',
-    enforcedBy: typeof raw.enforcedBy === 'string' && raw.enforcedBy.trim() !== '' ? raw.enforcedBy.trim() : 'both',
+    scope: target.scope,
+    layer: target.layer,
+    sides: target.sides,
+    enforcedBy: target.enforcedBy,
   };
 }
 
@@ -98,10 +117,14 @@ function readJson(file) {
 }
 
 /** Состояние утверждения для панели. */
-export function anchorsStatus(root, config) {
-  const cfg = anchorsConfig(root, config);
+export function anchorsStatus(root, config, layer = 'contour') {
+  const cfg = anchorsConfig(root, config, layer);
+  const available = {
+    contour: fs.existsSync(anchorsConfig(root, config, 'contour').file),
+    project: fs.existsSync(anchorsConfig(root, config, 'project').file),
+  };
   if (!fs.existsSync(cfg.file)) {
-    return { ok: false, approved: false, config: cfg, problems: ['якоря не найдены: ' + cfg.file] };
+    return { ok: false, approved: false, config: cfg, layer: cfg.layer, available, problems: ['якоря не найдены: ' + cfg.file] };
   }
   const hash = hashFile(cfg.file);
   /*
@@ -127,7 +150,7 @@ export function anchorsStatus(root, config) {
   const acceptorsRaw = readJson(cfg.acceptors);
   const acceptors = acceptorsRaw && Array.isArray(acceptorsRaw.acceptors) ? acceptorsRaw.acceptors : [];
   if (!approval) {
-    return { ok: true, approved: false, hash, file: cfg.file, approvalFile: cfg.approval, anchors: list, config: cfg, problems: ['якоря не утверждены: нет ' + path.basename(cfg.approval)] };
+    return { ok: true, approved: false, hash, file: cfg.file, approvalFile: cfg.approval, anchors: list, config: cfg, layer: cfg.layer, available, problems: ['якоря не утверждены: нет ' + path.basename(cfg.approval)] };
   }
   const signed = verifyApproval(approval, acceptors);
   const hashMatches = String(approval.hash || '') === hash;
@@ -142,6 +165,8 @@ export function anchorsStatus(root, config) {
     file: cfg.file,
     approvalFile: cfg.approval,
     anchors: list,
+    layer: cfg.layer,
+    available,
     keyId: approval.keyId || (approval.signature && typeof approval.signature === 'object' ? approval.signature.keyId : null) || null,
     at: approval.at || null,
     scope: approval.scope || null,
@@ -154,9 +179,9 @@ export function anchorsStatus(root, config) {
  * Подписать утверждение человеческим ключом. Ключ читается с диска и не
  * покидает процесс; панель не хранит приватный материал.
  */
-export function approveAnchors(root, config) {
-  const cfg = anchorsConfig(root, config);
-  const status = anchorsStatus(root, config);
+export function approveAnchors(root, config, layer = 'contour') {
+  const cfg = anchorsConfig(root, config, layer);
+  const status = anchorsStatus(root, config, layer);
   if (status.ok !== true || !status.hash) return { ok: false, problems: status.problems || ['якоря не читаются'] };
   if (!fs.existsSync(cfg.keyFile)) {
     return { ok: false, problems: ['нет человеческого ключа: ' + cfg.keyFile + ' — создайте его через sign.mjs keygen'] };
@@ -183,6 +208,7 @@ export function approveAnchors(root, config) {
     layer: cfg.layer,
     sides: cfg.sides,
     enforcedBy: cfg.enforcedBy,
+    scope: cfg.scope,
     by: payload.by,
     at: payload.at,
     publicKeyFingerprint: crypto.createHash('sha256').update(crypto.createPublicKey(privateKey).export({ type: 'spki', format: 'der' })).digest('hex').slice(0, 16),
@@ -191,7 +217,7 @@ export function approveAnchors(root, config) {
   fs.mkdirSync(path.dirname(cfg.approval), { recursive: true });
   fs.writeFileSync(cfg.approval, JSON.stringify(record, null, 2) + '\n');
   /* 0120: панель показывает состояние по верхним полям — отдаём их, а не только вложенный dashboard. */
-  const dashboard = anchorsStatus(root, config);
+  const dashboard = anchorsStatus(root, config, layer);
   return { ...dashboard, ok: true, signed: true, hash: record.hash, keyId: cfg.keyId, at: record.at, file: cfg.approval, dashboard };
 }
 
