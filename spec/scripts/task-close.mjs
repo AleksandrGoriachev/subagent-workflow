@@ -68,7 +68,8 @@ export function contractFilesToDelete(full) {
   const base = ['task.md', 'criteria.json'];
   if (!full) return base;
   const extra = [...TASK_ARTIFACTS].filter((name) => name !== 'acceptance.json' && name !== 'task.md' && name !== 'criteria.json');
-  return [...base, ...extra, 'preflight.json'];
+  /* attack.json — разбор атаки спецификации; preflight.json — предполёт контракта. */
+  return [...base, ...extra, 'attack.json', 'preflight.json'];
 }
 
 /**

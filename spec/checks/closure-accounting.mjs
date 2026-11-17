@@ -8,7 +8,8 @@
  *  - c3: закрытое задание закрыть повторно нельзя (закрытие окончательное);
  *  - c4: --delete-contract удаляет контракт, оставляя closure.json, и пишет удалённое в аудит;
  *  - c5: закрытое задание не активно для task-guard (не расширяет allowedPaths);
- *  - c6: task-accept и task-verify отказывают закрытому заданию.
+ *  - c6: task-accept и task-verify отказывают закрытому заданию;
+ *  - c7: --full удаляет и attack.json (артефакт задания), оставляя closure.json.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -113,6 +114,14 @@ try {
   equal(closedTask.active, false, 'c5: закрытое задание не активно');
   equal(closedTask.open, false, 'c5: закрытое задание не открыто');
 
+  /* c7: --full удаляет артефакты задания, включая attack.json */
+  const dir5 = makeTask('0005');
+  fs.writeFileSync(path.join(dir5, 'attack.json'), '{}\n');
+  closeTask({ repo, taskDir: dir5, status: 'closed', reason: 'брошено', by: 'tester', deleteContract: true, full: true });
+  truthy(!fs.existsSync(path.join(dir5, 'attack.json')), 'c7: attack.json удалён при --full');
+  truthy(!fs.existsSync(path.join(dir5, 'criteria.lock')), 'c7: criteria.lock удалён при --full');
+  truthy(fs.existsSync(path.join(dir5, 'closure.json')), 'c7: closure.json остался');
+
   /* c6: приёмка и верификация закрытого отказывают */
   for (const script of ['task-accept.mjs', 'task-verify.mjs']) {
     const run = spawnSyncPipeFree(process.execPath, [path.join(SCRIPTS, script), '--task', dir3, '--repo', repo], { encoding: 'utf8' });
@@ -123,4 +132,4 @@ try {
   fs.rmSync(repo, { recursive: true, force: true });
 }
 
-console.log('closure-accounting: OK c1–c6');
+console.log('closure-accounting: OK c1–c7');
