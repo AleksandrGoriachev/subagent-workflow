@@ -9,7 +9,10 @@
  *  - c4: решение: подавление только при совпадении task+criterion; просрочка подавляет, но при --strict — нет;
  *  - c5: применение помечает провал allowedBy и не считает его провалом; зелёные строки не трогает;
  *  - c6: битый JSON — fatal, entries пусты;
- *  - c7: CLI: проектный allowlist подхватывается; битый проектный файл — exit 1; --allowlist без файла — exit 1.
+ *  - c7: CLI: проектный allowlist подхватывается; битый проектный файл — exit 1; --allowlist без файла — exit 1;
+ *  - c8: принятая задача с падающим критерием + проектный allowlist — exit 0, задание ok, провал в allowed;
+ *  - c9: без allowlist тот же провал — regressed, exit 1;
+ *  - c10: просроченный reviewBy при --strict не подавляет — exit 1.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -20,6 +23,7 @@ import {
   ALLOWLIST_PROJECT_PATH,
 } from '../scripts/lib/regress.mjs';
 import { spawnSyncPipeFree } from '../scripts/lib/common.mjs';
+import { generateKeyPair, signRecord } from '../scripts/sign.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.join(HERE, '..', 'scripts', 'task-regress.mjs');
@@ -125,8 +129,63 @@ truthy(String(badRun.stderr || '').includes('allowlist не разобран'), 
 const missing = spawnSyncPipeFree(process.execPath, [SCRIPT, '--repo', goodRepo, '--allowlist', path.join(goodRepo, 'nope.json')], { encoding: 'utf8' });
 equal(missing.status, 1, 'c7: --allowlist без файла — exit 1');
 
+/* c8–c10: полный прогон task-regress на принятой задаче с падающим критерием */
+const keys = generateKeyPair();
+function acceptedRepo(allowlistEntries) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-allowlist-accepted-'));
+  fs.mkdirSync(path.join(dir, 'docs', 'tasks', '0001'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'docs', 'subagent-workflow'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'docs', 'subagent-workflow', 'acceptors.json'), JSON.stringify({
+    acceptors: [{ keyId: 'agent-judge', publicKeyPem: keys.publicKeyPem, kind: 'agent' }],
+  }, null, 2) + '\n');
+  const meta = {
+    id: '0001', version: 1, title: 'фикстура allowlist', risk: 'low', created: '2026-11-17',
+    owner: 'архитектор', executor: 'subagent:executor', acceptor: 'subagent:judge',
+    base: 'HEAD', criteria: 'criteria.json', allowedPaths: ['lib/**'],
+  };
+  fs.writeFileSync(path.join(dir, 'docs', 'tasks', '0001', 'task.md'),
+    '# Задание 0001\n<!-- TASK-META\n' + JSON.stringify(meta, null, 2) + '\n-->\n');
+  fs.writeFileSync(path.join(dir, 'docs', 'tasks', '0001', 'criteria.json'), JSON.stringify({
+    task: '0001',
+    criteria: [{ id: 'C1', title: 'падает', command: 'node -e "process.exit(1)"', expect: { exitCode: 0 } }],
+  }, null, 2) + '\n');
+  const record = signRecord({
+    version: 6, task: '0001', status: 'accepted', risk: 'low',
+    acceptedAt: '2026-11-17T10:00:00.000Z', contractCommit: 'abc123',
+    red: { baseSha: 'abc123', redProven: true }, actor: { session: 's2' }, decisions: [],
+  }, { privateKeyPem: keys.privateKeyPem, keyId: 'agent-judge' });
+  fs.writeFileSync(path.join(dir, 'docs', 'tasks', '0001', 'acceptance.json'), JSON.stringify(record, null, 2) + '\n');
+  if (allowlistEntries !== null) {
+    fs.writeFileSync(path.join(dir, ALLOWLIST_PROJECT_PATH), JSON.stringify(allowlistEntries) + '\n');
+  }
+  return dir;
+}
+const runRegress = (dir, extra = []) => spawnSyncPipeFree(process.execPath, [SCRIPT, '--repo', dir, '--json', ...extra], { encoding: 'utf8' });
+
+const acceptedWith = acceptedRepo([{ task: '0001', criteria: ['C1'], reason: 'известный провал', reviewBy: '2026-12-12', owner: 'coordinator' }]);
+const withRun = runRegress(acceptedWith);
+equal(withRun.status, 0, 'c8: известный провал не валит регресс: ' + String(withRun.stderr || '').slice(0, 200));
+const withReport = JSON.parse(withRun.stdout);
+equal(withReport.tasks[0].status, 'ok', 'c8: задание ok');
+equal(withReport.summary.allowed, 1, 'c8: summary.allowed = 1');
+equal(withReport.tasks[0].allowed[0].id, 'C1', 'c8: allowed перечисляет C1');
+
+const acceptedWithout = acceptedRepo(null);
+const withoutRun = runRegress(acceptedWithout);
+equal(withoutRun.status, 1, 'c9: без allowlist провал валит регресс');
+const withoutReport = JSON.parse(withoutRun.stdout);
+equal(withoutReport.tasks[0].status, 'regressed', 'c9: статус regressed');
+
+const acceptedExpired = acceptedRepo([{ task: '0001', criteria: ['C1'], reason: 'просрочен', reviewBy: '2026-01-01', owner: 'coordinator' }]);
+const strictRun = runRegress(acceptedExpired, ['--strict']);
+equal(strictRun.status, 1, 'c10: --strict + просрочка = exit 1');
+equal(JSON.parse(strictRun.stdout).tasks[0].status, 'regressed', 'c10: просрочка при strict не подавляет');
+
 fs.rmSync(repo, { recursive: true, force: true });
 fs.rmSync(goodRepo, { recursive: true, force: true });
 fs.rmSync(badRepo, { recursive: true, force: true });
+fs.rmSync(acceptedWith, { recursive: true, force: true });
+fs.rmSync(acceptedWithout, { recursive: true, force: true });
+fs.rmSync(acceptedExpired, { recursive: true, force: true });
 
-console.log('regress-allowlist: OK c1–c7');
+console.log('regress-allowlist: OK c1–c10');
