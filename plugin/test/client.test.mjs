@@ -234,8 +234,9 @@ test('client bundle registers the Workflow conversation view', async () => {
   assert.match(rendered, /Консоль workflow/u);
   const tabs = elements(slot.component()).filter((element) => element.type === 'button'
     && ['Обзор', 'Доска', 'Якоря', 'Политика', 'Совместимость'].includes(textOf(element).replace(/\s+/g, ' ').trim()));
-  assert.deepEqual(tabs.slice(0, 5).map((element) => textOf(element).replace(/\s+/g, ' ').trim()), ['Обзор', 'Доска', 'Якоря', 'Политика', 'Совместимость']);
-  assert.ok(tabs[0].props.style && tabs[0].props.style.background, 'overview is the active default tab');
+  assert.deepEqual(tabs.slice(0, 5).map((element) => textOf(element).replace(/\s+/g, ' ').trim()), ['Доска', 'Обзор', 'Якоря', 'Политика', 'Совместимость']);
+  const activeDefault = tabs.find((element) => textOf(element).replace(/\s+/g, ' ').trim() === 'Обзор');
+  assert.ok(activeDefault && activeDefault.props.style && activeDefault.props.style.background, 'overview is the active default tab');
   assert.match(rendered, /Доска/);
   assert.match(rendered, /Политика/);
   assert.match(rendered, /Обновить/);
@@ -251,8 +252,10 @@ test('client bundle registers the Workflow conversation view', async () => {
   assert.ok(overviewText.includes('Проверить актуальность'), 'Overview offers the release check');
   assert.ok(!overviewText.includes('Семантические якоря'), 'Overview does not duplicate the anchors card');
   assert.ok(overviewText.includes('Якоря'), 'Overview keeps the anchors relevance line');
-  assert.ok(overviewText.includes('Доска задач'), 'Overview board is present');
-  const blockOrder = ['Сейчас', 'Версия движка', 'Доска задач']
+  assert.ok(overviewText.includes('Карточки задач'), 'Overview task cards are present');
+  assert.equal((overviewText.match(/Сейчас/g) || []).length, 1, 'Overview renders the summary once');
+  assert.equal((overviewText.match(/Версия движка/g) || []).length, 1, 'Overview renders the engine version once');
+  const blockOrder = ['Сейчас', 'Версия движка', 'Карточки задач']
     .map((label) => overviewText.indexOf(label));
   assert.ok(blockOrder.every((index) => index >= 0), 'all Overview blocks are present');
   assert.deepEqual(blockOrder, [...blockOrder].sort((left, right) => left - right), 'Overview blocks follow the approved order');

@@ -14,12 +14,13 @@ const client = fs.readFileSync(path.join(import.meta.dirname, '..', 'lib', 'clie
 
 test('c1: карточка якорей объясняет, что это такое', () => {
   assert.match(client, /Семантические якоря/u);
-  assert.match(client, /Якоря — общие правила контура/u);
+  assert.match(client, /Якоря контура — общие правила движка workflow/u);
+  assert.match(client, /Якоря проекта — правила этого воркспейса/u);
   assert.match(client, /docs\/anchors\.json/u);
 });
 
 test('c2: у действия есть последствие, а не только название', () => {
-  assert.match(client, /ставит вашу человеческую подпись под его текущей редакцией/u);
+  assert.match(client, /ставит вашу человеческую подпись под текущей редакцией/u);
   assert.match(client, /Без подписи проверки считают набор неутверждённым/u);
 });
 

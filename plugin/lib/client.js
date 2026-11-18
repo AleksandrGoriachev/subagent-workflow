@@ -1843,10 +1843,10 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           const hint = isProjectLayer
             ? (approved
               ? "Якоря проекта — правила этого воркспейса, по которым его задачи и выпуски проверяются узлами. Утверждение уже есть; повторное не требуется, пока файл правил не менялся."
-              : "Якоря проекта — правила этого воркспейса, по которым его задачи и выпуски проверяются узлами. Кнопка проверяет docs/anchors.json и ставит вашу человеческую подпись под текущей редакцией; другие воркспейсы она не меняет.")
+              : "Якоря проекта — правила этого воркспейса, по которым его задачи и выпуски проверяются узлами. Кнопка проверяет docs/anchors.json и ставит вашу человеческую подпись под текущей редакцией; другие воркспейсы она не меняет. Без подписи проверки считают набор неутверждённым и релиз не проходит.")
             : (approved
               ? "Якоря контура — общие правила движка workflow, по которым проверяются задачи и выпуски во всех воркспейсах на этом движке. Утверждение уже есть; повторное не требуется, пока файл правил не менялся."
-              : "Якоря контура — общие правила движка workflow, по которым проверяются задачи и выпуски во всех воркспейсах на этом движке. Кнопка проверяет список движка и ставит человеческую подпись под текущей редакцией; формулировки и рабочие пространства не меняет.");
+              : "Якоря контура — общие правила движка workflow, по которым проверяются задачи и выпуски во всех воркспейсах на этом движке. Кнопка проверяет список движка и ставит вашу человеческую подпись под текущей редакцией; формулировки и рабочие пространства не меняет. Без подписи проверки считают набор неутверждённым и релиз не проходит.");
           const list = anchors && Array.isArray(anchors.anchors) ? anchors.anchors : null;
           const approvalUnavailable = !anchors || anchors.ok !== true || !list || list.length === 0;
           const approvalHint = anchorsBusy ? "Проверяем список и подпись…" : anchorsError ? "Утверждение недоступно: " + (anchors && anchors.problems && anchors.problems.length ? anchors.problems[0] : anchorsError) : approvalUnavailable && anchors ? "Утверждение недоступно: сначала проверьте целостность списка и подпись." : approvalUnavailable ? "Загружаем состояние…" : approved ? "Кнопка перечитывает состояние подписи; без обновления может быть показано устаревшее подтверждение." : "Кнопка ставит подпись под видимым набором правил; без подписи проверка выпуска не проходит.";
@@ -2579,7 +2579,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "Совместимость",
             compatAttention ? h("span", { style: { color: T.warn } }, " !") : null,
           );
-          return h("div", { style: S.tabs }, overviewTab, boardTab, anchorsTab, policyTab, compatTab);
+          return h("div", { style: S.tabs }, boardTab, overviewTab, anchorsTab, policyTab, compatTab);
         }
 
         function stageColumn(stage) {
@@ -2714,6 +2714,38 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           return h("div", null, renderAnchorsCard());
         }
 
+        function renderOverviewTasks(tasks) {
+          const list = Array.isArray(tasks) ? tasks : [];
+          const visible = list.slice(0, 12);
+          return h(
+            "section",
+            null,
+            h("h2", { style: S.summaryTitle }, "Карточки задач"),
+            list.length === 0
+              ? h("div", { style: S.empty }, "Задач нет: workflow не развёрнут или данные ещё не загружены.")
+              : h("div", { style: { display: "flex", flexDirection: "column", gap: "6px" } },
+                  visible.map((task) => h("button", {
+                    key: task.id,
+                    type: "button",
+                    style: S.card,
+                    onClick: () => void openTask(task.id),
+                    title: task.dir || task.id,
+                    "aria-label": cardAriaLabel(task),
+                  },
+                    h("span", { style: S.cardId }, task.id),
+                    h("span", { style: S.cardTitle }, task.title || "—"),
+                    h("span", { style: S.cardMeta },
+                      task.risk ? badge(task.risk, RISK_COLOR[task.risk], riskHint(task.risk), false) : null,
+                      task.errors > 0 ? badge("ошибок " + task.errors, T.danger, ERROR_HINT, false) : null,
+                      task.warnings > 0 ? badge("предупр. " + task.warnings, T.warn, WARNING_HINT, false) : null,
+                    ),
+                  )),
+                ),
+            list.length > visible.length ? h("div", { style: S.hint }, "Показаны первые " + visible.length + " из " + list.length + "; полный список — на вкладке «Доска».") : null,
+            h("div", { style: S.actions }, h("button", { type: "button", style: S.button, onClick: () => { setTab("board"); setCard(null); } }, "Открыть доску")),
+          );
+        }
+
         function renderOverview() {
           const tasks = board && board.tasks ? board.tasks : [];
           const working = tasks.filter((task) => ["contract", "attack", "lock", "red", "green", "incomplete"].includes(task.stage)).length;
@@ -2731,8 +2763,8 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             null,
             renderNowSummary(tasks, working, accepted, remarks),
             engineBlock,
-            h("h2", { style: S.summaryTitle }, "Доска задач"),
-            renderBoard(),
+            renderEngineCard(),
+            renderOverviewTasks(tasks),
           );
         }
 
