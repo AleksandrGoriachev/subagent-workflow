@@ -1760,7 +1760,17 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           setAnchorsError(null);
           try {
             const response = await fetch(BASE + "/api/anchors?layer=" + encodeURIComponent(layer), { headers: { Accept: "application/json" } });
-            setAnchors(await readJson(response));
+            const next = await readJson(response);
+            /*
+             * В чужом воркспейсе контурного набора обычно нет (docs не уезжают в развёрнутую
+             * копию): показываем проектный набор этого воркспейса, а не ошибку про контур.
+             */
+            if (layer === "contour" && next && next.available && next.available.contour === false && next.available.project === true) {
+              setAnchorsLayer("project");
+              void loadAnchors("project");
+              return;
+            }
+            setAnchors(next);
           } catch (failure) {
             setAnchorsError(errorText(failure));
           }
@@ -1829,9 +1839,14 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           /* 2.6.82: переключатель только когда в корне есть оба набора. */
           const showLayerSwitch = Boolean(anchors && anchors.available && anchors.available.contour && anchors.available.project);
           const layerLabel = anchorsLayer === "project" ? "проект (этот воркспейс)" : "контур (движок workflow)";
-          const hint = approved
-            ? "Якоря — общие правила контура, по которым проверяются задачи и выпуски. Утверждение уже есть; повторное утверждение не требуется, пока файл правил не менялся. Без действительной подписи проверки не принимают набор правил."
-            : "Якоря — общие правила контура, по которым проверяются задачи и выпуски. Кнопка проверяет список и ставит вашу человеческую подпись под его текущей редакцией (docs/anchors.json); сами формулировки и рабочие пространства не меняет. Без подписи проверки считают набор неутверждённым и релиз не проходит.";
+          const isProjectLayer = anchorsLayer === "project";
+          const hint = isProjectLayer
+            ? (approved
+              ? "Якоря проекта — правила этого воркспейса, по которым его задачи и выпуски проверяются узлами. Утверждение уже есть; повторное не требуется, пока файл правил не менялся."
+              : "Якоря проекта — правила этого воркспейса, по которым его задачи и выпуски проверяются узлами. Кнопка проверяет docs/anchors.json и ставит вашу человеческую подпись под текущей редакцией; другие воркспейсы она не меняет.")
+            : (approved
+              ? "Якоря контура — общие правила движка workflow, по которым проверяются задачи и выпуски во всех воркспейсах на этом движке. Утверждение уже есть; повторное не требуется, пока файл правил не менялся."
+              : "Якоря контура — общие правила движка workflow, по которым проверяются задачи и выпуски во всех воркспейсах на этом движке. Кнопка проверяет список движка и ставит человеческую подпись под текущей редакцией; формулировки и рабочие пространства не меняет.");
           const list = anchors && Array.isArray(anchors.anchors) ? anchors.anchors : null;
           const approvalUnavailable = !anchors || anchors.ok !== true || !list || list.length === 0;
           const approvalHint = anchorsBusy ? "Проверяем список и подпись…" : anchorsError ? "Утверждение недоступно: " + (anchors && anchors.problems && anchors.problems.length ? anchors.problems[0] : anchorsError) : approvalUnavailable && anchors ? "Утверждение недоступно: сначала проверьте целостность списка и подпись." : approvalUnavailable ? "Загружаем состояние…" : approved ? "Кнопка перечитывает состояние подписи; без обновления может быть показано устаревшее подтверждение." : "Кнопка ставит подпись под видимым набором правил; без подписи проверка выпуска не проходит.";
@@ -2537,6 +2552,18 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "Доска",
             board ? " (" + board.tasks.length + ")" : "",
           );
+          const anchorsAttention = Boolean(anchors && anchors.approved !== true);
+          const anchorsTab = h(
+            "button",
+            {
+              type: "button",
+              style: tab === "anchors" ? S.tabActive : S.tab,
+              onClick: () => { setTab("anchors"); setCard(null); },
+              title: "Семантические якоря: состояние утверждения и список правил",
+            },
+            "Якоря",
+            anchorsAttention ? h("span", { style: { color: T.warn } }, " !") : null,
+          );
           const policyTab = h(
             "button",
             { type: "button", style: tab === "policy" ? S.tabActive : S.tab, onClick: () => void openPolicy() },
@@ -2552,7 +2579,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "Совместимость",
             compatAttention ? h("span", { style: { color: T.warn } }, " !") : null,
           );
-          return h("div", { style: S.tabs }, overviewTab, boardTab, policyTab, compatTab);
+          return h("div", { style: S.tabs }, overviewTab, boardTab, anchorsTab, policyTab, compatTab);
         }
 
         function stageColumn(stage) {
@@ -2663,13 +2690,28 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             h("h2", { style: S.summaryTitle }, "Сейчас"),
             h("div", { style: S.summaryGrid },
               item("Движок", busy && engine.installed ? "Обновляем… · " + engineLabel : engineLabel, engine.source === "mapping" ? T.warn : engine.installed ? T.success : T.tertiary),
-              item("Панель / актуальность", releaseCheckBusy ? "Проверяем актуальность…" : releaseCheckText() || panelLabel, releaseCheck && releaseCheck.ok === false ? T.warn : null),
+              h("div", { style: S.summaryItem },
+                h("b", { style: Object.assign({}, S.summaryStatus, releaseCheck && releaseCheck.ok === false ? { color: T.warn } : null) }, "Панель / актуальность"),
+                h("span", null, releaseCheckBusy ? "Проверяем актуальность…" : releaseCheckText() || panelLabel),
+                h("button", {
+                  type: "button",
+                  style: Object.assign({}, S.button, { marginTop: "4px", padding: "1px 8px", fontSize: "11px" }),
+                  disabled: releaseCheckBusy,
+                  title: "Один запрос к API релиза: проверяет версии движка и панели. Без проверки дата актуальности может быть неизвестна.",
+                  onClick: () => void runReleaseCheck(),
+                }, releaseCheckBusy ? "Проверяем…" : "Проверить актуальность"),
+              ),
               item("Якоря", anchorsBusy ? "Проверяем и утверждаем якоря…" : anchorLabel, anchors && anchors.approved ? T.success : anchors ? T.warn : T.tertiary),
               item("Задачи", busy && !board ? "Загружаем состояние…" : taskLabel, null),
               item("Сводка задач", remarks > 0 ? "Требует внимания · замечаний: " + remarks : "Всё актуально", remarks > 0 ? T.warn : T.success)),
             busy ? h("div", { style: S.stageText }, "Обновляем состояние панели… Прежние значения оставлены на экране.") : null,
             issue ? h("div", { style: Object.assign({}, S.hint, { margin: "8px 0 0", borderColor: engine.source === "mapping" ? T.warn : T.border1 }) }, issue) : null,
             h("div", { style: Object.assign({}, S.stageText, { marginTop: "6px" }) }, "Сводка показывает состояние движка, панели, якорей и задач. Обновление данных только перечитывает сведения; без него останутся прежние значения."));
+        }
+
+        function renderAnchorsTab() {
+          /* Якоря — отдельная вкладка: на стартовой остаётся только строка актуальности. */
+          return h("div", null, renderAnchorsCard());
         }
 
         function renderOverview() {
@@ -2689,7 +2731,6 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             null,
             renderNowSummary(tasks, working, accepted, remarks),
             engineBlock,
-            renderAnchorsCard(),
             h("h2", { style: S.summaryTitle }, "Доска задач"),
             renderBoard(),
           );
@@ -2755,7 +2796,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                 : null,
             );
             /* Тупик «workflow не развёрнут»: карточка движка предлагает два пути. */
-            return h("div", null, renderNowSummary([], 0, 0, 0), renderEngineCard(), renderAnchorsCard(), empty, renderDeploy());
+            return h("div", null, renderNowSummary([], 0, 0, 0), renderEngineCard(), empty, renderDeploy());
           }
           const tasks = board.tasks || [];
           const skipped = board.skipped || [];
@@ -2780,7 +2821,6 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             renderNowSummary(tasks, working, accepted, remarks),
             renderEngineCard(),
             renderEngine(),
-            renderAnchorsCard(),
             h("h2", { style: S.summaryTitle }, "Доска задач"),
             h("div", { style: S.stageText }, "Доска группирует задачи по текущим состояниям. Откройте карточку задачи, чтобы увидеть её поля и действия; без этого обзора нельзя быстро понять, на каком шаге работа остановилась."),
             h("div", { style: S.actions }, runButton("doctor", null), h("span", { style: Object.assign({}, S.stageText, { flex: "1 1 100%" }) }, "«Проверить настройку» читает готовность ворот, ключа и политики и ничего не меняет; без проверки можно не заметить неполадку настройки.")),
@@ -3720,6 +3760,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         else if (tab === "policy") body = renderPolicy();
         else if (tab === "compat") body = renderCompat();
         else if (tab === "board") body = renderBoard();
+        else if (tab === "anchors") body = renderAnchorsTab();
         else body = renderOverview();
 
         const compatSummary = status && status.repo && status.repo.compat ? status.repo.compat.summary : null;
