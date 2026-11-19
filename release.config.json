@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.84",
+  "version": "2.6.85",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.84 — панель 0.9.38 выходит релизом",
+  "releaseName": "2.6.85 — панель 0.9.38",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0077",
-  "releaseCommand": "node tools/release.mjs release 2.6.84",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.84",
+  "task": "docs/tasks/0080",
+  "releaseCommand": "node tools/release.mjs release 2.6.85",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.85",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
