@@ -1,0 +1,169 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0082",
+  "title": "tools/commit.ps1 умеет удалять тег, в том числе в origin",
+  "risk": "medium",
+  "taskFileSha256": "050578aa8281081dfabed2a18116626ec182ebc4e6e556950e806b00d74a3323",
+  "criteriaSha256": "a680d3a09f7f57786b6ffcad38b6345104a74e263bd684bc25a05ccc2253eef7",
+  "criteriaJsonSha256": "f59fe347cc1ac7e95d1e29940782fbcb80444d93e7f25ee43d189db2620d6062",
+  "contractCommit": "f6ad175005445ddc30640434fd3dceb47cdbe660",
+  "baseCommit": "f6ad175005445ddc30640434fd3dceb47cdbe660",
+  "candidateCommit": "d16c9532f9b960202a11cf04f51ed626ac889cd6",
+  "tree": "4377cbd3271ad5cf00f0712f42c699561f0888fc",
+  "worktreeDigest": "8db63059f574268b91a43a76aa27865f565e7fb8efd2ad4582cfb37c83026b4b",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-c703fd15-a78c-4941-b7be-090d5e046c6e",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "785fb910-64f3-4b18-891a-262cc2bdb56a",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "69b2c998bf5f7586ac47958d89f6f10f",
+    "runKind": "accept",
+    "startedAt": "2026-11-19T20:54:35.336Z",
+    "finishedAt": "2026-11-19T20:57:55.346Z",
+    "durationMs": 200011,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "0eaad6acb5be538be8f4a93ca45fad30b6c228adf7f2230756f36babe51775eb",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "f6ad175005445ddc30640434fd3dceb47cdbe660",
+    "contractCommit": "f6ad175005445ddc30640434fd3dceb47cdbe660",
+    "criteriaJsonSha256": "f59fe347cc1ac7e95d1e29940782fbcb80444d93e7f25ee43d189db2620d6062",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/commit-delete-tag.mjs c1",
+      "exitCode": 0,
+      "durationMs": 11893,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/commit-delete-tag.mjs c2",
+      "exitCode": 0,
+      "durationMs": 11301,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/commit-delete-tag.mjs c3",
+      "exitCode": 0,
+      "durationMs": 7074,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 187949,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 143320,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-19T20:57:56.274Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 2,
+    "digest": "b45b7f80304fb10fca272b495099cb03bad457af9e050fa50d0db9d321cbba19",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "launch evidence недостижимо: корень пакета вне разрешённых корней спавна; приёмку выполняет узел judge отдельной сессией",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "Ltn7ycOlAiukrNnBH5qVOzauc/N79vvaLSOcCPXYgiSf//hjQN6ooTqOxyNLuBhYGV/0G2SDMlE/+K50FfdZBg=="
+}

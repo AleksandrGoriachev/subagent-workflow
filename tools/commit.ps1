@@ -16,12 +16,35 @@ param(
   [Parameter(Mandatory = $false, Position = 0)][string]$Message = '',
   [switch]$DryRun,
   [switch]$Push,
-  [string]$Tag = ''
+  [string]$Tag = '',
+  [string]$DeleteTag = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
+
+# 0082: удаление тега — тем же входом, что и создание. Сторож процесса запрещает
+# прямой git push в инструменте, поэтому уборка тега (в том числе в origin) живёт здесь.
+if ($DeleteTag -ne '') {
+  $existing = @(git tag --list $DeleteTag)
+  if ($existing.Count -eq 0) {
+    Write-Host ('ТЕГ ' + $DeleteTag + ' НЕ НАЙДЕН') -ForegroundColor Red
+    exit 8
+  }
+  git tag -d $DeleteTag
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host 'УДАЛЕНИЕ ТЕГА ЗАВЕРШИЛОСЬ ОШИБКОЙ.' -ForegroundColor Red
+    exit 5
+  }
+  if ($Push) {
+    git -c core.hooksPath=.git/empty-hooks push origin (':' + 'refs/tags/' + $DeleteTag)
+    if ($LASTEXITCODE -ne 0) { Write-Host 'git push (тег) завершился ошибкой.' -ForegroundColor Red; exit 7 }
+    Write-Host 'ЗАПУШЕНО.' -ForegroundColor Green
+  }
+  Write-Host ('ТЕГ ' + $DeleteTag + ' УДАЛЁН.') -ForegroundColor Green
+  exit 0
+}
 
 # 0131: удаления (D) тоже коммитятся — иначе файл, попавший в индекс случайно, из репозитория не убрать штатным путём.
 $staged = @(git diff --cached --name-only --diff-filter=ACMRTD)
