@@ -1,17 +1,6 @@
 {
   "acceptors": [
     {
-      "keyId": "agent-judge",
-      "kind": "agent",
-      "owner": "acceptor",
-      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADtWnWP6StEW0+hTUr/qG8ofTCr48nVTs66mdYlViUmc=\n-----END PUBLIC KEY-----\n",
-      "createdAt": "2026-10-27T20:53:41.224Z",
-      "fingerprint": "d8b2d1bad69e228a",
-      "retiredAt": "2026-11-11T04:01:58.710Z",
-      "legacy": true,
-      "legacyReason": "приватная часть утеряна (ротация 11.11.2026)"
-    },
-    {
       "keyId": "human-user",
       "kind": "human",
       "owner": "пользователь",
