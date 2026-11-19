@@ -1,0 +1,47 @@
+{
+  "project": "subagent-workflow",
+  "version": "2.6.84",
+  "panelVersion": "0.9.38",
+  "releaseName": "2.6.84 — панель 0.9.38 выходит релизом",
+  "packageRoot": "subagent-workflow-v2",
+  "task": "docs/tasks/0077",
+  "releaseCommand": "node tools/release.mjs release 2.6.84",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.84",
+  "versionCheckCommand": "node tools/check-version.mjs",
+  "versionFiles": [
+    "VERSION",
+    "package.json",
+    "README.md",
+    "spec/SPEC.md",
+    "spec/scripts/lib/common.mjs",
+    "plugin/package.json",
+    "CHANGELOG.md"
+  ],
+  "panelMetadataField": {
+    "file": "package.json",
+    "key": "dshPanelVersion",
+    "value": "0.9.38"
+  },
+  "credentialSource": {
+    "path": "~/.git-credentials",
+    "note": "единственная копия секрета; читать на месте, не печатать и не копировать"
+  },
+  "transport": {
+    "sslBackend": "openssl",
+    "terminalPrompt": "0"
+  },
+  "packageCache": ".tmp/npm-cache",
+  "evidence": [
+    "tag",
+    "releaseUrl",
+    "assetSize",
+    "httpStatus",
+    "smokeAsset",
+    "receipt"
+  ],
+  "failurePolicy": "stop-and-rollback-draft",
+  "acceptance": {
+    "task": "docs/tasks/0077",
+    "rule": "приёмка следует за candidate-коммитом выпуска: вердикт подписывает отдельная сессия приёмщика"
+  }
+}
