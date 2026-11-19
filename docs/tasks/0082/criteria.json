@@ -1,0 +1,108 @@
+{
+  "task": "0082",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "DeleteTag",
+      "C2": "DeleteTag"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Тег удаляется штатным путём",
+      "command": "node spec/checks/commit-delete-tag.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "tools/commit.ps1"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "COMMIT DELETE TAG OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Несуществующий тег: отказ с кодом 8",
+      "command": "node spec/checks/commit-delete-tag.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "tools/commit.ps1"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "COMMIT DELETE TAG OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Обычный вызов commit.ps1 не изменился",
+      "command": "node spec/checks/commit-delete-tag.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/commit-delete-tag.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "COMMIT DELETE TAG OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Полный набор плагина зелёный",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/commit.ps1"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "pass 308"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс правил пакета не сломан",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0082/task.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
