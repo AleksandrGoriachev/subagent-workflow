@@ -1,0 +1,154 @@
+{
+  "task": "0078",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5",
+      "C6",
+      "C7"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "2.6.83",
+      "C2": "VERSION OK: 2.6.83",
+      "C3": "preflight: не пройден",
+      "C4": "fatal:"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Цель версии 2.6.84 и панель 0.9.38 согласованы в файлах и брифе",
+      "command": "node -e \"const fs=require('fs');const p=require('./package.json');const pl=require('./plugin/package.json');const b=require('./release.config.json');process.stdout.write(fs.readFileSync('VERSION','utf8').trim()+'|'+p.version+'|'+String(p.dshPanelVersion)+'|'+pl.version+'|'+b.version)\"",
+      "cwd": ".",
+      "covers": [
+        "VERSION",
+        "package.json",
+        "plugin/package.json",
+        "release.config.json",
+        "plugin/lib/compat.js"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "2.6.84|2.6.84|0.9.38|0.9.38|2.6.84"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "check-version подтверждает 2.6.84 во всех файлах версии",
+      "command": "node tools/check-version.mjs",
+      "cwd": ".",
+      "covers": [
+        "README.md",
+        "spec/SPEC.md",
+        "spec/scripts/lib/common.mjs",
+        "CHANGELOG.md"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.84"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Предполёт выпуска 2.6.84 зелёный: ассеты и версии согласованы",
+      "command": "node tools/release.mjs preflight 2.6.84",
+      "cwd": ".",
+      "covers": [
+        "package.json"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "network"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "preflight: OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Тег v2.6.84 стоит на коммите выпуска",
+      "command": "git rev-parse --verify \"v2.6.84^{tag}\"",
+      "cwd": ".",
+      "covers": [
+        "VERSION"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutRegex": "[0-9a-f]{40}"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Полный набор плагина зелёный на выпуске",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/package.json"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "pass 308"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Регресс правил пакета не сломан выпуском",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C7",
+      "title": "Негативный случай: предполёт отвергает несуществующую версию",
+      "command": "node tools/release.mjs preflight 2.6.999",
+      "cwd": ".",
+      "covers": [
+        "package.json"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "negative",
+        "network"
+      ],
+      "expect": {
+        "exitCode": 1,
+        "stdoutRegex": "preflight: не пройден"
+      }
+    }
+  ]
+}
