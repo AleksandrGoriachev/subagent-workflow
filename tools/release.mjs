@@ -66,9 +66,21 @@ export function preflight(version, options = {}) {
       problems.push('release-receipt --online не прошёл: ' + text);
     }
   }
-  const assets = expectedNames(version, options.panelVersion);
+  const assets = expectedNames(version, options.panelVersion || panelVersionOf(root));
   const missing = assets.filter((name) => !fs.existsSync(path.join(root, 'dist', name)) && !fs.existsSync(path.join(root, 'dist', name + '.sha256')));
   return { ok: problems.length === 0, problems, assets, missing, receipts };
+}
+
+/**
+ * Версия панели для имён ассетов: из package.json ТОГО корня, который проверяем.
+ * 0079: чтение корня модуля ломало проверку чужого/фейкового корня — предполёт
+ * требовал ассеты нашей панели у чужого выпуска.
+ */
+function panelVersionOf(root) {
+  const file = path.join(root, 'package.json');
+  if (!fs.existsSync(file)) return '0.9.27';
+  const declared = readJson(file).dshPanelVersion;
+  return declared ? String(declared) : '0.9.27';
 }
 
 /** Имена ассетов выпуска: без них публикация не начинается. */
@@ -106,6 +118,8 @@ function run(command, args, cwd = ROOT) {
 export async function release(version, options = {}) {
   const log = typeof options.log === 'function' ? options.log : (line) => console.log(line);
   const steps = [];
+  /* Корень проверки — тот же, что у предполёта: от него зависит версия панели в именах ассетов. */
+  const root = options.root || ROOT;
   const first = preflight(version, options);
   if (first.missing.length > 0 && options.artifacts !== false) {
     log('release: собираю ассеты ' + version);
@@ -122,7 +136,7 @@ export async function release(version, options = {}) {
     }
     run('git', ['archive', '--format=tar.gz', '--prefix=subagent-workflow-' + version + '/', '-o',
       path.join('dist', 'subagent-workflow-' + version + '.tar.gz'), 'v' + version]);
-    const hashes = ['dsh-workflow-console.tgz', 'dsh-workflow-console-' + (options.panelVersion || '0.9.27') + '.tgz',
+    const hashes = ['dsh-workflow-console.tgz', 'dsh-workflow-console-' + (options.panelVersion || panelVersionOf(root)) + '.tgz',
       'subagent-workflow-' + version + '.tar.gz', 'subagent-workflow-' + version + '.zip'];
     for (const name of hashes) {
       const file = path.join(DIST, name);
