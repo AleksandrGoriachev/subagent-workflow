@@ -1,0 +1,177 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0081",
+  "title": "Выбор ключа приёмщика по окну action: активная запись вместо retired",
+  "risk": "medium",
+  "taskFileSha256": "6345cde4fafd1bdc8de009f1a595e5c6c2244ee2f9a1d206ddbe19022570336a",
+  "criteriaSha256": "7161c596b472758d0e2ce527acd293d085c4b17c34b558b0569d2a5d038c53a3",
+  "criteriaJsonSha256": "7ca3df51f9bc4cb02072869a8b9865d04712e19575ce74919129e1b8cef42d76",
+  "contractCommit": "8f852e31c90b4840e97c60a10162e8dc3ecfd4be",
+  "baseCommit": "8f852e31c90b4840e97c60a10162e8dc3ecfd4be",
+  "candidateCommit": "bd335269026dcef0151fb274a5beb317bfc00a19",
+  "tree": "a8812da850d34b86762e0e14d96c798736429fbf",
+  "worktreeDigest": "d47bd3bf56807378de1ff6aedf7cf9058282983e840f56519ceb4a558d63a724",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-c703fd15-a78c-4941-b7be-090d5e046c6e",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "66131c49-aea0-42da-8e72-cf6b3bf36be7",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "5435e47978ee7e498158e96621a0802e",
+    "runKind": "accept",
+    "startedAt": "2026-11-19T20:15:06.451Z",
+    "finishedAt": "2026-11-19T20:18:51.138Z",
+    "durationMs": 224687,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "6445f74ebf597564d31cf9ee37341fc2e6dc88eb1c18b2b2852da34ff0da831f",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "8f852e31c90b4840e97c60a10162e8dc3ecfd4be",
+    "contractCommit": "8f852e31c90b4840e97c60a10162e8dc3ecfd4be",
+    "criteriaJsonSha256": "7ca3df51f9bc4cb02072869a8b9865d04712e19575ce74919129e1b8cef42d76",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4",
+        "C5"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/acceptor-rotation.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1224,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/acceptor-rotation.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1371,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/acceptor-rotation.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1341,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 206850,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 163207,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-19T20:18:52.550Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 2,
+    "digest": "da7893261cea80eabfd63eff5ea258b4c0e42a21dc963637fc7040a32a7b64bf",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "launch evidence недостижимо: корень пакета вне разрешённых корней спавна, журнал запусков пишется по корню воркспейса; приёмку выполняет узел judge отдельной сессией",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "JOSqGrPSnIGFavfbQeg2aXac9DticHM4ZO1nYDXpmRWiCEDvDmytuUsQErOBqF5jO593kv/E/0A1TxnObk48AA=="
+}

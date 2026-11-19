@@ -33,6 +33,7 @@ import { detectActor, assessIndependence } from './actor.mjs';
 import { convertToWorkspace } from './facts-convert.mjs';
 import { evaluateWorkspaceTask, loadAcceptors as loadEngineAcceptors } from '../engine.mjs';
 import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
+import { pickAcceptorEntry } from './lib/accept-key.mjs';
 import { validateReview } from './lib/review.mjs';
 
 const argv = parseArgv(process.argv.slice(2));
@@ -340,8 +341,15 @@ try {
   if (!exists(keyFile)) fail('нет файла ключа: ' + keyFile);
   const keysFile = path.resolve(String(argv.keys || config.keysFile));
   if (!exists(keysFile)) fail('нет acceptors.json: ' + keysFile);
-  const entry = loadAcceptors(keysFile).find((item) => item.keyId === keyId);
+  /*
+   * 0081: запись выбирается по окну activeFrom/retiredAt (sign.mjs), а не «первая
+   * по keyId». Иначе после ротации подпись действующим ключом падала на retired-
+   * записи с утерянным приватным ключом, и приходилось чистить acceptors.json.
+   */
+  const picked = pickAcceptorEntry(loadAcceptors(keysFile), keyId);
+  const entry = picked.entry;
   if (!entry) fail('ключ ' + keyId + ' не закреплён в ' + keysFile);
+  if (picked.legacy) console.log('task-accept: WARN ключ ' + keyId + ' — ' + (picked.reason || 'retired-эпоха') + '; действует retired-запись');
   if (entry.revokedAt) fail('ключ ' + keyId + ' отозван ' + entry.revokedAt);
   const privateKeyPem = fs.readFileSync(keyFile, 'utf8');
   const derivedPublic = crypto.createPublicKey(privateKeyPem).export({ type: 'spki', format: 'pem' }).toString();
