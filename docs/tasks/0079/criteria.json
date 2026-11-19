@@ -1,0 +1,108 @@
+{
+  "task": "0079",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "fail 1"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Полный набор плагина зелёный: предполёт берёт панель из своего корня",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/release.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "pass 308"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Тег v2.6.84 указывает на коммит выпуска",
+      "command": "git rev-parse refs/tags/v2.6.84",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0079/task.md"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutRegex": "[0-9a-f]{40}"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Предполёт выпуска 2.6.84 зелёный",
+      "command": "node tools/release.mjs preflight 2.6.84",
+      "cwd": ".",
+      "covers": [
+        "tools/release.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "network"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "preflight: OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Негативный случай: предполёт отвергает несуществующую версию",
+      "command": "node tools/release.mjs preflight 2.6.999",
+      "cwd": ".",
+      "covers": [
+        "tools/release.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "negative",
+        "network"
+      ],
+      "expect": {
+        "exitCode": 1,
+        "stdoutRegex": "preflight: не пройден"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс правил пакета не сломан",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0079/task.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
