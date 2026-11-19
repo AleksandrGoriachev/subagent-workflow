@@ -1,0 +1,109 @@
+{
+  "task": "0081",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "не реализован",
+      "C2": "не реализован",
+      "C3": "не реализован"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Активная запись ключа побеждает retired",
+      "command": "node spec/checks/acceptor-rotation.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/accept-key.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPTOR ROTATION OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Retired-запись отдаётся как legacy с причиной",
+      "command": "node spec/checks/acceptor-rotation.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/accept-key.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPTOR ROTATION OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Неизвестный keyId даёт пустую запись",
+      "command": "node spec/checks/acceptor-rotation.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/acceptor-rotation.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPTOR ROTATION OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Полный набор плагина зелёный",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "pass 308"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс правил пакета не сломан",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0081/task.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
