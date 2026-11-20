@@ -49,3 +49,16 @@ node plugin/tools/test.mjs            # 308/308 (около 4 минут; под
   в спеке узла, launch evidence для корня пакета, кодировка в их проверках. Ответа пока нет.
 - Открыто: `opencode-go` в месячном лимите (узлы `worker-1..3,5`, `Critic`, `tester-1`),
   `reviewer-1` и `judge` переведены владельцем на `deepseek-official`.
+## 2.6.86 — выпущен (двухфазный порядок повторён)
+
+- Релиз: https://github.com/AleksandrGoriachev/subagent-workflow/releases/tag/v2.6.86, тег `v2.6.86` → `1a32c34`,
+  9 ассетов, SMOKE внутри, `release-receipt --online` зелёный; панель 0.9.38.
+- Внутри: 0081 (ключ приёмщика по окну ротации), 0082 (`commit.ps1 -DeleteTag`), 0083 (коды выхода вместо
+  кириллицы), 0084 (`tasksInProgress` учитывает `closure.json`).
+- Задача выпуска `0085` принята узлом `judge` (separate-session, ключ `agent-judge`, deviation по launch
+  evidence), коммит `1a32c34` включает и приёмку, и версию. Дерево чистое, HEAD = тег.
+- Порядок отработан второй раз подряд: подготовка в рабочем дереве (`git write-tree` + `git archive <tree>`),
+  приёмка, коммит+тег+пуш, пересборка архива из тега, публикация узлом `release-1` (23 с).
+- Структуре отправлено объявление `--197`; ждём подтверждения, что их гвард после обновления на 2.6.86
+  перестал требовать `allowInProgress`.
+- Открыто: `opencode-go` в месячном лимите (`worker-1..3,5`, `Critic`, `tester-1`).
