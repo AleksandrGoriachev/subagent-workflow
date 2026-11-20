@@ -1,0 +1,126 @@
+{
+  "task": "0084",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "9001 не должен быть в списке",
+      "C2": "9002 не должен быть в списке"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Закрытое (closed) не висит незавершённым",
+      "command": "node spec/checks/tasks-in-progress.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/deploy.js"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASKS IN PROGRESS OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Заменённое (superseded) не висит незавершённым",
+      "command": "node spec/checks/tasks-in-progress.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/tasks-in-progress.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASKS IN PROGRESS OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Приёмка завершает, незнакомый статус closure — нет",
+      "command": "node spec/checks/tasks-in-progress.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/deploy.js"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASKS IN PROGRESS OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Принятое и закрытое не висит, пустой каталог игнорируется",
+      "command": "node spec/checks/tasks-in-progress.mjs c4",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0084/task.md"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASKS IN PROGRESS OK c4"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Полный набор плагина без падений",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/deploy.js"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutRegex": "fail 0"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Регресс правил пакета не сломан",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0084/task.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
