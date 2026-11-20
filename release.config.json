@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.85",
+  "version": "2.6.86",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.85 — панель 0.9.38",
+  "releaseName": "2.6.86 — исправления приёмки, тегов и гварда обновления",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0080",
-  "releaseCommand": "node tools/release.mjs release 2.6.85",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.85",
+  "task": "docs/tasks/0085",
+  "releaseCommand": "node tools/release.mjs release 2.6.86",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.86",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",

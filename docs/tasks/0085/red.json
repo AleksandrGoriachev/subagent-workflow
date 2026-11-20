@@ -1,0 +1,162 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0085",
+  "createdAt": "2026-11-20T14:33:35.037Z",
+  "base": "HEAD",
+  "baseSha": "5a12d343cc3403682bff6a336f52c72f6223d477",
+  "headSha": "5a12d343cc3403682bff6a336f52c72f6223d477",
+  "contractCommit": "5a12d343cc3403682bff6a336f52c72f6223d477",
+  "criteriaSha256": "12f8b27dd60c894fa643de0845fd663dfe22095114e07558fb868dfe39e15c2c",
+  "criteriaJsonSha256": "6f485ee8eca4290d9a12e27d944c34cb8d4104ed126abe1012649cb5a1cd0fab",
+  "dirtyPaths": [
+    "docs/tasks/0085/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node -e \"const fs=require('fs');const p=require('./package.json');const pl=require('./plugin/package.json');process.stdout.write(fs.readFileSync('VERSION','utf8').trim()+'|'+p.version+'|'+String(p.dshPanelVersion)+'|'+pl.version)\"",
+      "exitCode": 0,
+      "durationMs": 803,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "stdout не содержит: 2.6.86|2.6.86|0.9.38|0.9.38"
+      ],
+      "stdoutSha256": "f33c059f0114ea5cd8e5d8c69e1aff0df598483144f2c3e63e3096395ccb54f5",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "2.6.85|2.6.85|0.9.38|0.9.38",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 734,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "stdout не содержит: VERSION OK: 2.6.86"
+      ],
+      "stdoutSha256": "fbb759a1358dcab90fbea081cb5fd10a8deb8659310bb09cd637cd5f40201fd9",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.6.85\nPASS  package.json                  — 2.6.85\nPASS  README.md                     — # subagent-workflow 2.6.85 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.6.85. Дата: 2026-11-19.\nPASS  spec/scripts/lib/common.mjs   — export const TOOL = 'subagent-workflow/2.6.85';\nPASS  CHANGELOG.md                  — ## 2.6.85 — 2026-11-19 (панель 0.9.38)\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.6.85:»\nPASS  plugin/package.json           — 0.9.38\nплагин — 0.9.38\n\nVERSION OK: 2.6.85\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node tools/release.mjs preflight 2.6.86",
+      "exitCode": 1,
+      "durationMs": 3692,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: preflight: OK"
+      ],
+      "stdoutSha256": "a047ff48156b527b890cee00bdff43bb21fe5a5a11bdd3a12f361bd50359640a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RELEASE ERROR VERSION не равен 2.6.86 (в файле 2.6.85)\nRELEASE ERROR package.json: 2.6.85 != 2.6.86\nRELEASE ERROR нет ассета subagent-workflow-2.6.86.tar.gz\nRELEASE ERROR нет ассета subagent-workflow-2.6.86.tar.gz.sha256\nRELEASE ERROR нет ассета subagent-workflow-2.6.86.zip\nRELEASE ERROR нет ассета subagent-workflow-2.6.86.zip.sha256\npreflight: не пройден\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 164925,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "041c29f24d1744a30fba9a65a889da2da38fb26610df12947d6158bbec36736f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 41 файл(ов)\n✔ c1: traversal и абсолютный путь не проходят (6.5497ms)\n✔ c2: факты другого run — C10 fail (332.1213ms)\n✔ c3: конфликтные доказательства гейта — C5 fail (356.8217ms)\n✔ c4: пустой объявленный план запрещает действия (924.4438ms)\n✔ c5: C9 требует проверенной подписи (1100.8204ms)\n✔ c1: без approval — отказ (4.5762ms)\n✔ c2: hash не совпал — отказ (1.1151ms)\n✔ c3: просрочка — предупреждение, а не отказ (решение заказчика 09.11) (1.5317ms)\n✔ c4: релизов больше порога — предупреждение (0.8983ms)\n✔ c5: inWork не в счёте, валидный набор — OK (1.1073ms)\n✔ c6: версии сравниваются числово, релизы считаются от подтверждения (0.5656ms)\n✔ checkRepo без approval.json сообщает причину, а не падает (997.6262ms)\n✔ c7: утверждение принимается только с подписью human-ключа (18.1352ms)\n✔ c8: правка anchors.json при старой подписи не проходит (хеш и подпись — оба) (2.6452ms)\n✔ c9: слой и исполнитель проверки обязательны и согласованы (2.623ms)\n✔ c6: проектный слой утверждается отдельно и не подменяет контур (354.9449ms)\n✔ c1: без утверждения статус — не утверждены (176.0531ms)\n✔ c2: подпись человеческим ключом утверждает якоря (148.6369ms)\n✔ c3: агентский ключ не может утвердить якоря (79.3631ms)\n✔ c4: правка якорей после подписи ломает утверждение (273.4439ms)\n✔ c7: статус отдаёт список правил — подписывать вслепую нельзя (114.8812ms)\n✔ c6: подпись движка (sign.mjs) принимается панелью — один канон (124.5255ms)\n✔ c5: без ключа — понятная ошибка (102.1796ms)\n✔ c8: абсолютный путь ключа не склеивается с корнем воркспейса (95.5508ms)\n✔ c9: результат подписи виден верхними полями (approved, keyId, at, hash) (189.0777ms)\n✔ c10: список якорей несёт слой и исполнителя проверки (схема 0.3) (129.3173ms)\n✔ c11: подпись выпускается во вложенной форме 0.3 и проверяется (226.3696ms)\n✔ c1: пустой слой — не отказ, но предупреждение (10.8207ms)\n✔ c2: корректный проектный якорь проходит (25.8506ms)\n✔ c3: layer, enforcedBy, check и статус проверяются (0.6829ms)\n✔ c4: дубль формулировки ловится нормализацией (0.5558ms)\n✔ c5: proof, потолок и истёкший срок (1.1754ms)\n✔ c6: файл без LF в конце — отказ по канону (46.5107ms)\n✔ GET /workflow/api/status reports the repository and policy (11810.1866ms)\n✔ GET /workflow/api/tasks returns the board with stages and skipped files (8678.2789ms)\n✔ GET /workflow/api/task/:id returns decisions, attack, coverage and record (7573.616ms)\n✔ GET /workflow/api/policy matches the doctor policy line (4531.5792ms)\n✔ GET /workflow/api/compat reports versions and recommendations (5833.9924ms)\n✔ a registered workspace is readable even when it is not a configured root (5391.2735ms)\n✔ non-GET methods answer 405 with Allow: GET (4889.498ms)\n✔ unknown routes answer 404 and a foreign root answers 400 (5941.5473ms)\n✔ a non-loopback peer is rejected (4359.9833ms)\n✔ a traversal-shaped task id is rejected (3806.1985ms)\n✔ GET /workflow/api/checks lists the read-only checks (4005.0397ms)\n✔ POST /workflow/api/run returns the log of a passing check and writes nothing (5135.8733ms)\n✔ a failing check is a result, not an error (4826.5159ms)\n✔ run rejects unknown checks, missing tasks and absent scripts (4997.2601ms)\n✔ run is POST-only and other routes stay GET-only (3993.1097ms)\n✔ POST /workflow/api/guard flips only guard.enabled and logs it (4952.4062ms)\n✔ guard route is POST-only and validates its body and root (3905.2994ms)\n✔ a full request sweep does not change files or git status (7276.2989ms)\n✔ POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0) (5976.1781ms)\n✔ deploy без confirm ничего не пишет, POST-only и проверяет корень (1648.8691ms)\n✔ POST guard/deploy требуют application/json — иначе 415 и никакой записи (5124.7333ms)\n✔ POST guard/deploy отвергают чужой Origin — 403, до записи (5483.5074ms)\n✔ deploy создаёт ключ проекта и не трогает глобальный ключ (11829.6762ms)\n✔ POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0) (8538.6407ms)\n✔ POST /workflow/api/update target eng\n…[truncated 16543 chars]",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 65383,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node tools/release.mjs preflight 2.6.999",
+      "exitCode": 1,
+      "durationMs": 3328,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "070991739bd32486e89239168f9bb5b742db8d22ef3da4552dcc3ed7f6ed52a1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RELEASE ERROR VERSION не равен 2.6.999 (в файле 2.6.85)\nRELEASE ERROR package.json: 2.6.85 != 2.6.999\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.tar.gz\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.tar.gz.sha256\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.zip\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.zip.sha256\npreflight: не пройден\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 3,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 10,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 0,
+        "total": 7,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}
