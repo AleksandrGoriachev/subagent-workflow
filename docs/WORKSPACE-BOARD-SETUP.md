@@ -1,7 +1,25 @@
-# Развёртывание нового воркспейса-оркестратора (доска реалма)
+# Развёртывание воркспейса-оркестратора «dsh-kanban-board» (доска реалма)
+
+## Конкретика
+
+- **Имя воркспейса:** `dsh-kanban-board`
+- **Корень:** `C:\Users\Goryachev\Documents\deepseek-harness\dsh-kanban-board`
+- **GitHub:** https://github.com/AleksandrGoriachev/dsh-kanban-board (репозиторий уже создан)
+- **Роль в реалме:** оркестратор/архитектор — владеет доской, журналом, реестром проектов.
+
+**Состояние на момент создания (проверено):** воркспейс уже поднят (GUI DSH его создал), внутри `.git`
+(ветка `master`, без коммитов, без remote), `.gitignore`, `docs/`, `.wf-keys/`, `.dsh/`. DSH при
+создании воркспейса автоматически развернул движок workflow (`docs/subagent-workflow/`).
+
+Важно про «движок не ставится»: §16 анализа говорил, что доска живёт не в движке. DSH разворачивает движок
+в каждый новый воркспейс по умолчанию — это нормально и не мешает: движок даёт `docs/subagent-workflow/scripts/`
+(в т.ч. `job.mjs`) и `docs/subagent-workflow/templates/`, но для доски мы их **не используем как
+исполнение**: оркестратор не заводит `docs/tasks`, он ведёт только `board/`.
+
+---
 
 Цель: поднять отдельный воркспейс, который владеет **доской оркестрации** реалма (эпики, наряды, журнал)
-и подключён к GitHub. Исполнением он не занимается — движок workflow в нём не ставится (см. анализ
+и подключён к GitHub. Исполнением он не занимается (см. анализ
 `ANALYSIS-KANBAN-WORKSPACES.md`, §15–§16).
 
 Два этапа:
@@ -61,10 +79,16 @@
 ## 3. Создание GitHub-репозитория
 
 ```
-# локально
-mkdir <новый-воркспейс>
-cd <новый-воркспейс>
-git init -b main
+Репозиторий уже создан на GitHub, воркспейс уже инициализирован (`master`, без коммитов).
+Осталось связать их и сделать первый коммит:
+
+```
+cd C:\Users\Goryachev\Documents\deepseek-harness\dsh-kanban-board
+git branch -M main
+git add .
+git commit -m "init: воркспейс-оркестратор доски реалма"
+git remote add origin https://github.com/AleksandrGoriachev/dsh-kanban-board.git
+git push -u origin main
 ```
 
 `.gitignore` (минимум):
@@ -80,13 +104,7 @@ git init -b main
 board/.sweep.json
 ```
 
-Создать пустой репозиторий на GitHub (веб или CLI):
-
-```
-gh repo create <владелец>/<имя-репо> --private --source . --push
-# либо вручную: создать пустой репо на github.com и затем
-git remote add origin https://github.com/<владелец>/<имя-репо>.git
-```
+(Репозиторий `AleksandrGoriachev/dsh-kanban-board` уже существует — см. блок выше.)
 
 ---
 
