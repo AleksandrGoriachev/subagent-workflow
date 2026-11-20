@@ -301,12 +301,34 @@ function appendDeployLog(repo, { from, to, actor, result, provenance }) {
  * Задания без валидной записи приёмки.
  *
  * «Незавершённое» — каталог `docs/tasks/<id>` с task.md/criteria.lock/red.json/
- * verify.json, у которого нет acceptance.json со `status: accepted`. Служебные
- * каталоги (`_superseded`, скрытые) не считаются: это история, а не работа.
+ * verify.json, у которого нет ни acceptance.json со `status: accepted`, ни
+ * terminal-записи closure.json (0084: `status: closed|superseded`). Закрытие —
+ * отдельный факт: у переизданных и выпущенных без приёмки заданий приёмки нет по
+ * определению, и без чтения closure.json они висели «в процессе» навсегда и
+ * блокировали обновление. Служебные каталоги (`_superseded`, скрытые) не
+ * считаются: это история, а не работа.
  *
  * @param {string} root корень проекта
  * @returns {string[]} ID заданий в стабильном порядке
  */
+const TERMINAL_CLOSURE_STATUSES = new Set(['closed', 'superseded']);
+
+/** Завершено ли задание: принято или закрыто штатным task-close. */
+function isFinished(taskDir) {
+  try {
+    const record = JSON.parse(fs.readFileSync(path.join(taskDir, 'acceptance.json'), 'utf8'));
+    if (record && record.status === 'accepted') return true;
+  } catch {
+    /* записи приёмки нет — смотрим закрытие */
+  }
+  try {
+    const closure = JSON.parse(fs.readFileSync(path.join(taskDir, 'closure.json'), 'utf8'));
+    return Boolean(closure && TERMINAL_CLOSURE_STATUSES.has(String(closure.status)));
+  } catch {
+    return false;
+  }
+}
+
 export function tasksInProgress(root) {
   const repo = path.resolve(String(root || ''));
   const tasksRoot = path.join(repo, 'docs', 'tasks');
@@ -325,14 +347,7 @@ export function tasksInProgress(root) {
     const started = ['task.md', 'criteria.lock', 'red.json', 'verify.json']
       .some((name) => fs.existsSync(path.join(dir, name)));
     if (!started) continue;
-    let accepted = false;
-    try {
-      const record = JSON.parse(fs.readFileSync(path.join(dir, 'acceptance.json'), 'utf8'));
-      accepted = Boolean(record && record.status === 'accepted');
-    } catch {
-      accepted = false;
-    }
-    if (!accepted) ids.push(entry.name);
+    if (!isFinished(dir)) ids.push(entry.name);
   }
   return ids;
 }
