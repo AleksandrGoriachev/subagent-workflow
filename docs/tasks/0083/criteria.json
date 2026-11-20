@@ -1,0 +1,91 @@
+{
+  "task": "0083",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "под cp866",
+      "C2": "под cp866",
+      "C3": "в обычной консоли"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Под cp866 случай отсутствующего тега зелёный",
+      "command": "node spec/checks/console-encoding.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/commit-delete-tag.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CONSOLE ENCODING OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Под cp866 случай удаления тега зелёный",
+      "command": "node spec/checks/console-encoding.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/commit-delete-tag.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CONSOLE ENCODING OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "В обычной консоли оба случая зелёные",
+      "command": "node spec/checks/console-encoding.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/console-encoding.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CONSOLE ENCODING OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс правил пакета не сломан",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0083/task.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
