@@ -38,3 +38,14 @@ node spec/scripts/task-check-acceptance.mjs --file docs/tasks/0080/acceptance.js
 node spec/checks/release-receipt.mjs --online     # OK
 node plugin/tools/test.mjs            # 308/308 (около 4 минут; под песочницей workspace-write даёт ложные отказы)
 ```
+## Дополнение (утро 20.11)
+
+- Закрыты ещё три задачи: **0081** (task-accept берёт ключ по окну ротации через
+  `lib/accept-key.mjs`), **0082** (`tools/commit.ps1 -DeleteTag`), **0083** (проверки сверяют коды
+  выхода, а не кириллицу в выводе pwsh; `spec/checks/console-encoding.mjs` гоняет случаи под chcp 866).
+  HEAD `bfb76dc`, тег `v2.6.84` удалён штатным путём.
+- Воркспейс закоммичен (`5115585`); в нём появился штатный вход коммита `tools/commit.ps1`.
+- Структуре отправлено письмо `--193`: объявление 2.6.85 и три просьбы — двухфазный порядок выпуска
+  в спеке узла, launch evidence для корня пакета, кодировка в их проверках. Ответа пока нет.
+- Открыто: `opencode-go` в месячном лимите (узлы `worker-1..3,5`, `Critic`, `tester-1`),
+  `reviewer-1` и `judge` переведены владельцем на `deepseek-official`.
