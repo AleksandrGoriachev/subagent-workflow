@@ -1,236 +1,69 @@
-# Развёртывание воркспейса-оркестратора «dsh-kanban-board» (доска реалма)
+# Репозиторий плагина «dsh-kanban-board»
+
+## Назначение
+
+DSH-плагин: канбан-доска распределения задач между воркспейсами, а не между сессиями одного воркспейса.
+Обоснование и модель — «ANALYSIS-KANBAN-WORKSPACES.md» (слабые места сессий-как-узлов, двухфазные переходы,
+доска у оркестратора, письма как транспорт, код — императив, модель — суждение).
+
+«dsh-kanban-board» — это не оркестратор конкретных проектов и не доска реалма console/proxy/optimizer.
+Эти три имени — пример применения для постановки; плагин делает механизм, а не вшивает реалм.
+Реалм задаётся конфигурацией, которую владелец кладёт рядом с доской.
 
 ## Конкретика
 
-- **Имя воркспейса:** `dsh-kanban-board`
-- **Корень:** `C:\Users\Goryachev\Documents\deepseek-harness\dsh-kanban-board`
-- **GitHub:** https://github.com/AleksandrGoriachev/dsh-kanban-board (репозиторий уже создан)
-- **Роль в реалме:** оркестратор/архитектор — владеет доской, журналом, реестром проектов.
+- имя воркспейса/репозитория: dsh-kanban-board
+- корень: C:/Users/Goryachev/Documents/deepseek-harness/dsh-kanban-board
+- GitHub: https://github.com/AleksandrGoriachev/dsh-kanban-board
+- тип: плагин DSH (host-половина + вкладка GUI), как VictorKozachek/dsh-kanban, но адресация — воркспейсы
 
-**Состояние на момент создания (проверено):** воркспейс уже поднят (GUI DSH его создал), внутри `.git`
-(ветка `master`, без коммитов, без remote), `.gitignore`, `docs/`, `.wf-keys/`, `.dsh/`. DSH при
-создании воркспейса автоматически развернул движок workflow (`docs/subagent-workflow/`).
+## Структура репозитория (целевая)
 
-Важно про «движок не ставится»: §16 анализа говорил, что доска живёт не в движке. DSH разворачивает движок
-в каждый новый воркспейс по умолчанию — это нормально и не мешает: движок даёт `docs/subagent-workflow/scripts/`
-(в т.ч. `job.mjs`) и `docs/subagent-workflow/templates/`, но для доски мы их **не используем как
-исполнение**: оркестратор не заводит `docs/tasks`, он ведёт только `board/`.
+dsh-kanban-board/
+  package.json      # манифест плагина: dsh.profile.bundles / dsh.bundle.patch / dsh.client.platform
+  README.md  LICENSE  .gitignore
+  src/host/         # watcher папок обмена и доски, apply/sweep/journal/replay (логика мотора)
+  src/ui/           # вкладка «Канбан» (клиентская половина)
+  lib/board.js      # apply, допустимые переходы, журнал (императив, не модель)
+  test/             # отрицательные кейсы: недопустимый переход, дубль письма, просроченный лиз, расхождение журнала
+  docs/PROTOCOL.md  # формат карточки, переходы, маркеры писем, формат реалма-конфига
+  examples/realm.example.json  # console/proxy/optimizer как ПРИМЕР конфигурации реалма
+  tools/check-exchange.mjs     # опционально: копия координаторского инструмента
 
----
+«docs/subagent-workflow/» — движок, который DSH развернул при создании воркспейса. Плагину он не нужен;
+не коммитим его (.gitignore: docs/subagent-workflow/) либо удаляем каталог.
 
-Цель: поднять отдельный воркспейс, который владеет **доской оркестрации** реалма (эпики, наряды, журнал)
-и подключён к GitHub. Исполнением он не занимается (см. анализ
-`ANALYSIS-KANBAN-WORKSPACES.md`, §15–§16).
+## Git (состояние и финал)
 
-Два этапа:
-- **Этап 1 (сейчас):** репозиторий + структура каталогов + git + папка обмена + presence. Кода доски ещё нет.
-- **Этап 2 (позже):** механика доски (`apply`, `sweep`, `journal`, `replay`, `render`) и, если нужна
-  панель — плагин.
+Воркспейс уже инициализирован (ветка master, коммит 2d3aca3 init); origin/main имеет Initial commit с LICENSE.
+Связываем несвязанные истории:
 
----
+  git branch -M main
+  git commit -m "chore: gitignore .dsh/.tmp/docs-subagent-workflow; убрать локальную память из трека"
+  git merge origin/main --allow-unrelated-histories --no-edit
+  git push -u origin main
 
-## 0. Что создаётся и роли
+.gitignore (дополнение к существующему): .dsh/  .tmp/  board/.sweep.json  docs/subagent-workflow/
 
-| Объект | Владелец | Что делает |
-| --- | --- | --- |
-| Новый воркспейс | воркспейс-архитектор реалма | доска, журнал, реестр проектов |
-| GitHub-репозиторий | реалм | код доски + протокол + (опц.) данные доски |
-| Папка обмена | реалм | письма нарядов/квитанций между воркспейсами |
+## Монтаж плагина в профиль DSH
 
-Рабочие воркспейсы (консоль, прокси, оптимизатор) доску не читают и не пишут — только письма.
+1. В манифесте package.json заявить dsh.profile.bundles (host-половина) и dsh.client.platform (клиентская вкладка).
+2. Установить бандл в профиль (~/.dsh/profiles/<профиль>/): добавить зависимость и запись в манифест, симлинк в node_modules.
+3. Перезапустить DSH; вкладка «Канбан» появляется в правом сайдбаре.
+4. Проверка: /workflow/api/status жив, вкладка регистрируется, доска читает папки обмена.
 
----
+Точный формат манифеста сверять с референсом dsh-kanban (KANBAN.md, раздел установки).
 
-## 1. Предусловия
+## Конфигурация реалма (runtime, не в репозитории)
 
-- DSH (запущенный web-интерфейс);
-- git, `pwsh` 7+, node (≥20);
-- доступ к GitHub (аккаунт + токен/ключ).
+Плагин читает конфиг реалма, который владелец кладёт в свой воркспейс-архитектор: поля version, architect
+(root, exchange), workspaces[] (id, root, exchange). console/proxy/optimizer — пример записей; плагин
+оперирует списком из конфига и ничего про них не знает заранее.
 
----
+## Чек-лист готовности
 
-## 2. Каталоги нового воркспейса
-
-```
-<новый-воркспейс>/
-  README.md
-  LICENSE
-  .gitignore
-  tools/
-    commit.ps1               # штатный вход коммита (шаблон ниже)
-    exchange-inbox.mjs       # копия из subagent-workflow-v2/tools
-    check-exchange.mjs       # копия из default-workspace/tools
-  coordination/
-    projects.json            # реестр собеседников (владелец — архитектор)
-    presence.json            # живость воркспейса
-    exchange/
-      outbox/                # письма ОТ нас; формат dsh-exchange/1
-  board/
-    epics/                   # эпики реалма
-    tasks/                   # наряды воркспейсам
-    journal.jsonl            # append-only журнал переходов
-    .sweep.json              # память прочтения обхода
-  docs/
-    PROTOCOL.md              # ссылка на протокол доски (из ANALYSIS-KANBAN-WORKSPACES.md)
-```
-
----
-
-## 3. Создание GitHub-репозитория
-
-```
-Репозиторий уже создан на GitHub, воркспейс уже инициализирован (`master`, без коммитов).
-Осталось связать их и сделать первый коммит:
-
-```
-cd C:\Users\Goryachev\Documents\deepseek-harness\dsh-kanban-board
-git branch -M main
-git add .
-git commit -m "init: воркспейс-оркестратор доски реалма"
-git remote add origin https://github.com/AleksandrGoriachev/dsh-kanban-board.git
-git push -u origin main
-```
-
-`.gitignore` (минимум):
-
-```
-# секреты и приватное
-*.key.pem
-*.pem
-.wf-keys/
-# временное
-.tmp/
-# локальное состояние доски
-board/.sweep.json
-```
-
-(Репозиторий `AleksandrGoriachev/dsh-kanban-board` уже существует — см. блок выше.)
-
----
-
-## 4. Git-авторизация в DSH
-
-Токен/креды хранятся в `~/.git-credentials` (единая копия, в файлы воркспейса не копировать).
-
-```
-# проверить, что credential fill отдаёт токен
-git credential fill <<EOF
-protocol=https
-host=github.com
-
-EOF
-```
-
-Если push падает с ошибкой SSL-бэкенда:
-
-```
-git config --local http.sslBackend openssl
-```
-
-Для неинтерактивности: `GIT_TERMINAL_PROMPT=0`.
-
-> Если воркспейс работает под политикой workflow (`processPolicy=fail`), прямой `git commit`/`git push`
-> в инструменте запрещён — коммитить через `tools/commit.ps1` (шаблон ниже).
-
----
-
-## 5. Штатный вход коммита — `tools/commit.ps1`
-
-Скопировать адаптированный вариант (как в `default-workspace/tools/commit.ps1`):
-
-```powershell
-param([Parameter(Position=0)][string]$Message='',[switch]$DryRun,[switch]$Push,[string]$Tag='',[string]$DeleteTag='')
-$ErrorActionPreference='Stop'
-$repo = Split-Path -Parent $PSScriptRoot
-Set-Location $repo
-if ($DeleteTag -ne '') {
-  if (@(git tag --list $DeleteTag).Count -eq 0) { Write-Host ('ТЕГ ' + $DeleteTag + ' НЕ НАЙДЕН'); exit 8 }
-  git tag -d $DeleteTag
-  if ($Push) { git push origin (':' + 'refs/tags/' + $DeleteTag) }
-  Write-Host ('ТЕГ ' + $DeleteTag + ' УДАЛЁН.'); exit 0
-}
-$staged = @(git diff --cached --name-only --diff-filter=ACMRTD)
-if ($staged.Count -eq 0 -and -not $Push -and $Tag -eq '') { Write-Host 'КОММИТ НЕ НУЖЕН'; exit 2 }
-if ($staged.Count -gt 0) {
-  if ($Message -eq '') { Write-Host 'НУЖНО СООБЩЕНИЕ'; exit 2 }
-  if ($DryRun) { Write-Host 'ПРОВЕРКА ПРОЙДЕНА'; exit 0 }
-  git commit -m $Message
-  if ($LASTEXITCODE -ne 0) { exit 4 }
-}
-if ($Tag -ne '') { git tag $Tag }
-if ($Push) { git push origin HEAD; if ($Tag -ne '') { git push origin $Tag } }
-exit 0
-```
-
----
-
-## 6. Реестр и живость
-
-`coordination/projects.json` — версионированный, владелец — архитектор:
-
-```json
-{
-  "version": 1,
-  "owner": "architect",
-  "peers": [
-    { "id": "console",  "root": "<абс. путь>/console-workspace",  "exchange": "<абс. путь>/console-workspace/coordination/exchange" },
-    { "id": "proxy",    "root": "<абс. путь>/proxy-workspace",    "exchange": "<абс. путь>/proxy-workspace/coordination/exchange" },
-    { "id": "optimizer","root": "<абс. путь>/optimizer-workspace", "exchange": "<абс. путь>/optimizer-workspace/coordination/exchange" }
-  ]
-}
-```
-
-`coordination/presence.json` — обновляется архитектором при каждом ходе/обходе:
-
-```json
-{ "version": 1, "workspace": "architect", "sessionId": "<DSH_SESSION_ID>", "at": "<ISO-8601>" }
-```
-
----
-
-## 7. Папка обмена
-
-Письма пишутся **только в свой outbox**; чужие outbox читаются по реестру. Формат письма — `dsh-exchange/1`
-(шапка `From/To/Date/Thread/Status/Workspace/Session/Reply-To/Subject`).
-
-Тест доставки (после того как собеседник поднял свою папку):
-
-```
-# отправить тестовое письмо соседу
-# прочитать свой ящик
-node tools/exchange-inbox.mjs --box <путь-к-обмену>
-# проверить формат и чей ход
-node tools/check-exchange.mjs --box <путь-к-обмену> --me architect
-```
-
----
-
-## 8. Регистрация воркспейса в DSH
-
-1. GUI → Workspaces → добавить путь к новому воркспейсу.
-2. Убедиться, что корень появился в списке (`/workflow/api/status` → `roots`), если воркспейс должен
-   участвовать в спавне узлов.
-3. Панель доски (этап 2) монтируется отдельным плагином в профиле — на этапе 1 не требуется.
-
----
-
-## 9. Проверка готовности (чек-лист)
-
-- [ ] `git remote -v` показывает origin;
-- [ ] `git push -u origin main` прошёл (или через `commit.ps1 -Push`);
-- [ ] каталоги `board/epics`, `board/tasks`, `coordination/exchange/outbox` созданы;
-- [ ] `presence.json` и `projects.json` на месте, версии проставлены;
-- [ ] `node tools/check-exchange.mjs --box ... --me architect` → «формат … ок», exit 0;
-- [ ] тестовое письмо соседу ушло и прочитано собеседником (квитанция `Status: report`).
-
----
-
-## 10. Что дальше (этап 2)
-
-1. Реализовать механику доски (`apply`, `sweep`, `journal`, `replay`, `render`) в этом репозитории;
-2. обвязка с обменом (маркеры `[task-accept]`, `[stage-ready]`, `[blocked]`…);
-3. панель-плагин (если нужна) — отдельный репозиторий, монтируется профилем владельца;
-4. приёмочные проверки — отрицательные кейсы (недопустимый переход, дубль письма, просроченный лиз,
-   расхождение журнала).
-
-Протокол доски и разделение «код ↔ модель» — в `subagent-workflow-v2/docs/ANALYSIS-KANBAN-WORKSPACES.md`.
+- git: origin/main синхронен, LICENSE на месте, .dsh/.wf-keys/движок не в треке
+- package.json — валидный манифест плагина (бандлы, платформа)
+- host-половина и вкладка регистрируются, DSH перезапущен
+- отрицательные кейсы мотора (недопустимый переход, дубль письма, просроченный лиз) зелёные
+- на примере реалма: наряд ушёл в воркспейс, квитанция вернулась, переход применён и записан в журнал
