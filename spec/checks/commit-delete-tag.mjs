@@ -38,9 +38,7 @@ if (CASE === 'c2') {
   const result = commitScript(['-DeleteTag', ABSENT]);
   const output = text(result);
   if (result.status !== 8) {
-    process.exitCode = fail('ожидался exit 8 для несуществующего тега, пришло ' + result.status + ': ' + output.trim().split(String.fromCharCode(10)).slice(-2).join(' / '));
-  } else if (!/НЕ НАЙДЕН/u.test(output)) {
-    process.exitCode = fail('нет сообщения «НЕ НАЙДЕН»: ' + output.trim().split(String.fromCharCode(10)).slice(-2).join(' / '));
+    process.exitCode = fail('ожидался exit 8 для несуществующего тега, пришло ' + result.status);
   } else {
     console.log('COMMIT DELETE TAG OK c2');
     process.exitCode = 0;
@@ -48,10 +46,8 @@ if (CASE === 'c2') {
 } else if (CASE === 'c3') {
   const result = commitScript([]);
   const output = text(result);
-  if (result.status === 0) process.exitCode = fail('пустой вызов commit.ps1 не должен завершаться успехом');
-  else if (!/КОММИТ НЕ НУЖЕН|НУЖНО СООБЩЕНИЕ/u.test(output)) {
-    process.exitCode = fail('изменился обычный отказ: ' + output.trim().split(String.fromCharCode(10)).slice(-2).join(' / '));
-  } else {
+  if (result.status !== 2) process.exitCode = fail('ожидался exit 2 на пустом вызове, пришло ' + result.status);
+  else {
     console.log('COMMIT DELETE TAG OK c3');
     process.exitCode = 0;
   }
@@ -65,7 +61,6 @@ if (CASE === 'c2') {
     const after = String(git(['tag', '--list', PROBE]).stdout || '').trim();
     if (result.status !== 0) process.exitCode = fail('exit ' + result.status + ': ' + output.trim().split(String.fromCharCode(10)).slice(-2).join(' / '));
     else if (after !== '') { git(['tag', '-d', PROBE]); process.exitCode = fail('тег ' + PROBE + ' остался после удаления'); }
-    else if (!/УДАЛ[ЕЁ]Н/u.test(output)) process.exitCode = fail('нет подтверждения удаления: ' + output.trim().split(String.fromCharCode(10)).slice(-2).join(' / '));
     else { console.log('COMMIT DELETE TAG OK c1'); process.exitCode = 0; }
   }
 }

@@ -1,0 +1,169 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0083",
+  "title": "Проверка удаления тега сверяет коды выхода, а не кириллицу в выводе pwsh",
+  "risk": "medium",
+  "taskFileSha256": "d58d42ca006a057c2942a90a6da136f43489a27b0a86574482172503ecba8318",
+  "criteriaSha256": "402bdb41ea9e8669f9dc19aadadf68b16a5a769844d2b1477c3c0f284e8ae7cb",
+  "criteriaJsonSha256": "230a0e46b14bdc738d0c958d883e26f9621d71bd4811d28632a18febfcd12313",
+  "contractCommit": "d288b3f2882ae3f910be20a296fa2c0ecde04b4d",
+  "baseCommit": "d288b3f2882ae3f910be20a296fa2c0ecde04b4d",
+  "candidateCommit": "87e9ca5db875b32d64949b5cea1b9c992908f274",
+  "tree": "3ba407f3f98e4aa4f17fd2b2accf963a3de42d24",
+  "worktreeDigest": "d59102a78c5cf75879487e3f863fa1c3bfe7e96c196c112b36b0d35b4903c92f",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-c703fd15-a78c-4941-b7be-090d5e046c6e",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "c4fe4c22-c1c2-4140-af1a-efd51417f669",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "2570ace4c00bd1a806fd045223767cad",
+    "runKind": "accept",
+    "startedAt": "2026-11-20T05:23:51.355Z",
+    "finishedAt": "2026-11-20T05:25:10.459Z",
+    "durationMs": 79105,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "12ff841ff40ddac45f8c6e70bb95fbda0ab74cda962ddb31d6ad454b23948d8f",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "d288b3f2882ae3f910be20a296fa2c0ecde04b4d",
+    "contractCommit": "d288b3f2882ae3f910be20a296fa2c0ecde04b4d",
+    "criteriaJsonSha256": "230a0e46b14bdc738d0c958d883e26f9621d71bd4811d28632a18febfcd12313",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/console-encoding.mjs c1",
+      "exitCode": 0,
+      "durationMs": 4602,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/console-encoding.mjs c2",
+      "exitCode": 0,
+      "durationMs": 5549,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/console-encoding.mjs c3",
+      "exitCode": 0,
+      "durationMs": 8556,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 48412,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-20T05:25:11.563Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 1,
+    "digest": "ec5fa5bc54f27d66d4c97127b54527398002e395da0075edc51d9e57bab4fa58",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "launch evidence недостижимо: корень пакета вне разрешённых корней спавна; приёмку выполняет узел judge отдельной сессией",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "RG+HZABw+anFF8Zs7Gixt50lKnDZU4i1h2Fl2fEpnx5CGRUf10wFxTrTlqjn0HdkO5XJ9dVg/+ORmI1sncpXCA=="
+}
