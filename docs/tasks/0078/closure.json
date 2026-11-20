@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0078",
+  "status": "superseded",
+  "reason": "критерии требовали тег до приёмки; заменено двухфазным 0080",
+  "by": "coordinator",
+  "at": "2026-11-20T13:39:23.378Z",
+  "successor": "0080",
+  "evidence": []
+}

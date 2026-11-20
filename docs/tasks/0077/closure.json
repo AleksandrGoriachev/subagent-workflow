@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0077",
+  "status": "superseded",
+  "reason": "маршрут с публикацией до приёмки заменён двухфазным (0080)",
+  "by": "coordinator",
+  "at": "2026-11-20T13:39:23.080Z",
+  "successor": "0080",
+  "evidence": []
+}
