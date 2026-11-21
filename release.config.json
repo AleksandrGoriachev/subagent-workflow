@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.88",
+  "version": "2.6.89",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.88 — границы цикла узла: повтор, бюджет, маршрут, образ результата",
+  "releaseName": "2.6.89 — стоп по тишине и витрина метрик",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0089",
-  "releaseCommand": "node tools/release.mjs release 2.6.88",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.88",
+  "task": "docs/tasks/0091",
+  "releaseCommand": "node tools/release.mjs release 2.6.89",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.89",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
