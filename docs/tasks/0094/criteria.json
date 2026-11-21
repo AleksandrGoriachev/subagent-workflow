@@ -4,16 +4,15 @@
   "teardown": [],
   "redExpect": {
     "mustFail": [
-      "C1",
       "C2"
     ],
     "mustPass": [
+      "C1",
       "C3",
       "C4"
     ],
     "reasonWindow": 25,
     "reasons": {
-      "C1": "писатель",
       "C2": "no writer"
     }
   },
@@ -21,7 +20,7 @@
     {
       "id": "C1",
       "title": "writer квитанции: round-trip и отказ без review",
-      "command": "node --test --test-name-pattern=\"писатель\" plugin/test/review-receipt.test.mjs",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
       "cwd": ".",
       "covers": [
         "spec/scripts/lib/review-receipt.mjs",
