@@ -53,3 +53,34 @@ export function validateReviewReceipt({ taskDir, meta, review, reviewPath }) {
   }
   return { applicable: true, ok: problems.length === 0, problems, receipt, file: receiptFile };
 }
+
+/**
+ * 0094 (2.6.91): записать квитанцию ревью. Поля — ровно те, что проверяет
+ * validateReviewReceipt. Запись атомарная: временный файл → rename, чтобы
+ * приёмка не прочитала полузаписанную квитанцию.
+ *
+ * @returns {{ok: boolean, problems: string[], file: string, receipt: object|null}}
+ */
+export function writeReviewReceipt({ taskDir, reviewPath, reviewer, decision = 'accept', at = new Date().toISOString() } = {}) {
+  const dir = path.resolve(String(taskDir || '.'));
+  const reviewFile = reviewPath ? path.resolve(String(reviewPath)) : path.join(dir, 'review.json');
+  const file = path.join(dir, 'review.receipt.json');
+  const problems = [];
+  const who = String(reviewer || '').trim();
+  if (who === '') problems.push('reviewer обязателен');
+  if (!fs.existsSync(reviewFile)) problems.push('нет файла review.json: ' + reviewFile);
+  if (problems.length > 0) return { ok: false, problems, file, receipt: null };
+
+  const receipt = {
+    artifactSha256: sha256File(reviewFile),
+    reviewer: who,
+    decision: String(decision || 'accept').trim(),
+    at: String(at),
+    review: path.basename(reviewFile),
+  };
+  fs.mkdirSync(dir, { recursive: true });
+  const tmp = file + '.' + process.pid + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(receipt, null, 2) + '\n');
+  fs.renameSync(tmp, file);
+  return { ok: true, problems: [], file, receipt };
+}

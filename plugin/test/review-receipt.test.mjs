@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const { validateReviewReceipt } = await import('../../spec/scripts/lib/review-receipt.mjs');
+const { validateReviewReceipt, writeReviewReceipt } = await import('../../spec/scripts/lib/review-receipt.mjs');
 
 function fixture() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-receipt-'));
@@ -56,4 +56,21 @@ test('квитанция: ревьюер не объявлен — not-applicabl
   const result = validateReviewReceipt({ taskDir: dir, meta: {}, review });
   assert.equal(result.applicable, false);
   assert.equal(result.ok, true);
+});
+
+test('писатель квитанции: round-trip writer → валидатор', () => {
+  const { dir } = fixture();
+  const written = writeReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(written.ok, true);
+  assert.equal(written.receipt.artifactSha256, crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, 'review.json'))).digest('hex'));
+  const checked = validateReviewReceipt({ taskDir: dir, meta: { reviewer: 'reviewer-1' }, review: { reviewer: 'reviewer-1' } });
+  assert.equal(checked.ok, true);
+});
+
+test('писатель квитанции: без review.json — отказ, файл не создан', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-receipt-empty-'));
+  const written = writeReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(written.ok, false);
+  assert.match(written.problems.join(' '), /нет файла review\.json/u);
+  assert.equal(fs.existsSync(path.join(dir, 'review.receipt.json')), false);
 });
