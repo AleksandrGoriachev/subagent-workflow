@@ -1,0 +1,287 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "a32beeedc9129f53c65105bb23db2df3",
+  "runKind": "accept",
+  "task": "0086",
+  "createdAt": "2026-11-21T15:55:24.865Z",
+  "headSha": "1966f35af7c810bbd922b5b8038adec5f7c9cee5",
+  "contractCommit": "1966f35af7c810bbd922b5b8038adec5f7c9cee5",
+  "criteriaSha256": "2af2438c70a61ff1846ea0090b419ab8d23f502ee48960bf5488984fe6018d37",
+  "criteriaJsonSha256": "45ad3556de5b24efcae438c5309406b991389fa024541d2a1c5165330d7b9bae",
+  "taskFileSha256": "0c202735195053d14502ceb370172354bc91cdd68e334374c04a5035c00a2aea",
+  "changedPaths": [
+    "docs/tasks/0086/criteria.lock",
+    "docs/tasks/0086/gates.jsonl",
+    "docs/tasks/0086/gates.jsonl.tip",
+    "docs/tasks/0086/red.json",
+    "docs/tasks/0086/verify.executor.json",
+    "docs/tasks/0086/verify.json",
+    "plugin/test/task-guard.test.mjs",
+    "spec/scripts/init.mjs",
+    "spec/scripts/task-guard.mjs"
+  ],
+  "coverage": {
+    "declared": 20,
+    "covered": [
+      {
+        "path": "plugin/test/task-guard.test.mjs",
+        "criterion": "C10"
+      },
+      {
+        "path": "spec/scripts/init.mjs",
+        "criterion": "C6"
+      },
+      {
+        "path": "spec/scripts/task-guard.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": true,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C1",
+        "observable": "коммит вне активного задания отклоняется и при guard.enabled=false: exit 1 с названием пути",
+        "threshold": "C1 зелёный: covered=0, uncovered exit=1, в выводе «не покрыт» и путь",
+        "measuredBy": "C10"
+      }
+    ],
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C10"
+      }
+    ],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabled",
+      "exitCode": 0,
+      "durationMs": 22602,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "66429130d1b194099f2be2bd0ca0d4b2e3b3293192c2f3eafeffc29a7e76c25d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS disabled — covered=0 exit=1 path=true explains=true task-guard: коммит отклонён — изменение вне активного задания\n  не покрыт: notes.txt\n\nПокрытие (D3): allowedPaths задания, активного в том же коммите (criteria.lock есть,\nacceptance.json нет), каталог задания (после закрытия — его артефакты\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabledBypass",
+      "exitCode": 0,
+      "durationMs": 22385,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7a33be9a9674d51bcc3b224018584e8bd2f4360bf921296ab677ac705e85c6fb",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS disabledBypass — allowed=0 protected=1 text=true task-guard: метка \"workflow-bypass\" не действует на защищённые пути: tools/x.mjs\ntask-guard: нужен контракт задачи (allowedPaths) и артефакты ворот, а не метка\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabledAudit",
+      "exitCode": 0,
+      "durationMs": 23225,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "ff1a53d4f10f7e3bf47809365102bcd99dc3270671b1b246fbc9c4952ce7aa3d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS disabledAudit — audit=0 staged(clean)=0 task-guard: guard выключен (guard.enabled !== true) — аудит не выполняется\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/guard-acceptance.mjs --case allow && node spec/checks/guard-acceptance.mjs --case deny",
+      "exitCode": 0,
+      "durationMs": 41261,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "31976a76b35dee2519ac4520ad0ec1cbb5e2c1383921aa3dbc58a36fb1669847",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS allow — exit=0 \nPASS deny — exit=1 path=true explains=true task-guard: коммит отклонён — изменение вне активного задания\n  не покрыт: notes.txt\n\nПокрытие (D3): allowedPaths задания, активного в том же коммите (criteria.lock есть,\nacceptance.json нет), каталог задания (после закрытия — его артефакты\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/guard-acceptance.mjs --case bypass",
+      "exitCode": 0,
+      "durationMs": 24803,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "1b5a91c369f2bb1caa98ccfedeefc06f5b3239c900acf5821a1f50695b710fc1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS bypass — allow=0 audit=0 mentions=true task-guard: аудит диапазона HEAD~1..HEAD (коммитов: 1)\n  3e75fc7284f2 hotfix [workflow-bypass: срочно] — обход по метке \"workflow-bypass\"\n  итог: меток обхода 1, непокрытых путей 0\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/guard-acceptance.mjs --case pushAfterAcceptance",
+      "exitCode": 0,
+      "durationMs": 43119,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "38856541beae223205fdef70758126f7939bc72edbe71603340ac29db0905225",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS pushAfterAcceptance — commit=0 push=0 To C:\\Users\\GORYAC~1\\AppData\\Local\\Temp\\wf-push-UvHuqO\\remote.git\n   e0bcf6b..ae92e06  HEAD -> main\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/checks/guard-acceptance.mjs --case bypassOnPush",
+      "exitCode": 0,
+      "durationMs": 41581,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c99988cf5464be379d82a38b205458fd5762228c2a697be7d5702567dfaa04c3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS bypassOnPush — commit=0 push=0 To C:\\Users\\GORYAC~1\\AppData\\Local\\Temp\\wf-pushby-48ReOl\\remote.git\n   27eba7a..42d580b  HEAD -> main\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C8",
+      "command": "node spec/checks/guard-acceptance.mjs",
+      "exitCode": 0,
+      "durationMs": 141422,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "92b2d00cfd69ef3704f0e35a6605e477c5bca7fa6ea2037f9e0f8664c21acf14",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS allow — exit=0 \nPASS deny — exit=1 path=true explains=true task-guard: коммит отклонён — изменение вне активного задания\n  не покрыт: notes.txt\n\nПокрытие (D3): allowedPaths задания, активного в том же коммите (criteria.lock есть,\nacceptance.json нет), каталог задания (после закрытия — его артефакты\nPASS bypass — allow=0 audit=0 mentions=true task-guard: аудит диапазона HEAD~1..HEAD (коммитов: 1)\n  cc04d9a1225a hotfix [workflow-bypass: срочно] — обход по метке \"workflow-bypass\"\n  итог: меток обхода 1, непокрытых путей 0\nPASS disabled — covered=0 exit=1 path=true explains=true task-guard: коммит отклонён — изменение вне активного задания\n  не покрыт: notes.txt\n\nПокрытие (D3): allowedPaths задания, активного в том же коммите (criteria.lock есть,\nacceptance.json нет), каталог задания (после закрытия — его артефакты\nPASS disabledAudit — audit=0 staged(clean)=0 task-guard: guard выключен (guard.enabled !== true) — аудит не выполняется\nPASS disabledBypass — allowed=0 protected=1 text=true task-guard: метка \"workflow-bypass\" не действует на защищённые пути: tools/x.mjs\ntask-guard: нужен контракт задачи (allowedPaths) и артефакты ворот, а не метка\nPASS hooks — init=0 hooksPath=\"docs/subagent-workflow/hooks\" global=1 preCommit=true prePush=true\nPASS pushAfterAcceptance — commit=0 push=0 To C:\\Users\\GORYAC~1\\AppData\\Local\\Temp\\wf-push-qfHVwb\\remote.git\n   68287ca..3c3f265  HEAD -> main\nPASS bypassOnPush — commit=0 push=0 To C:\\Users\\GORYAC~1\\AppData\\Local\\Temp\\wf-pushby-xQkuSU\\remote.git\n   5c17de3..b48b2c2  HEAD -> main\nPASS panel — restSame=true logged=true toggled=true first={\"root\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-5oXOKy\",\"configPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-5oXOKy\\\\docs\\\\subagent-workflow\\\\workflow.config.json\",\"logPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-5oXOKy\\\\docs\\\\subagent-workflow\\\\guard.log\",\"guard\":{\"enabled\":true},\"previous\":false,\"changed\":true,\"actor\":\"d148fdcf-d084-4320-a363-06463f21ae94\",\"loggedAt\":\"2026-11-21T15:55:15.520Z\"} second={\"root\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-5oXOKy\",\"configPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-5oXOKy\\\\docs\\\\subagent-workflow\\\\workflow.config.json\",\"logPath\":\"C:\\\\Users\\\\GORYAC~1\\\\AppData\\\\Local\\\\Temp\\\\wf-guard-5oXOKy\\\\docs\\\\subagent-workflow\\\\guard.log\",\"guard\":{\"enabled\":false},\"previous\":true,\"changed\":true,\"actor\":\"d148fdcf-d084-4320-a363-06463f21ae94\",\"loggedAt\":\"2026-11-21T15:55:15.536Z\"}\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C9",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 94953,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C10",
+      "command": "node --test plugin/test/task-guard.test.mjs",
+      "exitCode": 0,
+      "durationMs": 35859,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c44369a434001e2127d78ac05736bf15342fe14d9029c13ed8949b82490260dd",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ok enabled=false: путь вне задания отклоняется с причиной\nok enabled=false: путь под активным заданием проходит\nok enabled=false: метка обхода разрешает незащищённый путь\nok enabled=false: метка обхода не прикрывает защищённый путь\nok enabled=false: --audit и --range не блокируют\nok enabled=true: прежние коды — покрыто 0, не покрыто 1\n# tests 6\n# fail 0\n✔ plugin\\test\\task-guard.test.mjs (34363.5576ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 34392.7388\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 10,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "1966f35af7c810bbd922b5b8038adec5f7c9cee5",
+    "contractCommit": "1966f35af7c810bbd922b5b8038adec5f7c9cee5",
+    "criteriaJsonSha256": "45ad3556de5b24efcae438c5309406b991389fa024541d2a1c5165330d7b9bae",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C8",
+      "C10"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C8",
+        "C10"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7",
+        "C9"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C8",
+          "ok": true,
+          "distance": 6,
+          "total": 17,
+          "window": 25
+        },
+        {
+          "id": "C10",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "0d193c8a6c1f1977ccddea6c5dfb6740ca86562716d2ae65c609bb5d7293053f",
+  "log": "verify.log"
+}

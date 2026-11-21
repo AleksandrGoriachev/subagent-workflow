@@ -188,8 +188,9 @@ if (argv.help) {
   console.log('       [--external <dir>] записать связь воркспейса с внешним движком и выйти;');
   console.log('                        ничего не разворачивается, карта: ~/.dsh/workflow/engine-roots.json');
   console.log('       [--git-init]     git init, если репозитория ещё нет, и продолжить развёртывание');
-  console.log('       Хуки (2.5.0): локальный git config core.hooksPath docs/subagent-workflow/hooks;');
-  console.log('       проверка коммита включается флагом guard.enabled в workflow.config.json.');
+  console.log('       Хуки (2.6.87): локальный git config core.hooksPath docs/subagent-workflow/hooks;');
+  console.log('       активное задание обязательно для коммита всегда; флаг guard.enabled');
+  console.log('       включает аудит и проверку диапазона (--range), а не обязательность задания.');
   process.exit(0);
 }
 
@@ -335,13 +336,13 @@ config.enforcement = enforcementBlock;
 fs.writeFileSync(configFile, JSON.stringify(config, null, 2) + '\n');
 
 /*
- * 2.5.0: хуки — часть развёрнутого пространства. git config core.hooksPath
+ * 2.6.87: хуки — часть развёрнутого пространства. git config core.hooksPath
  * ставится ЛОКАЛЬНО (решение D2): глобальный переключил бы хуки во всех
  * репозиториях машины. Повторный init идемпотентен: то же значение не меняется,
  * предупреждение печатается только при реальной замене чужого пути.
  *
- * Сами хуки безвредны, пока guard.enabled !== true: task-guard молча выходит 0.
- * Так включение проверки — один флаг, а не повторное развёртывание.
+ * 2.6.87: хуки действуют сразу — коммит без активного задания отклоняется при любом
+ * значении guard.enabled. Флаг включает аудит и проверку диапазона (--range).
  */
 const hooksRel = path.posix.join(workflowDir, 'hooks');
 const hooksDir = path.join(repo, hooksRel);
@@ -521,4 +522,4 @@ console.log('  git add ' + tasksDir + '/0001 checks && git commit -m "task 0001:
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-hash.mjs') + ' --task ' + tasksDir + '/0001 --write');
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-lint.mjs') + ' --task ' + tasksDir + '/0001 --strict');
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-red.mjs')  + ' --task ' + tasksDir + '/0001 --base HEAD');
-console.log('  guard: включите проверку коммитов на панели или флагом guard.enabled в ' + path.posix.join(workflowDir, 'workflow.config.json'));
+console.log('  guard: активное задание обязательно для коммита всегда; guard.enabled в ' + path.posix.join(workflowDir, 'workflow.config.json') + ' включает аудит и --range');

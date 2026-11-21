@@ -32,8 +32,12 @@
  * Настройки читаются из рабочего дерева (это действующая политика сейчас), а
  * состояние заданий — из коммита (это факт истории).
  *
- * Инвариант 2.5.0: при guard.enabled !== true скрипт ничего не делает — exit 0
- * и ни одной строки вывода (кроме явного --audit, который говорит, что выключен).
+ * Инвариант 2.6.87 (заменяет 2.5.0): обязательность активного задания для --staged
+ * НЕ зависит от guard.enabled. Флаг управляет только аудитом и проверкой диапазона:
+ * при enabled !== true --audit и --range не блокируют, а --staged по-прежнему
+ * требует задание (exit 1, если путь не покрыт). Метка обхода действует и при
+ * выключенном флаге, но защищённые пути не прикрывает. Причина замены: выключенный
+ * флаг превращал commit-гейт в пустой — коммит любых путей без задания.
  *
  * Пределы честные: git commit --no-verify и git push --no-verify пропускают
  * хуки целиком, следа в аудите не остаётся. Аудит показывает метки обхода, а
@@ -436,16 +440,24 @@ function main() {
 
   const config = loadConfig(repo);
   const guard = guardSettings(config);
-  if (!guard.enabled) {
-    if (audit) console.log('task-guard: guard выключен (guard.enabled !== true) — аудит не выполняется');
-    return 0;
-  }
-
+  /*
+   * 2.6.87: выключенный guard — это выключенный аудит и --range, а не отказ от
+   * обязательности задания. Проверка индекса идёт при любом значении флага;
+   * отличается только аудит и проверка диапазона.
+   */
   if (audit) {
+    if (!guard.enabled) {
+      console.log('task-guard: guard выключен (guard.enabled !== true) — аудит не выполняется');
+      return 0;
+    }
     if (range !== null) return auditRange(repo, config, guard, range);
     return auditStaged(repo, config, guard);
   }
-  if (guard.mode === 'off') return 0;
+  if (!staged && !guard.enabled) {
+    console.log('task-guard: guard выключен (guard.enabled !== true) — --range не проверяется; задание обязательно для --staged');
+    return 0;
+  }
+  if (guard.enabled && guard.mode === 'off') return 0;
 
   if (staged) {
     /*
@@ -468,7 +480,8 @@ function main() {
     const result = evaluate(stagedPaths(repo), coverageFromWorktree(repo, config), guard);
     if (result.uncovered.length === 0) return 0;
     printStagedUncovered(repo, result.uncovered, guard);
-    return guard.mode === 'warn' ? 0 : 1;
+    /* При выключенном флаге режим warn не смягчает: задание обязательно (2.6.87). */
+    return guard.enabled && guard.mode === 'warn' ? 0 : 1;
   }
 
   return checkRange(repo, config, guard, range);
