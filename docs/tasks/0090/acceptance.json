@@ -1,0 +1,207 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0090",
+  "title": "2.6.89: стоп по тишине вместо часового бюджета; метрики эффективности на доске",
+  "risk": "medium",
+  "taskFileSha256": "17544a40ccde7b514627adaa9719f19fc1de7c68080f2f66fb0cf9ff2b601502",
+  "criteriaSha256": "f08838801d8c2316648a9d163ca04e6b441c8d67d28a0eb9e9ce128a91821eb1",
+  "criteriaJsonSha256": "39a3e0e9ea015d0d1add324c36e4c9c9ff042f8a607fec238d333d5d295543ef",
+  "contractCommit": "d188bbb9a262e63a171a56cb54fcc0f4976f8806",
+  "baseCommit": "d188bbb9a262e63a171a56cb54fcc0f4976f8806",
+  "candidateCommit": "aa1350756d332f181c8402beeec0409539ef94a3",
+  "tree": "8ad6b5c9b6038833ffa28de9b670feec90ae7eeb",
+  "worktreeDigest": "b85633a27f359921a480dd8b6568f31f60aedd2265961a6b6bbc6e114daf8a69",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "e72bbb024b64f02069f403e7ceb29839",
+    "runKind": "accept",
+    "startedAt": "2026-11-21T21:45:08.437Z",
+    "finishedAt": "2026-11-21T21:47:32.132Z",
+    "durationMs": 143704,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "973b2390912f1076729c8b64917dea4a056480a19a3e899c669621de8d226fc3",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "долгое ожидание после тишины отклоняется с требованием промежуточной сдачи",
+      "threshold": "C1 зелёный: разрыв 11 мин при пороге 10 мин → deny, в причине «тишина» и «промежуточн»",
+      "measuredBy": "C2"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C2"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "d188bbb9a262e63a171a56cb54fcc0f4976f8806",
+    "contractCommit": "d188bbb9a262e63a171a56cb54fcc0f4976f8806",
+    "criteriaJsonSha256": "39a3e0e9ea015d0d1add324c36e4c9c9ff042f8a607fec238d333d5d295543ef",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "mustPass": [
+        "C5",
+        "C6"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 3,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node --test --test-name-pattern=\"тишина\" plugin/test/silence-guard.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1254,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"require('fs').rmSync('.tmp/metrics-publish-test',{recursive:true,force:true})\" && node tools/launch-metrics.mjs --publish .tmp/metrics-publish-test --workspaces e-trace --sessions 2 && node -e \"const fs=require('fs');if(!fs.existsSync('.tmp/metrics-publish-test/.dsh/workflow/metrics.json')){console.log('publish missing');process.exit(9)}\"",
+      "exitCode": 0,
+      "durationMs": 8470,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/api.js','utf8');if(!s.includes('/api/metrics')){console.log('no metrics route');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 750,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/client.js','utf8');if(!s.includes('Метрики')){console.log('no metrics tab');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 744,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 132445,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 105255,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-21T21:47:33.075Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 2,
+    "digest": "d30a00d515fdb9b01361fa12c3ccbe917a588d756f948ea3494b48728618e7df",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "JdwP7q98j6eecUvpflqRdFmyjJ0mM5D8zGNy4Vu6SkHrnVxUK8uhUXNtdh/VoiF2WwGoq+Y5CMLBGlJfPu6sCg=="
+}
