@@ -1,0 +1,193 @@
+{
+  "task": "0088",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5",
+      "C6",
+      "C7",
+      "C8",
+      "C9"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Could not find",
+      "C2": "Could not find",
+      "C3": "Could not find",
+      "C4": "criteria.lock отсутствует"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "сторож повторов блокирует третий одинаковый вызов",
+      "command": "node --test --test-name-pattern=\"повтор\" plugin/test/guard-router.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/wait-guard.js",
+        "plugin/test/guard-router.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      },
+      "effect": {
+        "observable": "повтор одного и того же вызова после отказа отклоняется с готовым маршрутом в сторож",
+        "threshold": "C1 зелёный: третий вызов deny, в причине «повтор» и «job.mjs start»",
+        "measuredBy": "C2"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "бюджет узла требует промежуточной сдачи",
+      "command": "node --test --test-name-pattern=\"бюджет\" plugin/test/guard-router.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/wait-guard.js",
+        "plugin/test/guard-router.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "отказ несёт маршрут job.mjs",
+      "command": "node --test --test-name-pattern=\"маршрут\" plugin/test/guard-router.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/wait-guard.js",
+        "plugin/test/guard-router.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "task-lint --strict требует resultShape",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/without-shape --strict",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs",
+        "docs/tasks/0088/fixtures/without-shape/**"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 1,
+        "stdoutContains": "resultShape"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "task-lint с resultShape проходит",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/with-shape",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs",
+        "docs/tasks/0088/fixtures/with-shape/**"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "без resultShape без --strict проходит (обратная совместимость)",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/without-shape",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs",
+        "docs/tasks/0088/fixtures/without-shape/**"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C7",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C8",
+      "title": "инструмент метрик сравнивает с baseline",
+      "command": "node tools/launch-metrics.mjs --compare docs/metrics/baseline-2.6.87.json --workspaces e-trace --sessions 2",
+      "cwd": ".",
+      "covers": [
+        "tools/launch-metrics.mjs",
+        "docs/metrics/baseline-2.6.87.json"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "воркспейс"
+      }
+    },
+    {
+      "id": "C9",
+      "title": "тесты плагина зелёные",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/**",
+        "plugin/test/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
