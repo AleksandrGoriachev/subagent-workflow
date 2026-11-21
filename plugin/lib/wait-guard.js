@@ -77,13 +77,18 @@ export const WAIT_POLICIES = ['fail', 'warn', 'off'];
  * «повтор после отказа»: агент не импровизирует, а получает маршрут в сторож.
  */
 export const REPEAT_LIMIT = 2;
+/** 2.6.89: тишина по умолчанию — 10 минут без событий считаются зависанием. */
+export const DEFAULT_SILENCE_MS = 600000;
 /** Память повторов и начало узла: ключ → состояние. Живёт в процессе плагина. */
 const guardMemory = new Map();
 const nodeStarts = new Map();
+/** 2.6.89: последнее событие сессии — основа стопа по тишине. */
+const lastSeen = new Map();
 /** Тестовый сброс памяти: без него сценарии влияют друг на друга. */
 export function resetGuardMemory() {
   guardMemory.clear();
   nodeStarts.clear();
+  lastSeen.clear();
 }
 /** Producer-owned источник notice, как у остальных сообщений плагина. */
 export const NOTICE_SOURCE_KIND = 'plugin:dsh-workflow-console';
@@ -319,6 +324,7 @@ function resolvePolicy(config) {
   const policy = WAIT_POLICIES.includes(raw) ? raw : 'fail';
   const budget = finiteNumber(firstDefined(source.waitBudgetMs, nested.waitBudgetMs));
   const nodeBudget = finiteNumber(firstDefined(source.nodeBudgetMs, nested.nodeBudgetMs));
+  const silence = finiteNumber(firstDefined(source.silenceMs, nested.silenceMs));
   const jobScript = firstDefined(source.jobScript, nested.jobScript) !== false;
   /* Корень профиля: root/repoRoot/workspaceRoot/roots[0] конфига (как в api.js), иначе cwd. */
   const firstConfiguredRoot = Array.isArray(source.roots)
@@ -332,6 +338,7 @@ function resolvePolicy(config) {
     policy,
     budgetMs: budget === null ? WAIT_BUDGET_MS : budget,
     nodeBudgetMs: nodeBudget === null || nodeBudget <= 0 ? 0 : nodeBudget,
+    silenceMs: silence === null ? DEFAULT_SILENCE_MS : silence,
     jobScript,
     root,
   };
@@ -471,11 +478,14 @@ function readWorkspaceWaitSettings(root, cache) {
     const policy = WAIT_POLICIES.includes(enforcement.waitPolicy) ? enforcement.waitPolicy : undefined;
     const budget = finiteNumber(enforcement.waitBudgetMs);
     const nodeBudget = finiteNumber(enforcement.nodeBudgetMs);
+    const silence = finiteNumber(enforcement.silenceMs);
     settings = {
       policy,
       budgetMs: budget !== null && budget > 0 ? budget : undefined,
       /* 2.6.88: бюджет жизни узла; 0/нет ключа — выключен. */
       nodeBudgetMs: nodeBudget !== null && nodeBudget > 0 ? nodeBudget : undefined,
+      /* 2.6.89: тишина; 0 — выключена, нет ключа — профильный дефолт. */
+      silenceMs: silence !== null ? silence : undefined,
     };
   } catch {
     settings = {};
@@ -495,6 +505,7 @@ function resolveCall(exec, state) {
   const policy = settings.policy !== undefined ? settings.policy : state.policy;
   const budgetMs = settings.budgetMs !== undefined ? settings.budgetMs : state.budgetMs;
   const nodeBudgetMs = settings.nodeBudgetMs !== undefined ? settings.nodeBudgetMs : state.nodeBudgetMs;
+  const silenceMs = settings.silenceMs !== undefined ? settings.silenceMs : state.silenceMs;
   /* Старый движок: сторожа в воркспейсе нет — отклонять нельзя, действует warn. */
   const effective = policy === 'fail' && !state.jobScript ? 'warn' : policy;
   return {
@@ -504,6 +515,7 @@ function resolveCall(exec, state) {
     effective,
     budgetMs,
     nodeBudgetMs,
+    silenceMs,
     jobScript: state.jobScript,
   };
 }
@@ -567,12 +579,18 @@ function routeHint(root, exec) {
 function preExecuteDenial(exec, state) {
   try {
     const decision = resolveCall(exec, state);
+    const now = typeof state.now === 'function' ? state.now() : Date.now();
+    const sessionId = sessionIdOf(exec);
+    /*
+     * 2.6.89: тишина считается по любым вызовам — и коротким тоже. Молчание
+     * между событиями и есть признак зависания; длительность работы — нет.
+     */
+    const previous = lastSeen.get(sessionId);
+    const gap = previous === undefined ? 0 : Math.max(0, now - previous);
+    lastSeen.set(sessionId, now);
     if (decision.effective !== 'fail') return null;
     const hit = detectLongWait(exec, decision.budgetMs);
     if (hit === null) return null;
-
-    const now = typeof state.now === 'function' ? state.now() : Date.now();
-    const sessionId = sessionIdOf(exec);
     const signature = signatureOf(exec);
     const repeatKey = sessionId + '|' + decision.root + '|' + signature;
     const attempt = guardMemory.get(repeatKey) || { count: 0 };
@@ -588,6 +606,10 @@ function preExecuteDenial(exec, state) {
     if (attempt.count > REPEAT_LIMIT) {
       reason = 'повтор того же вызова после отказа (' + attempt.count + '-й раз) — остановка: '
         + hit.detail + '. ' + routeHint(decision.root, exec);
+    } else if (decision.silenceMs > 0 && gap >= decision.silenceMs) {
+      reason = 'тишина ' + Math.round(gap / 60000) + ' мин без событий (порог '
+        + Math.round(decision.silenceMs / 60000) + ' мин): сдай промежуточный результат и продолжи следующим шагом. '
+        + routeHint(decision.root, exec);
     } else if (decision.nodeBudgetMs > 0 && elapsed + hit.waitMs > decision.nodeBudgetMs) {
       reason = 'бюджет узла исчерпан: прошло ' + Math.round(elapsed / 1000) + ' с из '
         + Math.round(decision.nodeBudgetMs / 1000) + ' с, а запрошено ещё '
@@ -682,6 +704,7 @@ export function registerWaitGuard(ctx, config = {}, options = {}) {
     policy: profile.policy,
     budgetMs: profile.budgetMs,
     nodeBudgetMs: profile.nodeBudgetMs,
+    silenceMs: profile.silenceMs,
     jobScript: profile.jobScript,
     fallbackRoot: profile.root,
     cache: new Map(),

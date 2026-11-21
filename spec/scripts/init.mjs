@@ -323,6 +323,7 @@ const ENFORCEMENT_DEFAULTS = {
   loopLimit: 3,
   waitBudgetMs: 120000,
     nodeBudgetMs: 0,
+    silenceMs: 600000,
   processPolicy: 'fail',
   structurePolicy: 'fail',
 };

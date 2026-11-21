@@ -891,6 +891,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         const [card, setCard] = React.useState(null);
         const [policy, setPolicy] = React.useState(null);
         const [compat, setCompat] = React.useState(null);
+        const [metrics, setMetrics] = React.useState(null);
         const [tab, setTab] = React.useState("overview");
         const [root, setRoot] = React.useState(null);
         const [currentWorkspace, setCurrentWorkspace] = React.useState(null);
@@ -1046,6 +1047,26 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           setError(null);
           try {
             setCompat(await apiGet("/api/compat", root));
+          } catch (failure) {
+            setError(errorText(failure));
+          } finally {
+            setBusy(false);
+          }
+        }
+
+        /*
+         * 2.6.89: снимок метрик эффективности узлов публикует launch-metrics
+         * (--publish <корень>), панель его только читает. Тяжёлый пересчёт
+         * журналов в браузере не делается: снимок показывает автор и время.
+         */
+        async function openMetrics(force = false) {
+          setCard(null);
+          setTab("metrics");
+          if (!root || (metrics && !force)) return;
+          setBusy(true);
+          setError(null);
+          try {
+            setMetrics(await apiGet("/api/metrics", root));
           } catch (failure) {
             setError(errorText(failure));
           } finally {
@@ -2579,7 +2600,12 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             "Совместимость",
             compatAttention ? h("span", { style: { color: T.warn } }, " !") : null,
           );
-          return h("div", { style: S.tabs }, boardTab, overviewTab, anchorsTab, policyTab, compatTab);
+          const metricsTab = h(
+            "button",
+            { type: "button", style: tab === "metrics" ? S.tabActive : S.tab, onClick: () => void openMetrics() },
+            "Метрики",
+          );
+          return h("div", { style: S.tabs }, boardTab, overviewTab, anchorsTab, policyTab, compatTab, metricsTab);
         }
 
         function stageColumn(stage) {
@@ -3647,6 +3673,54 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
           );
         }
 
+        /* 2.6.89: витрина эффективности — доли, а не абсолюты (объём журналов растёт). */
+        function renderMetrics() {
+          if (!root) return h("div", { style: S.empty }, "Корень не настроен: добавьте roots в cordis.patch.yml.");
+          if (busy && !metrics) return h("div", { style: S.empty }, "Читаем снимок метрик…");
+          if (!metrics) return h("div", { style: S.empty }, "Снимок метрик ещё не прочитан. Нажмите „Перечитать“.");
+          if (metrics.error) {
+            return h(
+              "div",
+              { style: S.empty },
+              "Снимок метрик не опубликован: " + metrics.error + ". Публикация: node tools/launch-metrics.mjs --publish .",
+            );
+          }
+          const snapshot = metrics.snapshot || {};
+          const rows = (snapshot.workspaces || []).map((w) => [
+            h("span", { style: S.mono }, String(w.workspace).slice(-42)),
+            String(w.sessions),
+            String(w.avgTurnMin) + " мин",
+            String(w.p90TurnMin) + " мин",
+            String(w.longTurnRate),
+            String(w.killedRate),
+            String(w.refusalsPerSession),
+            String(w.loopsPerSession),
+          ]);
+          return h(
+            "div",
+            null,
+            h("h2", { style: S.summaryTitle }, "Метрики эффективности узлов"),
+            h(
+              "div",
+              { style: S.hint },
+              "Снимок от " + (snapshot.generatedAt || "неизвестно") + ", сессий в срезе: "
+                + (snapshot.sessionsScanned || 0) + ". Публикуется командой node tools/launch-metrics.mjs --publish . ;"
+                + " сравнение с baseline — тот же инструмент с --compare docs/metrics/baseline-2.6.87.json.",
+            ),
+            h(
+              "div",
+              { style: S.actions },
+              h("button", { type: "button", style: S.button, disabled: busy, onClick: () => void openMetrics(true) }, "Перечитать"),
+            ),
+            rows.length === 0
+              ? h("div", { style: S.empty }, "В снимке нет воркспейсов.")
+              : section("По воркспейсам", table(
+                ["воркспейс", "сессий", "средний ход", "p90", "длинные", "killed", "отказы/сесс.", "петли/сесс."],
+                rows,
+              )),
+          );
+        }
+
         function renderCompat() {
           /*
            * В пространстве без движка вкладка «Совместимость» тоже не тупик:
@@ -3791,6 +3865,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         if (card) body = renderCard();
         else if (tab === "policy") body = renderPolicy();
         else if (tab === "compat") body = renderCompat();
+        else if (tab === "metrics") body = renderMetrics();
         else if (tab === "board") body = renderBoard();
         else if (tab === "anchors") body = renderAnchorsTab();
         else body = renderOverview();

@@ -35,6 +35,8 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 const OUT = arg('--out', '');
+/** 2.6.89: публикация снимка в воркспейс для панели ( /api/metrics ). */
+const PUBLISH = arg('--publish', '');
 const COMPARE = arg('--compare', '');
 const ONLY = arg('--workspaces', '');
 const LIMIT = Number(arg('--sessions', '0')) || 0;
@@ -192,9 +194,17 @@ function main() {
   const snapshot = {
     schema: SCHEMA,
     root: ROOT,
+    generatedAt: new Date().toISOString(),
     sessionsScanned: entries.length,
     workspaces,
   };
+  if (PUBLISH) {
+    /* Панель читает только этот файл: тяжёлый пересчёт в браузере не нужен. */
+    const target = path.join(path.resolve(PUBLISH), '.dsh', 'workflow');
+    fs.mkdirSync(target, { recursive: true });
+    fs.writeFileSync(path.join(target, 'metrics.json'), JSON.stringify(snapshot, null, 2) + '\n');
+    console.log('launch-metrics: снимок опубликован в ' + path.join(target, 'metrics.json'));
+  }
   if (OUT) { fs.mkdirSync(path.dirname(path.resolve(OUT)), { recursive: true }); fs.writeFileSync(OUT, JSON.stringify(snapshot, null, 2) + '\n'); }
   if (COMPARE) {
     if (!fs.existsSync(COMPARE)) { console.error('launch-metrics: нет baseline ' + COMPARE); return 3; }

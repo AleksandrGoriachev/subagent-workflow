@@ -1,0 +1,174 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0090",
+  "createdAt": "2026-11-21T21:41:50.085Z",
+  "base": "HEAD",
+  "baseSha": "d188bbb9a262e63a171a56cb54fcc0f4976f8806",
+  "headSha": "d188bbb9a262e63a171a56cb54fcc0f4976f8806",
+  "contractCommit": "d188bbb9a262e63a171a56cb54fcc0f4976f8806",
+  "criteriaSha256": "f08838801d8c2316648a9d163ca04e6b441c8d67d28a0eb9e9ce128a91821eb1",
+  "criteriaJsonSha256": "39a3e0e9ea015d0d1add324c36e4c9c9ff042f8a607fec238d333d5d295543ef",
+  "dirtyPaths": [
+    "docs/tasks/0090/criteria.lock",
+    "docs/tasks/0090/gates.jsonl",
+    "docs/tasks/0090/gates.jsonl.tip"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node --test --test-name-pattern=\"тишина\" plugin/test/silence-guard.test.mjs",
+      "exitCode": 1,
+      "durationMs": 675,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: fail 0"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "3d15419bcb7d47940d46f007cf1ad945c14512a0af3129e95346dbd49b4135cf",
+      "stdoutPreview": "",
+      "stderrPreview": "Could not find 'plugin/test/silence-guard.test.mjs'\n"
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"require('fs').rmSync('.tmp/metrics-publish-test',{recursive:true,force:true})\" && node tools/launch-metrics.mjs --publish .tmp/metrics-publish-test --workspaces e-trace --sessions 2 && node -e \"const fs=require('fs');if(!fs.existsSync('.tmp/metrics-publish-test/.dsh/workflow/metrics.json')){console.log('publish missing');process.exit(9)}\"",
+      "exitCode": 9,
+      "durationMs": 9545,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 9 != 0"
+      ],
+      "stdoutSha256": "d3d247517b271e1ad7814b286dcb16db7cf646a37c9940c215b05e157e5e5304",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "сессий в снимке: 2\nC-Users-Goryachev-Documents-deepseek-harness-e-trace сессий    2 | ходов  220 | средний  3.45 мин | p90     8 мин | длинных 0.018 | killed 0.007 | отказы/сессия 0 | петли/сессия 7\npublish missing\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/api.js','utf8');if(!s.includes('/api/metrics')){console.log('no metrics route');process.exit(1)}\"",
+      "exitCode": 1,
+      "durationMs": 756,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "ba51b5656cbfe5757c33e436ca3f74992420bb8c96d40c4aa4a9a694c2ba4568",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no metrics route\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/client.js','utf8');if(!s.includes('Метрики')){console.log('no metrics tab');process.exit(1)}\"",
+      "exitCode": 1,
+      "durationMs": 839,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "595f189c3494ccd9e6aeb7da7daf7d10d043a8b44c6a64fd08c9946533dd40f1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no metrics tab\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 149306,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "17a20940c95414e987eafb571dd67f3c3a2f6b6780953e17e9a6f7fcff6fa718",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 43 файл(ов)\n✔ c1: traversal и абсолютный путь не проходят (12.8154ms)\n✔ c2: факты другого run — C10 fail (239.3873ms)\n✔ c3: конфликтные доказательства гейта — C5 fail (259.0805ms)\n✔ c4: пустой объявленный план запрещает действия (457.4109ms)\n✔ c5: C9 требует проверенной подписи (858.4173ms)\n✔ c1: без approval — отказ (12.4082ms)\n✔ c2: hash не совпал — отказ (0.638ms)\n✔ c3: просрочка — предупреждение, а не отказ (решение заказчика 09.11) (1.352ms)\n✔ c4: релизов больше порога — предупреждение (0.5187ms)\n✔ c5: inWork не в счёте, валидный набор — OK (0.5002ms)\n✔ c6: версии сравниваются числово, релизы считаются от подтверждения (2.8839ms)\n✔ checkRepo без approval.json сообщает причину, а не падает (800.8287ms)\n✔ c7: утверждение принимается только с подписью human-ключа (15.9202ms)\n✔ c8: правка anchors.json при старой подписи не проходит (хеш и подпись — оба) (1.0525ms)\n✔ c9: слой и исполнитель проверки обязательны и согласованы (1.547ms)\n✔ c6: проектный слой утверждается отдельно и не подменяет контур (242.8971ms)\n✔ c1: без утверждения статус — не утверждены (57.4536ms)\n✔ c2: подпись человеческим ключом утверждает якоря (205.2729ms)\n✔ c3: агентский ключ не может утвердить якоря (66.4829ms)\n✔ c4: правка якорей после подписи ломает утверждение (188.6927ms)\n✔ c7: статус отдаёт список правил — подписывать вслепую нельзя (114.3021ms)\n✔ c6: подпись движка (sign.mjs) принимается панелью — один канон (177.5814ms)\n✔ c5: без ключа — понятная ошибка (98.6942ms)\n✔ c8: абсолютный путь ключа не склеивается с корнем воркспейса (106.6652ms)\n✔ c9: результат подписи виден верхними полями (approved, keyId, at, hash) (134.0311ms)\n✔ c10: список якорей несёт слой и исполнителя проверки (схема 0.3) (58.0883ms)\n✔ c11: подпись выпускается во вложенной форме 0.3 и проверяется (80.8875ms)\n✔ c1: пустой слой — не отказ, но предупреждение (13.182ms)\n✔ c2: корректный проектный якорь проходит (22.0104ms)\n✔ c3: layer, enforcedBy, check и статус проверяются (1.5956ms)\n✔ c4: дубль формулировки ловится нормализацией (1.3732ms)\n✔ c5: proof, потолок и истёкший срок (1.8096ms)\n✔ c6: файл без LF в конце — отказ по канону (23.7288ms)\n✔ GET /workflow/api/status reports the repository and policy (8884.7515ms)\n✔ GET /workflow/api/tasks returns the board with stages and skipped files (7575.3046ms)\n✔ GET /workflow/api/task/:id returns decisions, attack, coverage and record (6951.4753ms)\n✔ GET /workflow/api/policy matches the doctor policy line (4818.2909ms)\n✔ GET /workflow/api/compat reports versions and recommendations (5754.8161ms)\n✔ a registered workspace is readable even when it is not a configured root (5768.2768ms)\n✔ non-GET methods answer 405 with Allow: GET (4153.0239ms)\n✔ unknown routes answer 404 and a foreign root answers 400 (4002.2153ms)\n✔ a non-loopback peer is rejected (3487.022ms)\n✔ a traversal-shaped task id is rejected (3643.794ms)\n✔ GET /workflow/api/checks lists the read-only checks (3554.2304ms)\n✔ POST /workflow/api/run returns the log of a passing check and writes nothing (4502.3739ms)\n✔ a failing check is a result, not an error (4777.7551ms)\n✔ run rejects unknown checks, missing tasks and absent scripts (4707.3954ms)\n✔ run is POST-only and other routes stay GET-only (3838.6014ms)\n✔ POST /workflow/api/guard flips only guard.enabled and logs it (4408.6949ms)\n✔ guard route is POST-only and validates its body and root (3638.1757ms)\n✔ a full request sweep does not change files or git status (7760.6906ms)\n✔ POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0) (6376.4582ms)\n✔ deploy без confirm ничего не пишет, POST-only и проверяет корень (1504.5049ms)\n✔ POST guard/deploy требуют application/json — иначе 415 и никакой записи (5595.3342ms)\n✔ POST guard/deploy отвергают чужой Origin — 403, до записи (5483.2746ms)\n✔ deploy создаёт ключ проекта и не трогает глобальный ключ (9821.6443ms)\n✔ POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0) (7177.6151ms)\n✔ POST /workflow/api/update target engine-rep\n…[truncated 17206 chars]",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 121983,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 4,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3",
+    "C4"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5",
+      "C6"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 3,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C4",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

@@ -503,6 +503,28 @@ export function createWebHandler(runtime) {
       }
 
       const selection = selectRoot(runtime, url.searchParams.get('root'));
+      /*
+       * 2.6.89: снимок метрик эффективности узлов. Считает tools/launch-metrics.mjs
+       * (--publish <root>), панель только читает — браузер не пересчитывает журналы.
+       */
+      if (rel === '/api/metrics') {
+        const root = selection.root;
+        if (!root) {
+          sendJson(res, 400, { error: selection.error || 'root required' });
+          return;
+        }
+        const file = path.join(root, '.dsh', 'workflow', 'metrics.json');
+        let snapshot = null;
+        let error = null;
+        try {
+          snapshot = JSON.parse(fs.readFileSync(file, 'utf8'));
+        } catch {
+          error = 'снимок метрик не опубликован: node tools/launch-metrics.mjs --publish "' + root + '"';
+        }
+        sendJson(res, 200, { root, snapshot, error, file });
+        return;
+      }
+
       if (rel === '/api/status') {
         const roots = runtime.roots.map((root) => ({ path: root, exists: fs.existsSync(root) }));
         const rootConfigured = selection.root !== null
