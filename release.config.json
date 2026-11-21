@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.89",
+  "version": "2.6.90",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.89 — стоп по тишине и витрина метрик",
+  "releaseName": "2.6.90 — реестр задач и квитанция ревью",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0091",
-  "releaseCommand": "node tools/release.mjs release 2.6.89",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.89",
+  "task": "docs/tasks/0093",
+  "releaseCommand": "node tools/release.mjs release 2.6.90",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.90",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",

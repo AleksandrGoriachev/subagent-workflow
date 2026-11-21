@@ -1,5 +1,16 @@
 # Изменения
 
+## 2.6.90 — 2026-11-22 (панель 0.9.38)
+
+- **Реестр задач в движке (0092).** Если есть `docs/tasks/REGISTRY.json`, `task-lint` отвергает незарегистрированный
+  номер и чужой `subject`; нет файла — поведение прежнее. Инструменты ведения: `tools/task-register.mjs`,
+  `tools/task-next-id.mjs`.
+- **Квитанция ревью.** `task-accept` при объявленном `reviewer`/`reviewerNode` требует
+  `review.receipt.json` (`artifactSha256 = sha256(review.json)`, тот же ревьюер, `decision=accept`);
+  без объявленного ревьюера — not-applicable.
+- Тесты: новые наборы `registry-lint` и `review-receipt`, полный набор плагина и selftest зелёные.
+  Требуется перезапуск DSH.
+
 ## 2.6.89 — 2026-11-22 (панель 0.9.38)
 
 - **Стоп по тишине (0090).** Вместо часового бюджета — разрыв между событиями: `enforcement.silenceMs`
