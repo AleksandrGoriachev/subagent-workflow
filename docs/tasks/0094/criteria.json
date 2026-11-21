@@ -1,0 +1,91 @@
+{
+  "task": "0094",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "писатель",
+      "C2": "no writer"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "writer квитанции: round-trip и отказ без review",
+      "command": "node --test --test-name-pattern=\"писатель\" plugin/test/review-receipt.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/review-receipt.mjs",
+        "plugin/test/review-receipt.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "review-receipt.mjs экспортирует writeReviewReceipt",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/lib/review-receipt.mjs','utf8');if(!s.includes('export function writeReviewReceipt')){console.log('no writer');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/review-receipt.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "тесты плагина зелёные",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/**",
+        "plugin/test/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
