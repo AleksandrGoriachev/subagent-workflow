@@ -1,0 +1,132 @@
+{
+  "task": "0090",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5",
+      "C6"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Could not find",
+      "C2": "publish missing",
+      "C3": "no metrics route",
+      "C4": "no metrics tab"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "стоп по тишине: после разрыва долгое ожидание отклоняется",
+      "command": "node --test --test-name-pattern=\"тишина\" plugin/test/silence-guard.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/wait-guard.js",
+        "plugin/test/silence-guard.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      },
+      "effect": {
+        "observable": "долгое ожидание после тишины отклоняется с требованием промежуточной сдачи",
+        "threshold": "C1 зелёный: разрыв 11 мин при пороге 10 мин → deny, в причине «тишина» и «промежуточн»",
+        "measuredBy": "C2"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "launch-metrics --publish пишет снимок в воркспейс",
+      "command": "node tools/launch-metrics.mjs --publish .tmp/metrics-publish-test --workspaces e-trace --sessions 2 && node -e \"const fs=require('fs');if(!fs.existsSync('.tmp/metrics-publish-test/.dsh/workflow/metrics.json')){console.log('publish missing');process.exit(9)}\"",
+      "cwd": ".",
+      "covers": [
+        "tools/launch-metrics.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "API отдаёт /api/metrics",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/api.js','utf8');if(!s.includes('/api/metrics')){console.log('no metrics route');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/api.js"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "панель имеет вкладку «Метрики»",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/client.js','utf8');if(!s.includes('Метрики')){console.log('no metrics tab');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/client.js"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "тесты плагина зелёные",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/**",
+        "plugin/test/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
