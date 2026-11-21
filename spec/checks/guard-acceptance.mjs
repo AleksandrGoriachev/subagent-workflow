@@ -154,13 +154,54 @@ const CASES = {
       };
     } finally { cleanup(repo); }
   },
-  /* Выключенный guard не мешает. */
+  /*
+   * 2.6.87: выключенный guard отключает аудит и --range, но НЕ обязательность
+   * задания. Путь под активным заданием проходит, путь вне задания — отказ.
+   */
   disabled() {
     const repo = makeRepo({ enabled: false });
     try {
+      stage(repo, 'src/a.js');
+      const covered = guard(repo, ['--staged']);
       stage(repo, 'notes.txt');
       const result = guard(repo, ['--staged']);
-      return { ok: result.code === 0, detail: 'exit=' + result.code + ' ' + result.out.trim().slice(0, 160) };
+      const mentionsPath = result.out.includes('notes.txt');
+      const explains = /не покрыт|задани/i.test(result.out);
+      return {
+        ok: covered.code === 0 && result.code === 1 && mentionsPath && explains,
+        detail: 'covered=' + covered.code + ' exit=' + result.code + ' path=' + mentionsPath
+          + ' explains=' + explains + ' ' + result.out.trim().slice(0, 240),
+      };
+    } finally { cleanup(repo); }
+  },
+  /* 2.6.87: при выключенном guard аудит и --range не падают и не блокируют. */
+  disabledAudit() {
+    const repo = makeRepo({ enabled: false });
+    try {
+      stage(repo, 'notes.txt');
+      git(repo, ['commit', '-q', '--no-verify', '-m', 'notes: вне задания']);
+      const audit = guard(repo, ['--audit', '--range', 'HEAD~1..HEAD']);
+      const range = guard(repo, ['--staged']);
+      return {
+        ok: audit.code === 0 && range.code === 0,
+        detail: 'audit=' + audit.code + ' staged(clean)=' + range.code + ' ' + audit.out.trim().slice(0, 200),
+      };
+    } finally { cleanup(repo); }
+  },
+  /* 2.6.87: при выключенном guard метка обхода действует, защищённые пути — нет. */
+  disabledBypass() {
+    const repo = makeRepo({ enabled: false });
+    try {
+      stage(repo, 'notes.txt');
+      const allowed = guard(repo, ['--staged', '--message', 'hotfix [workflow-bypass: срочно]']);
+      stage(repo, 'tools/x.mjs', 'export const x = 1;\n');
+      const denied = guard(repo, ['--staged', '--message', 'hotfix [workflow-bypass: срочно]']);
+      const text = denied.out.includes('tools/x.mjs') || /защищённ/i.test(denied.out);
+      return {
+        ok: allowed.code === 0 && denied.code === 1 && text,
+        detail: 'allowed=' + allowed.code + ' protected=' + denied.code + ' text=' + text
+          + ' ' + denied.out.trim().slice(0, 240),
+      };
     } finally { cleanup(repo); }
   },
   /* init ставит хуки локально и только в этом репозитории. */
@@ -210,7 +251,6 @@ const CASES = {
       git(repo, ['init', '-q']);
       git(repo, ['config', 'user.email', 'guard@local']);
       git(repo, ['config', 'user.name', 'guard']);
-      git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
       copyTree(path.join(PKG, 'spec'), path.join(repo, 'docs', 'subagent-workflow'));
       write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(false), null, 2) + '\n');
       const dir = path.join(repo, 'docs', 'tasks', '0001');
@@ -229,6 +269,8 @@ const CASES = {
       git(repo, ['commit', '-q', '-m', 'base (guard off)']);
       git(repo, ['remote', 'add', 'origin', bare]);
       git(repo, ['push', '-q', '-u', 'origin', 'HEAD:refs/heads/main']);
+      /* 2.6.87: хуки ставим после базового коммита — он сам вне задания. */
+      git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
       /* Включаем guard в рабочем дереве, не коммитя: конфиг читается хуком. */
       write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(true), null, 2) + '\n');
       /*
@@ -269,7 +311,6 @@ const CASES = {
       git(repo, ['init', '-q']);
       git(repo, ['config', 'user.email', 'guard@local']);
       git(repo, ['config', 'user.name', 'guard']);
-      git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
       copyTree(path.join(PKG, 'spec'), path.join(repo, 'docs', 'subagent-workflow'));
       write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(false), null, 2) + '\n');
       write(path.join(repo, 'README.md'), '# проба\n');
@@ -277,6 +318,8 @@ const CASES = {
       git(repo, ['commit', '-q', '-m', 'base (guard off)']);
       git(repo, ['remote', 'add', 'origin', bare]);
       git(repo, ['push', '-q', '-u', 'origin', 'HEAD:refs/heads/main']);
+      /* 2.6.87: хуки ставим после базового коммита — он сам вне задания. */
+      git(repo, ['config', 'core.hooksPath', 'docs/subagent-workflow/hooks']);
       write(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json'), JSON.stringify(guardConfig(true), null, 2) + '\n');
       /* Контроль: без метки коммит вне задания отклоняется — иначе хуки не активны. */
       write(path.join(repo, 'other.txt'), 'вне задания\n');

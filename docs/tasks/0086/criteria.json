@@ -1,0 +1,215 @@
+{
+  "task": "0086",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C8",
+      "C10"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7",
+      "C9"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "FAIL disabled",
+      "C2": "FAIL disabledBypass",
+      "C8": "FAIL disabled",
+      "C10": "Could not find"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "enabled=false: путь вне задания отклоняется, под заданием проходит",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabled",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS disabled"
+      },
+      "effect": {
+        "observable": "коммит вне активного задания отклоняется и при guard.enabled=false: exit 1 с названием пути",
+        "threshold": "C1 зелёный: covered=0, uncovered exit=1, в выводе «не покрыт» и путь",
+        "measuredBy": "C10"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "enabled=false: метка обхода действует, защищённые пути нет",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabledBypass",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS disabledBypass"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "enabled=false: аудит и --range не падают",
+      "command": "node spec/checks/guard-acceptance.mjs --case disabledAudit",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS disabledAudit"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "enabled=true: покрытый путь проходит, непокрытый отклоняется",
+      "command": "node spec/checks/guard-acceptance.mjs --case allow && node spec/checks/guard-acceptance.mjs --case deny",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS deny"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "enabled=true: метка обхода разрешает и попадает в аудит",
+      "command": "node spec/checks/guard-acceptance.mjs --case bypass",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS bypass"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "пуш после приёмки проходит; init.mjs с новым комментарием работает (хуки ставятся)",
+      "command": "node spec/checks/guard-acceptance.mjs --case pushAfterAcceptance",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs",
+        "spec/scripts/init.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS pushAfterAcceptance"
+      }
+    },
+    {
+      "id": "C7",
+      "title": "метка обхода работает и на пуше",
+      "command": "node spec/checks/guard-acceptance.mjs --case bypassOnPush",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS bypassOnPush"
+      }
+    },
+    {
+      "id": "C8",
+      "title": "все кейсы guard-acceptance зелёные",
+      "command": "node spec/checks/guard-acceptance.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 420000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS panel"
+      }
+    },
+    {
+      "id": "C9",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C10",
+      "title": "новый тест task-guard проходит",
+      "command": "node --test plugin/test/task-guard.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/task-guard.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "# fail 0"
+      }
+    }
+  ]
+}

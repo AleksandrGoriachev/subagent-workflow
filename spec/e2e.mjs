@@ -94,10 +94,11 @@ try {
   );
 
   /*
-   * 2.5.0: guard — граница истории. Хуки поставлены init-ом (локальный
-   * core.hooksPath), поэтому проверяется настоящий git commit, а не CLI:
-   * выключенный guard молчит, включённый отклоняет коммит вне задания, метка
-   * обхода в сообщении коммита разрешает и остаётся в аудите.
+   * 2.6.87: guard — граница истории. Хуки поставлены init-ом (локальный
+   * core.hooksPath), поэтому проверяется настоящий git commit, а не CLI.
+   * Обязательность задания от флага не зависит: и при enabled=false коммит вне
+   * задания отклоняется; флаг выключает аудит и --range. Метка обхода в
+   * сообщении разрешает коммит, кроме защищённых путей.
    */
   const guardScript = path.join(repo, 'docs/subagent-workflow/scripts/task-guard.mjs');
   const readConfig = () => JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -117,23 +118,29 @@ try {
     JSON.stringify({ status: hooksPath.status, path: hooksPath.stdout.trim() }));
 
   setGuard(false);
-  write(path.join(repo, 'src/probe.js'), 'export const probe = 1;\n');
-  git(['add', 'src/probe.js']);
-  const guardOffCommit = gitTry(['commit', '-q', '-m', 'probe: guard выключен']);
-  report('2.5.0: выключенный guard не мешает коммиту вне задания',
-    guardOffCommit.status === 0, (guardOffCommit.stdout || '') + (guardOffCommit.stderr || ''));
-
-  setGuard(true);
   write(path.join(repo, 'notes.txt'), 'x\n');
   git(['add', 'notes.txt']);
-  const guardDeny = gitTry(['commit', '-m', 'notes: вне задания']);
+  const guardOffDeny = gitTry(['commit', '-m', 'notes: вне задания при выключенном guard']);
+  const guardOffDenyText = (guardOffDeny.stdout || '') + (guardOffDeny.stderr || '');
+  report('2.6.87: выключенный guard отклоняет коммит вне задания',
+    guardOffDeny.status !== 0 && /не покрыт/.test(guardOffDenyText) && /notes\.txt/.test(guardOffDenyText),
+    guardOffDenyText);
+
+  const guardOffBypass = gitTry(['commit', '-q', '-m', 'notes: срочно [workflow-bypass: выключенный guard]']);
+  report('2.6.87: при выключенном guard метка обхода разрешает коммит',
+    guardOffBypass.status === 0, (guardOffBypass.stdout || '') + (guardOffBypass.stderr || ''));
+
+  setGuard(true);
+  write(path.join(repo, 'notes2.txt'), 'x\n');
+  git(['add', 'notes2.txt']);
+  const guardDeny = gitTry(['commit', '-m', 'notes2: вне задания']);
   const guardDenyText = (guardDeny.stdout || '') + (guardDeny.stderr || '');
-  report('2.5.0: включённый guard отклоняет коммит вне задания',
-    guardDeny.status !== 0 && /не покрыт/.test(guardDenyText) && /notes\.txt/.test(guardDenyText),
+  report('2.6.87: включённый guard отклоняет коммит вне задания',
+    guardDeny.status !== 0 && /не покрыт/.test(guardDenyText) && /notes2\.txt/.test(guardDenyText),
     guardDenyText);
 
-  const guardBypass = gitTry(['commit', '-q', '-m', 'notes: срочно [workflow-bypass: проверка e2e]']);
-  report('2.5.0: метка обхода в сообщении разрешает коммит',
+  const guardBypass = gitTry(['commit', '-q', '-m', 'notes2: срочно [workflow-bypass: проверка e2e]']);
+  report('2.6.87: метка обхода в сообщении разрешает коммит',
     guardBypass.status === 0, (guardBypass.stdout || '') + (guardBypass.stderr || ''));
   const guardAudit = spawnSyncPipeFree(
     process.execPath,
@@ -145,23 +152,37 @@ try {
     'audit-status=' + guardAudit.status + ' script=' + guardScript + ' err=' + String(guardAudit.error && guardAudit.error.message || '') + ' out=' + ((guardAudit.stdout || '') + (guardAudit.stderr || '')).slice(0, 200));
 
   /*
-   * pre-push: тот же guard на диапазоне, который уезжает. Ветка новая, поэтому
-   * хук проверяет коммиты, которых нет ни в одном remote.
+   * pre-push проверяет диапазон, который уезжает. Чтобы было что проверять,
+   * делаем коммит вне задания В ОБХОД хуков (--no-verify — предел честности,
+   * задокументированный в task-guard): такой коммит в истории останется.
    */
+  write(path.join(repo, 'hidden.txt'), 'x\n');
+  git(['add', 'hidden.txt']);
+  const hiddenCommit = spawnSyncPipeFree(
+    'git',
+    ['-C', repo, 'commit', '-q', '--no-verify', '-m', 'hidden: вне задания, хуки обойдены'],
+    { encoding: 'utf8' },
+  );
+  report('2.6.87: коммит в обход хуков создан (предел --no-verify)',
+    hiddenCommit.status === 0, (hiddenCommit.stdout || '') + (hiddenCommit.stderr || ''));
+
   const bareOrigin = path.join(tmp, 'origin.git');
   spawnSyncPipeFree('git', ['init', '--bare', '-q', bareOrigin], { encoding: 'utf8' });
   gitTry(['remote', 'add', 'origin', bareOrigin]);
   const deniedPush = gitTry(['push', 'origin', 'HEAD']);
   const deniedPushText = (deniedPush.stdout || '') + (deniedPush.stderr || '');
-  report('2.5.0: guard отклоняет push с изменением вне задания',
+  report('2.6.87: guard отклоняет push с изменением вне задания',
     deniedPush.status !== 0 && /не покрыт/.test(deniedPushText), deniedPushText);
 
-  /* Дальше цикл идёт с выключенным guard: граница проверена отдельно выше. */
+  /*
+   * Выключенный guard отключает --range: тот же push проходит. Это ровно та
+   * граница, которую 2.6.87 оставил за флагом: аудит и диапазон, но не индекс.
+   */
   setGuard(false);
   const allowedPush = gitTry(['push', 'origin', 'HEAD']);
-  report('2.5.0: выключенный guard не мешает push',
+  report('2.6.87: выключенный guard не мешает push (--range отключён)',
     allowedPush.status === 0, (allowedPush.stdout || '') + (allowedPush.stderr || ''));
-  report('2.5.0: guard выключен — рабочий цикл задачи не меняется', readConfig().guard.enabled === false);
+  report('2.6.87: guard выключен — рабочий цикл задачи не меняется', readConfig().guard.enabled === false);
 
   const task = run('new-task.mjs', ['--repo', repo, '--id', '0001', '--title', 'Сложение', '--risk', 'medium'], { env: { DSH_SESSION_ID: 'issuer-session', DSH_MODEL: 'e2e-model' } });
   report('new-task создаёт задание с issuedBy', task.code === 0 && fs.readFileSync(path.join(repo, 'docs/tasks/0001/task.md'), 'utf8').includes('issuer-session'), task.out);
