@@ -1,0 +1,13 @@
+{
+  "task": "9899",
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "c",
+      "command": "node -e \"1\"",
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}

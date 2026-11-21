@@ -1,0 +1,170 @@
+{
+  "task": "0092",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C8"
+    ],
+    "mustPass": [
+      "C5",
+      "C6",
+      "C7"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Could not find",
+      "C2": "no receipt validation",
+      "C3": "Could not find",
+      "C4": "no registry check",
+      "C8": "no registry tools"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "валидатор квитанции: негативы и валидный кейс",
+      "command": "node --test --test-name-pattern=\"квитанц\" plugin/test/review-receipt.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/review-receipt.mjs",
+        "plugin/test/review-receipt.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "task-accept вызывает validateReviewReceipt",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-accept.mjs','utf8');if(!s.includes('validateReviewReceipt')){console.log('no receipt validation');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "проверка реестра: 4 кейса",
+      "command": "node --test --test-name-pattern=\"реестр\" plugin/test/registry-lint.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/registry.mjs",
+        "plugin/test/registry-lint.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "fail 0"
+      },
+      "effect": {
+        "observable": "номер и предмет задачи проверяются по реестру до начала работы",
+        "threshold": "C3 зелёный: 4 кейса — незарегистрированный номер и чужой subject отвергнуты, совпадающий проходит, без файла не применяется",
+        "measuredBy": "C1"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "task-lint вызывает checkRegistry",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-lint.mjs','utf8');if(!s.includes('checkRegistry')){console.log('no registry check');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "task-lint без реестра не меняет поведения",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/with-shape",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "тесты плагина зелёные",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/**",
+        "plugin/test/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C7",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C8",
+      "title": "инструменты реестра существуют",
+      "command": "node -e \"const fs=require('fs');if(!fs.existsSync('tools/task-register.mjs')||!fs.existsSync('tools/task-next-id.mjs')){console.log('no registry tools');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "tools/task-register.mjs",
+        "tools/task-next-id.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
