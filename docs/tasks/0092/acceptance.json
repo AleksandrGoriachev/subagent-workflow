@@ -1,0 +1,231 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0092",
+  "title": "2.6.90: upstream-реестр задач и проверка квитанции ревью",
+  "risk": "medium",
+  "taskFileSha256": "d5c5baf9a00eb47fb291d81e6e73d21540ad130583d0b3953f76b2ca672f55ff",
+  "criteriaSha256": "1cc57f4dd89cb751e6ce7ded152f837f2298f37ac22cb5bdd32c23479ca7634e",
+  "criteriaJsonSha256": "04a6f815596670403279adb4740c1fdfbfaaa56a7696258c6ebf29f7937e0a8d",
+  "contractCommit": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+  "baseCommit": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+  "candidateCommit": "6e7bea4d078f69380c77bd91d8dd8fc06c6a7d8b",
+  "tree": "892ad93222c111019e516247ce9af584f5b31829",
+  "worktreeDigest": "4b56138b371de6fb1c75e0030b20cc2ac15fb20d499f73979195672455402847",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "01e6dc68c987970eb6e3d25f009f9a08",
+    "runKind": "accept",
+    "startedAt": "2026-11-21T22:47:19.440Z",
+    "finishedAt": "2026-11-21T22:50:06.789Z",
+    "durationMs": 167350,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "656bfbc46d1653624b681d359f98f743e8c9561fea233076b10312ad6c901e76",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C3",
+      "observable": "номер и предмет задачи проверяются по реестру до начала работы",
+      "threshold": "C3 зелёный: 4 кейса — незарегистрированный номер и чужой subject отвергнуты, совпадающий проходит, без файла не применяется",
+      "measuredBy": "C1"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C3",
+        "carrier": "C3",
+        "measuredBy": "C1"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+    "contractCommit": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+    "criteriaJsonSha256": "04a6f815596670403279adb4740c1fdfbfaaa56a7696258c6ebf29f7937e0a8d",
+    "failed": 5,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C8"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C8"
+      ],
+      "mustPass": [
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C8",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node --test --test-name-pattern=\"квитанц\" plugin/test/review-receipt.test.mjs",
+      "exitCode": 0,
+      "durationMs": 2601,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-accept.mjs','utf8');if(!s.includes('validateReviewReceipt')){console.log('no receipt validation');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 960,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node --test --test-name-pattern=\"реестр\" plugin/test/registry-lint.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1968,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-lint.mjs','utf8');if(!s.includes('checkRegistry')){console.log('no registry check');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 969,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/with-shape",
+      "exitCode": 0,
+      "durationMs": 2123,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 155194,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 120982,
+      "passed": true
+    },
+    {
+      "id": "C8",
+      "command": "node -e \"const fs=require('fs');if(!fs.existsSync('tools/task-register.mjs')||!fs.existsSync('tools/task-next-id.mjs')){console.log('no registry tools');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1522,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-21T22:50:08.002Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 2,
+    "digest": "a249af4a4b1fbfb36d39b2a6ae814b7702ded8f26863cea048e9f09b1d81e106",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "gRE73y1kCBv83q4UVzQTSuf1lSx4zkR8ZEHew2gVF9fJDPSoGctkNLC9p2MLZcyOecgaviu0gqKmu/pgHKGyCw=="
+}
