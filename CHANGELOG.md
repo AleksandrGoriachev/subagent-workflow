@@ -1,5 +1,13 @@
 # Изменения
 
+## 2.6.91 — 2026-11-22 (панель 0.9.38)
+
+- **Writer квитанции ревью (0094).** `writeReviewReceipt` в `spec/scripts/lib/review-receipt.mjs`
+  создаёт `review.receipt.json` атомарно (`artifactSha256` = sha256 `review.json`, `reviewer`, `decision`, `at`);
+  без `review.json` — отказ с причиной. Вместе с валидатором из 2.6.90 даёт round-trip, который и проверяет
+  внешняя проверка `0198-review-receipts.mjs c4`.
+- Тесты: `review-receipt` 7/7, полный набор плагина и selftest зелёные. Требуется перезапуск DSH.
+
 ## 2.6.90 — 2026-11-22 (панель 0.9.38)
 
 - **Реестр задач в движке (0092).** Если есть `docs/tasks/REGISTRY.json`, `task-lint` отвергает незарегистрированный
