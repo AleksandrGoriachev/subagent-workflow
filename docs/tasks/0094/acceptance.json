@@ -1,0 +1,153 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0094",
+  "title": "2.6.91: движок умеет писать квитанцию ревью",
+  "risk": "medium",
+  "taskFileSha256": "57f8bb175dbf3f011682d33bdc234b67631adb5016e1cdf7f010ce4c753dd9b0",
+  "criteriaSha256": "9a3b627c7d0666bbfdeb5644846eafb81e4c9879981a7bca24a2b6aa9bed15c7",
+  "criteriaJsonSha256": "a4f62ffea202c7891710e95ede24bd63888f43863413d4e215360021a9de096d",
+  "contractCommit": "a49ac4750c7288c3e1699e415f7bc843e93cf7c5",
+  "baseCommit": "a49ac4750c7288c3e1699e415f7bc843e93cf7c5",
+  "candidateCommit": "12fb73de41bf424dc40e004b83512150f964f8f0",
+  "tree": "db1098335fd510efe104dd0ba407cc546e2a6386",
+  "worktreeDigest": "6c0b8ab27ee97796a3f140486f1f3d605b3f7a618c86d671ce13823d44fa5f31",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "82f9b32447c0d1abe76f506ceed142e1",
+    "runKind": "accept",
+    "startedAt": "2026-11-21T23:36:24.469Z",
+    "finishedAt": "2026-11-21T23:39:14.050Z",
+    "durationMs": 169582,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "de6f7d635940b0a60b5d9dfc7f50de7631b2d2428c35f93495a8e5cdc2231529",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "a49ac4750c7288c3e1699e415f7bc843e93cf7c5",
+    "contractCommit": "a49ac4750c7288c3e1699e415f7bc843e93cf7c5",
+    "criteriaJsonSha256": "a4f62ffea202c7891710e95ede24bd63888f43863413d4e215360021a9de096d",
+    "failed": 1,
+    "failedIds": [
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C2"
+      ],
+      "mustPass": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1386,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/lib/review-receipt.mjs','utf8');if(!s.includes('export function writeReviewReceipt')){console.log('no writer');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 857,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 157817,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 124163,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-21T23:39:15.044Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 1,
+    "digest": "46cbabf29ef555fac21ddaa377bce1c654adc33507262bb3656fa79247ffb850",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "ttGoNLXi8UEJ0lpRN2/k1h3DJ02iSVFUM1/jG99pKTmlPOPId1SyqDXvWzJXQCfQXywr/fcbmMmrM7B1SsrSDA=="
+}
