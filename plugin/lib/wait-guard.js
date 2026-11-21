@@ -71,6 +71,20 @@ export const TOOL_TIMEOUT_THRESHOLD_MS = 2 * WAIT_BUDGET_MS;
 export const MIN_SLEEP_THRESHOLD_MS = 3000;
 /** Разрешённые политики: fail | warn | off. */
 export const WAIT_POLICIES = ['fail', 'warn', 'off'];
+/**
+ * 2.6.88: сколько отказов по одному и тому же вызову допускается до жёсткой
+ * остановки. Первый и второй отказ — обычная политика W1; третий и далее —
+ * «повтор после отказа»: агент не импровизирует, а получает маршрут в сторож.
+ */
+export const REPEAT_LIMIT = 2;
+/** Память повторов и начало узла: ключ → состояние. Живёт в процессе плагина. */
+const guardMemory = new Map();
+const nodeStarts = new Map();
+/** Тестовый сброс памяти: без него сценарии влияют друг на друга. */
+export function resetGuardMemory() {
+  guardMemory.clear();
+  nodeStarts.clear();
+}
 /** Producer-owned источник notice, как у остальных сообщений плагина. */
 export const NOTICE_SOURCE_KIND = 'plugin:dsh-workflow-console';
 /** Конфиг воркспейса с блоком enforcement — относительно корня. */
@@ -304,6 +318,7 @@ function resolvePolicy(config) {
   const raw = firstDefined(source.waitPolicy, nested.waitPolicy);
   const policy = WAIT_POLICIES.includes(raw) ? raw : 'fail';
   const budget = finiteNumber(firstDefined(source.waitBudgetMs, nested.waitBudgetMs));
+  const nodeBudget = finiteNumber(firstDefined(source.nodeBudgetMs, nested.nodeBudgetMs));
   const jobScript = firstDefined(source.jobScript, nested.jobScript) !== false;
   /* Корень профиля: root/repoRoot/workspaceRoot/roots[0] конфига (как в api.js), иначе cwd. */
   const firstConfiguredRoot = Array.isArray(source.roots)
@@ -313,7 +328,13 @@ function resolvePolicy(config) {
   const root = typeof configuredRoot === 'string' && configuredRoot.trim() !== ''
     ? path.resolve(configuredRoot)
     : process.cwd();
-  return { policy, budgetMs: budget === null ? WAIT_BUDGET_MS : budget, jobScript, root };
+  return {
+    policy,
+    budgetMs: budget === null ? WAIT_BUDGET_MS : budget,
+    nodeBudgetMs: nodeBudget === null || nodeBudget <= 0 ? 0 : nodeBudget,
+    jobScript,
+    root,
+  };
 }
 
 /** Абсолютный путь или null: относительные не разворачиваем, чтобы не угадывать корень. */
@@ -449,9 +470,12 @@ function readWorkspaceWaitSettings(root, cache) {
       : {};
     const policy = WAIT_POLICIES.includes(enforcement.waitPolicy) ? enforcement.waitPolicy : undefined;
     const budget = finiteNumber(enforcement.waitBudgetMs);
+    const nodeBudget = finiteNumber(enforcement.nodeBudgetMs);
     settings = {
       policy,
       budgetMs: budget !== null && budget > 0 ? budget : undefined,
+      /* 2.6.88: бюджет жизни узла; 0/нет ключа — выключен. */
+      nodeBudgetMs: nodeBudget !== null && nodeBudget > 0 ? nodeBudget : undefined,
     };
   } catch {
     settings = {};
@@ -470,6 +494,7 @@ function resolveCall(exec, state) {
   const settings = state.workspaceMode ? readWorkspaceWaitSettings(root, state.cache) : {};
   const policy = settings.policy !== undefined ? settings.policy : state.policy;
   const budgetMs = settings.budgetMs !== undefined ? settings.budgetMs : state.budgetMs;
+  const nodeBudgetMs = settings.nodeBudgetMs !== undefined ? settings.nodeBudgetMs : state.nodeBudgetMs;
   /* Старый движок: сторожа в воркспейсе нет — отклонять нельзя, действует warn. */
   const effective = policy === 'fail' && !state.jobScript ? 'warn' : policy;
   return {
@@ -478,6 +503,7 @@ function resolveCall(exec, state) {
     policy,
     effective,
     budgetMs,
+    nodeBudgetMs,
     jobScript: state.jobScript,
   };
 }
@@ -498,11 +524,45 @@ function addNotice(result, hit, options) {
   return result;
 }
 
+/** 2.6.88: ключ сессии для памяти повторов и бюджета узла. */
+function sessionIdOf(exec) {
+  const agent = exec && exec.agent && typeof exec.agent === 'object' ? exec.agent : {};
+  const session = agent.session && typeof agent.session === 'object' ? agent.session : {};
+  const candidates = [session.id, agent.sessionId, exec && exec.sessionId, exec && exec.callId];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value !== '') return value;
+  }
+  return 'session';
+}
+
+/** 2.6.88: подпись вызова — имя инструмента и его аргументы без порядка ключей. */
+function signatureOf(exec) {
+  const name = String((exec && (exec.name || exec.tool)) || '');
+  const args = exec && exec.arguments && typeof exec.arguments === 'object' ? exec.arguments : {};
+  return createHash('sha1').update(name + '|' + JSON.stringify(args)).digest('hex').slice(0, 12);
+}
+
+/** 2.6.88: маршрут в сторож — готовой командой, а не «нельзя». */
+function routeHint(root, exec) {
+  const script = path.join(root, 'docs', 'subagent-workflow', 'scripts', 'job.mjs');
+  const args = exec && exec.arguments && typeof exec.arguments === 'object' ? exec.arguments : {};
+  const command = typeof args.command === 'string' && args.command.trim() !== ''
+    ? args.command.trim().slice(0, 80)
+    : '(тот же вызов)';
+  return 'Маршрут: node ' + script + ' start -- ' + command + ' ; затем node ' + script + ' wait <id>';
+}
+
 /**
  * Решение об отказе по одному вызову: {kind: 'deny', reason} для
  * tools/pre-execute, либо null (не долгий вызов / корень не fail). Журнал
  * пишется здесь же — и для pre-execute, и для guard второго слоя. Ошибка
  * политики не бросается: решение не принимается, вызов решает downstream.
+ *
+ * 2.6.88: два дополнительных предела поверх W1:
+ *   - повтор того же вызова после отказа: третий и далее — «повтор после отказа»
+ *     с маршрутом в сторож (агент не крутит один и тот же вызов);
+ *   - бюджет узла (enforcement.nodeBudgetMs): если остаток меньше запрошенного
+ *     ожидания — отказ с требованием промежуточной сдачи.
  */
 function preExecuteDenial(exec, state) {
   try {
@@ -510,7 +570,33 @@ function preExecuteDenial(exec, state) {
     if (decision.effective !== 'fail') return null;
     const hit = detectLongWait(exec, decision.budgetMs);
     if (hit === null) return null;
-    const reason = waitGuardReason(hit);
+
+    const now = typeof state.now === 'function' ? state.now() : Date.now();
+    const sessionId = sessionIdOf(exec);
+    const signature = signatureOf(exec);
+    const repeatKey = sessionId + '|' + decision.root + '|' + signature;
+    const attempt = guardMemory.get(repeatKey) || { count: 0 };
+    attempt.count += 1;
+    attempt.at = now;
+    guardMemory.set(repeatKey, attempt);
+
+    if (!nodeStarts.has(sessionId)) nodeStarts.set(sessionId, now);
+    const startedAt = nodeStarts.get(sessionId);
+    const elapsed = Math.max(0, now - startedAt);
+
+    let reason;
+    if (attempt.count > REPEAT_LIMIT) {
+      reason = 'повтор того же вызова после отказа (' + attempt.count + '-й раз) — остановка: '
+        + hit.detail + '. ' + routeHint(decision.root, exec);
+    } else if (decision.nodeBudgetMs > 0 && elapsed + hit.waitMs > decision.nodeBudgetMs) {
+      reason = 'бюджет узла исчерпан: прошло ' + Math.round(elapsed / 1000) + ' с из '
+        + Math.round(decision.nodeBudgetMs / 1000) + ' с, а запрошено ещё '
+        + Math.round(hit.waitMs / 1000) + ' с (' + hit.detail + '). Сдай промежуточный результат'
+        + ' и продолжи следующим шагом; ' + routeHint(decision.root, exec);
+    } else {
+      reason = waitGuardReason(hit) + ' ' + routeHint(decision.root, exec);
+    }
+
     recordWait(exec, hit, {
       root: decision.root,
       attribution: decision.attribution,
@@ -580,7 +666,11 @@ function postExecuteHandler(state) {
  *   блок { enforcement: { ... } } из workflow.config.json
  * @returns {{policy: string, budgetMs: number, jobScript: boolean, roots: string[]}}
  */
-export function registerWaitGuard(ctx, config = {}) {
+export function registerWaitGuard(ctx, config = {}, options = {}) {
+  /* 2.6.88: регистрация начинает чистую память повторов и бюджета —
+   * один экземпляр плагина на процесс, иначе счётчики переезжают между сессиями. */
+  guardMemory.clear();
+  nodeStarts.clear();
   const profile = resolvePolicy(config);
   const roots = normalizeRoots(config);
   const profileEffective = profile.policy === 'fail' && !profile.jobScript ? 'warn' : profile.policy;
@@ -591,9 +681,12 @@ export function registerWaitGuard(ctx, config = {}) {
     workspaceMode: roots.length > 0,
     policy: profile.policy,
     budgetMs: profile.budgetMs,
+    nodeBudgetMs: profile.nodeBudgetMs,
     jobScript: profile.jobScript,
     fallbackRoot: profile.root,
     cache: new Map(),
+    /* 2.6.88: часы инъектируемы — сценарии бюджета проверяются без сна. */
+    now: typeof options.now === 'function' ? options.now : Date.now,
   };
   const result = {
     policy: profileEffective,

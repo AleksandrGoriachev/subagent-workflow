@@ -108,6 +108,24 @@ if (exists(path.join(taskDir, 'closure.json'))) {
   if (meta.created && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(String(meta.created))) warn('TASK-META.created: ожидается дата YYYY-MM-DD');
   if (meta.risk === 'high' && meta.securityReview !== true) error('risk=high без securityReview: true');
   if (meta.risk === 'high' && meta.humanSignoff !== true) error('risk=high без humanSignoff: true');
+/*
+ * 2.6.88: образ результата. Задание обязано назвать, ЧТО оно возвращает:
+ * артефакт, формат и критерий, которым это проверяется. Без образа результата
+ * узел возвращает «что получилось», и следующая сессия переспрашивает заново.
+ * Старые задания не ломаем: без --strict — предупреждение, под --strict — ошибка.
+ */
+const resultShape = meta.resultShape;
+if (resultShape === undefined) {
+  (strict ? error : warn)('TASK-META.resultShape: укажите { artifact, format, criterion } — образ результата узла');
+} else if (resultShape === null || typeof resultShape !== 'object' || Array.isArray(resultShape)) {
+  error('TASK-META.resultShape: ожидается объект { artifact, format, criterion }');
+} else {
+  for (const key of ['artifact', 'format', 'criterion']) {
+    if (typeof resultShape[key] !== 'string' || resultShape[key].trim() === '') {
+      error('TASK-META.resultShape.' + key + ': нужна непустая строка');
+    }
+  }
+}
   /*
    * 0068 (WC-43): приёмщик-субагент без узла — видимое предупреждение. Политика
    * структуры остаётся warn, поэтому exit не меняется: контракт можно запереть,
@@ -257,6 +275,11 @@ if (exists(path.join(taskDir, 'closure.json'))) {
   if (tableIds.length === 0) error('Критерии: таблица пуста или не распознана');
   if (criteria.parsed.task && String(criteria.parsed.task) !== id) error('criteria.json.task (' + criteria.parsed.task + ') не совпадает с TASK-META.id (' + id + ')');
   const jsonIds = criteria.criteria.map((c) => String(c.id));
+  /* 2.6.88: образ результата обязан ссылаться на существующий критерий. */
+  if (resultShape && typeof resultShape === 'object' && typeof resultShape.criterion === 'string'
+    && resultShape.criterion.trim() !== '' && !jsonIds.includes(resultShape.criterion.trim())) {
+    error('TASK-META.resultShape.criterion: критерия "' + resultShape.criterion.trim() + '" нет в criteria.json');
+  }
   const dupJson = jsonIds.filter((x, i) => jsonIds.indexOf(x) !== i);
   if (dupJson.length) error('criteria.json: повторяются ID: ' + [...new Set(dupJson)].join(', '));
   const onlyTable = tableIds.filter((x) => !jsonIds.includes(x));

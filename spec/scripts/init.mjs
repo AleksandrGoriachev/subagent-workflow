@@ -322,6 +322,7 @@ const ENFORCEMENT_DEFAULTS = {
   loopPolicy: 'fail',
   loopLimit: 3,
   waitBudgetMs: 120000,
+    nodeBudgetMs: 0,
   processPolicy: 'fail',
   structurePolicy: 'fail',
 };
