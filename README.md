@@ -1,4 +1,4 @@
-# subagent-workflow 2.6.87 — полный пакет делегирования и приёмки
+# subagent-workflow 2.6.88 — полный пакет делегирования и приёмки
 
 [![ci](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml/badge.svg)](https://github.com/AleksandrGoriachev/subagent-workflow/actions/workflows/ci.yml)
 

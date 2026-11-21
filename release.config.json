@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.87",
+  "version": "2.6.88",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.87 — коммит-гейт требует задание и при выключенном guard",
+  "releaseName": "2.6.88 — границы цикла узла: повтор, бюджет, маршрут, образ результата",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0087",
-  "releaseCommand": "node tools/release.mjs release 2.6.87",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.87",
+  "task": "docs/tasks/0089",
+  "releaseCommand": "node tools/release.mjs release 2.6.88",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.88",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
