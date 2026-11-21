@@ -48,7 +48,7 @@
     {
       "id": "C2",
       "title": "launch-metrics --publish пишет снимок в воркспейс",
-      "command": "node tools/launch-metrics.mjs --publish .tmp/metrics-publish-test --workspaces e-trace --sessions 2 && node -e \"const fs=require('fs');if(!fs.existsSync('.tmp/metrics-publish-test/.dsh/workflow/metrics.json')){console.log('publish missing');process.exit(9)}\"",
+      "command": "node -e \"require('fs').rmSync('.tmp/metrics-publish-test',{recursive:true,force:true})\" && node tools/launch-metrics.mjs --publish .tmp/metrics-publish-test --workspaces e-trace --sessions 2 && node -e \"const fs=require('fs');if(!fs.existsSync('.tmp/metrics-publish-test/.dsh/workflow/metrics.json')){console.log('publish missing');process.exit(9)}\"",
       "cwd": ".",
       "covers": [
         "tools/launch-metrics.mjs"
