@@ -1,0 +1,89 @@
+{
+  "task": "0096",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C2"
+    ],
+    "mustPass": [
+      "C1",
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C2": "validator ignores reviewer"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "тесты валидатора и writer",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/review-receipt.mjs",
+        "plugin/test/review-receipt.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "validator принимает reviewer без квитанции как отказ",
+      "command": "node -e \"const fs=require('fs'),os=require('os'),path=require('path');import('./spec/scripts/lib/review-receipt.mjs').then(m=>{const d=fs.mkdtempSync(path.join(os.tmpdir(),'wf-v-'));fs.writeFileSync(path.join(d,'review.json'),'{}');const r=m.validateReviewReceipt({taskDir:d,reviewer:'reviewer-1'});if(r.ok!==false){console.log('validator ignores reviewer');process.exit(1)}fs.rmSync(d,{recursive:true,force:true})})\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/review-receipt.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "тесты плагина зелёные",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/**",
+        "plugin/test/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
