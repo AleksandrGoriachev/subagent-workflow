@@ -35,6 +35,7 @@ import { evaluateWorkspaceTask, loadAcceptors as loadEngineAcceptors } from '../
 import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
 import { pickAcceptorEntry } from './lib/accept-key.mjs';
 import { validateReview } from './lib/review.mjs';
+import { validateReviewReceipt } from './lib/review-receipt.mjs';
 
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
@@ -674,6 +675,7 @@ try {
   if (manualBypass && !humanSigner) fail('manual-критерии требуют --human <кто>: пропуск ручной проверки не подписывается автоматически');
 
   let review = null;
+  let reviewReceipt = null;
   let releaseReady = true;
   if (argv.review) {
     const reviewPath = path.resolve(String(argv.review));
@@ -686,6 +688,24 @@ try {
     }
     releaseReady = reviewCheck.releaseReady;
   }
+  /*
+   * 0092 (2.6.90): квитанция ревью. Объявлен reviewer/reviewerNode — без
+   * review.receipt.json (artifactSha256 = sha256(review.json), тот же ревьюер,
+   * decision=accept) приёмки нет. Не объявлен — not-applicable.
+   */
+  const receiptCheck = validateReviewReceipt({
+    taskDir,
+    meta,
+    review,
+    reviewReceipt,
+    reviewPath: argv.review ? path.resolve(String(argv.review)) : null,
+  });
+  if (receiptCheck.applicable && !receiptCheck.ok) {
+    for (const problem of receiptCheck.problems) console.error('task-accept: квитанция: ' + problem);
+    process.exit(1);
+  }
+  reviewReceipt = receiptCheck.receipt;
+
   if (decisionSummary.assumed.length) releaseReady = false;
   if (attackCheck && attackCheck.summary.unresolved > 0) releaseReady = false;
 

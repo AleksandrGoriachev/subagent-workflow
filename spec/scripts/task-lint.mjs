@@ -8,17 +8,20 @@ import {
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
+import { checkRegistry } from './lib/registry.mjs';
 
 const NL = String.fromCharCode(10);
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
-  console.log('Usage: node task-lint.mjs --task <dir> [--repo <dir>] [--strict] [--json]');
+  console.log('Usage: node task-lint.mjs --task <dir> [--repo <dir>] [--strict] [--registry <file>] [--json]');
   process.exit(0);
 }
 
 const taskDir = path.resolve(argv.task || argv._[0] || '.');
 const repo = path.resolve(argv.repo || repoRoot(taskDir));
 const strict = Boolean(argv.strict);
+/* 0092: реестр задач; по умолчанию docs/tasks/REGISTRY.json в репозитории. */
+const registryOverride = typeof argv.registry === 'string' ? argv.registry : '';
 const errors = [];
 const warnings = [];
 const error = (m) => errors.push(m);
@@ -126,6 +129,13 @@ if (resultShape === undefined) {
     }
   }
 }
+/*
+ * 0092 (2.6.90): реестр задач. Если docs/tasks/REGISTRY.json есть, номер обязан
+ * быть в нём, а subject — совпадать с TASK-META.title. Нет файла — прежнее
+ * поведение: фикстуры без реестра не краснеют.
+ */
+const registryCheck = checkRegistry({ repo, id, title: meta.title, registryPath: registryOverride });
+for (const problem of registryCheck.problems) error(problem);
   /*
    * 0068 (WC-43): приёмщик-субагент без узла — видимое предупреждение. Политика
    * структуры остаётся warn, поэтому exit не меняется: контракт можно запереть,

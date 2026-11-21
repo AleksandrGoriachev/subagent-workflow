@@ -1,0 +1,290 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "01e6dc68c987970eb6e3d25f009f9a08",
+  "runKind": "accept",
+  "task": "0092",
+  "createdAt": "2026-11-21T22:50:06.387Z",
+  "headSha": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+  "contractCommit": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+  "criteriaSha256": "1cc57f4dd89cb751e6ce7ded152f837f2298f37ac22cb5bdd32c23479ca7634e",
+  "criteriaJsonSha256": "04a6f815596670403279adb4740c1fdfbfaaa56a7696258c6ebf29f7937e0a8d",
+  "taskFileSha256": "d5c5baf9a00eb47fb291d81e6e73d21540ad130583d0b3953f76b2ca672f55ff",
+  "changedPaths": [
+    "docs/tasks/0092/criteria.lock",
+    "docs/tasks/0092/gates.jsonl",
+    "docs/tasks/0092/gates.jsonl.tip",
+    "docs/tasks/0092/red.json",
+    "docs/tasks/0092/verify.executor.json",
+    "docs/tasks/0092/verify.json",
+    "plugin/test/registry-lint.test.mjs",
+    "plugin/test/review-receipt.test.mjs",
+    "spec/scripts/lib/registry.mjs",
+    "spec/scripts/lib/review-receipt.mjs",
+    "spec/scripts/task-accept.mjs",
+    "spec/scripts/task-lint.mjs",
+    "tools/task-next-id.mjs",
+    "tools/task-register.mjs"
+  ],
+  "coverage": {
+    "declared": 13,
+    "covered": [
+      {
+        "path": "plugin/test/registry-lint.test.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "plugin/test/review-receipt.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/registry.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "spec/scripts/lib/review-receipt.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-accept.mjs",
+        "criterion": "C2"
+      },
+      {
+        "path": "spec/scripts/task-lint.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "tools/task-next-id.mjs",
+        "criterion": "C8"
+      },
+      {
+        "path": "tools/task-register.mjs",
+        "criterion": "C8"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": true,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C3",
+        "observable": "номер и предмет задачи проверяются по реестру до начала работы",
+        "threshold": "C3 зелёный: 4 кейса — незарегистрированный номер и чужой subject отвергнуты, совпадающий проходит, без файла не применяется",
+        "measuredBy": "C1"
+      }
+    ],
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C3",
+        "carrier": "C3",
+        "measuredBy": "C1"
+      }
+    ],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node --test --test-name-pattern=\"квитанц\" plugin/test/review-receipt.test.mjs",
+      "exitCode": 0,
+      "durationMs": 2601,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "841df2da235e3c9cefc6c15a827e090686f593b25177030099b13a70309bd50e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "✔ квитанция: объявлен ревьюер, review не передан — отказ (9.9309ms)\n✔ квитанция: неверный artifactSha256 — отказ (21.029ms)\n✔ квитанция: чужой reviewer — отказ (15.4981ms)\n✔ квитанция: валидная квитанция проходит (9.5543ms)\n✔ квитанция: ревьюер не объявлен — not-applicable (4.8118ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 950.2231\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-accept.mjs','utf8');if(!s.includes('validateReviewReceipt')){console.log('no receipt validation');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 960,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node --test --test-name-pattern=\"реестр\" plugin/test/registry-lint.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1968,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "02e1d33b283689af2693323b17381b79cbc14bd8e77c44153ff5b402b754a84f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "✔ реестр: номер не зарегистрирован — ошибка (22.3342ms)\n✔ реестр: чужой subject — ошибка (6.991ms)\n✔ реестр: совпадающий subject проходит (12.1055ms)\n✔ реестр: файла нет — проверка не применяется (3.0421ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 903.6586\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-lint.mjs','utf8');if(!s.includes('checkRegistry')){console.log('no registry check');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 969,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/with-shape",
+      "exitCode": 0,
+      "durationMs": 2123,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c841fb4c11a000ca4477c3fd15066d26d2c708cffa868c69be095c42309ce6de",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "task-lint: 0902 — ок\n  WARN  criteria.lock отсутствует: выполните task-hash --write до красного прогона\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 155194,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "db9d5a1ec74ed00baf9431809ba8c0908fda2eab2457cd3edd4e2f814a00adea",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 46 файл(ов)\n✔ c1: traversal и абсолютный путь не проходят (3.1662ms)\n✔ c2: факты другого run — C10 fail (203.8074ms)\n✔ c3: конфликтные доказательства гейта — C5 fail (279.8709ms)\n✔ c4: пустой объявленный план запрещает действия (728.2513ms)\n✔ c5: C9 требует проверенной подписи (814.5447ms)\n✔ c1: без approval — отказ (16.5436ms)\n✔ c2: hash не совпал — отказ (0.7478ms)\n✔ c3: просрочка — предупреждение, а не отказ (решение заказчика 09.11) (1.7914ms)\n✔ c4: релизов больше порога — предупреждение (0.7478ms)\n✔ c5: inWork не в счёте, валидный набор — OK (2.5761ms)\n✔ c6: версии сравниваются числово, релизы считаются от подтверждения (0.6972ms)\n✔ checkRepo без approval.json сообщает причину, а не падает (922.4644ms)\n✔ c7: утверждение принимается только с подписью human-ключа (14.7988ms)\n✔ c8: правка anchors.json при старой подписи не проходит (хеш и подпись — оба) (0.9261ms)\n✔ c9: слой и исполнитель проверки обязательны и согласованы (1.1785ms)\n✔ c6: проектный слой утверждается отдельно и не подменяет контур (293.5134ms)\n✔ c1: без утверждения статус — не утверждены (61.2058ms)\n✔ c2: подпись человеческим ключом утверждает якоря (164.5778ms)\n✔ c3: агентский ключ не может утвердить якоря (80.6338ms)\n✔ c4: правка якорей после подписи ломает утверждение (160.7742ms)\n✔ c7: статус отдаёт список правил — подписывать вслепую нельзя (102.7623ms)\n✔ c6: подпись движка (sign.mjs) принимается панелью — один канон (106.9828ms)\n✔ c5: без ключа — понятная ошибка (55.0983ms)\n✔ c8: абсолютный путь ключа не склеивается с корнем воркспейса (119.076ms)\n✔ c9: результат подписи виден верхними полями (approved, keyId, at, hash) (158.7606ms)\n✔ c10: список якорей несёт слой и исполнителя проверки (схема 0.3) (108.5ms)\n✔ c11: подпись выпускается во вложенной форме 0.3 и проверяется (117.3243ms)\n✔ c1: пустой слой — не отказ, но предупреждение (61.427ms)\n✔ c2: корректный проектный якорь проходит (63.7864ms)\n✔ c3: layer, enforcedBy, check и статус проверяются (0.7199ms)\n✔ c4: дубль формулировки ловится нормализацией (0.5239ms)\n✔ c5: proof, потолок и истёкший срок (16.5628ms)\n✔ c6: файл без LF в конце — отказ по канону (34.1338ms)\n✔ GET /workflow/api/status reports the repository and policy (9329.0306ms)\n✔ GET /workflow/api/tasks returns the board with stages and skipped files (8822.3018ms)\n✔ GET /workflow/api/task/:id returns decisions, attack, coverage and record (6788.2707ms)\n✔ GET /workflow/api/policy matches the doctor policy line (5301.4885ms)\n✔ GET /workflow/api/compat reports versions and recommendations (5828.0487ms)\n✔ a registered workspace is readable even when it is not a configured root (5840.7223ms)\n✔ non-GET methods answer 405 with Allow: GET (4582.3429ms)\n✔ unknown routes answer 404 and a foreign root answers 400 (3836.8186ms)\n✔ a non-loopback peer is rejected (3725.6857ms)\n✔ a traversal-shaped task id is rejected (3692.4787ms)\n✔ GET /workflow/api/checks lists the read-only checks (3895.7413ms)\n✔ POST /workflow/api/run returns the log of a passing check and writes nothing (4814.3898ms)\n✔ a failing check is a result, not an error (4856.3616ms)\n✔ run rejects unknown checks, missing tasks and absent scripts (4708.843ms)\n✔ run is POST-only and other routes stay GET-only (3460.4805ms)\n✔ POST /workflow/api/guard flips only guard.enabled and logs it (4038.5695ms)\n✔ guard route is POST-only and validates its body and root (3791.1768ms)\n✔ a full request sweep does not change files or git status (8144.074ms)\n✔ POST /workflow/api/deploy разворачивает движок в корень workspace (0.7.0) (7479.9726ms)\n✔ deploy без confirm ничего не пишет, POST-only и проверяет корень (1867.5537ms)\n✔ POST guard/deploy требуют application/json — иначе 415 и никакой записи (4761.5471ms)\n✔ POST guard/deploy отвергают чужой Origin — 403, до записи (4879.1499ms)\n✔ deploy создаёт ключ проекта и не трогает глобальный ключ (10532.2656ms)\n✔ POST /workflow/api/update обновляет движок и защищает незавершённые задания (0.8.0) (7994.9611ms)\n✔ POST /workflow/api/update target engine-r\n…[truncated 17959 chars]",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 120982,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C8",
+      "command": "node -e \"const fs=require('fs');if(!fs.existsSync('tools/task-register.mjs')||!fs.existsSync('tools/task-next-id.mjs')){console.log('no registry tools');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1522,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 8,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "baseSha": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+    "contractCommit": "f8de27aacd1953c0bafaae2b3b5c345c4ac9d3b4",
+    "criteriaJsonSha256": "04a6f815596670403279adb4740c1fdfbfaaa56a7696258c6ebf29f7937e0a8d",
+    "failed": 5,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C8"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C8"
+      ],
+      "mustPass": [
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C8",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "worktreeDigest": "4b56138b371de6fb1c75e0030b20cc2ac15fb20d499f73979195672455402847",
+  "log": "verify.log"
+}
