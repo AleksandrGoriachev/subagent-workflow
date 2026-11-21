@@ -1,0 +1,224 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0088",
+  "title": "2.6.88: границы цикла узла — бюджет, маршрут, повторы, образ результата",
+  "risk": "medium",
+  "taskFileSha256": "afdf520dd4ee0145ab3fdf1c557abed7e581a18616b7c89317220ac41ebaca38",
+  "criteriaSha256": "b64f12cfea4bfeed3c588e5c1e5293530f0ffd0e1bf970e53fcaa9b8e8718215",
+  "criteriaJsonSha256": "3d1c4e289c4f5d6def25569c20d424d04f73fa21cb8df2219ccc94e2e3b3b4cb",
+  "contractCommit": "eca686feb6999db67f5ee9b61fa061e2f19a2268",
+  "baseCommit": "eca686feb6999db67f5ee9b61fa061e2f19a2268",
+  "candidateCommit": "95ade22b4642b5095a77551b8c52a50d230ddc17",
+  "tree": "ffa80b734f10dd863778c0558667ed642f639813",
+  "worktreeDigest": "ee6aad08eb583c38241e015b909c8b6a3f3a7e1bbba8d5de8c152d4d693ebb65",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "07625aa21aa1a6dbb15f776562643c18",
+    "runKind": "accept",
+    "startedAt": "2026-11-21T19:24:46.933Z",
+    "finishedAt": "2026-11-21T19:28:35.674Z",
+    "durationMs": 228742,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "d9747a0cce7e96434508ae1f62341b2860e34899df5c94cabaaaa7834bfaef6d",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "повтор одного и того же вызова после отказа отклоняется с готовым маршрутом в сторож",
+      "threshold": "C1 зелёный: третий вызов deny, в причине «повтор» и «job.mjs start»",
+      "measuredBy": "C2"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "eca686feb6999db67f5ee9b61fa061e2f19a2268",
+    "contractCommit": "eca686feb6999db67f5ee9b61fa061e2f19a2268",
+    "criteriaJsonSha256": "3d1c4e289c4f5d6def25569c20d424d04f73fa21cb8df2219ccc94e2e3b3b4cb",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "mustPass": [
+        "C5",
+        "C6",
+        "C7",
+        "C8",
+        "C9"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 1,
+          "total": 4,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node --test --test-name-pattern=\"повтор\" plugin/test/guard-router.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1860,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node --test --test-name-pattern=\"бюджет\" plugin/test/guard-router.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1957,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node --test --test-name-pattern=\"маршрут\" plugin/test/guard-router.test.mjs",
+      "exitCode": 0,
+      "durationMs": 2096,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/without-shape --strict",
+      "exitCode": 1,
+      "durationMs": 1947,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/with-shape",
+      "exitCode": 0,
+      "durationMs": 1754,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/scripts/task-lint.mjs --task docs/tasks/0088/fixtures/without-shape",
+      "exitCode": 0,
+      "durationMs": 2232,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 145317,
+      "passed": true
+    },
+    {
+      "id": "C8",
+      "command": "node tools/launch-metrics.mjs --compare docs/metrics/baseline-2.6.87.json --workspaces e-trace --sessions 2",
+      "exitCode": 0,
+      "durationMs": 6067,
+      "passed": true
+    },
+    {
+      "id": "C9",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 211065,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-21T19:28:36.854Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 2,
+    "digest": "4d755e00f997b3ee3c6e8221fb39ea9c05b3b9d2799c9e2d1d530bbd8cf4e09d",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "x7fsKQvmGuXlVrfmpShEdivBsvXrWGJFxvTbdG4nx0UrTc2artHflL0NoL2QGoPM+bUwbdOa3yY3zx8yOy9BAA=="
+}
