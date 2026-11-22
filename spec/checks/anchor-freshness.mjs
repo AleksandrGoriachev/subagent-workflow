@@ -95,6 +95,18 @@ export function checkSignature(approval, acceptors) {
   return { ok: true, keyId };
 }
 
+/**
+ * 0104 (2.6.95): дата подтверждения якоря. Контурный/старый вид — confirmed-объект;
+ * манифест structure (v2/v3) держит confirmed как boolean и выносит дату в
+ * confirmedVersion/confirmedAt. Один helper на оба вида.
+ */
+function confirmedOf(anchor) {
+  if (anchor && anchor.confirmed && typeof anchor.confirmed === 'object') return anchor.confirmed;
+  const version = anchor && typeof anchor.confirmedVersion === 'string' ? anchor.confirmedVersion : '';
+  const date = anchor && typeof anchor.confirmedAt === 'string' ? anchor.confirmedAt : '';
+  return { version, date };
+}
+
 export function evaluateAnchors(input) {
   const problems = [];
   const notes = [];
@@ -146,7 +158,7 @@ export function evaluateAnchors(input) {
     if (layer === 'project' && enforcedBy === 'engine') {
       problems.push(id + ': проектное правило не может проверяться только движком — он не знает домен проекта');
     }
-    const confirmed = anchor && anchor.confirmed && typeof anchor.confirmed === 'object' ? anchor.confirmed : {};
+    const confirmed = confirmedOf(anchor);
     if (status === 'inWork') {
       notes.push(id + ': в работе, в счёт свежести не идёт');
       continue;
@@ -323,7 +335,7 @@ export function evaluateProjectAnchors(input) {
     if (proofText === '' || proofText === '{}') problems.push(id + ': нет proof — узлам нечем доказать выполнение правила');
     const status = String(anchor && anchor.status ? anchor.status : '');
     if (!allowedStatus.has(status)) problems.push(id + ': статус должен быть auto|semi|inWork|retired');
-    const confirmed = anchor && anchor.confirmed && typeof anchor.confirmed === 'object' ? anchor.confirmed : {};
+    const confirmed = confirmedOf(anchor);
     if (status !== 'inWork' && !confirmed.date) problems.push(id + ': нет confirmed.date — непонятно, когда правило подтверждено');
     if (confirmed.date) {
       const ageDays = Math.floor((now.getTime() - Date.parse(confirmed.date)) / 86400000);

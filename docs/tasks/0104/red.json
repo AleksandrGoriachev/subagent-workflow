@@ -1,0 +1,107 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0104",
+  "createdAt": "2026-11-22T19:25:49.627Z",
+  "base": "HEAD",
+  "baseSha": "386f2d6c09b9fadec90000938e037e7e075696af",
+  "headSha": "386f2d6c09b9fadec90000938e037e7e075696af",
+  "contractCommit": "386f2d6c09b9fadec90000938e037e7e075696af",
+  "criteriaSha256": "c6fe12856ccd35603c3639f9efef18ea886c0e745965c2ade186eeed1583e183",
+  "criteriaJsonSha256": "f5790a38de4cacf280f68a1ec4b40c9af437f2beff6bab1d05d20ec5b7354598",
+  "dirtyPaths": [
+    "docs/tasks/0104/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node --test plugin/test/anchors-project.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1165,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f54d25c974ecab547e7a13499cdc21d1bb701099397c4180f6a67fc412120e25",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "✔ c1: пустой слой — не отказ, но предупреждение (9.1357ms)\n✔ c2: корректный проектный якорь проходит (4.964ms)\n✔ c3: layer, enforcedBy, check и статус проверяются (0.34ms)\n✔ c4: дубль формулировки ловится нормализацией (0.2654ms)\n✔ c5: proof, потолок и истёкший срок (0.6017ms)\n✔ c6: файл без LF в конце — отказ по канону (26.4338ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 531.2401\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const m=require('module');import('./spec/checks/anchor-freshness.mjs').then(mod=>{const r=mod.evaluateProjectAnchors({list:[{id:'P1',claim:'x',layer:'project',enforcedBy:'nodes',check:'tool',proof:{command:'node -e 1'},status:'auto',confirmedVersion:'2.6.82',confirmedAt:'2026-11-18'}],approval:{hash:'a'},sha:'a',approvalHash:'a',acceptors:[]});const bad=(r.problems||[]).filter(p=>p.includes('confirmed.date'));if(bad.length){console.log('no confirmed fallback: '+bad.join('; '));process.exit(1)}console.log('ok')})\"",
+      "exitCode": 1,
+      "durationMs": 796,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: ok"
+      ],
+      "stdoutSha256": "04f2d2edb303583b77e9dc54a3db836f3904e1099e614a15bdc171aad766194b",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no confirmed fallback: P1: нет confirmed.date — непонятно, когда правило подтверждено\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/checks/foreign-workspace.mjs','utf8');if(!s.includes('permitsCandidates')){console.log('no permits fallback');process.exit(1)}\"",
+      "exitCode": 1,
+      "durationMs": 689,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "f5d35b56c145efdf0e19d0425d56f14a7aa91f21909283cb491308c2a094e5c2",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no permits fallback\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 2,
+  "failedIds": [
+    "C2",
+    "C4"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C2",
+      "C4"
+    ],
+    "mustPass": [
+      "C1"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C4",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

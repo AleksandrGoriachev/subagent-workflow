@@ -77,10 +77,23 @@ function slugOf(foreignRoot) {
   return path.basename(String(foreignRoot)).toLowerCase().replace(/[^a-z0-9.-]+/gu, '-');
 }
 
+/**
+ * 0104 (2.6.95): где искать permits. При запуске из каталога движка корень —
+ * это движок, а разрешения лежат в воркспейсе рядом (как foreign-roots, 0132).
+ */
+export function permitsCandidates(workspaceRoot) {
+  const base = String(workspaceRoot || '.');
+  return [
+    path.join(base, 'coordination', 'permits'),
+    path.resolve(base, '..', 'coordination', 'permits'),
+  ];
+}
+
 /** Есть ли разрешение на дату: файл содержит день (YYYY-MM-DD) или «постоянно». */
 export function hasPermit(workspaceRoot, foreignRoot, day, options = {}) {
-  const dir = options.permitsDir || path.join(String(workspaceRoot), 'coordination', 'permits');
-  if (!fs.existsSync(dir)) return false;
+  const dirs = options.permitsDir ? [options.permitsDir] : permitsCandidates(workspaceRoot);
+  const dir = dirs.find((candidate) => fs.existsSync(candidate));
+  if (!dir) return false;
   const slug = slugOf(foreignRoot);
   for (const name of fs.readdirSync(dir)) {
     if (!name.toLowerCase().includes(slug) || !name.endsWith('.md')) continue;
