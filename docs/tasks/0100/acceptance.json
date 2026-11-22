@@ -1,0 +1,145 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0100",
+  "title": "2.6.94: повтор git-команд в фикстурах при ETIMEDOUT",
+  "risk": "medium",
+  "taskFileSha256": "ce8ee5d8a7bd5379ba86f07a6cd8d5008c851251fb602066a631587f3fdffcd5",
+  "criteriaSha256": "460c716112b13d4313d652c9230b0f1f0b76d2d567cbe135b786a7104b2d95c8",
+  "criteriaJsonSha256": "e24edf4c5bd36c7468d474cc2b56aeb4899958b3c93a694910919b33851865c3",
+  "contractCommit": "86028fb3f3acf4c7246534631491d0db8c751802",
+  "baseCommit": "86028fb3f3acf4c7246534631491d0db8c751802",
+  "candidateCommit": "866c9cd3db766888c6922d67583edc4c12e61b5f",
+  "tree": "aeaecfe1ef7dcafeffecbe1e2fc376389fa4e31f",
+  "worktreeDigest": "fa79ff27cd8d0e6a34c0b692e88848f96377f54719cca344148e218256cc6f92",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "cadfecf03a796d9af27a6f56aafd2e9b",
+    "runKind": "accept",
+    "startedAt": "2026-11-22T10:31:20.010Z",
+    "finishedAt": "2026-11-22T10:32:22.369Z",
+    "durationMs": 62360,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "8d0d28a1aa6ac4605b2bf57ad5d7aa43b66765515ea347e93412a6ecd4ef35b0",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "86028fb3f3acf4c7246534631491d0db8c751802",
+    "contractCommit": "86028fb3f3acf4c7246534631491d0db8c751802",
+    "criteriaJsonSha256": "e24edf4c5bd36c7468d474cc2b56aeb4899958b3c93a694910919b33851865c3",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/test/fixture.mjs','utf8');if(!s.includes('attempt')||!s.includes('runGit')){console.log('no git retry');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 718,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1690,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 52524,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-22T10:32:23.377Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 1,
+    "digest": "412b0b0c85ef23f19441570f3c2a1ef9d396319a620d924144c0b958a51960ed",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "TlAWJHSywIxWIVAltkya+3+lF+Xx/cw2PcmpLdlFHmSUFS9nH4Z+LclQWWzj3MLJDlR/9FdLLF8Rgs1ojf8rBA=="
+}
