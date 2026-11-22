@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "task": "0099",
+  "status": "superseded",
+  "reason": "red не доказан: флейк git ETIMEDOUT при прогоне тестов плагина; исправление в 0100, релиз перенесён",
+  "by": "coordinator",
+  "successor": "0101",
+  "evidence": []
+}
