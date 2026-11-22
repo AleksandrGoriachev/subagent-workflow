@@ -15,7 +15,7 @@
     ],
     "reasonWindow": 25,
     "reasons": {
-      "C1": "no monitor",
+      "C1": "Cannot find module",
       "C2": "no publish",
       "C3": "no api route",
       "C4": "no panel block",
