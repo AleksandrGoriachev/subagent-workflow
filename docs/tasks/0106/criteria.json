@@ -50,7 +50,7 @@
     {
       "id": "C2",
       "title": "монитор публикует снимок",
-      "command": "node -e \"const {spawnSync}=require('child_process');const fs=require('fs');const path=require('path');const tmp=fs.mkdtempSync(path.join(__dirname,'.tmp-mon-'));const r=spawnSync(process.execPath,['tools/task-monitor.mjs','--publish',tmp],{encoding:'utf8'});if(r.status!==0){console.log('no publish: '+(r.stdout||'')+(r.stderr||''));process.exit(1)}const f=path.join(tmp,'.dsh','workflow','tasks.json');if(!fs.existsSync(f)){console.log('no publish');process.exit(1)}console.log('ok')\"",
+      "command": "node -e \"const {spawnSync}=require('child_process');const fs=require('fs');const path=require('path');const os=require('os');const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'wf-mon-'));const r=spawnSync(process.execPath,['tools/task-monitor.mjs','--publish',tmp],{encoding:'utf8'});if(r.status!==0){console.log('no publish: '+(r.stdout||'')+(r.stderr||''));process.exit(1)}const f=path.join(tmp,'.dsh','workflow','tasks.json');if(!fs.existsSync(f)){console.log('no publish');process.exit(1)}console.log('ok')\"",
       "cwd": ".",
       "covers": [
         "tools/task-monitor.mjs"
