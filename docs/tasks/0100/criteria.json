@@ -1,0 +1,70 @@
+{
+  "task": "0100",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "no git retry"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "фикстура повторяет git",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/test/fixture.mjs','utf8');if(!s.includes('attempt')||!s.includes('runGit')){console.log('no git retry');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/fixture.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "тесты без git зелёные",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/review-receipt.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
