@@ -1,0 +1,153 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0096",
+  "title": "2.6.92: validateReviewReceipt({taskDir, reviewer}) — declared reviewer и авто-чтение review.json",
+  "risk": "medium",
+  "taskFileSha256": "0b0a3919ac4f1d43adab8f772560ffb7a34528b47baa34562daa73bbc99542e8",
+  "criteriaSha256": "f119c9e6ac763cb92d3230bab99bb7098576571ce867aade4d25bd58bd067624",
+  "criteriaJsonSha256": "11b02530674b15120e4cef8715467079bbe034b9ccd3e9101fceeed4e3bad1e9",
+  "contractCommit": "2094ab778a2e997efd675e0dde577b57a0a21f13",
+  "baseCommit": "2094ab778a2e997efd675e0dde577b57a0a21f13",
+  "candidateCommit": "d8e1b005a406c9f8df9b833dfa9aa32e81d85372",
+  "tree": "d57e3b94910617444714dae2d7e1e943a0c11587",
+  "worktreeDigest": "4ffce71576eb6a28a94607efaa70f88e7c5354fdfffe699e6ab7d1b5a045c31a",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "099339d1c2e1f45ba851e9e1de5c7f52",
+    "runKind": "accept",
+    "startedAt": "2026-11-22T00:07:47.535Z",
+    "finishedAt": "2026-11-22T00:10:39.807Z",
+    "durationMs": 172284,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "60543205a04b8174fa7bc4a6f3e938f825276075acf1a81c472f6bd78f4326f8",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "2094ab778a2e997efd675e0dde577b57a0a21f13",
+    "contractCommit": "2094ab778a2e997efd675e0dde577b57a0a21f13",
+    "criteriaJsonSha256": "11b02530674b15120e4cef8715467079bbe034b9ccd3e9101fceeed4e3bad1e9",
+    "failed": 1,
+    "failedIds": [
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C2"
+      ],
+      "mustPass": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "exitCode": 0,
+      "durationMs": 2033,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const fs=require('fs'),os=require('os'),path=require('path');import('./spec/scripts/lib/review-receipt.mjs').then(m=>{const d=fs.mkdtempSync(path.join(os.tmpdir(),'wf-v-'));fs.writeFileSync(path.join(d,'review.json'),'{}');const r=m.validateReviewReceipt({taskDir:d,reviewer:'reviewer-1'});if(r.ok!==false){console.log('validator ignores reviewer');process.exit(1)}fs.rmSync(d,{recursive:true,force:true})})\"",
+      "exitCode": 0,
+      "durationMs": 896,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 160233,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 124470,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-22T00:10:41.048Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "decisions": {
+    "count": 1,
+    "digest": "280708a8ffbc0e14a857b0df78dbcc863db4e32f258a0a8cb7bd1352babfeef6",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "uVnXm1NK3diqvJbKctT4nxpq3dsEUYextY3m8mlIsEXAX85Xm5PVBC+d6yVKB2zx0L6K/xAZN7i0pM44nceDBw=="
+}
