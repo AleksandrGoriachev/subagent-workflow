@@ -5,7 +5,9 @@
  * Поэтому список собирает сам Node-скрипт — одинаково на Windows, Ubuntu и в CI.
  *
  * 0098 (2.6.93): гейт не должен давать ложный красный под нагрузкой.
- *  - прогон параллельный по умолчанию (WF_TEST_CONCURRENCY=1 — последовательно);
+ *  - прогон параллельный по умолчанию, но с умеренной параллельностью (до 3):
+ *    полный параллел на загруженной машине изредка морит файл голодом, а
+ *    последовательный вдвое медленнее. WF_TEST_CONCURRENCY задаёт явно;
  *  - полный вывод пишется в файл, при падении печатается путь и последние
  *    30 строк — по логу видно тест и причину, а не «exit 1».
  * Ретрай-обход не добавлен: гейт не маскирует падения.
@@ -38,7 +40,7 @@ console.log('plugin test: ' + files.length + ' файл(ов)');
 const requestedConcurrency = Number(process.env.WF_TEST_CONCURRENCY);
 const concurrency = Number.isFinite(requestedConcurrency) && requestedConcurrency > 0
   ? requestedConcurrency
-  : Math.max(2, Math.min(8, os.cpus().length - 1));
+  : Math.max(2, Math.min(3, os.cpus().length - 1));
 const logsDir = path.join(root, '.tmp');
 mkdirSync(logsDir, { recursive: true });
 const logFile = path.join(logsDir, 'plugin-test-' + Date.now() + '.log');

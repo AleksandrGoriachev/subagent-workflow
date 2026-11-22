@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.95",
+  "version": "2.6.96",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.95 — проектные якоря по манифесту structure",
+  "releaseName": "2.6.96 — скорость гейта и мониторинг задач",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0105",
-  "releaseCommand": "node tools/release.mjs release 2.6.95",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.95",
+  "task": "docs/tasks/0107",
+  "releaseCommand": "node tools/release.mjs release 2.6.96",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.96",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
