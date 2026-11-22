@@ -1,0 +1,231 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0102",
+  "title": "2.6.94: reviewer без префикса subagent:, review привязан к контракту",
+  "risk": "medium",
+  "taskFileSha256": "9b31a3623392e1bd9ddfc34e6499c5d92d7641f0e070bb13aa3503135765459a",
+  "criteriaSha256": "84012486747a473e0977df1b27dffe7706e96b86ea187b39bb23c62203757d25",
+  "criteriaJsonSha256": "d9c19407f7bb367cf6f2218185de857363e2dd2c5b95df178379a0b0ee1589f9",
+  "contractCommit": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+  "baseCommit": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+  "candidateCommit": "8cdae599cc382b1333a70a778e4659ae9729411c",
+  "tree": "9df2baa6a130e95af6f5b8236519122d8eebeb31",
+  "worktreeDigest": "380a89014d9f977c60fd79b21f8c20062f2b76e084c269f67da6649d1faeb2f0",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "34d72b2d0d34193c5f1f15ca775e05f1",
+    "runKind": "accept",
+    "startedAt": "2026-11-22T13:01:14.692Z",
+    "finishedAt": "2026-11-22T13:02:18.805Z",
+    "durationMs": 64114,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "d44a2b1489c9d3459a91116a871e2a296e084218e265b1170ee3dcd5d8bb084a",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "контракт с reviewer вида subagent:reviewer-1 принимается, и квитанция с голым id проходит",
+      "threshold": "C1 зелёный: обе формы дают ok, чужой id — отказ (проверяется рядом)",
+      "measuredBy": "C2"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C2"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "baseSha": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+    "contractCommit": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+    "criteriaJsonSha256": "d9c19407f7bb367cf6f2218185de857363e2dd2c5b95df178379a0b0ee1589f9",
+    "failed": 5,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "mustPass": [
+        "C6",
+        "C7"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 4,
+          "total": 5,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node docs/tasks/0102/check.mjs c1",
+      "exitCode": 0,
+      "durationMs": 617,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node docs/tasks/0102/check.mjs c2",
+      "exitCode": 0,
+      "durationMs": 797,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node docs/tasks/0102/check.mjs c3",
+      "exitCode": 0,
+      "durationMs": 829,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node docs/tasks/0102/check.mjs c4",
+      "exitCode": 0,
+      "durationMs": 2914,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node docs/tasks/0102/check.mjs c5",
+      "exitCode": 0,
+      "durationMs": 2932,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "exitCode": 0,
+      "durationMs": 2754,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 51775,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-22T13:02:19.958Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+    "taskFileSha256": "9b31a3623392e1bd9ddfc34e6499c5d92d7641f0e070bb13aa3503135765459a",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "decisions": {
+    "count": 2,
+    "digest": "fc425f88298c8e8d31c429089aa49c6abfb5db0a2b82fcd1837cdde844b260e1",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "OzL0Pa8DXDFZC/NSVmVmsAbJBbXtE1Uywc3ZOapRP3EmzYEcvD4MYQVV1I0dOkqR6NtF/ZuhBB75pnR5808iDQ=="
+}
