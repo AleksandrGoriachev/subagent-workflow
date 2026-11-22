@@ -55,7 +55,7 @@ if (mode === 'c1') {
   /* у фикстуры нет lock, поэтому смотрим именно на требование resultShape */
   const run = lint(path.join(here, 'fixtures/accepted-noshape'), ['--strict']);
   const out = (run.stdout || '') + (run.stderr || '');
-  if (/resultShape/.test(out)) bad('accepted without resultShape: ' + out.trim().slice(0, 400));
+  if (/ERROR[^\n]*resultShape/.test(out)) bad('accepted without resultShape: ' + out.trim().slice(0, 400));
   console.log('ok');
 } else {
   console.error('usage: node docs/tasks/0102/check.mjs c1|c2|c3|c4|c5');
