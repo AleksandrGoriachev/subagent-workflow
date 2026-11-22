@@ -1,0 +1,72 @@
+{
+  "task": "0104",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C2"
+    ],
+    "mustPass": [
+      "C1",
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C2": "no confirmed fallback"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "тесты проектных якорей",
+      "command": "node --test plugin/test/anchors-project.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/anchors-project.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "фолбэк confirmedVersion/confirmedAt",
+      "command": "node -e \"const m=require('module');import('./spec/checks/anchor-freshness.mjs').then(mod=>{const r=mod.evaluateProjectAnchors({list:[{id:'P1',claim:'x',layer:'project',enforcedBy:'nodes',check:'tool',proof:{command:'node -e 1'},status:'auto',confirmedVersion:'2.6.82',confirmedAt:'2026-11-18'}],approval:{hash:'a'},sha:'a',approvalHash:'a',acceptors:[]});const bad=(r.problems||[]).filter(p=>p.includes('confirmed.date'));if(bad.length){console.log('no confirmed fallback: '+bad.join('; '));process.exit(1)}console.log('ok')})\"",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/anchor-freshness.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
