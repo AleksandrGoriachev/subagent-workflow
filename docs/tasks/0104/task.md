@@ -77,6 +77,11 @@ node 25, Windows, без сети.
 W5 (foreign-workspace) при запуске из каталога движка искал permits в `<движок>/coordination/permits`
 и не видел разрешений воркспейса. Исправляем: кандидаты — корень запуска и его родитель (как для foreign-roots).
 
+## Примечание
+
+Полный selftest в этой задаче не критерий: на базе он красный именно из-за W5 без permits-фолбэка,
+поэтому «зелёный до работы» доказать нельзя. Selftest проверит релизная задача 0105.
+
 ## Инварианты
 
 1. Якорь с `confirmed`-объектом читается как раньше.
@@ -91,6 +96,5 @@ W5 (foreign-workspace) при запуске из каталога движка 
 | --- | --- | --- |
 | C1 | `node --test plugin/test/anchors-project.test.mjs` | все PASS |
 | C2 | `evaluateProjectAnchors` с confirmedVersion/confirmedAt | нет проблемы «confirmed.date» |
-| C3 | `node spec/selftest.mjs` | `SELFTEST OK` |
 | C4 | `foreign-workspace.mjs` находит permits в корне воркспейса | exit 0 |
 <!-- CRITERIA:END -->

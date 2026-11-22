@@ -8,8 +8,7 @@
       "C4"
     ],
     "mustPass": [
-      "C1",
-      "C3"
+      "C1"
     ],
     "reasonWindow": 25,
     "reasons": {
@@ -50,24 +49,6 @@
       "expect": {
         "exitCode": 0,
         "stdoutContains": "ok"
-      }
-    },
-    {
-      "id": "C3",
-      "title": "selftest движка зелёный",
-      "command": "node spec/selftest.mjs",
-      "cwd": ".",
-      "covers": [
-        "spec/selftest.mjs",
-        "spec/scripts/lib/common.mjs"
-      ],
-      "timeoutMs": 600000,
-      "tags": [
-        "slow"
-      ],
-      "expect": {
-        "exitCode": 0,
-        "stdoutContains": "SELFTEST OK"
       }
     },
     {

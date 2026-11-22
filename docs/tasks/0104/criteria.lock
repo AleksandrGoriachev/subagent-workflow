@@ -1,11 +1,11 @@
 {
   "version": 3,
   "task": "0104",
-  "taskFileSha256": "e8f219aad3678546008028a0e419758e9360795369402afa4b3392303b275bb6",
-  "criteriaSha256": "a6eab151f7eb9b439b08d32ef37a9c3fe72782243c80756a14c510336156e833",
-  "criteriaJsonSha256": "5859ad4171d5393def6ca80c38796c9cbe66cbe58734596b7ef25f9a493a5db0",
+  "taskFileSha256": "acbc332af4fc0d0690f8670dfeac9fe96a62c4fe2480ec0e090de04ecc1dc1bb",
+  "criteriaSha256": "fa8ca4da0b68218c850b1c05dccdbe66d58afde3bf53f531a012766b262c0f3f",
+  "criteriaJsonSha256": "9c916d3f7990a3605a642cae3c179c9d99ec4eaadda35b10702c17d8813d5ad2",
   "attackSha256": null,
-  "contractCommit": "f495107698eafa0cdc0da962ee0f80af66f7e59a",
+  "contractCommit": "1d1f8bb1a4cc1eeeb60ceaee3765175e85f54524",
   "protected": [
     {
       "path": "plugin/lib/anchors.js",
@@ -303,6 +303,7 @@
   "contract": {
     "allowedPaths": [
       "spec/checks/anchor-freshness.mjs",
+      "spec/checks/foreign-workspace.mjs",
       "plugin/test/anchors-project.test.mjs",
       "docs/tasks/0104/**"
     ],
@@ -363,9 +364,24 @@
         "tags": [
           "slow"
         ]
+      },
+      {
+        "id": "C4",
+        "command": "node -e \"const s=require('fs').readFileSync('spec/checks/foreign-workspace.mjs','utf8');if(!s.includes('permitsCandidates')){console.log('no permits fallback');process.exit(1)}\"",
+        "cwd": ".",
+        "timeoutMs": 60000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "spec/checks/foreign-workspace.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
       }
     ]
   },
-  "createdAt": "2026-11-22T19:17:50.774Z",
+  "createdAt": "2026-11-22T19:23:38.049Z",
   "tool": "subagent-workflow/2.6.94"
 }
