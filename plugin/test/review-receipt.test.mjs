@@ -19,12 +19,12 @@ function fixture() {
 }
 const receipt = (digest, extra = {}) => ({ artifactSha256: digest, reviewer: 'reviewer-1', decision: 'accept', ...extra });
 
-test('квитанция: объявлен ревьюер, review не передан — отказ', () => {
-  const { dir } = fixture();
+test('квитанция: объявлен ревьюер, review.json нет — отказ', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-receipt-noreview-'));
   const result = validateReviewReceipt({ taskDir: dir, meta: { reviewerNode: 'reviewer-1' }, review: null });
   assert.equal(result.applicable, true);
   assert.equal(result.ok, false);
-  assert.match(result.problems.join(' '), /review\.json не передан/u);
+  assert.match(result.problems.join(' '), /нет файла review\.json/u);
 });
 
 test('квитанция: неверный artifactSha256 — отказ', () => {
@@ -73,4 +73,31 @@ test('писатель квитанции: без review.json — отказ, ф
   assert.equal(written.ok, false);
   assert.match(written.problems.join(' '), /нет файла review\.json/u);
   assert.equal(fs.existsSync(path.join(dir, 'review.receipt.json')), false);
+});
+
+test('валидатор: reviewer без meta — без квитанции отказ', () => {
+  const { dir } = fixture();
+  const result = validateReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(result.applicable, true);
+  assert.equal(result.ok, false);
+  assert.match(result.problems.join(' '), /нет квитанции/u);
+});
+
+test('валидатор: reviewer + writer → ок, правка review.json → отказ', () => {
+  const { dir } = fixture();
+  const written = writeReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(written.ok, true);
+  const good = validateReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(good.ok, true, good.problems.join('; '));
+  fs.writeFileSync(path.join(dir, 'review.json'), JSON.stringify({ reviewer: 'reviewer-1', decision: 'accept', extra: 1 }));
+  const bad = validateReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(bad.ok, false);
+  assert.match(bad.problems.join(' '), /artifactSha256/u);
+});
+
+test('валидатор: пустой reviewer и нет meta — not-applicable', () => {
+  const { dir } = fixture();
+  const result = validateReviewReceipt({ taskDir: dir });
+  assert.equal(result.applicable, false);
+  assert.equal(result.ok, true);
 });

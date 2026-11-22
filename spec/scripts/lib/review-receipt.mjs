@@ -19,18 +19,30 @@ export function sha256File(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
-export function validateReviewReceipt({ taskDir, meta, review, reviewPath }) {
-  const reviewer = declaredReviewer(meta);
-  if (reviewer === '') return { applicable: false, ok: true, problems: [], receipt: null };
+export function validateReviewReceipt({ taskDir, meta, review, reviewPath, reviewer } = {}) {
+  /*
+   * 0096 (2.6.92): объявленный ревьюер — явный аргумент, иначе meta. Без
+   * review аргумента читаем review.json из каталога задания: внешняя проверка
+   * (0198 c4) вызывает валидатор именно так — {taskDir, reviewer}.
+   */
+  const declared = String(reviewer || '').trim() || declaredReviewer(meta);
+  if (declared === '') return { applicable: false, ok: true, problems: [], receipt: null };
 
   const problems = [];
   const dir = path.resolve(String(taskDir || '.'));
   const reviewFile = reviewPath ? path.resolve(String(reviewPath)) : path.join(dir, 'review.json');
   const receiptFile = path.join(dir, 'review.receipt.json');
 
-  if (!review) problems.push('объявлен ревьюер ' + reviewer + ', но review.json не передан');
-  if (!fs.existsSync(reviewFile)) problems.push('нет файла review.json: ' + reviewFile);
-  if (!fs.existsSync(receiptFile)) problems.push('нет квитанции review.receipt.json при объявленном ревьюере ' + reviewer);
+  let reviewDoc = review;
+  if (!reviewDoc && fs.existsSync(reviewFile)) {
+    try {
+      reviewDoc = JSON.parse(fs.readFileSync(reviewFile, 'utf8'));
+    } catch (error) {
+      problems.push('review.json не читается: ' + (error && error.message ? error.message : error));
+    }
+  }
+  if (!reviewDoc) problems.push('нет файла review.json: ' + reviewFile);
+  if (!fs.existsSync(receiptFile)) problems.push('нет квитанции review.receipt.json при объявленном ревьюере ' + declared);
   if (problems.length > 0) return { applicable: true, ok: false, problems, receipt: null, file: receiptFile };
 
   let receipt;
@@ -44,8 +56,8 @@ export function validateReviewReceipt({ taskDir, meta, review, reviewPath }) {
   if (String(receipt.artifactSha256 || '') !== digest) {
     problems.push('artifactSha256 не совпадает с sha256(review.json)');
   }
-  if (String(receipt.reviewer || '').trim() !== reviewer) {
-    problems.push('reviewer квитанции "' + String(receipt.reviewer || '').trim() + '" не совпадает с объявленным "' + reviewer + '"');
+  if (String(receipt.reviewer || '').trim() !== declared) {
+    problems.push('reviewer квитанции "' + String(receipt.reviewer || '').trim() + '" не совпадает с объявленным "' + declared + '"');
   }
   const decision = String(receipt.decision || '').trim();
   if (decision !== 'accept' && decision !== 'accepted') {
@@ -54,13 +66,6 @@ export function validateReviewReceipt({ taskDir, meta, review, reviewPath }) {
   return { applicable: true, ok: problems.length === 0, problems, receipt, file: receiptFile };
 }
 
-/**
- * 0094 (2.6.91): записать квитанцию ревью. Поля — ровно те, что проверяет
- * validateReviewReceipt. Запись атомарная: временный файл → rename, чтобы
- * приёмка не прочитала полузаписанную квитанцию.
- *
- * @returns {{ok: boolean, problems: string[], file: string, receipt: object|null}}
- */
 export function writeReviewReceipt({ taskDir, reviewPath, reviewer, decision = 'accept', at = new Date().toISOString() } = {}) {
   const dir = path.resolve(String(taskDir || '.'));
   const reviewFile = reviewPath ? path.resolve(String(reviewPath)) : path.join(dir, 'review.json');
