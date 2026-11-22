@@ -72,3 +72,7 @@
 | C2 | `node --test plugin/test/review-receipt.test.mjs` | все тесты PASS |
 | C3 | `node spec/selftest.mjs` | `SELFTEST OK` |
 <!-- CRITERIA:END -->
+
+## Примечание
+
+Контракт пересобран после закрытия 0099 (superseded): красный прогон должен идти на текущем HEAD.
