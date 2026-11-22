@@ -10,9 +10,14 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+export function normalizeReviewer(value) {
+  /* 0102 (2.6.94): один узел может быть назван «reviewer-1» и «subagent:reviewer-1». */
+  return String(value || '').trim().replace(/^subagent:/i, '').trim();
+}
+
 export function declaredReviewer(meta) {
   const source = meta && typeof meta === 'object' ? meta : {};
-  return String(source.reviewer || source.reviewerNode || '').trim();
+  return normalizeReviewer(source.reviewer || source.reviewerNode || '');
 }
 
 export function sha256File(file) {
@@ -56,7 +61,7 @@ export function validateReviewReceipt({ taskDir, meta, review, reviewPath, revie
   if (String(receipt.artifactSha256 || '') !== digest) {
     problems.push('artifactSha256 не совпадает с sha256(review.json)');
   }
-  if (String(receipt.reviewer || '').trim() !== declared) {
+  if (normalizeReviewer(receipt.reviewer) !== declared) {
     problems.push('reviewer квитанции "' + String(receipt.reviewer || '').trim() + '" не совпадает с объявленным "' + declared + '"');
   }
   const decision = String(receipt.decision || '').trim();
@@ -71,7 +76,7 @@ export function writeReviewReceipt({ taskDir, reviewPath, reviewer, decision = '
   const reviewFile = reviewPath ? path.resolve(String(reviewPath)) : path.join(dir, 'review.json');
   const file = path.join(dir, 'review.receipt.json');
   const problems = [];
-  const who = String(reviewer || '').trim();
+  const who = normalizeReviewer(reviewer);
   if (who === '') problems.push('reviewer обязателен');
   if (!fs.existsSync(reviewFile)) problems.push('нет файла review.json: ' + reviewFile);
   if (problems.length > 0) return { ok: false, problems, file, receipt: null };

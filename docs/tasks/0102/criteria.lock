@@ -1,11 +1,11 @@
 {
   "version": 3,
   "task": "0102",
-  "taskFileSha256": "f3c9e2ba1475861c68e6f4fbf68bdf2f8c1570ceea1d02667d30a05ac58bf551",
+  "taskFileSha256": "9b31a3623392e1bd9ddfc34e6499c5d92d7641f0e070bb13aa3503135765459a",
   "criteriaSha256": "84012486747a473e0977df1b27dffe7706e96b86ea187b39bb23c62203757d25",
-  "criteriaJsonSha256": "05d4b81abd6aa6f7142fede155404363163db92f223a652af3f8c5c69ecb3177",
+  "criteriaJsonSha256": "d9c19407f7bb367cf6f2218185de857363e2dd2c5b95df178379a0b0ee1589f9",
   "attackSha256": null,
-  "contractCommit": "bfd57543d90fc65cfb8785f824e4fbb9f33a107b",
+  "contractCommit": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
   "protected": [
     {
       "path": "plugin/lib/anchors.js",
@@ -469,7 +469,8 @@
           "spec/scripts/lib/review-receipt.mjs"
         ],
         "tags": [
-          "fast"
+          "fast",
+          "negative"
         ]
       },
       {
@@ -570,6 +571,6 @@
       }
     ]
   },
-  "createdAt": "2026-11-22T12:36:02.979Z",
+  "createdAt": "2026-11-22T12:53:17.618Z",
   "tool": "subagent-workflow/2.6.93"
 }

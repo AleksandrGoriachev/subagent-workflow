@@ -1,0 +1,203 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0102",
+  "createdAt": "2026-11-22T12:55:10.259Z",
+  "base": "HEAD",
+  "baseSha": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+  "headSha": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+  "contractCommit": "0f09efdabc8aaa05dc9148e8d00a10f4bd3750f3",
+  "criteriaSha256": "84012486747a473e0977df1b27dffe7706e96b86ea187b39bb23c62203757d25",
+  "criteriaJsonSha256": "d9c19407f7bb367cf6f2218185de857363e2dd2c5b95df178379a0b0ee1589f9",
+  "dirtyPaths": [
+    "docs/tasks/0102/criteria.lock",
+    "docs/tasks/0102/verify.executor.json",
+    "docs/tasks/0102/verify.json"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node docs/tasks/0102/check.mjs c1",
+      "exitCode": 1,
+      "durationMs": 612,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: ok"
+      ],
+      "stdoutSha256": "76b772c4b1b42981075f6a877f806d2b0d3d54b7365aa70b0fbd9d2a282d38a8",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no normalization: reviewer квитанции \"reviewer-1\" не совпадает с объявленным \"subagent:reviewer-1\"\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node docs/tasks/0102/check.mjs c2",
+      "exitCode": 1,
+      "durationMs": 681,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: ok"
+      ],
+      "stdoutSha256": "3fd1c41c5ee975911ab501ac2e63c9f9ea75e4024f6f27019826352d10e0b38a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no review binding\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node docs/tasks/0102/check.mjs c3",
+      "exitCode": 1,
+      "durationMs": 771,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: ok"
+      ],
+      "stdoutSha256": "17c443df73948cf70a1d660fcca21f8a68c2e548b2c22c933b5fcf95ef8ae7b6",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no early preflight\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node docs/tasks/0102/check.mjs c4",
+      "exitCode": 1,
+      "durationMs": 2561,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: ok"
+      ],
+      "stdoutSha256": "bd4bc73f84f985a2861b7630150d1dd1636c3028e46f7e9e2fa85f961e899087",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no subagent warn\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node docs/tasks/0102/check.mjs c5",
+      "exitCode": 1,
+      "durationMs": 2520,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: ok"
+      ],
+      "stdoutSha256": "1cec093448b5fddbb6f005203223220d516b6acedd67c8b5612e3175eec5f3de",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "accepted without resultShape: task-lint: 0904 — ОШИБКИ\ntask-lint: TASK-META.resultShape: укажите { artifact, format, criterion } — образ результата узла\n  ERROR TASK-META.resultShape: укажите { artifact, format, criterion } — образ результата узла\n  ERROR criteria.lock отсутствует (--strict): выполните task-hash --write\n\nИсправьте ошибки до красного прогона.\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1998,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "b3b35ea57e5d37aacda6a69a6c4a999c3c08eb2f0dfc4b5daa63959bfbdcbbb5",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "✔ квитанция: объявлен ревьюер, review.json нет — отказ (14.7093ms)\n✔ квитанция: неверный artifactSha256 — отказ (28.8299ms)\n✔ квитанция: чужой reviewer — отказ (40.1681ms)\n✔ квитанция: валидная квитанция проходит (24.366ms)\n✔ квитанция: ревьюер не объявлен — not-applicable (17.492ms)\n✔ писатель квитанции: round-trip writer → валидатор (74.7611ms)\n✔ писатель квитанции: без review.json — отказ, файл не создан (9.0284ms)\n✔ валидатор: reviewer без meta — без квитанции отказ (13.1298ms)\n✔ валидатор: reviewer + writer → ок, правка review.json → отказ (47.4459ms)\n✔ валидатор: пустой reviewer и нет meta — not-applicable (11.8952ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1043.012\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 53237,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 7,
+  "failed": 5,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [
+      "C6",
+      "C7"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C4",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C5",
+        "ok": true,
+        "distance": 4,
+        "total": 5,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

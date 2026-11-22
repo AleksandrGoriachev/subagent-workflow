@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
+import { validateReviewReceipt } from './lib/review-receipt.mjs';
 import {
   parseArgv, readTask, verifyLock, repoRoot, git, diffPaths, matchesAny, relPosix,
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, writeJson, writeText,
@@ -67,6 +68,23 @@ try {
     process.exit(1);
   }
   const headSha = lockCheck.expected.contractCommit;
+  /*
+   * 0102 (2.6.94): ранняя проверка пары (контракт, квитанция). Если review уже
+   * выпущен, mismatch не должен всплывать у judge после зелёного verify.
+   */
+  const earlyReviewFile = path.join(taskDir, 'review.json');
+  if ((meta.reviewer || meta.reviewerNode) && exists(earlyReviewFile)) {
+    const early = validateReviewReceipt({ taskDir, meta });
+    if (!early.ok) fail('ранняя проверка квитанции: ' + early.problems.join('; '));
+    const earlyReview = readJson(earlyReviewFile);
+    if (earlyReview.contractCommit && String(earlyReview.contractCommit) !== lockCheck.expected.contractCommit) {
+      fail('review.contractCommit ' + earlyReview.contractCommit + ' не совпадает с контрактом ' + lockCheck.expected.contractCommit);
+    }
+    if (earlyReview.taskFileSha256 && String(earlyReview.taskFileSha256) !== lockCheck.expected.taskFileSha256) {
+      fail('review.taskFileSha256 не совпадает с task.md контракта');
+    }
+  }
+
   const taskRel = relPosix(repo, taskDir);
   const bypasses = { allowMissingRed: false, allowManual: false };
   let red = null;

@@ -111,6 +111,16 @@ if (exists(path.join(taskDir, 'closure.json'))) {
   if (meta.created && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(String(meta.created))) warn('TASK-META.created: ожидается дата YYYY-MM-DD');
   if (meta.risk === 'high' && meta.securityReview !== true) error('risk=high без securityReview: true');
   if (meta.risk === 'high' && meta.humanSignoff !== true) error('risk=high без humanSignoff: true');
+  /*
+   * 0102 (2.6.94): имя узла сравнивается по голому id. Префикс «subagent:» в
+   * контракте не запрещён, но предупреждаем — иначе расхождение всплывает
+   * на приёмке, как у structure в 0331.
+   */
+  for (const key of ['reviewer', 'reviewerNode']) {
+    if (typeof meta[key] === 'string' && /^subagent:/i.test(meta[key].trim())) {
+      warn('TASK-META.' + key + ': префикс "subagent:" не нужен — сравнивается голый id');
+    }
+  }
 /*
  * 2.6.88: образ результата. Задание обязано назвать, ЧТО оно возвращает:
  * артефакт, формат и критерий, которым это проверяется. Без образа результата
@@ -118,8 +128,12 @@ if (exists(path.join(taskDir, 'closure.json'))) {
  * Старые задания не ломаем: без --strict — предупреждение, под --strict — ошибка.
  */
 const resultShape = meta.resultShape;
+/* 0102 (2.6.94): у принятого задания образ результата уже не переспрашивают. */
+const acceptedTaskRecord = hasAcceptedRecord(path.join(taskDir, 'acceptance.json'), id)
+  || hasAcceptedRecord(path.join(taskDir, 'closure.json'), id);
 if (resultShape === undefined) {
-  (strict ? error : warn)('TASK-META.resultShape: укажите { artifact, format, criterion } — образ результата узла');
+  if (acceptedTaskRecord) warn('TASK-META.resultShape: принятому заданию не требуется');
+  else (strict ? error : warn)('TASK-META.resultShape: укажите { artifact, format, criterion } — образ результата узла');
 } else if (resultShape === null || typeof resultShape !== 'object' || Array.isArray(resultShape)) {
   error('TASK-META.resultShape: ожидается объект { artifact, format, criterion }');
 } else {

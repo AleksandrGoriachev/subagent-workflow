@@ -101,3 +101,26 @@ test('валидатор: пустой reviewer и нет meta — not-applicabl
   assert.equal(result.applicable, false);
   assert.equal(result.ok, true);
 });
+
+test('валидатор: префикс subagent: у объявленного ревьюера', () => {
+  const { dir } = fixture();
+  const written = writeReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(written.ok, true);
+  const result = validateReviewReceipt({ taskDir: dir, meta: { reviewer: 'subagent:reviewer-1' } });
+  assert.equal(result.ok, true, result.problems.join('; '));
+});
+
+test('валидатор: reviewerNode без reviewer', () => {
+  const { dir } = fixture();
+  const written = writeReviewReceipt({ taskDir: dir, reviewer: 'reviewer-1' });
+  assert.equal(written.ok, true);
+  const result = validateReviewReceipt({ taskDir: dir, meta: { reviewerNode: 'reviewer-1' } });
+  assert.equal(result.ok, true, result.problems.join('; '));
+});
+
+test('валидатор: квитанция с префиксом при голом объявленном', () => {
+  const { dir } = fixture();
+  writeReviewReceipt({ taskDir: dir, reviewer: 'subagent:reviewer-1' });
+  const result = validateReviewReceipt({ taskDir: dir, meta: { reviewer: 'reviewer-1' } });
+  assert.equal(result.ok, true, result.problems.join('; '));
+});

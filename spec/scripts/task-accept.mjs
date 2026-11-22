@@ -697,7 +697,6 @@ try {
     taskDir,
     meta,
     review,
-    reviewReceipt,
     reviewPath: argv.review ? path.resolve(String(argv.review)) : null,
   });
   if (receiptCheck.applicable && !receiptCheck.ok) {
@@ -705,6 +704,40 @@ try {
     process.exit(1);
   }
   reviewReceipt = receiptCheck.receipt;
+
+  /*
+   * 0102 (2.6.94): review обязан быть привязан к контракту. Иначе «добро» дано
+   * на другую редакцию task.md, и приёмка это не видит (случай structure 0331).
+   * Отсутствие обоих полей — отказ; обход только осознанным флагом и виден в
+   * acceptance.reviewBinding.
+   */
+  const reviewBinding = {
+    contractCommit,
+    taskFileSha256: lockCheck.expected.taskFileSha256,
+    bound: false,
+    allowedBy: null,
+    note: null,
+  };
+  if (review) {
+    const reviewContract = review.contractCommit === undefined || review.contractCommit === null ? null : String(review.contractCommit);
+    const reviewTaskSha = review.taskFileSha256 === undefined || review.taskFileSha256 === null ? null : String(review.taskFileSha256);
+    if (reviewContract === null && reviewTaskSha === null) {
+      if (!argv['allow-unbound-review']) {
+        fail('review без привязки к контракту: нет review.contractCommit и review.taskFileSha256; перевыпустите review или укажите --allow-unbound-review --note <причина>');
+      }
+      if (!argv.note) fail('--allow-unbound-review требует --note с причиной');
+      reviewBinding.allowedBy = 'flag';
+      reviewBinding.note = String(argv.note);
+    } else {
+      if (reviewContract !== null && reviewContract !== contractCommit) {
+        fail('review.contractCommit ' + reviewContract + ' не совпадает с контрактом ' + contractCommit + ': review выпущен на другую редакцию');
+      }
+      if (reviewTaskSha !== null && reviewTaskSha !== lockCheck.expected.taskFileSha256) {
+        fail('review.taskFileSha256 не совпадает с task.md контракта: review выпущен на другую редакцию task.md');
+      }
+      reviewBinding.bound = true;
+    }
+  }
 
   if (decisionSummary.assumed.length) releaseReady = false;
   if (attackCheck && attackCheck.summary.unresolved > 0) releaseReady = false;
@@ -783,6 +816,8 @@ try {
     signedBy: humanSigner,
     securityReview: meta.securityReview === true,
     review,
+    reviewReceipt,
+    reviewBinding,
     decisions: {
       count: decisionSummary.count,
       digest: decisionSummary.digest,
