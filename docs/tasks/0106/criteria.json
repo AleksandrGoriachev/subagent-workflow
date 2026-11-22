@@ -40,6 +40,11 @@
       "expect": {
         "exitCode": 0,
         "stdoutContains": "\"tasks\""
+      },
+      "effect": {
+        "observable": "задачи воркспейса видны в панели: стадия, время с последнего артефакта, флаги проблем",
+        "threshold": "C1 отдаёт JSON со списком задач и summary; C2 публикует снимок, который читает /api/tasks",
+        "measuredBy": "C2"
       }
     },
     {
