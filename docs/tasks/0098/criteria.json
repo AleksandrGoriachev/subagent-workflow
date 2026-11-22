@@ -1,0 +1,107 @@
+{
+  "task": "0098",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C5"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "no concurrency",
+      "C2": "no failure log",
+      "C5": "no git timeout override"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "последовательный прогон",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/tools/test.mjs','utf8');if(!s.includes('--test-concurrency')){console.log('no concurrency');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/tools/test.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "лог падения с путём",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/tools/test.mjs','utf8');if(!s.includes('лог:')&&!s.includes('полный лог')){console.log('no failure log');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/tools/test.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "тесты плагина зелёные",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/**",
+        "plugin/test/**"
+      ],
+      "timeoutMs": 1200000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "таймаут git настраивается",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/state.js','utf8');if(!s.includes('WF_GIT_TIMEOUT_MS')){console.log('no git timeout override');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/state.js"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
