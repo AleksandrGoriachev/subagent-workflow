@@ -1,0 +1,371 @@
+{
+  "version": 3,
+  "task": "0104",
+  "taskFileSha256": "e8f219aad3678546008028a0e419758e9360795369402afa4b3392303b275bb6",
+  "criteriaSha256": "a6eab151f7eb9b439b08d32ef37a9c3fe72782243c80756a14c510336156e833",
+  "criteriaJsonSha256": "5859ad4171d5393def6ca80c38796c9cbe66cbe58734596b7ef25f9a493a5db0",
+  "attackSha256": null,
+  "contractCommit": "f495107698eafa0cdc0da962ee0f80af66f7e59a",
+  "protected": [
+    {
+      "path": "plugin/lib/anchors.js",
+      "sha256": "f3228753eaab837c86086db936669af1cf87ec474d1572c6dd1c021c76670618"
+    },
+    {
+      "path": "plugin/lib/api.js",
+      "sha256": "7e67b84a7d1d9e8edbe245f605f72cf60efa2613cf161d0c52fd2abd7a365363"
+    },
+    {
+      "path": "plugin/lib/archive.mjs",
+      "sha256": "487dbdac38dec91f22a8990a8e429ca6961104a277de4537e3c777210d116583"
+    },
+    {
+      "path": "plugin/lib/checks.js",
+      "sha256": "71e5a9642c8b39c09409ce16487c3c538c3a384e0440874df8f1008d5cfb6947"
+    },
+    {
+      "path": "plugin/lib/client.js",
+      "sha256": "a9878acf142e81d6add1e41af7aae619665d6941d2f5803f51db057d08b96614"
+    },
+    {
+      "path": "plugin/lib/compat.js",
+      "sha256": "af430ed633f146715e835d03b61597773283119bdb1955faf909b959e27a44aa"
+    },
+    {
+      "path": "plugin/lib/deploy.js",
+      "sha256": "ebd65d1e3ccfccbd97bbf34e29c468c3d7851a38080f362c49c6bc686b41bc5b"
+    },
+    {
+      "path": "plugin/lib/engine-root.js",
+      "sha256": "f56baa2bce360db90b5e7f0d21d1e66d9fa6a10ec7e3e74a532b302fc1810c7f"
+    },
+    {
+      "path": "plugin/lib/fetch-retry.mjs",
+      "sha256": "a604a7c8c78afaf0ce8e4ceb996c7a1284b96d5384bb1e59448381b2caac6820"
+    },
+    {
+      "path": "plugin/lib/guard.js",
+      "sha256": "0fce3ebbbe7dcc1713cfe0d795e5e8bd7af063bc44f7513b3a60bdaeda2a584c"
+    },
+    {
+      "path": "plugin/lib/imperative.js",
+      "sha256": "d98bb3c7ec294b05fefd13a8141f4656567e2607bf60ca78183ee096b4f0b24d"
+    },
+    {
+      "path": "plugin/lib/index.js",
+      "sha256": "b0a8efae77aeaaf6623c8658eb9bb6698127b8aa1c0e5eaf10895138972e5994"
+    },
+    {
+      "path": "plugin/lib/loop-guard.js",
+      "sha256": "b07e0561ff821166196f533f56efdf41cc65167f751eef363ead0dd005cc1605"
+    },
+    {
+      "path": "plugin/lib/plugin-update.mjs",
+      "sha256": "55958a201b00b641d3a0252961c477826be9773095269458b999edde3bcee00d"
+    },
+    {
+      "path": "plugin/lib/release-check.mjs",
+      "sha256": "842c2ef3469ad496b3c70ab902ca67dfd79a0a3accb186bcf8d6e63bdc5ca83f"
+    },
+    {
+      "path": "plugin/lib/release-source.mjs",
+      "sha256": "17942ccf3f8aef1f6990b718080399b62721dc6463bb9440f6e5fe36fe2a7d9a"
+    },
+    {
+      "path": "plugin/lib/state.js",
+      "sha256": "ba0e7b43137ff312a5f0ed29856aaf86503b1de9929078b39bcc60319ae7ff3b"
+    },
+    {
+      "path": "plugin/lib/tasks-write.mjs",
+      "sha256": "c0c62b16fede3c3ef13bfaff695bbb535f8834f69ef4c57ee8a637c033df0a9e"
+    },
+    {
+      "path": "plugin/lib/wait-guard.js",
+      "sha256": "cae0562470a8e845797896d71985d859f117ce3649ae5181fb13c1171a9b6ee5"
+    },
+    {
+      "path": "spec/scripts/actor.mjs",
+      "sha256": "49286d0c6b915062c261296aa8b8c2cc6ea3225d38f895776f7e3380eef1071d"
+    },
+    {
+      "path": "spec/scripts/doctor.mjs",
+      "sha256": "809f7da95cd2179607f359a657b0920c3e3c99b9045fc4fc92399be87248318d"
+    },
+    {
+      "path": "spec/scripts/engine-shadow-summary.mjs",
+      "sha256": "7b9f73bbd48b0a572eb62214b99f64c188c8531afac6c556e0cef29e941adfaa"
+    },
+    {
+      "path": "spec/scripts/facts-convert.mjs",
+      "sha256": "4ba24202ce03ec93ea6aaa6626c0d7d4b902f7a387b241c186f649cdb6585b60"
+    },
+    {
+      "path": "spec/scripts/facts-repair.mjs",
+      "sha256": "f994b0d14c457dcfa9e101de5df715a2b4615b2600f65fe98e0a4824b612dfef"
+    },
+    {
+      "path": "spec/scripts/init.mjs",
+      "sha256": "0535b7f06503bac8c452986c8cbd83ec07e0d43cf2163562365ef2b706d13895"
+    },
+    {
+      "path": "spec/scripts/job.mjs",
+      "sha256": "3e76ef08a20d533e4d601f0c061459e260d47c520767b6e0f81d2b63047dd310"
+    },
+    {
+      "path": "spec/scripts/lib/accept-key.mjs",
+      "sha256": "511598b3ba848b29c690e77e49ba3be3a057d336a4f623787c2d1bee53c781d2"
+    },
+    {
+      "path": "spec/scripts/lib/acceptance-policy.mjs",
+      "sha256": "9e582792ade089fa9a0664660333b747ffb19fe2c813dd2ed76fa814053bd4fe"
+    },
+    {
+      "path": "spec/scripts/lib/attack.mjs",
+      "sha256": "95ed1737ede602fc03ac8577c98f566bbd6e24991e9eb977069ff7ac6ada6a6e"
+    },
+    {
+      "path": "spec/scripts/lib/batch-tasks.mjs",
+      "sha256": "f9eb7c7e8eacf4c439383df582fbf1f60230cd90d70dd7887cae5ad3f0ce91e0"
+    },
+    {
+      "path": "spec/scripts/lib/common.mjs",
+      "sha256": "e0f5587ae623d17701a21b021c68cd24e7690b505013054081bfab1e863b612d"
+    },
+    {
+      "path": "spec/scripts/lib/launch-evidence.mjs",
+      "sha256": "86df10981cb9d52b877a4f5c75032650fb71a76e04fa415584848036b97a6435"
+    },
+    {
+      "path": "spec/scripts/lib/policy.mjs",
+      "sha256": "036701d685fca8da11caf935a87fb3b9e8ea59faf932b60bb9a65205b5aad918"
+    },
+    {
+      "path": "spec/scripts/lib/preflight.mjs",
+      "sha256": "08a4defb41b5f85c4d95781b35ac2dba706e2267e5c828207d4c763af853d777"
+    },
+    {
+      "path": "spec/scripts/lib/registry.mjs",
+      "sha256": "c88d48bc6dec498ccec69c70fd6e3dfb8a8ce78f983c3be72f5a39ab530e5766"
+    },
+    {
+      "path": "spec/scripts/lib/regress.mjs",
+      "sha256": "752313ec9abc6268105bfca1751f7680820bd180e51b525b5e8030df9f06c9fd"
+    },
+    {
+      "path": "spec/scripts/lib/review-receipt.mjs",
+      "sha256": "19bf26e6a3216b38b08bd5fbcd237755f11f8514c7a40ecbd1e9a7862a6927a1"
+    },
+    {
+      "path": "spec/scripts/lib/review.mjs",
+      "sha256": "d387db287df453f04eca92281b11087ead555d576568746d81637e25e28d97cc"
+    },
+    {
+      "path": "spec/scripts/lib/session-model.mjs",
+      "sha256": "d5c4e052652c6e8d05eaaf38c6ddb72bfa25d122fcfed01b6637d8dafca673af"
+    },
+    {
+      "path": "spec/scripts/new-task.mjs",
+      "sha256": "30cb0b6eafbe9983733d43d06e807ffa22f383be2da94ab40f2358f1c520b671"
+    },
+    {
+      "path": "spec/scripts/sealed-run.mjs",
+      "sha256": "ceaedaa1fa0c4ebd598aa9ccb5a6789efbde336311658fa1f1af36ef158650ee"
+    },
+    {
+      "path": "spec/scripts/sign.mjs",
+      "sha256": "0226db034a2eb993c9e34fa7ec94e244e0935166f915ba1669562baa7e179a87"
+    },
+    {
+      "path": "spec/scripts/task-accept-batch.mjs",
+      "sha256": "b509cbd9fdb82645626e2708c80ccdfe6773cec23526e7649427d9b796b85999"
+    },
+    {
+      "path": "spec/scripts/task-accept.mjs",
+      "sha256": "50cfa93309bd8c5199f11e9608732034a7784a73db165dd3017460e26955b3b2"
+    },
+    {
+      "path": "spec/scripts/task-attack.mjs",
+      "sha256": "745bbb7a84fa6e8957399f3f4a5686f5d02653b4b531c5378df94a978f6127d2"
+    },
+    {
+      "path": "spec/scripts/task-check-acceptance.mjs",
+      "sha256": "dcc4045a2c6712459fe3ea577e909363ebef5c1cce4a56d8802204b81bc1cc60"
+    },
+    {
+      "path": "spec/scripts/task-close.mjs",
+      "sha256": "70aa74b7cf38ccff1363b60caaab6a45107ffcd47f79f7d5100e40d2eeadebda"
+    },
+    {
+      "path": "spec/scripts/task-guard.mjs",
+      "sha256": "fe9d21538b1cbeb674581e256c220efde72368608ad031af20d26aa74a21e6d3"
+    },
+    {
+      "path": "spec/scripts/task-hash.mjs",
+      "sha256": "b864c09a6d19dc11fa367ee1edded71b289554773a959b8377fa4e9481356bb1"
+    },
+    {
+      "path": "spec/scripts/task-lint.mjs",
+      "sha256": "acfc1ae4e1c0bb70ba908c13faff45ddcf18e61ad03076a0b925bc9f01d53bd3"
+    },
+    {
+      "path": "spec/scripts/task-preflight.mjs",
+      "sha256": "5c4bd1f89ae58b6d46921996bf015c14a94982d0cf780d6301ce4a6a3dd3f603"
+    },
+    {
+      "path": "spec/scripts/task-red.mjs",
+      "sha256": "e20a956e3822e24a2ff56884cea62715ad843bfcc2c32463c09c7e26503e0d3d"
+    },
+    {
+      "path": "spec/scripts/task-regress.mjs",
+      "sha256": "d4fdad976313d0d80119e7bccbc4c33c10416c73b6e4af88b7e525e821e21755"
+    },
+    {
+      "path": "spec/scripts/task-verify.mjs",
+      "sha256": "c6190df0b6707aaadd600ffe10b9494eebf2f78286f0dbb4deb49da7b29b2fa6"
+    },
+    {
+      "path": "spec/scripts/tests-for.mjs",
+      "sha256": "8adb75a535e68495cecb3ebfb0db19f024c7d54b906337b3e87c4e6ea3891844"
+    },
+    {
+      "path": "tools/check-version.mjs",
+      "sha256": "20e91141352cfe112c33d994e54dd298313fb7f5a123faed0a6c631faea101ee"
+    },
+    {
+      "path": "tools/commit.ps1",
+      "sha256": "ac8de7d1ba84c606f17e2ef95309d10d945fdb687430faaab141a8bd37234991"
+    },
+    {
+      "path": "tools/contract-lint.mjs",
+      "sha256": "9bb5ad4cd94dc9021a9ee453ecd7c87e04ff68cdbc45609724947d4d4ef64b74"
+    },
+    {
+      "path": "tools/exchange-inbox.mjs",
+      "sha256": "13db8a961f0ec958e066302de03c9e5b097057b94c86fbe1c8f33eaf8d99541d"
+    },
+    {
+      "path": "tools/launch-metrics.mjs",
+      "sha256": "b1e827404a184aead1ad0c9d13640266c350e99e22ba1d2a2ebe4cfd7b470e17"
+    },
+    {
+      "path": "tools/lib/github-token.mjs",
+      "sha256": "1a6e507c07a93b367899d34ec93f1f641a39be403e98d38c826efe0855dfb130"
+    },
+    {
+      "path": "tools/migrate-anchors-sides.mjs",
+      "sha256": "f2bb0957bdec31abf31e4e42eb38f63298d8edb4fd21be89fd096d1eaab71aa8"
+    },
+    {
+      "path": "tools/pack-plugin.mjs",
+      "sha256": "bff83bcb67e977827f4de3a694fcd3e1a40aa61df506983f14e4838d5905d6ed"
+    },
+    {
+      "path": "tools/pack.mjs",
+      "sha256": "24307ad474ac93776e50888add5b3740e7f3a94d2205820ec44eb195269ed3f0"
+    },
+    {
+      "path": "tools/release-draft.mjs",
+      "sha256": "ce70201e82f19f4dad9a488477ae002fa092682f8bf9ea50d70519a95e2e54c0"
+    },
+    {
+      "path": "tools/release-publish.mjs",
+      "sha256": "f88d32c4027987f379e361ef57953a7bd050b270d87954c42880faf9ad1de6d3"
+    },
+    {
+      "path": "tools/release-smoke.mjs",
+      "sha256": "50410d8b378a2f279db0acd7e1e136a569d2eea2f5e9f310bd449f41db1df248"
+    },
+    {
+      "path": "tools/release.mjs",
+      "sha256": "6202a33596e33f8b328df0e76496899188b445f8d2620fde12f532204f840dff"
+    },
+    {
+      "path": "tools/stopline-accept.mjs",
+      "sha256": "60365c69b21cb3b36ea8c5fe1b3ab34ad9b628612270e1037a4285fcc55939df"
+    },
+    {
+      "path": "tools/structure-approve.mjs",
+      "sha256": "a25fb0f4c75a93aace24612ebe244d2c4e024aa406e33374a6cb7a53e71b88c1"
+    },
+    {
+      "path": "tools/task-next-id.mjs",
+      "sha256": "9ecd05196b5c7592b3040c970c40f12365ff0a197b669a8c6897e2016c7e2681"
+    },
+    {
+      "path": "tools/task-register.mjs",
+      "sha256": "ee06a564dabe8b0d5036dea1aad4932fef1f87549555fcfdc4ea78c1f7928c39"
+    },
+    {
+      "path": "tools/verify.mjs",
+      "sha256": "c1885759d5026aee95cc637643265fb928e025c164eb26033720846702d4dfdf"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "spec/checks/anchor-freshness.mjs",
+      "plugin/test/anchors-project.test.mjs",
+      "docs/tasks/0104/**"
+    ],
+    "protectedPaths": [
+      "plugin/lib/**",
+      "tools/**",
+      "spec/scripts/**"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0104/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node --test plugin/test/anchors-project.test.mjs",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "plugin/test/anchors-project.test.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node -e \"const m=require('module');import('./spec/checks/anchor-freshness.mjs').then(mod=>{const r=mod.evaluateProjectAnchors({list:[{id:'P1',claim:'x',layer:'project',enforcedBy:'nodes',check:'tool',proof:{command:'node -e 1'},status:'auto',confirmedVersion:'2.6.82',confirmedAt:'2026-11-18'}],approval:{hash:'a'},sha:'a',approvalHash:'a',acceptors:[]});const bad=(r.problems||[]).filter(p=>p.includes('confirmed.date'));if(bad.length){console.log('no confirmed fallback: '+bad.join('; '));process.exit(1)}console.log('ok')})\"",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "ok"
+        },
+        "covers": [
+          "spec/checks/anchor-freshness.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/selftest.mjs",
+        "cwd": ".",
+        "timeoutMs": 600000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "SELFTEST OK"
+        },
+        "covers": [
+          "spec/scripts/lib/common.mjs",
+          "spec/selftest.mjs"
+        ],
+        "tags": [
+          "slow"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-22T19:17:50.774Z",
+  "tool": "subagent-workflow/2.6.94"
+}

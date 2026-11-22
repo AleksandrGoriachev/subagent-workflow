@@ -15,6 +15,7 @@
   "criteria": "criteria.json",
   "allowedPaths": [
     "spec/checks/anchor-freshness.mjs",
+    "spec/checks/foreign-workspace.mjs",
     "plugin/test/anchors-project.test.mjs",
     "docs/tasks/0104/**"
   ],
@@ -71,11 +72,17 @@ node 25, Windows, без сети.
 2. Правки structure.
 3. Релиз 2.6.95 — отдельной задачей.
 
+## Дополнительно
+
+W5 (foreign-workspace) при запуске из каталога движка искал permits в `<движок>/coordination/permits`
+и не видел разрешений воркспейса. Исправляем: кандидаты — корень запуска и его родитель (как для foreign-roots).
+
 ## Инварианты
 
 1. Якорь с `confirmed`-объектом читается как раньше.
 2. Якорь с `confirmedVersion`/`confirmedAt` без объекта даёт те же version/date.
 3. Контурный `evaluateAnchors` не меняет поведения.
+4. `hasPermit` ищет разрешения и в `<root>/coordination/permits`, и в `<root>/../coordination/permits`.
 
 <!-- CRITERIA:BEGIN -->
 ## Критерии приёмки
@@ -85,4 +92,5 @@ node 25, Windows, без сети.
 | C1 | `node --test plugin/test/anchors-project.test.mjs` | все PASS |
 | C2 | `evaluateProjectAnchors` с confirmedVersion/confirmedAt | нет проблемы «confirmed.date» |
 | C3 | `node spec/selftest.mjs` | `SELFTEST OK` |
+| C4 | `foreign-workspace.mjs` находит permits в корне воркспейса | exit 0 |
 <!-- CRITERIA:END -->

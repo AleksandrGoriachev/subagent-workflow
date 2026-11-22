@@ -4,7 +4,8 @@
   "teardown": [],
   "redExpect": {
     "mustFail": [
-      "C2"
+      "C2",
+      "C4"
     ],
     "mustPass": [
       "C1",
@@ -12,7 +13,8 @@
     ],
     "reasonWindow": 25,
     "reasons": {
-      "C2": "no confirmed fallback"
+      "C2": "no confirmed fallback",
+      "C4": "no permits fallback"
     }
   },
   "criteria": [
@@ -66,6 +68,22 @@
       "expect": {
         "exitCode": 0,
         "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "permits ищутся в корне воркспейса",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/checks/foreign-workspace.mjs','utf8');if(!s.includes('permitsCandidates')){console.log('no permits fallback');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/foreign-workspace.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
       }
     }
   ]
