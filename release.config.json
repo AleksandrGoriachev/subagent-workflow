@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.92",
+  "version": "2.6.93",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.92 — валидатор квитанции принимает reviewer",
+  "releaseName": "2.6.93 — гейт тестов без ложного красного",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0097",
-  "releaseCommand": "node tools/release.mjs release 2.6.92",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.92",
+  "task": "docs/tasks/0101",
+  "releaseCommand": "node tools/release.mjs release 2.6.93",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.93",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
