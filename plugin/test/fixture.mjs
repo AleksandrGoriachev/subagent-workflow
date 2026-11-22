@@ -47,11 +47,25 @@ export const DECISIONS = [
 ];
 
 export function git(cwd, args) {
-  const result = runGit(cwd, args);
+  /*
+   * 0100 (2.6.94): локальный git на загруженной машине иногда не укладывается в
+   * таймаут (ETIMEDOUT на «git config»), и тест краснел без причины. Команды
+   * идемпотентны — повторяем до трёх раз с короткой паузой, ошибку отдаём
+   * только после третьей неудачи.
+   */
+  let result = runGit(cwd, args);
+  for (let attempt = 2; !result.ok && attempt <= 3; attempt += 1) {
+    sleepSync(300 * (attempt - 1));
+    result = runGit(cwd, args);
+  }
   if (!result.ok) {
     throw new Error('git ' + args.join(' ') + ': ' + (result.stderr || result.stdout || String(result.error || 'failed')));
   }
   return (result.stdout || '').trim();
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 function write(file, text) {
