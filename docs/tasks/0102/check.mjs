@@ -9,7 +9,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -31,7 +31,7 @@ function lint(taskDir, extra = []) {
 }
 
 if (mode === 'c1') {
-  const mod = await import(path.join(root, 'spec/scripts/lib/review-receipt.mjs'));
+  const mod = await import(pathToFileURL(path.join(root, 'spec/scripts/lib/review-receipt.mjs')).href);
   const dir = tmpDir();
   writeReceipt(dir, 'reviewer-1');
   const result = mod.validateReviewReceipt({ taskDir: dir, meta: { reviewer: 'subagent:reviewer-1' } });
