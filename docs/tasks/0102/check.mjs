@@ -52,9 +52,10 @@ if (mode === 'c1') {
   if (!/subagent:/.test(out)) bad('no subagent warn');
   console.log('ok');
 } else if (mode === 'c5') {
+  /* у фикстуры нет lock, поэтому смотрим именно на требование resultShape */
   const run = lint(path.join(here, 'fixtures/accepted-noshape'), ['--strict']);
   const out = (run.stdout || '') + (run.stderr || '');
-  if (run.status !== 0) bad('accepted without resultShape: ' + out.trim().slice(0, 400));
+  if (/resultShape/.test(out)) bad('accepted without resultShape: ' + out.trim().slice(0, 400));
   console.log('ok');
 } else {
   console.error('usage: node docs/tasks/0102/check.mjs c1|c2|c3|c4|c5');
