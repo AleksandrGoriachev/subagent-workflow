@@ -10,6 +10,7 @@
   "owner": "координатор",
   "executor": "subagent:coordinator",
   "acceptor": "subagent:judge",
+  "acceptorNode": "judge",
   "issuedBy": { "kind": "agent", "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5", "model": "deepseek-flash" },
   "base": "HEAD",
   "criteria": "criteria.json",
@@ -39,6 +40,7 @@
       "chosen": "Объявленный ревьюер нормализуется (снять subagent:), сравнение по голому id; task-accept сверяет review.contractCommit/taskFileSha256 с lock и отказывает при расхождении; без привязки — deny, кроме явного --allow-unbound-review с записью reviewBinding в acceptance.",
       "options": ["Литеральное сравнение (текущее)", "Нормализация + привязка к контракту"],
       "impact": "public-contract",
+      "reversible": false,
       "evidence": { "kind": "criterion", "ref": "C1" }
     },
     {
@@ -48,9 +50,11 @@
       "chosen": "task-verify проверяет квитанцию и привязку, если review.json уже есть (до judge); task-lint даёт WARN на subagent:-префикс и не требует resultShape у принятых заданий.",
       "options": ["Оставить только приёмку", "Ранняя проверка + WARN + исключение для принятых"],
       "impact": "internal",
+      "reversible": true,
       "evidence": { "kind": "criterion", "ref": "C3" }
     }
   ],
+  "resultShape": { "artifact": "docs/tasks/0102/report.json", "format": "json", "criterion": "C1" },
   "securityReview": false,
   "humanSignoff": false,
   "followUps": [
@@ -64,6 +68,22 @@
 
 Контракт с `reviewer: "subagent:reviewer-1"` проходит приёмку, а review, выпущенный на старую редакцию контракта,
 приёмкой отклоняется. Ранний контроль — в `task-verify`, до judge.
+
+## Границы знания
+
+Только код движка, перечисленный в allowedPaths; чужие воркспейсы не трогаем.
+
+## Среда
+
+node 25, Windows, без сети.
+
+## Отчёт
+
+Отчёт — критерии и verify.log; отдельный отчёт не требуется.
+
+## Коммит
+
+Коммитится контракт и реализация по правилам движка.
 
 ## Что не входит
 

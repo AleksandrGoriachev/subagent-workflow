@@ -35,7 +35,8 @@
       ],
       "timeoutMs": 120000,
       "tags": [
-        "fast"
+        "fast",
+        "negative"
       ],
       "expect": {
         "exitCode": 0,
