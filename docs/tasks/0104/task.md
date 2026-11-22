@@ -21,7 +21,7 @@
   "protectedPaths": [
     "plugin/lib/**",
     "tools/**",
-    "spec/checks/**"
+    "spec/scripts/**"
   ],
   "redAllowDirty": ["docs/tasks/0104/**"],
   "hashExclude": [],
