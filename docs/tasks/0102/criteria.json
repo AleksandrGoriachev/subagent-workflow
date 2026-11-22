@@ -1,0 +1,153 @@
+{
+  "task": "0102",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [
+      "C6",
+      "C7"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "no normalization",
+      "C2": "no review binding",
+      "C3": "no early preflight",
+      "C4": "no subagent warn",
+      "C5": "accepted without resultShape"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "обе формы ревьюера",
+      "command": "node docs/tasks/0102/check.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/review-receipt.mjs",
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      },
+      "effect": {
+        "observable": "контракт с reviewer вида subagent:reviewer-1 принимается, и квитанция с голым id проходит",
+        "threshold": "C1 зелёный: обе формы дают ok, чужой id — отказ (проверяется рядом)",
+        "measuredBy": "C2"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "привязка review к контракту",
+      "command": "node docs/tasks/0102/check.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "ранняя проверка в verify",
+      "command": "node docs/tasks/0102/check.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-verify.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "WARN на subagent:-префикс",
+      "command": "node docs/tasks/0102/check.mjs c4",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "принятое без resultShape",
+      "command": "node docs/tasks/0102/check.mjs c5",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "тесты валидатора квитанции",
+      "command": "node --test plugin/test/review-receipt.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/review-receipt.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C7",
+      "title": "selftest движка зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
