@@ -1236,8 +1236,14 @@ export function captureCommand(command, args, options = {}) {
 
 /** Read-only git helper. Never passes a mutating subcommand. */
 export function runGit(root, args) {
+  /*
+   * 0098 (2.6.93): под нагрузкой локальный git иногда не укладывался в 20 с
+   * (ETIMEDOUT на «git config user.email»), и гейт тестов падал ложным красным.
+   * Таймаут настраивается WF_GIT_TIMEOUT_MS, по умолчанию 120 с.
+   */
+  const gitTimeoutMs = Number(process.env.WF_GIT_TIMEOUT_MS) || 120000;
   try {
-    const result = captureCommand('git', ['-C', root, ...args], { timeoutMs: 20000 });
+    const result = captureCommand('git', ['-C', root, ...args], { timeoutMs: gitTimeoutMs });
     const ok = !result.error && result.status === 0;
     return { ok, status: result.status, stdout: result.stdout, stderr: result.stderr, error: result.error };
   } catch (error) {
