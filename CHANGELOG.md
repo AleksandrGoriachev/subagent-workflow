@@ -1,5 +1,13 @@
 # Изменения
 
+## 2.6.92 — 2026-11-22 (панель 0.9.38)
+
+- **Валидатор квитанции принимает reviewer (0096).** `validateReviewReceipt({taskDir, reviewer})` считает
+  переданного ревьюера объявленным (приоритет: явный аргумент → `meta`), а без `review` читает
+  `<taskDir>/review.json` сам; правка review.json после квитанции → отказ по `artifactSha256`.
+  Форма совпадает с внешней проверкой `0198-review-receipts.mjs c4`.
+- Тесты: `review-receipt` 10/10, полный набор плагина и selftest зелёные. Требуется перезапуск DSH.
+
 ## 2.6.91 — 2026-11-22 (панель 0.9.38)
 
 - **Writer квитанции ревью (0094).** `writeReviewReceipt` в `spec/scripts/lib/review-receipt.mjs`

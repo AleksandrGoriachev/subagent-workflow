@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.91",
+  "version": "2.6.92",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.91 — writer квитанции ревью",
+  "releaseName": "2.6.92 — валидатор квитанции принимает reviewer",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0095",
-  "releaseCommand": "node tools/release.mjs release 2.6.91",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.91",
+  "task": "docs/tasks/0097",
+  "releaseCommand": "node tools/release.mjs release 2.6.92",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.92",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
