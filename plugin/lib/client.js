@@ -2743,6 +2743,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
         function renderOverviewTasks(tasks) {
           const list = Array.isArray(tasks) ? tasks : [];
           const visible = list.slice(0, 12);
+          /* 0106 (2.6.96): флаги здоровья из снимка монитора — по id задачи. */
+          const healthRows = board && board.health && Array.isArray(board.health.tasks) ? board.health.tasks : [];
+          const taskHealth = new Map(healthRows.map((row) => [String(row.id), Array.isArray(row.flags) ? row.flags : []]));
           return h(
             "section",
             null,
@@ -2755,7 +2758,7 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                     type: "button",
                     style: S.card,
                     onClick: () => void openTask(task.id),
-                    title: task.dir || task.id,
+                    title: (task.dir || task.id) + ((taskHealth.get(String(task.id)) || []).length ? " · " + taskHealth.get(String(task.id)).join(", ") : ""),
                     "aria-label": cardAriaLabel(task),
                   },
                     h("span", { style: S.cardId }, task.id),
@@ -2764,6 +2767,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
                       task.risk ? badge(task.risk, RISK_COLOR[task.risk], riskHint(task.risk), false) : null,
                       task.errors > 0 ? badge("ошибок " + task.errors, T.danger, ERROR_HINT, false) : null,
                       task.warnings > 0 ? badge("предупр. " + task.warnings, T.warn, WARNING_HINT, false) : null,
+                      (taskHealth.get(String(task.id)) || []).length
+                        ? badge("здоровье: " + taskHealth.get(String(task.id)).join(", "), T.warn, "Флаги монитора задач: красный не доказан, verify красный, нет приёмки, зависло", false)
+                        : null,
                     ),
                   )),
                 ),

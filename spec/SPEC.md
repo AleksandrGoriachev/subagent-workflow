@@ -708,6 +708,13 @@
    `selftest`, `deployed-copy`. Версии пакета и плагина этой задачей не
    двигаются — их двигает релиз архитектора после приёмки.
 
+Версия 2.6.96: скорость и мониторинг. Тесты плагина по умолчанию идут параллельно
+(`--test-concurrency` = cpus−1, минимум 2; `WF_TEST_CONCURRENCY=1` — последовательно): причина прежних
+флейков устранена в 2.6.93. `tools/task-monitor.mjs` читает `docs/tasks/*` и даёт по задаче стадию,
+время с последнего артефакта и флаги `red-not-proven`, `red-missing`, `verify-red`, `no-acceptance`,
+`stalled`, `superseded`; `--publish <корень>` пишет снимок `.dsh/workflow/tasks.json`, который `/api/tasks`
+отдаёт полем `health`, а панель показывает флагом в карточке задачи.
+
 Версия 2.6.95: проектная свежесть якорей понимает манифест structure. `confirmedOf(anchor)` берёт
 `anchor.confirmed` как объект (контур/старый вид) либо `{version: confirmedVersion, date: confirmedAt}`
 (манифест v2/v3, где `confirmed` — boolean или отсутствует). W5 (`foreign-workspace`) ищет

@@ -1,0 +1,182 @@
+{
+  "version": 5,
+  "kind": "red",
+  "task": "0106",
+  "createdAt": "2026-11-22T21:13:42.706Z",
+  "base": "HEAD",
+  "baseSha": "8524c806759e94c5d5a7ef7a7368eac49f72610b",
+  "headSha": "8524c806759e94c5d5a7ef7a7368eac49f72610b",
+  "contractCommit": "8524c806759e94c5d5a7ef7a7368eac49f72610b",
+  "criteriaSha256": "80d2c1ac76f05a40ec88ca545a185334d428e807ee3cbe59335219019738b34d",
+  "criteriaJsonSha256": "ffa3b79bd2faddc015700bad0de3728d935308a9a8e916fd1f5813241f9b4f8c",
+  "dirtyPaths": [
+    "docs/tasks/0106/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node tools/task-monitor.mjs --json",
+      "exitCode": 1,
+      "durationMs": 713,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: \"tasks\""
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "2fc83d4c639b5c5cbc4311f1a668fb599a2cf9b46a3da6f2206f73a0fc185ed9",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\tools\\task-monitor.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const {spawnSync}=require('child_process');const fs=require('fs');const path=require('path');const os=require('os');const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'wf-mon-'));const r=spawnSync(process.execPath,['tools/task-monitor.mjs','--publish',tmp],{encoding:'utf8'});if(r.status!==0){console.log('no publish: '+(r.stdout||'')+(r.stderr||''));process.exit(1)}const f=path.join(tmp,'.dsh','workflow','tasks.json');if(!fs.existsSync(f)){console.log('no publish');process.exit(1)}console.log('ok')\"",
+      "exitCode": 1,
+      "durationMs": 1314,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "7015c075a47e9050c25417c30bd197364ce4e69e71df15f4440b220b2bbe3057",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no publish: node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\tools\\task-monitor.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/api.js','utf8');if(!s.includes('workflow/tasks.json')){console.log('no api route');process.exit(1)}\"",
+      "exitCode": 1,
+      "durationMs": 901,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "053b4e1295780bd1d17f79247dd5807a6c9c5794a9d082f28f44637cdb82f5e4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no api route\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/client.js','utf8');if(!s.includes('taskHealth')){console.log('no panel block');process.exit(1)}\"",
+      "exitCode": 1,
+      "durationMs": 759,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "31a4a4fdfc9f7331ce59740424189f1161a124b51c34ec5731aeacfa19a974ad",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "no panel block\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 332583,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "ee4ae8ae6e4d75e2624ae1866fff480393dbe700bb7bd12303a50059d3628ce6",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 46 файл(ов)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node --test plugin/test/task-monitor.test.mjs",
+      "exitCode": 1,
+      "durationMs": 731,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "39dc0134ab3e94c23fa86bd48efb040fdd714b3ea92af809c613e45015fc78d3",
+      "stdoutPreview": "",
+      "stderrPreview": "Could not find 'plugin/test/task-monitor.test.mjs'\n"
+    }
+  ],
+  "executed": 6,
+  "failed": 5,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C6"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C6"
+    ],
+    "mustPass": [
+      "C5"
+    ],
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 15,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C4",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C6",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

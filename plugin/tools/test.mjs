@@ -5,8 +5,7 @@
  * Поэтому список собирает сам Node-скрипт — одинаково на Windows, Ubuntu и в CI.
  *
  * 0098 (2.6.93): гейт не должен давать ложный красный под нагрузкой.
- *  - прогон последовательный (--test-concurrency=1): API-тесты не соревнуются
- *    за порты и тайминги; WF_TEST_CONCURRENCY позволяет поднять осознанно;
+ *  - прогон параллельный по умолчанию (WF_TEST_CONCURRENCY=1 — последовательно);
  *  - полный вывод пишется в файл, при падении печатается путь и последние
  *    30 строк — по логу видно тест и причину, а не «exit 1».
  * Ретрай-обход не добавлен: гейт не маскирует падения.
@@ -30,7 +29,16 @@ if (files.length === 0) {
 }
 console.log('plugin test: ' + files.length + ' файл(ов)');
 
-const concurrency = Number(process.env.WF_TEST_CONCURRENCY) || 1;
+/*
+ * 0106 (2.6.96): по умолчанию снова параллельно. Причина прежних флейков —
+ * ETIMEDOUT локального git в фикстурах — устранена в 2.6.93 (повтор команд и
+ * WF_GIT_TIMEOUT_MS), поэтому последовательный режим нужен только для отладки:
+ * WF_TEST_CONCURRENCY=1.
+ */
+const requestedConcurrency = Number(process.env.WF_TEST_CONCURRENCY);
+const concurrency = Number.isFinite(requestedConcurrency) && requestedConcurrency > 0
+  ? requestedConcurrency
+  : Math.max(2, Math.min(8, os.cpus().length - 1));
 const logsDir = path.join(root, '.tmp');
 mkdirSync(logsDir, { recursive: true });
 const logFile = path.join(logsDir, 'plugin-test-' + Date.now() + '.log');

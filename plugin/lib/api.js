@@ -1251,7 +1251,20 @@ export function createWebHandler(runtime) {
         }
         const engine = resolveRuntimeEngine(runtime, selection.root);
         const board = readRepository(engineReadRoot(selection.root, engine));
-        sendJson(res, 200, { plugin: runtime.plugin, engine: engineView(engine), ...board });
+        /*
+         * 0106 (2.6.96): здоровье задач — снимок tools/task-monitor.mjs. Панель
+         * показывает флаги (красный не доказан, verify красный, зависло), API
+         * отдаёт как есть; битый снимок не роняет доску.
+         * Файл снимка: <root>/.dsh/workflow/tasks.json (его пишет tools/task-monitor.mjs).
+         */
+        let health = null;
+        try {
+          const healthFile = path.join(selection.root, '.dsh', 'workflow', 'tasks.json');
+          if (fs.existsSync(healthFile)) health = JSON.parse(fs.readFileSync(healthFile, 'utf8').replace(/^\uFEFF/u, ''));
+        } catch (error) {
+          health = { error: String(error && error.message ? error.message : error) };
+        }
+        sendJson(res, 200, { plugin: runtime.plugin, engine: engineView(engine), ...board, health });
         return;
       }
 
