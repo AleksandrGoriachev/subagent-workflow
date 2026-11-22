@@ -10,7 +10,6 @@
   "owner": "координатор",
   "executor": "subagent:coordinator",
   "acceptor": "subagent:judge",
-  "acceptorNode": "judge",
   "issuedBy": { "kind": "agent", "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5", "model": "deepseek-flash" },
   "base": "HEAD",
   "criteria": "criteria.json",
