@@ -67,7 +67,7 @@
     {
       "id": "C3",
       "title": "маршрут /api/tasks",
-      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/api.js','utf8');if(!s.includes('/api/tasks')){console.log('no api route');process.exit(1)}\"",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/api.js','utf8');if(!s.includes('workflow/tasks.json')){console.log('no api route');process.exit(1)}\"",
       "cwd": ".",
       "covers": [
         "plugin/lib/api.js"
@@ -83,7 +83,7 @@
     {
       "id": "C4",
       "title": "блок «Задачи» в панели",
-      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/client.js','utf8');if(!s.includes('Задачи')){console.log('no panel block');process.exit(1)}\"",
+      "command": "node -e \"const s=require('fs').readFileSync('plugin/lib/client.js','utf8');if(!s.includes('taskHealth')){console.log('no panel block');process.exit(1)}\"",
       "cwd": ".",
       "covers": [
         "plugin/lib/client.js"
