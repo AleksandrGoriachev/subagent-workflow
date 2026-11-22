@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.93",
+  "version": "2.6.94",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.93 — гейт тестов без ложного красного",
+  "releaseName": "2.6.94 — ревьюер без префикса и review, привязанный к контракту",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0101",
-  "releaseCommand": "node tools/release.mjs release 2.6.93",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.93",
+  "task": "docs/tasks/0103",
+  "releaseCommand": "node tools/release.mjs release 2.6.94",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.94",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
