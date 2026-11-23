@@ -1,0 +1,92 @@
+{
+  "task": "0128",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Перекрытие подтверждено",
+      "command": "node spec/checks/check-tests-parallel.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs",
+        "spec/checks/check-tests-parallel.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CTPAR OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "План показывает parallel",
+      "command": "node spec/checks/check-tests-parallel.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs",
+        "spec/checks/check-tests-parallel.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CTPAR OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "check-tests зелёный",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "selftest",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
