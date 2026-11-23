@@ -15,7 +15,7 @@
     ],
     "reasonWindow": 25,
     "reasons": {
-      "C1": "noRed",
+      "C1": "Could not find",
       "C2": "no noRed",
       "C3": "no noRed lint rule",
       "C4": "no redKind",
