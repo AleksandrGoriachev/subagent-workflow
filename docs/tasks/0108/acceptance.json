@@ -1,0 +1,225 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0108",
+  "title": "2.6.97: noRed для e2e-смоука существующего сценария",
+  "risk": "medium",
+  "taskFileSha256": "eb6ebddcb0737b6e1ca9ac85cdc89c4267fc344cd3c06a56eadb2b99d1b01633",
+  "criteriaSha256": "4d74d9e2f9510b96165c8faf52c7ec2fccabf6a5f4595b429518bd16b8b5530e",
+  "criteriaJsonSha256": "232d32923cfa69594334a54f18d4749f36d7139f3b3d3da141fcb7cfb758c374",
+  "contractCommit": "98e3e3fca4286384209c3e7eac74133ec07ecf11",
+  "baseCommit": "98e3e3fca4286384209c3e7eac74133ec07ecf11",
+  "candidateCommit": "475e30d3281b55c68a66253abf3725cb406c265a",
+  "tree": "ade75494dfae3559bfca98cdda38d95028190626",
+  "worktreeDigest": "3ecb7cc7c4e67ef95d0c0dd1fc2b56f17d599588deb4a0dc0a9b4e9d2012ff7a",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "74a950982c89f1a51994b6fe90200931",
+    "runKind": "accept",
+    "startedAt": "2026-11-23T10:28:28.145Z",
+    "finishedAt": "2026-11-23T10:29:30.200Z",
+    "durationMs": 62063,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "2993d9c3b84f38673db090e5902c28fdf5b5bcc348a548594b8916d6ec99e3ae",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C2",
+      "observable": "e2e-смоук существующего сценария проходит red/verify штатно и несёт причину noRed",
+      "threshold": "C2: evaluateRedExpectation с noRed и risk=low даёт ok и noRed; C3: lint не пропускает noRed с непустым mustFail",
+      "measuredBy": "C3"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C2",
+        "carrier": "C2",
+        "measuredBy": "C3"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "98e3e3fca4286384209c3e7eac74133ec07ecf11",
+    "contractCommit": "98e3e3fca4286384209c3e7eac74133ec07ecf11",
+    "criteriaJsonSha256": "232d32923cfa69594334a54f18d4749f36d7139f3b3d3da141fcb7cfb758c374",
+    "failed": 5,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "mustPass": [
+        "C6"
+      ],
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node --test plugin/test/red-nored.test.mjs",
+      "exitCode": 0,
+      "durationMs": 1832,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"import('./spec/scripts/lib/common.mjs').then(m=>{const r=m.evaluateRedExpectation({mustFail:[],mustPass:[],noRed:{reason:'e2e smoke'}},[],{risk:'low'});if(!r.noRed){console.log('no noRed: '+JSON.stringify(r.errors));process.exit(1)}if(!r.ok){console.log('no noRed ok: '+JSON.stringify(r.errors));process.exit(1)}console.log('ok')})\"",
+      "exitCode": 0,
+      "durationMs": 1269,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const {spawnSync}=require('child_process');const r=spawnSync(process.execPath,['spec/scripts/task-lint.mjs','--task','docs/tasks/0108/fixtures/with-mustfail','--strict'],{encoding:'utf8'});const out=(r.stdout||'')+(r.stderr||'');if(!/noRed/.test(out)){console.log('no noRed lint rule');process.exit(1)}console.log('ok')\"",
+      "exitCode": 0,
+      "durationMs": 3433,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-red.mjs','utf8');if(!s.includes('redKind')){console.log('no redKind');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1245,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-verify.mjs','utf8');if(!s.includes('red-noRed')){console.log('no red-noRed');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1106,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 49363,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-23T10:29:31.446Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "98e3e3fca4286384209c3e7eac74133ec07ecf11",
+    "taskFileSha256": "eb6ebddcb0737b6e1ca9ac85cdc89c4267fc344cd3c06a56eadb2b99d1b01633",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "decisions": {
+    "count": 1,
+    "digest": "aedbe259db1e5d7284f9896cd93dbeffbdd1a29239dad235451b13a812bb3154",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "ERJVp4jKukEP+WG2IDDVgkI7FyfA/ZUFLweYdoHA1H2DyitEl51Im7VeBkQ7pab/1jBKBH2XcTFJGg0MAPqwAQ=="
+}
