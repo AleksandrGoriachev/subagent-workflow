@@ -1,0 +1,176 @@
+{
+  "task": "0122",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "mustPass": [
+      "C7",
+      "C8"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module",
+      "C4": "Cannot find module",
+      "C5": "Cannot find module",
+      "C6": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Лог виден и отдаётся",
+      "command": "node spec/checks/job-log-paths.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/job.mjs",
+        "spec/checks/job-log-paths.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "JOBLP OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Несуществующее задание — код 3",
+      "command": "node spec/checks/job-log-paths.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/job.mjs",
+        "spec/checks/job-log-paths.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "JOBLP OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Без --tail хвоста нет",
+      "command": "node spec/checks/job-log-paths.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/job.mjs",
+        "spec/checks/job-log-paths.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "JOBLP OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "gate.mjs: ворота сторожем",
+      "command": "node spec/checks/gate-runner.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/gate.mjs",
+        "spec/checks/gate-runner.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATERUN OK c1"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "gate.mjs: неизвестное действие",
+      "command": "node spec/checks/gate-runner.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/gate.mjs",
+        "spec/checks/gate-runner.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATERUN OK c2"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "gate.mjs: код ребёнка доходит",
+      "command": "node spec/checks/gate-runner.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/gate.mjs",
+        "spec/checks/gate-runner.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATERUN OK c3"
+      }
+    },
+    {
+      "id": "C7",
+      "title": "selftest",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/templates/task.md",
+        "spec/SPEC.md",
+        "plugin/lib/wait-guard.js"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C8",
+      "title": "Проверка по изменённым файлам",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
