@@ -1,0 +1,189 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0121",
+  "title": "Выпуск 2.6.103: 0120 в релизе",
+  "risk": "medium",
+  "taskFileSha256": "f0fed29f4b9264b8f83944de3245e5078c6b26710e90a603eb3986d9316a4c6f",
+  "criteriaSha256": "7d0aeb5370526aba065618b28306dd7b1e638e267c60cbef6c10e9b89ec08d91",
+  "criteriaJsonSha256": "d0a9db21c5c100ff6a910de3e776e01518ce5bceb0f2d4aca7ecd62f58244452",
+  "contractCommit": "0e27750c27387771f2b592a70a16e23efd2afdcf",
+  "baseCommit": "0e27750c27387771f2b592a70a16e23efd2afdcf",
+  "candidateCommit": "59c78223bf05845d2860d2a04ed03344777d170f",
+  "tree": "86008d20b7b0179f98095b0efc3afb1e90b7f426",
+  "worktreeDigest": "f9c2b8d93c4b3ac24c4d7f4550eea56943e8966a253f512f5f3b508fc5a8bd88",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-a8aa52b9-4e97-4794-815e-9226f34a3945",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "0c056237-047f-4818-b1ee-3fa7d96f9f20",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "9638de2f29ae653e6573da002118cf20",
+    "runKind": "accept",
+    "startedAt": "2026-11-23T18:04:04.411Z",
+    "finishedAt": "2026-11-23T18:05:00.528Z",
+    "durationMs": 56131,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "df0f0cd91d2902eb73abfb60c471912717335b131f5d4db4f65387f0f2187e2c",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "0e27750c27387771f2b592a70a16e23efd2afdcf",
+    "contractCommit": "0e27750c27387771f2b592a70a16e23efd2afdcf",
+    "criteriaJsonSha256": "d0a9db21c5c100ff6a910de3e776e01518ce5bceb0f2d4aca7ecd62f58244452",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4",
+        "C5"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 10,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 7,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node -e \"const fs=require('fs');const p=require('./package.json');const pl=require('./plugin/package.json');process.stdout.write(fs.readFileSync('VERSION','utf8').trim()+'|'+p.version+'|'+String(p.dshPanelVersion)+'|'+pl.version)\"",
+      "exitCode": 0,
+      "durationMs": 762,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 868,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node tools/release.mjs preflight 2.6.103",
+      "exitCode": 0,
+      "durationMs": 4487,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 45005,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node tools/release.mjs preflight 2.6.999",
+      "exitCode": 1,
+      "durationMs": 3915,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-23T18:05:01.788Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "0e27750c27387771f2b592a70a16e23efd2afdcf",
+    "taskFileSha256": "f0fed29f4b9264b8f83944de3245e5078c6b26710e90a603eb3986d9316a4c6f",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 2,
+    "digest": "52a891b6f8470caa25519a1bcd35dd8474dc2eed88f6d89a565f685b5a5a9e61",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "wCOWVORv7ZhDqFRSpx2PW0Xctc90D4kV5lY+dT6QzQ02fJsd7TShmrC73naTtKdpf1xBmJlc7d8J7Kbr6BBKBQ=="
+}
