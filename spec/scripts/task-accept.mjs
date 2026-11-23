@@ -17,6 +17,7 @@ import {
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
   attributionGap, nodeConsistency, formatGateRow, formatGateSummary,
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
+  headCommit,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
 import { sessionModelFact } from './lib/session-model.mjs';
@@ -657,6 +658,10 @@ try {
   validateVerify(verify, lockCheck, contractCommit, fresh ? acceptorRun.nonce : null);
   const digest = computeWorktreeDigest(repo, taskDir, meta);
   if (digest !== verify.worktreeDigest) fail('дерево изменилось после verify (digest не совпадает); перезапустите task-verify');
+  /* 0110 (2.6.98): после verify разрешены только чужие коммиты; их видно в headDrift. */
+  if (verify.headAtVerify && headCommit(repo) !== verify.headAtVerify) {
+    fail('HEAD изменился после verify (' + String(verify.headAtVerify).slice(0, 12) + ' -> ' + String(headCommit(repo)).slice(0, 12) + '); перезапустите task-verify');
+  }
 
   if (verify.red && !exists(files.red)) fail('red.json исчез после verify; доказательство красного потеряно');
   const red = exists(files.red) ? readJson(files.red) : null;
@@ -820,6 +825,7 @@ try {
     review,
     reviewReceipt,
     reviewBinding,
+    headDrift: verify.headDrift || null,
     decisions: {
       count: decisionSummary.count,
       digest: decisionSummary.digest,

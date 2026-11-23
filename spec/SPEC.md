@@ -708,6 +708,12 @@
    `selftest`, `deployed-copy`. Версии пакета и плагина этой задачей не
    двигаются — их двигает релиз архитектора после приёмки.
 
+Версия 2.6.98: `headDrift` — контракт заперт на `contractCommit`, но приёмка не блокируется чужими коммитами.
+Сдвиг HEAD допускается, если контрактные хеши совпали (verifyLock), `contractCommit` — предок HEAD и коммиты между
+ними не задели `taskDir`/`allowedPaths`/`protectedPaths`. Пути чужих коммитов исключаются из базы диффа границ;
+`verify.json` и `acceptance.json` несут `headDrift {from, to, foreignCommits, paths}` (при отсутствии сдвига — null).
+`red` по-прежнему бежит на `contractCommit` (`red.baseSha = contractCommit`), сдвиг появляется только после красного.
+
 Версия 2.6.97: `redExpect.noRed.reason` — осознанный отказ от красного для `risk: low`, когда на базе
 зелёный e2e-смоук существующего сценария. При пустом `mustFail` и непустой причине `task-red` пишет
 `redKind: "noRed"`, `redProven: true` (состояние решено) и причину; `task-verify` принимает только

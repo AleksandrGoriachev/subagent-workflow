@@ -7,6 +7,7 @@ import {
   formatGateRow, formatGateSummary, computeWorktreeDigest, readDiffText, scanSecrets, exists, readJson,
   checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
   gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord, lockOrderHint, reportFatal,
+  headCommit,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 
@@ -68,6 +69,8 @@ try {
     process.exit(1);
   }
   const headSha = lockCheck.expected.contractCommit;
+  /* 0110 (2.6.98): чужие коммиты после контракта допустимы, их пути исключаем из границ. */
+  const drift = lockCheck.drift || null;
   /*
    * 0102 (2.6.94): ранняя проверка пары (контракт, квитанция). Если review уже
    * выпущен, mismatch не должен всплывать у judge после зелёного verify.
@@ -123,7 +126,8 @@ try {
     ...(Array.isArray(meta.protectedPaths) ? meta.protectedPaths : []),
     taskRel + '/**',
   ];
-  const changedBefore = diffPaths(repo, headSha);
+  const foreignPaths = new Set(drift && drift.drift ? drift.paths : []);
+  const changedBefore = diffPaths(repo, headSha).filter((p) => !foreignPaths.has(p));
   const outsideBefore = changedBefore.filter((p) => !matchesAny(p, allowedDiff));
   if (outsideBefore.length) {
     console.error('task-verify: изменения вне разрешённых путей:');
@@ -286,6 +290,10 @@ try {
           bypasses: red.bypasses || {},
           log: red.log,
         }
+      : null,
+    headAtVerify: headCommit(repo),
+    headDrift: drift && drift.drift
+      ? { from: drift.from, to: drift.to, foreignCommits: drift.foreignCommits, paths: drift.paths }
       : null,
     worktreeDigest,
     log: path.basename(files.verifyLog),

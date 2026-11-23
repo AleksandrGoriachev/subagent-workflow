@@ -1060,13 +1060,22 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) 
    *    двигался после verify» одним касанием (находка ревью 2.4.9).
    */
   const accepted = options.acceptedTolerant === true && hasAcceptedRecord(files.acceptance, meta.id);
+  /* 0110 (2.6.98): сдвиг HEAD чужими коммитами допустим, если не задел пути задания. */
+  const drift = lock.contractCommit !== actual.contractCommit
+    ? headDrift(repo, lock.contractCommit, meta, taskDir)
+    : { drift: false, ok: true, from: lock.contractCommit, to: actual.contractCommit, foreignCommits: 0, paths: [] };
   for (const key of ['task', 'taskFileSha256', 'criteriaSha256', 'criteriaJsonSha256', 'attackSha256', 'contractCommit']) {
     if (lock[key] === actual[key]) continue;
     if (key === 'contractCommit' && accepted) {
       notes.push('contractCommit: замок на ' + lock[key] + ', HEAD сейчас ' + actual[key] + ' — задание уже принято, сдвиг HEAD ожидаем (metadata-коммит и последующая работа)');
       continue;
     }
-    errors.push(key + ': ожидалось ' + lock[key] + ', сейчас ' + actual[key]);
+    if (key === 'contractCommit' && drift.ok) {
+      notes.push('headDrift: контракт на ' + String(lock[key]).slice(0, 12) + ', HEAD ' + String(actual[key]).slice(0, 12)
+        + '; чужих коммитов ' + drift.foreignCommits + ', пути вне задания: ' + (drift.paths.join(', ') || 'нет'));
+      continue;
+    }
+    errors.push(key + ': ожидалось ' + lock[key] + ', сейчас ' + actual[key] + (key === 'contractCommit' && drift.errors ? '; ' + drift.errors.join('; ') : ''));
   }
   const lockMap = new Map((lock.protected || []).map((x) => [x.path, x.sha256]));
   const actualMap = new Map(actual.protected.map((x) => [x.path, x.sha256]));
@@ -1076,7 +1085,7 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) 
   }
   for (const p of lockMap.keys()) if (!actualMap.has(p)) errors.push('защищённый файл исчез: ' + p);
   for (const error of contract.errors) errors.push('контракт: ' + error);
-  return { ok: errors.length === 0, errors, notes, expected: lock, actual };
+  return { ok: errors.length === 0, errors, notes, expected: lock, actual, drift };
 }
 
 /*
@@ -1173,6 +1182,38 @@ export function diffPaths(repo, base) {
   const untracked = git(repo, ['ls-files', '--others', '--exclude-standard', '-z']);
   if (untracked.exitCode === 0) for (const p of untracked.stdout.split('\0')) if (p) set.add(toPosix(p));
   return [...set].sort();
+}
+
+/**
+ * 0110 (2.6.98): сдвиг HEAD чужими коммитами.
+ *
+ * Контракт заперт на contractCommit; если после него в репозиторий коммитили
+ * другие задачи (релизы, соседние задания), равенство HEAD больше не держим —
+ * но только пока контрактные хеши совпали (это проверяет verifyLock) и чужие
+ * коммиты не задели пути этого задания. Иначе — отказ с названными путями.
+ */
+export function headDrift(repo, contractCommit, meta, taskDir) {
+  const head = headCommit(repo);
+  if (!head) return { drift: false, ok: false, errors: ['в репозитории нет HEAD'] };
+  if (!contractCommit) return { drift: false, ok: false, errors: ['нет contractCommit в замке'] };
+  if (head === contractCommit) return { drift: false, ok: true, from: contractCommit, to: head, foreignCommits: 0, paths: [] };
+  const anc = git(repo, ['merge-base', '--is-ancestor', contractCommit, head]);
+  if (anc.exitCode !== 0) return { drift: true, ok: false, errors: ['contractCommit ' + String(contractCommit).slice(0, 12) + ' не предок HEAD ' + head.slice(0, 12)] };
+  const committed = git(repo, ['diff', '--name-only', '-z', contractCommit, head, '--']);
+  const paths = committed.exitCode === 0 ? committed.stdout.split('\0').filter(Boolean).map(toPosix) : [];
+  const countRaw = git(repo, ['rev-list', '--count', contractCommit + '..' + head]);
+  const foreignCommits = countRaw.exitCode === 0 ? Number(countRaw.stdout.trim()) || 0 : 0;
+  const taskRel = relPosix(repo, taskDir);
+  const own = [
+    ...(Array.isArray(meta && meta.allowedPaths) ? meta.allowedPaths : []),
+    ...(Array.isArray(meta && meta.protectedPaths) ? meta.protectedPaths : []),
+    taskRel + '/**',
+  ];
+  const overlap = paths.filter((p) => matchesAny(p, own));
+  if (overlap.length) {
+    return { drift: true, ok: false, errors: ['коммиты после контракта задели пути задания: ' + overlap.join(', ')], from: contractCommit, to: head, foreignCommits, paths };
+  }
+  return { drift: true, ok: true, from: contractCommit, to: head, foreignCommits, paths };
 }
 
 export function readDiffText(repo, base) {
