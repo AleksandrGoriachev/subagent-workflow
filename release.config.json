@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.101",
+  "version": "2.6.102",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.101 — TOOL из VERSION",
+  "releaseName": "2.6.102 — красный на контрактном дереве",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0117",
-  "releaseCommand": "node tools/release.mjs release 2.6.101",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.101",
+  "task": "docs/tasks/0119",
+  "releaseCommand": "node tools/release.mjs release 2.6.102",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.102",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
