@@ -15,10 +15,11 @@
   "criteria": "criteria.json",
   "allowedPaths": [
     "spec/scripts/lib/common.mjs",
+    "tools/check-version.mjs",
     "spec/SPEC.md",
     "docs/tasks/0116/**"
   ],
-  "protectedPaths": ["plugin/lib/**", "plugin/tools/**", "spec/checks/**", "tools/**"],
+  "protectedPaths": ["plugin/lib/**", "plugin/tools/**", "spec/checks/**"],
   "redAllowDirty": ["docs/tasks/0116/**"],
   "hashExclude": [],
   "decisions": [
@@ -63,7 +64,7 @@ node 25, Windows, без сети.
 
 ## Что не входит
 
-1. Правки тестов и других скриптов.
+1. Правки тестов; check-version правится только в части чтения TOOL.
 2. Правки панели.
 3. Релиз 2.6.101 — отдельной задачей.
 

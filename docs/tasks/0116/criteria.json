@@ -58,6 +58,7 @@
       "command": "node tools/check-version.mjs",
       "cwd": ".",
       "covers": [
+        "tools/check-version.mjs",
         "README.md",
         "CHANGELOG.md"
       ],
