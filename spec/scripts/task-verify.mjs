@@ -8,6 +8,7 @@ import {
   checkContractCommitted, computeCoverage, loadConfig, evaluateEffects,
   gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord, lockOrderHint, reportFatal,
   headCommit,
+  ownChanges,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 
@@ -126,8 +127,12 @@ try {
     ...(Array.isArray(meta.protectedPaths) ? meta.protectedPaths : []),
     taskRel + '/**',
   ];
-  const foreignPaths = new Set(drift && drift.drift ? drift.paths : []);
-  const changedBefore = diffPaths(repo, headSha).filter((p) => !foreignPaths.has(p));
+  /*
+   * 0114 (2.6.100): проверяем только свои незакоммиченные изменения. Чужие
+   * коммиты (релизы, другие задания) в дифф не входят, артефакты чужих заданий
+   * и .dsh отбрасываются: они не наши и не должны блокировать verify.
+   */
+  const changedBefore = ownChanges(diffPaths(repo, 'HEAD'), taskRel);
   const outsideBefore = changedBefore.filter((p) => !matchesAny(p, allowedDiff));
   if (outsideBefore.length) {
     console.error('task-verify: изменения вне разрешённых путей:');
@@ -291,6 +296,7 @@ try {
           log: red.log,
         }
       : null,
+    changes: 'own-uncommitted',
     headAtVerify: headCommit(repo),
     headDrift: drift && drift.drift
       ? { from: drift.from, to: drift.to, foreignCommits: drift.foreignCommits, paths: drift.paths }

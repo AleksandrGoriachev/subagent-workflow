@@ -53,7 +53,7 @@ test('headDrift: чужой коммит вне путей задания — д
   assert.equal(result.foreignCommits, 1);
 });
 
-test('headDrift: чужой коммит задел allowedPaths — отказ с путём', () => {
+test('headDrift: чужой коммит задел allowedPaths — допускается (код не коммитит исполнитель)', () => {
   const dir = repo();
   const contract = headCommit(dir);
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
@@ -61,8 +61,19 @@ test('headDrift: чужой коммит задел allowedPaths — отказ 
   git(dir, ['add', '-A']);
   git(dir, ['commit', '-q', '-m', 'code']);
   const result = headDrift(dir, contract, META, taskDir(dir));
+  assert.equal(result.ok, true, JSON.stringify(result.errors));
+  assert.deepEqual(result.paths, ['src/x.js']);
+});
+
+test('headDrift: чужой коммит задел каталог задания — отказ', () => {
+  const dir = repo();
+  const contract = headCommit(dir);
+  fs.writeFileSync(path.join(dir, 'docs/tasks/0001/task.md'), '# task v2\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-q', '-m', 'contract change']);
+  const result = headDrift(dir, contract, META, taskDir(dir));
   assert.equal(result.ok, false);
-  assert.match(result.errors.join(' '), /src\/x\.js/u);
+  assert.match(result.errors.join(' '), /docs\/tasks\/0001\/task\.md/u);
 });
 
 test('headDrift: contractCommit не предок HEAD — отказ', () => {

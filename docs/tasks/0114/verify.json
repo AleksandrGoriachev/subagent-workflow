@@ -1,0 +1,188 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "3fcf66d51691e9a3660d6250655fc956",
+  "runKind": "accept",
+  "task": "0114",
+  "createdAt": "2026-11-23T14:23:41.540Z",
+  "headSha": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+  "contractCommit": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+  "criteriaSha256": "5253a965a983984c5b3b6cf77a42ab786ea93aff285d2b2f33ccc6716c31a76b",
+  "criteriaJsonSha256": "5dfe6a45c48f39d0364e1cf2d556dc9edd70be9cd88053274fd576db2d322b7a",
+  "taskFileSha256": "ab37b05c52f847fd71c7ac318eacf34115c272d0e8f256261b5d6372958be060",
+  "changedPaths": [
+    "docs/tasks/0114/criteria.lock",
+    "docs/tasks/0114/gates.jsonl",
+    "docs/tasks/0114/gates.jsonl.tip",
+    "docs/tasks/0114/red.json",
+    "docs/tasks/0114/verify.executor.json",
+    "docs/tasks/0114/verify.json",
+    "plugin/test/head-drift.test.mjs",
+    "spec/SPEC.md",
+    "spec/scripts/lib/common.mjs",
+    "spec/scripts/task-verify.mjs"
+  ],
+  "coverage": {
+    "declared": 5,
+    "covered": [
+      {
+        "path": "plugin/test/head-drift.test.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-verify.mjs",
+        "criterion": "C2"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": true,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C1",
+        "observable": "задание принимается после чужих коммитов и чужих артефактов: verify видит только свои незакоммиченные изменения",
+        "threshold": "C1/C2: ownChanges реализован и используется verify; C3: headDrift терпит чужие allowedPaths, но не правку своего каталога; C4 selftest",
+        "measuredBy": "C3"
+      }
+    ],
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C3"
+      }
+    ],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/lib/common.mjs','utf8');if(!s.includes('export function ownChanges')){console.log('no ownChanges');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1056,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-verify.mjs','utf8');if(!s.includes('ownChanges(')){console.log('no ownChanges in verify');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1211,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node --test plugin/test/head-drift.test.mjs",
+      "exitCode": 0,
+      "durationMs": 21537,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "6c002a5c303bdb250221af9a68db5132dff0636c9f7f5dd84dfa548195206c57",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "✔ headDrift: без сдвига — drift=false (3002.7252ms)\n✔ headDrift: чужой коммит вне путей задания — допускается (4532.7418ms)\n✔ headDrift: чужой коммит задел allowedPaths — допускается (код не коммитит исполнитель) (4515.5617ms)\n✔ headDrift: чужой коммит задел каталог задания — отказ (4552.1699ms)\n✔ headDrift: contractCommit не предок HEAD — отказ (2581.7027ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 19883.2106\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 55474,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+    "contractCommit": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+    "criteriaJsonSha256": "5dfe6a45c48f39d0364e1cf2d556dc9edd70be9cd88053274fd576db2d322b7a",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+  "headDrift": null,
+  "worktreeDigest": "fb563a1ccf31546518590ff03658ccc6928919d7af393b25401419e78b37860e",
+  "log": "verify.log"
+}

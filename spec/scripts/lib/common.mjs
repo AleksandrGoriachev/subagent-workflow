@@ -1175,6 +1175,25 @@ export function dirtyPaths(repo) {
   return [...set].sort();
 }
 
+/**
+ * 0114 (2.6.100): только свои изменения. Исполнитель не коммитит — любой коммит
+ * после контракта чужой, поэтому границы проверяются по незакоммиченным путям,
+ * а артефакты чужих заданий и рантайм-каталог .dsh не считаются изменениями.
+ */
+export function ownChanges(paths, taskRel) {
+  const own = String(taskRel || '').split('\\').join('/').replace(/\/+$/u, '') + '/';
+  const list = [];
+  for (const raw of Array.isArray(paths) ? paths : []) {
+    const p = toPosix(String(raw));
+    if (p === '' || p.startsWith('.dsh/')) continue;
+    if (p.startsWith('docs/tasks/')) {
+      if (!p.startsWith(own)) continue;
+    }
+    list.push(p);
+  }
+  return [...new Set(list)].sort();
+}
+
 export function diffPaths(repo, base) {
   const set = new Set();
   const r = git(repo, ['diff', '--name-only', '-z', base, '--']);
@@ -1204,11 +1223,12 @@ export function headDrift(repo, contractCommit, meta, taskDir) {
   const countRaw = git(repo, ['rev-list', '--count', contractCommit + '..' + head]);
   const foreignCommits = countRaw.exitCode === 0 ? Number(countRaw.stdout.trim()) || 0 : 0;
   const taskRel = relPosix(repo, taskDir);
-  const own = [
-    ...(Array.isArray(meta && meta.allowedPaths) ? meta.allowedPaths : []),
-    ...(Array.isArray(meta && meta.protectedPaths) ? meta.protectedPaths : []),
-    taskRel + '/**',
-  ];
+  /*
+   * 0114 (2.6.100): чужой коммит в allowedPaths не блокирует — код исполнитель
+   * не коммитит, кандидата создаёт task-accept, значит коммит чужой. Блокирует
+   * только правка собственного каталога задания (контракт).
+   */
+  const own = [taskRel + '/**'];
   const overlap = paths.filter((p) => matchesAny(p, own));
   if (overlap.length) {
     return { drift: true, ok: false, errors: ['коммиты после контракта задели пути задания: ' + overlap.join(', ')], from: contractCommit, to: head, foreignCommits, paths };
