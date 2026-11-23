@@ -1,0 +1,94 @@
+{
+  "task": "0114",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "no ownChanges",
+      "C2": "no ownChanges in verify"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "ownChanges в common",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/lib/common.mjs','utf8');if(!s.includes('export function ownChanges')){console.log('no ownChanges');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0
+      },
+      "effect": {
+        "observable": "задание принимается после чужих коммитов и чужих артефактов: verify видит только свои незакоммиченные изменения",
+        "threshold": "C1/C2: ownChanges реализован и используется verify; C3: headDrift терпит чужие allowedPaths, но не правку своего каталога; C4 selftest",
+        "measuredBy": "C3"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "verify использует ownChanges",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-verify.mjs','utf8');if(!s.includes('ownChanges(')){console.log('no ownChanges in verify');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-verify.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "тесты headDrift",
+      "command": "node --test plugin/test/head-drift.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/head-drift.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "selftest зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
