@@ -239,6 +239,12 @@ try {
    * потрачено зря. Дешёвые mustPass идут первыми, дорогие не запускаются после
    * первого провала дешёвой.
    */
+  /*
+   * 0126 (2.6.106): результаты preflight переиспользуются пулом. Раньше mustPass
+   * исполнялся дважды — в preflight и в пуле критериев, — и красный прогон платил
+   * двойную цену за selftest/check-tests.
+   */
+  const preflightReuse = new Map();
   if (argv['skip-preflight'] !== true) {
     const preflight = await preflightMustPass({ repo, criteria, env, log: (line) => logLine(line) });
     if (!preflight.empty) {
@@ -255,6 +261,9 @@ try {
       }
       process.exit(1);
     }
+    for (const row of preflight.rows || []) {
+      if (row && row.ok === true) preflightReuse.set(String(row.id), row);
+    }
   }
 
   /*
@@ -262,7 +271,8 @@ try {
    * порядок строк, лог и вердикт прежние. setup/teardown остаются
    * последовательными и стоят вокруг пула.
    */
-  const pooled = await runCriteria(criteria.criteria, {
+  const pendingCriteria = criteria.criteria.filter((item) => !preflightReuse.has(String(item.id)));
+  const pooled = await runCriteria(pendingCriteria, {
     cwd: repo,
     env,
     timeoutMs: 120000,
@@ -275,10 +285,11 @@ try {
       logLine('## ' + id + ': MANUAL (пропущен)');
       continue;
     }
-    const r = pooledById.get(id);
+    const r = pooledById.get(id) || preflightReuse.get(id);
     if (!r) continue;
     const ev = evaluateExpectation(c.expect, r);
     const passed = ev.passed;
+    if (preflightReuse.has(id)) logLine('## ' + id + ': результат preflight переиспользован (повторного прогона не было)');
     /* 0057 (WC-35): дефект проверки фиксируется в results сразу — артефакт, а не догадка при печати. */
     const checkDefect = detectCheckDefect({ passed, stdout: r.stdout, stderr: r.stderr });
     results.push({ id, command: c.command, exitCode: r.exitCode, durationMs: r.durationMs, passed, timedOut: r.timedOut, reasons: ev.reasons, stdout: r.stdout, stderr: r.stderr, checkDefect });

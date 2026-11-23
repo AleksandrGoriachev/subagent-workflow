@@ -49,12 +49,20 @@ export async function preflightMustPass({ repo, criteria, env = process.env, log
       timeoutMs: Number(criterion.timeoutMs) > 0 ? Number(criterion.timeoutMs) : CHEAP_TIMEOUT_MS,
     });
     const verdict = evaluateExpectation(criterion.expect, run);
+    /*
+     * 0126 (2.6.106): строки несут вывод — тот же результат идёт в пул критериев,
+     * без повторного прогона. Раньше mustPass исполнялся дважды (preflight и пул),
+     * и красный прогон платил за selftest/check-tests двойную цену.
+     */
     const row = {
       id,
       command: String(criterion.command),
       ok: verdict.passed,
       exitCode: run.exitCode,
       durationMs: run.durationMs,
+      timedOut: Boolean(run.timedOut),
+      stdout: String(run.stdout || ''),
+      stderr: String(run.stderr || ''),
       reasons: verdict.reasons,
     };
     rows.push(row);
