@@ -1,0 +1,115 @@
+{
+  "task": "0115",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "2.6.99",
+      "C2": "VERSION OK: 2.6.99",
+      "C3": "preflight: не пройден"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Цель версии 2.6.100",
+      "command": "node -e \"const fs=require('fs');const p=require('./package.json');const pl=require('./plugin/package.json');process.stdout.write(fs.readFileSync('VERSION','utf8').trim()+'|'+p.version+'|'+String(p.dshPanelVersion)+'|'+pl.version)\"",
+      "cwd": ".",
+      "covers": [
+        "VERSION",
+        "package.json",
+        "plugin/package.json"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "2.6.100|2.6.100|0.9.38|0.9.38"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "check-version 2.6.100",
+      "command": "node tools/check-version.mjs",
+      "cwd": ".",
+      "covers": [
+        "README.md",
+        "spec/SPEC.md",
+        "spec/scripts/lib/common.mjs",
+        "CHANGELOG.md"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.100"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "предполёт 2.6.100",
+      "command": "node tools/release.mjs preflight 2.6.100",
+      "cwd": ".",
+      "covers": [
+        "release.config.json"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "preflight: OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "проверка по изменённым файлам",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs",
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "предполёт несуществующей версии",
+      "command": "node tools/release.mjs preflight 2.6.999",
+      "cwd": ".",
+      "covers": [
+        "release.config.json"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 1,
+        "stdoutContains": "preflight: не пройден"
+      }
+    }
+  ]
+}
