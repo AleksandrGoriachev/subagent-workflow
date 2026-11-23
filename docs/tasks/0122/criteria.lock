@@ -1,0 +1,243 @@
+{
+  "version": 3,
+  "task": "0122",
+  "taskFileSha256": "11bb476b270db4a65a3e8012e862abbe8220cd5995abd3304cc3f3ffa2040e55",
+  "criteriaSha256": "979e9c654b0a30c4c119549f5b797cfb87c549ead27ef36985dc69ac12b0de34",
+  "criteriaJsonSha256": "f92d06052e2a5a147527d0d337c06d278b7cdb374a1c98c14699d494453ec41f",
+  "attackSha256": null,
+  "contractCommit": "562971b642a11d52b6d67a9073ef57cb71cb705a",
+  "protected": [
+    {
+      "path": "plugin/lib/client.js",
+      "sha256": "2e3f875d67267d8ee6d1aab255c74344c414062218f4bf8a398a7d81169b1b5e"
+    },
+    {
+      "path": "plugin/lib/imperative.js",
+      "sha256": "d98bb3c7ec294b05fefd13a8141f4656567e2607bf60ca78183ee096b4f0b24d"
+    },
+    {
+      "path": "plugin/lib/index.js",
+      "sha256": "b0a8efae77aeaaf6623c8658eb9bb6698127b8aa1c0e5eaf10895138972e5994"
+    },
+    {
+      "path": "spec/checks/wait-guard.mjs",
+      "sha256": "f373de96272de3798410106e472cc7042806bf173d364d88db5e5b8bebf1669e"
+    },
+    {
+      "path": "spec/scripts/lib/accept-key.mjs",
+      "sha256": "511598b3ba848b29c690e77e49ba3be3a057d336a4f623787c2d1bee53c781d2"
+    },
+    {
+      "path": "spec/scripts/lib/acceptance-policy.mjs",
+      "sha256": "9e582792ade089fa9a0664660333b747ffb19fe2c813dd2ed76fa814053bd4fe"
+    },
+    {
+      "path": "spec/scripts/lib/attack.mjs",
+      "sha256": "95ed1737ede602fc03ac8577c98f566bbd6e24991e9eb977069ff7ac6ada6a6e"
+    },
+    {
+      "path": "spec/scripts/lib/batch-tasks.mjs",
+      "sha256": "f9eb7c7e8eacf4c439383df582fbf1f60230cd90d70dd7887cae5ad3f0ce91e0"
+    },
+    {
+      "path": "spec/scripts/lib/common.mjs",
+      "sha256": "9dceda38a2c5f757d7aae0beb81d3369f1f4754d60f7236ab748e877fc355a5d"
+    },
+    {
+      "path": "spec/scripts/lib/launch-evidence.mjs",
+      "sha256": "86df10981cb9d52b877a4f5c75032650fb71a76e04fa415584848036b97a6435"
+    },
+    {
+      "path": "spec/scripts/lib/policy.mjs",
+      "sha256": "036701d685fca8da11caf935a87fb3b9e8ea59faf932b60bb9a65205b5aad918"
+    },
+    {
+      "path": "spec/scripts/lib/preflight.mjs",
+      "sha256": "08a4defb41b5f85c4d95781b35ac2dba706e2267e5c828207d4c763af853d777"
+    },
+    {
+      "path": "spec/scripts/lib/registry.mjs",
+      "sha256": "c88d48bc6dec498ccec69c70fd6e3dfb8a8ce78f983c3be72f5a39ab530e5766"
+    },
+    {
+      "path": "spec/scripts/lib/regress.mjs",
+      "sha256": "752313ec9abc6268105bfca1751f7680820bd180e51b525b5e8030df9f06c9fd"
+    },
+    {
+      "path": "spec/scripts/lib/review-receipt.mjs",
+      "sha256": "19bf26e6a3216b38b08bd5fbcd237755f11f8514c7a40ecbd1e9a7862a6927a1"
+    },
+    {
+      "path": "spec/scripts/lib/review.mjs",
+      "sha256": "d387db287df453f04eca92281b11087ead555d576568746d81637e25e28d97cc"
+    },
+    {
+      "path": "spec/scripts/lib/session-model.mjs",
+      "sha256": "d5c4e052652c6e8d05eaaf38c6ddb72bfa25d122fcfed01b6637d8dafca673af"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "spec/scripts/job.mjs",
+      "spec/scripts/gate.mjs",
+      "spec/checks/job-log-paths.mjs",
+      "spec/checks/gate-runner.mjs",
+      "plugin/lib/wait-guard.js",
+      "spec/templates/task.md",
+      "spec/SPEC.md",
+      "docs/tasks/0122/**"
+    ],
+    "protectedPaths": [
+      "plugin/lib/index.js",
+      "plugin/lib/client.js",
+      "plugin/lib/imperative.js",
+      "spec/scripts/lib/**",
+      "spec/checks/wait-guard.mjs"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0122/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/job-log-paths.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 300000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "JOBLP OK c1"
+        },
+        "covers": [
+          "spec/checks/job-log-paths.mjs",
+          "spec/scripts/job.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/job-log-paths.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "JOBLP OK c2"
+        },
+        "covers": [
+          "spec/checks/job-log-paths.mjs",
+          "spec/scripts/job.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/checks/job-log-paths.mjs c3",
+        "cwd": ".",
+        "timeoutMs": 300000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "JOBLP OK c3"
+        },
+        "covers": [
+          "spec/checks/job-log-paths.mjs",
+          "spec/scripts/job.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node spec/checks/gate-runner.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 300000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATERUN OK c1"
+        },
+        "covers": [
+          "spec/checks/gate-runner.mjs",
+          "spec/scripts/gate.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C5",
+        "command": "node spec/checks/gate-runner.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATERUN OK c2"
+        },
+        "covers": [
+          "spec/checks/gate-runner.mjs",
+          "spec/scripts/gate.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C6",
+        "command": "node spec/checks/gate-runner.mjs c3",
+        "cwd": ".",
+        "timeoutMs": 300000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATERUN OK c3"
+        },
+        "covers": [
+          "spec/checks/gate-runner.mjs",
+          "spec/scripts/gate.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C7",
+        "command": "node spec/selftest.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "SELFTEST OK"
+        },
+        "covers": [
+          "plugin/lib/wait-guard.js",
+          "spec/SPEC.md",
+          "spec/templates/task.md"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C8",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "tools/check-tests.mjs"
+        ],
+        "tags": [
+          "slow"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-23T18:36:00.909Z",
+  "tool": "subagent-workflow/2.6.103"
+}

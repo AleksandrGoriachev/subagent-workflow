@@ -14,11 +14,18 @@
  *
  * Вывод (вердикт в stdout, не кодом — харнесс нормализует нестандартные коды
  * фоновых заданий в 1 и шумит «ошибкой»):
- *   start  -- <cmd...>                    -> JOB <id> | FAILED <id> <причина>
- *   wait   <id> [--timeout с] [--interval с] -> DONE <id> exit=<код> <мс>ms | TIMEOUT <мс>ms <id> | STALE <id> <причина>
+ *   start  -- <cmd...>                    -> JOB <id> + LOG <абсолютный путь лога> | FAILED <id> <причина>
+ *   wait   <id> [--timeout с] [--interval с] [--tail N]
+ *                                         -> DONE <id> exit=<код> <мс>ms [+ хвост лога] | TIMEOUT … | STALE …
+ *   log    <id> [--tail N]                -> содержимое лога (или последние N строк)
  *   status <id>                           -> RUNNING <id> | DONE <id> exit=<код> | STALE <id> <причина>
  *   list                                  -> <id> <состояние> <команда>
  *   kill   <id>                           -> KILLED <id>
+ *
+ * 2.6.104 (0122): путь к логу печатается строкой LOG сразу после JOB, а содержимое
+ * отдаёт log/wait --tail. Причина — 38 событий «cannot read .tmp/jobs/<id>.log:
+ * not found»: агент не знал, что в развёрнутой копии каталог заданий лежит под
+ * docs/subagent-workflow/.tmp/jobs, а не под корнем репозитория.
  *
  * Коды выхода: 0 — штатная работа wait/status/list/kill (включая TIMEOUT и STALE);
  * 1 — start не смог запустить сторожа; 2 — ошибка аргументов; 3 — нет такого задания.
@@ -233,6 +240,43 @@ async function cmdStart(argv) {
     return 1;
   }
   process.stdout.write('JOB ' + id + String.fromCharCode(10));
+  /* 0122: путь абсолютный — иначе агент ищет лог у корня репозитория. */
+  process.stdout.write('LOG ' + logFile(id) + String.fromCharCode(10));
+  return 0;
+}
+
+/* Хвост лога: N последних строк; больше N нет — весь текст. */
+function tailLines(file, limit) {
+  let text = '';
+  try { text = fs.readFileSync(file, 'utf8'); } catch { return ''; }
+  const lines = text.replaceAll(String.fromCharCode(13), '').split(String.fromCharCode(10));
+  if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+  const count = Number.isInteger(limit) && limit >= 0 ? limit : lines.length;
+  if (count >= lines.length) return lines.join(String.fromCharCode(10));
+  return '…[' + (lines.length - count) + ' строк выше]' + String.fromCharCode(10)
+    + lines.slice(lines.length - count).join(String.fromCharCode(10));
+}
+
+/* Номер строк для --tail; мусор отвергаем, а не глотаем молча. */
+function tailOption(value, fallback) {
+  if (value === undefined) return null;
+  if (value === true) return fallback;
+  const number = Number(String(value).trim());
+  if (!Number.isInteger(number) || number < 0) die('--tail: нужно целое число строк ≥ 0', 2);
+  return number;
+}
+
+/* ---------- log: отдать содержимое лога ---------- */
+
+function cmdLog(argv) {
+  const parsed = parseArgs(argv);
+  const id = parsed._[0];
+  if (!id) die('usage: job.mjs log <id> [--tail <строк>]', 2);
+  if (!fs.existsSync(stateFile(id)) && !fs.existsSync(logFile(id))) die('нет задания ' + id, 3);
+  const limit = tailOption(parsed.opts.tail, 20);
+  const text = limit === null ? (() => { try { return fs.readFileSync(logFile(id), 'utf8'); } catch { return ''; } })() : tailLines(logFile(id), limit);
+  process.stdout.write(text);
+  if (text !== '' && !text.endsWith(String.fromCharCode(10))) process.stdout.write(String.fromCharCode(10));
   return 0;
 }
 
@@ -322,8 +366,20 @@ function cmdRun(argv) {
 async function cmdWait(argv) {
   const parsed = parseArgs(argv);
   const id = parsed._[0];
-  if (!id) die('usage: job.mjs wait <id> [--timeout <сек>] [--interval <сек>]', 2);
+  if (!id) die('usage: job.mjs wait <id> [--timeout <сек>] [--interval <сек>] [--tail <строк>]', 2);
   if (!fs.existsSync(stateFile(id))) die('нет задания ' + id, 3);
+  /*
+   * 0122: --tail отдаёт хвост лога после вердикта. Вердикт остаётся ПЕРВОЙ строкой
+   * (по нему парсят DONE/TIMEOUT/STALE), хвост — за ним и с подписью.
+   */
+  const tail = tailOption(parsed.opts.tail, 20);
+  const withTail = () => {
+    if (tail === null || tail === 0) return;
+    const text = tailLines(logFile(id), tail);
+    if (text === '') return;
+    process.stdout.write('--- log tail: последние ' + tail + ' строк ---' + String.fromCharCode(10));
+    process.stdout.write(text + String.fromCharCode(10));
+  };
 
   /* 2.6.82: без --timeout ожидание ограничено 30 мин; --timeout 0 — явно без лимита. */
   let timeoutSec = DEFAULT_WAIT_TIMEOUT_SEC;
@@ -351,14 +407,17 @@ async function cmdWait(argv) {
     if (state && TERMINAL.has(String(state.status))) {
       if (String(state.status) === 'STALE') {
         process.stdout.write('STALE ' + id + ' ' + (state.staleReason || 'сторож не жив') + String.fromCharCode(10));
+        withTail();
         return 0;
       }
       process.stdout.write('DONE ' + id + ' exit=' + exitLabel(state) + ' ' + durationMs(state, began) + 'ms' + String.fromCharCode(10));
+      withTail();
       return 0;
     }
     const now = Date.now();
     if (now >= deadline) {
       process.stdout.write('TIMEOUT ' + (now - began) + 'ms ' + id + String.fromCharCode(10));
+      withTail();
       return 0;
     }
     const left = deadline === Infinity ? intervalMs : Math.max(1, Math.min(intervalMs, deadline - now));
@@ -453,11 +512,12 @@ async function main() {
     case 'start': return cmdStart(rest);
     case '__run': return cmdRun(rest);
     case 'wait': return cmdWait(rest);
+    case 'log': return cmdLog(rest);
     case 'status': return cmdStatus(rest);
     case 'list': return cmdList();
     case 'kill': return cmdKill(rest);
     default:
-      die('usage: job.mjs start -- <команда...> | wait <id> [--timeout с] [--interval с] | status <id> | list | kill <id>', 2);
+      die('usage: job.mjs start -- <команда...> | wait <id> [--timeout с] [--interval с] [--tail N] | log <id> [--tail N] | status <id> | list | kill <id>', 2);
   }
   return 0;
 }

@@ -275,11 +275,20 @@ export function detectLongWait(exec, budgetMs = WAIT_BUDGET_MS) {
 
 /** Отказ политики fail: причина со ссылкой на сторожа (guard вернёт её текстом). */
 export function waitGuardReason(hit) {
+  /*
+   * 0122 (2.6.104): отказ называет не только сторожа, но и как читать результат.
+   * Замер structure: 38 событий «cannot read .tmp/jobs/<id>.log: not found» —
+   * агент искал лог у корня репозитория, а в развёрнутой копии каталог заданий
+   * лежит под docs/subagent-workflow/.tmp/jobs. Поэтому: start печатает строку
+   * LOG <абсолютный путь>, а хвост отдают wait --tail N и log <id>.
+   */
   return 'долгое ожидание ('
     + hit.detail
     + ') запрещено политикой воркспейса enforcement.waitPolicy=fail: ожидайте тяжёлый прогон'
     + ' сторожем scripts/job.mjs — node docs/subagent-workflow/scripts/job.mjs start ... ,'
-    + ' затем node docs/subagent-workflow/scripts/job.mjs wait <id>;'
+    + ' затем node docs/subagent-workflow/scripts/job.mjs wait <id> --tail 20;'
+    + ' лог: start печатает «LOG <абсолютный путь>», содержимое — job.mjs log <id> [--tail N];'
+    + ' ворота одной командой — node spec/scripts/gate.mjs <red|verify|accept|tests>;'
     + ' сон внутри инструмента императивом W1 не допускается';
 }
 

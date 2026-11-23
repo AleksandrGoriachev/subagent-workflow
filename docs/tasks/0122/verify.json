@@ -1,0 +1,277 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "049933b42c398ba9c9192d782c01d815",
+  "runKind": "accept",
+  "task": "0122",
+  "createdAt": "2026-11-23T18:47:22.625Z",
+  "headSha": "562971b642a11d52b6d67a9073ef57cb71cb705a",
+  "contractCommit": "562971b642a11d52b6d67a9073ef57cb71cb705a",
+  "criteriaSha256": "979e9c654b0a30c4c119549f5b797cfb87c549ead27ef36985dc69ac12b0de34",
+  "criteriaJsonSha256": "f92d06052e2a5a147527d0d337c06d278b7cdb374a1c98c14699d494453ec41f",
+  "taskFileSha256": "11bb476b270db4a65a3e8012e862abbe8220cd5995abd3304cc3f3ffa2040e55",
+  "changedPaths": [
+    "docs/tasks/0122/criteria.lock",
+    "docs/tasks/0122/gates.jsonl",
+    "docs/tasks/0122/gates.jsonl.tip",
+    "docs/tasks/0122/red.json",
+    "docs/tasks/0122/verify.executor.json",
+    "docs/tasks/0122/verify.json",
+    "plugin/lib/wait-guard.js",
+    "spec/SPEC.md",
+    "spec/checks/gate-runner.mjs",
+    "spec/checks/job-log-paths.mjs",
+    "spec/scripts/gate.mjs",
+    "spec/scripts/job.mjs",
+    "spec/templates/task.md"
+  ],
+  "coverage": {
+    "declared": 16,
+    "covered": [
+      {
+        "path": "plugin/lib/wait-guard.js",
+        "criterion": "C7"
+      },
+      {
+        "path": "spec/checks/gate-runner.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "spec/checks/job-log-paths.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/gate.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "spec/scripts/job.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/job-log-paths.mjs c1",
+      "exitCode": 0,
+      "durationMs": 4850,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7ee9c3369f797d1beb6a1ede75e73ea01ca698a774173f2fdcf166bae78cf200",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "JOBLP OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/job-log-paths.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1295,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "0864dacec6e36a0870f5c965cd0462ed61bbe3315c6d6747fd83fb1f8432869b",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "JOBLP OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/job-log-paths.mjs c3",
+      "exitCode": 0,
+      "durationMs": 4874,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "5d70e0e04bbc3d89b836764cd7bb5f0a93cbccb0c48c46cb2225ec67920c9659",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "JOBLP OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-runner.mjs c1",
+      "exitCode": 0,
+      "durationMs": 11043,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f9e75ac3db14f37797992e113c40374f7a0c1c34c53f90d90b5fea21909dfc6b",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATERUN OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/gate-runner.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1471,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "23a8453bbb3be36c1eb875731950c08361edd03c70aee4f8f6c977af95fda51d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATERUN OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-runner.mjs c3",
+      "exitCode": 0,
+      "durationMs": 5066,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "11a0b498f405ed050ac5fdac529e5d940453f1aec45aa38178a72c39411f0982",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATERUN OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C7",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 107847,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C8",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 196210,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "3c87b91b1456f87f3204a352dadc649eba4d19868dee1457a600c0009602a1b3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 50 файл(ов)\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 8,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "562971b642a11d52b6d67a9073ef57cb71cb705a",
+    "contractCommit": "562971b642a11d52b6d67a9073ef57cb71cb705a",
+    "criteriaJsonSha256": "f92d06052e2a5a147527d0d337c06d278b7cdb374a1c98c14699d494453ec41f",
+    "failed": 6,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "mustPass": [
+        "C7",
+        "C8"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C6",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "562971b642a11d52b6d67a9073ef57cb71cb705a",
+  "headDrift": null,
+  "worktreeDigest": "5e60d410e015a9894a8777c5de0d2e2e44d2ecf2aae7455791b93525c60eed19",
+  "log": "verify.log"
+}
