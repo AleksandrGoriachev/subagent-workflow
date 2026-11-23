@@ -1,5 +1,14 @@
 # Изменения
 
+## 2.6.98 — 2026-11-23 (панель 0.9.38)
+
+- **headDrift (0110).** Приёмка не блокируется чужими коммитами после контракта: сдвиг HEAD допускается,
+  если контрактные хеши совпали, `contractCommit` — предок HEAD и коммиты между ними не задели
+  `taskDir`/`allowedPaths`/`protectedPaths`. Пути чужих коммитов исключаются из базы диффа границ;
+  `verify.json`/`acceptance.json` несут `headDrift {from,to,foreignCommits,paths}`. Red по-прежнему
+  бежит на `contractCommit`.
+- Тесты: `head-drift` 4/4, полный набор плагина и selftest зелёные. Требуется перезапуск DSH.
+
 ## 2.6.97 — 2026-11-23 (панель 0.9.38)
 
 - **noRed для e2e-смоука (0108).** `redExpect.noRed.reason` при пустом `mustFail` и `risk: low`:

@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.97",
+  "version": "2.6.98",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.97 — noRed для e2e-смоука",
+  "releaseName": "2.6.98 — headDrift: приёмка при чужих коммитах",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0109",
-  "releaseCommand": "node tools/release.mjs release 2.6.97",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.97",
+  "task": "docs/tasks/0111",
+  "releaseCommand": "node tools/release.mjs release 2.6.98",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.98",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
