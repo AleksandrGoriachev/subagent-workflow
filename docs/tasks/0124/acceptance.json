@@ -1,0 +1,237 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0124",
+  "title": "2.6.105: сбой git не равен «не закоммичен», повтор accept — с --rework",
+  "risk": "medium",
+  "taskFileSha256": "84eab5a2852ab53f8a7c83507b9d4c2ee86ae81e47d02c1c1452822fec6d35f1",
+  "criteriaSha256": "a18f8e07c3407cfb67a93e708c50327b5052b39cbbfa29b48c73abc8ad05e829",
+  "criteriaJsonSha256": "4201c1ad56eee55a90a5154b3eb2195241fc0e517af2ccb16f52217c3c97c32b",
+  "contractCommit": "7b29de7791dbabf75b989499634f2763c9c18e12",
+  "baseCommit": "7b29de7791dbabf75b989499634f2763c9c18e12",
+  "candidateCommit": "c879ddb4f982427c65d314f40569a9e9f25005b8",
+  "tree": "94289a9b0a7b3a0d2aaf60fb43d54189ee922f9a",
+  "worktreeDigest": "724efc05ae89e7506989bc5cff39b20e9d03abd745a1f02c6a5c10d4db43cbf0",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-a8aa52b9-4e97-4794-815e-9226f34a3945",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "366bf3a8-6a3a-4370-a242-fb1171a45d86",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "ba5f58157dfe59c9f777aac697e2e766",
+    "runKind": "accept",
+    "startedAt": "2026-11-23T21:22:51.535Z",
+    "finishedAt": "2026-11-23T21:28:19.710Z",
+    "durationMs": 328177,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "9b60f8a742c7f3a4157cc322dfee5dbf5a52085a5b0a8b5161104854c07e4fcd",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "7b29de7791dbabf75b989499634f2763c9c18e12",
+    "contractCommit": "7b29de7791dbabf75b989499634f2763c9c18e12",
+    "criteriaJsonSha256": "4201c1ad56eee55a90a5154b3eb2195241fc0e517af2ccb16f52217c3c97c32b",
+    "failed": 6,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "mustPass": [
+        "C7",
+        "C8"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C6",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/verify-git-read.mjs c1",
+      "exitCode": 0,
+      "durationMs": 8545,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/verify-git-read.mjs c2",
+      "exitCode": 0,
+      "durationMs": 8842,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-availability.mjs c1",
+      "exitCode": 0,
+      "durationMs": 19887,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-availability.mjs c2",
+      "exitCode": 0,
+      "durationMs": 4671,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/accept-rework.mjs c1",
+      "exitCode": 0,
+      "durationMs": 944,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/accept-rework.mjs c2",
+      "exitCode": 0,
+      "durationMs": 834,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 79349,
+      "passed": true
+    },
+    {
+      "id": "C8",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 296890,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-23T21:28:21.568Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "7b29de7791dbabf75b989499634f2763c9c18e12",
+    "taskFileSha256": "84eab5a2852ab53f8a7c83507b9d4c2ee86ae81e47d02c1c1452822fec6d35f1",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 2,
+    "digest": "999c35f194938dd65621410bf77e6345381e9c7864b297972be5cc136242c9a4",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "aPQnREup4vPyh2JEmjkyXXXKDnd4PeFojf3gAUCv37Ta0zQhYFp+w4xOj9GHFxEYxMp0XNec8NF79HSAcPKkBA=="
+}
