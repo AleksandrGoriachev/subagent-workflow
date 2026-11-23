@@ -1,0 +1,177 @@
+{
+  "task": "0124",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "mustPass": [
+      "C7",
+      "C8"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module",
+      "C4": "Cannot find module",
+      "C5": "Cannot find module",
+      "C6": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Сбой чтения git",
+      "command": "node spec/checks/verify-git-read.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/checks/verify-git-read.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GITREAD OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Незакоммиченный файл назван",
+      "command": "node spec/checks/verify-git-read.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/checks/verify-git-read.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GITREAD OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Доступные действия в пакете",
+      "command": "node spec/checks/gate-availability.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/gate.mjs",
+        "spec/checks/gate-availability.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEAV OK c1"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Недоступное действие отказано",
+      "command": "node spec/checks/gate-availability.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/gate.mjs",
+        "spec/checks/gate-availability.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATEAV OK c2"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Повтор приёмки с причиной",
+      "command": "node spec/checks/accept-rework.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-accept.mjs",
+        "spec/checks/accept-rework.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REWORK OK c1"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Причина в notes",
+      "command": "node spec/checks/accept-rework.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-accept.mjs",
+        "spec/checks/accept-rework.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REWORK OK c2"
+      }
+    },
+    {
+      "id": "C7",
+      "title": "selftest",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/**",
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C8",
+      "title": "Проверка по изменённым файлам",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
