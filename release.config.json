@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.103",
+  "version": "2.6.104",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.103 — границы и покрытие verify по своим изменениям",
+  "releaseName": "2.6.104 — ворота одной командой и видимый лог",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0121",
-  "releaseCommand": "node tools/release.mjs release 2.6.103",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.103",
+  "task": "docs/tasks/0123",
+  "releaseCommand": "node tools/release.mjs release 2.6.104",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.104",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
