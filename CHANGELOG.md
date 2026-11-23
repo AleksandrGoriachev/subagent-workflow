@@ -1,5 +1,14 @@
 # Изменения
 
+## 2.6.97 — 2026-11-23 (панель 0.9.38)
+
+- **noRed для e2e-смоука (0108).** `redExpect.noRed.reason` при пустом `mustFail` и `risk: low`:
+  `task-red` пишет `redKind: "noRed"`, `redProven: true` и причину; `task-verify` принимает только low,
+  различает `red-noRed` (осознанный отказ) и `red-not-proven` (красный не доказан); `task-accept`
+  переносит `red.kind`/`red.noRed` в запись приёмки. `task-lint` запрещает `noRed` при непустом `mustFail`
+  и у не-low.
+- Тесты: `red-nored` 4/4, полный набор плагина и selftest зелёные. Требуется перезапуск DSH.
+
 ## 2.6.96 — 2026-11-23 (панель 0.9.38)
 
 - **Параллельный прогон тестов с умеренной параллельностью (0106).** `plugin/tools/test.mjs` идёт

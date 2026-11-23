@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.96",
+  "version": "2.6.97",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.96 — скорость гейта и мониторинг задач",
+  "releaseName": "2.6.97 — noRed для e2e-смоука",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0107",
-  "releaseCommand": "node tools/release.mjs release 2.6.96",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.96",
+  "task": "docs/tasks/0109",
+  "releaseCommand": "node tools/release.mjs release 2.6.97",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.97",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
