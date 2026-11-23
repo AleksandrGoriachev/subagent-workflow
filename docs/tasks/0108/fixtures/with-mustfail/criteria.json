@@ -1,0 +1,25 @@
+{
+  "task": "0908",
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [],
+    "reasons": {
+      "C1": "x"
+    },
+    "noRed": {
+      "reason": "не нужен"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "c",
+      "command": "node -e \"1\"",
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}

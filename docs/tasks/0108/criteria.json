@@ -1,0 +1,134 @@
+{
+  "task": "0108",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [
+      "C6"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "noRed",
+      "C2": "no noRed",
+      "C3": "no noRed lint rule",
+      "C4": "no redKind",
+      "C5": "no red-noRed"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "тест noRed",
+      "command": "node --test plugin/test/red-nored.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/red-nored.test.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "noRed в evaluateRedExpectation",
+      "command": "node -e \"import('./spec/scripts/lib/common.mjs').then(m=>{const r=m.evaluateRedExpectation({mustFail:[],mustPass:[],noRed:{reason:'e2e smoke'}},[],{risk:'low'});if(!r.noRed){console.log('no noRed: '+JSON.stringify(r.errors));process.exit(1)}if(!r.ok){console.log('no noRed ok: '+JSON.stringify(r.errors));process.exit(1)}console.log('ok')})\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      },
+      "effect": {
+        "observable": "e2e-смоук существующего сценария проходит red/verify штатно и несёт причину noRed",
+        "threshold": "C2: evaluateRedExpectation с noRed и risk=low даёт ok и noRed; C3: lint не пропускает noRed с непустым mustFail",
+        "measuredBy": "C3"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "lint запрещает noRed с mustFail",
+      "command": "node -e \"const {spawnSync}=require('child_process');const r=spawnSync(process.execPath,['spec/scripts/task-lint.mjs','--task','docs/tasks/0108/fixtures/with-mustfail','--strict'],{encoding:'utf8'});const out=(r.stdout||'')+(r.stderr||'');if(!/noRed/.test(out)){console.log('no noRed lint rule');process.exit(1)}console.log('ok')\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "task-red пишет redKind",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-red.mjs','utf8');if(!s.includes('redKind')){console.log('no redKind');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-red.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "verify различает red-noRed и red-not-proven",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-verify.mjs','utf8');if(!s.includes('red-noRed')){console.log('no red-noRed');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-verify.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "selftest зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/task-accept.mjs",
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
