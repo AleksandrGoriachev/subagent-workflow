@@ -1,0 +1,92 @@
+{
+  "task": "0116",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "literal version"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "TOOL без литерала версии",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/lib/common.mjs','utf8');if(/TOOL\\s*=\\s*'subagent-workflow\\/\\d+\\.\\d+\\.\\d+'/u.test(s)){console.log('literal version');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C2",
+      "title": "TOOL = версия package.json",
+      "command": "node -e \"Promise.all([import('./spec/scripts/lib/common.mjs'),import('node:fs')]).then(([m,fs])=>{const v=JSON.parse(fs.readFileSync('package.json','utf8')).version;if(m.TOOL!=='subagent-workflow/'+v){console.log('TOOL mismatch: '+m.TOOL);process.exit(1)}console.log('ok')})\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ok"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "check-version",
+      "command": "node tools/check-version.mjs",
+      "cwd": ".",
+      "covers": [
+        "README.md",
+        "CHANGELOG.md"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "selftest",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/scripts/**"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
