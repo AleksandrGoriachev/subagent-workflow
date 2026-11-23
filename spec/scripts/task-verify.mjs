@@ -108,7 +108,15 @@ try {
       const reason = red.noRed && typeof red.noRed.reason === 'string' ? red.noRed.reason.trim() : '';
       if (reason === '') fail('red-noRed: нет причины noRed');
     } else if (!red.redProven) {
-      fail('red-not-proven: красный не доказан (redProven=false)');
+      /*
+       * 0118 (2.6.102): отказ называет, чего не хватает. Исторический red.json
+       * (до 2.6.97) не имеет поля redProven — verify принимает версию 5, но
+       * требует поле нового формата; без объяснения это выглядит как «красного
+       * не было» и уводит в перезамок (kanban, задание 0014).
+       */
+      fail('red-not-proven: ' + (red.redProven === undefined
+        ? 'в red.json нет поля redProven — артефакт записан движком до 2.6.97; перезапустите красный на контрактном дереве: task-red --task <dir> --at-contract'
+        : 'красный не доказан (redProven=false); причины — в red.json (redExpectation.errors) и red.log'));
     }
     if (red.redExpectation && red.redExpectation.ok !== true) fail('red.json: красный не совпал с redExpect');
     if (red.baseSha !== headSha) fail('HEAD изменился после красного прогона (' + red.baseSha + ' -> ' + headSha + '); коммит исполнителя запрещён, перезапустите task-red');

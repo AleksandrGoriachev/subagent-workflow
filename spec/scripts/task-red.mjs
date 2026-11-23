@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { preflightMustPass } from './lib/preflight.mjs';
 import {
@@ -6,12 +8,14 @@ import {
   runCommand, runCriteria, evaluateExpectation, isManual, stableResults, truncate, writeJson, writeText,
   formatGateRow, formatGateSummary, evaluateRedExpectation, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
   detectCheckDefect, matchRedReason, redReasonWindow, lockOrderHint, reportFatal,
+  exists, readJson, headDrift, spawnSyncPipeFree, TOOL,
 } from './lib/common.mjs';
 
 const NL = String.fromCharCode(10);
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
-  console.log('Usage: node task-red.mjs --task <dir> [--repo <dir>] [--base <ref>] [--json] [--allow-dirty] [--allow-base-mismatch] [--skip-preflight]');
+  console.log('Usage: node task-red.mjs --task <dir> [--repo <dir>] [--base <ref>] [--json] [--allow-dirty] [--allow-base-mismatch] [--skip-preflight] [--at-contract]');
+  console.log('--at-contract: HEAD ушёл вперёд чужими коммитами — доказать красный в worktree на contractCommit.');
   process.exit(0);
 }
 
@@ -47,6 +51,78 @@ function changedSinceContract(contractCommit) {
   return r.stdout.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
 }
 
+/*
+ * 0118 (2.6.102): красный на контрактном дереве.
+ *
+ * Красный обязан измерять контрактное дерево: если в HEAD уже лежит реализация
+ * (своя отложенная или чужая), критерий может позеленеть не от проверяемого
+ * поведения. Раньше единственным деревом был HEAD, поэтому после любого чужого
+ * коммита красный было не перепрогнать: verify сдвиг терпит (0110, 2.6.98),
+ * task-red отказывал. Здесь поднимается временный worktree ровно на
+ * contractCommit, в него копируется criteria.lock (перезамок не нужен), красный
+ * гоняется дочерним task-red в этом дереве, артефакты возвращаются в задание,
+ * red.json получает происхождение (redTree), worktree снимается.
+ *
+ * Явный флаг --at-contract, а не автоматика: подмена измеряемого дерева — выбор,
+ * который виден в журнале ворот, как --allow-dirty.
+ */
+function runRedAtContract({ contractCommit, headSha, files, meta, taskDir, repo, argv }) {
+  const drift = headDrift(repo, contractCommit, meta, taskDir);
+  if (!drift.ok) {
+    for (const error of drift.errors) console.error('task-red: --at-contract: ' + error);
+    reportFatal('task-red', '--at-contract: ' + drift.errors.join('; '), { stderr: false, json: Boolean(argv.json) });
+    process.exit(1);
+  }
+  const relTask = relPosix(repo, taskDir);
+  const wt = path.join(os.tmpdir(), 'wf-red-contract-' + process.pid + '-' + Date.now());
+  console.log('task-red: HEAD ' + headSha.slice(0, 12) + ' ушёл от контракта ' + contractCommit.slice(0, 12)
+    + ' (коммитов после контракта: ' + drift.foreignCommits + '; пути вне задания: ' + (drift.paths.join(', ') || 'нет') + ').');
+  console.log('task-red: --at-contract, красный идёт на контрактном дереве: ' + wt);
+  let status = 1;
+  try {
+    const add = git(repo, ['worktree', 'add', '--detach', wt, contractCommit]);
+    if (add.exitCode !== 0) {
+      reportFatal('task-red', 'не удалось поднять worktree на контракте: ' + (add.stderr || add.stdout).trim(), { json: Boolean(argv.json) });
+      process.exit(1);
+    }
+    const childTask = path.join(wt, relTask);
+    if (!exists(path.join(childTask, 'task.md'))) {
+      reportFatal('task-red', 'на контрактном коммите нет задания ' + relTask, { json: Boolean(argv.json) });
+      process.exit(1);
+    }
+    /* Замок переносится как есть: смысл критериев не меняется, перезамок не нужен. */
+    fs.copyFileSync(files.lock, path.join(childTask, path.basename(files.lock)));
+    const childArgs = [path.resolve(process.argv[1]), '--task', childTask, '--repo', wt, '--base', 'HEAD'];
+    if (argv.json === true) childArgs.push('--json');
+    const child = spawnSyncPipeFree(process.execPath, childArgs, { cwd: wt, encoding: 'utf8', timeout: 3600000 });
+    if (child.stdout) process.stdout.write(child.stdout);
+    if (child.stderr) process.stderr.write(child.stderr);
+    status = child.status === null ? 1 : child.status;
+    for (const file of [files.red, files.redLog]) {
+      const source = path.join(childTask, path.basename(file));
+      if (exists(source)) fs.copyFileSync(source, file);
+    }
+    if (exists(files.red)) {
+      try {
+        const red = readJson(files.red);
+        if (red && typeof red === 'object' && !Array.isArray(red)) {
+          red.redTree = { mode: 'contract-worktree', commit: contractCommit, worktree: wt };
+          writeJson(files.red, red);
+        }
+      } catch (error) {
+        console.error('task-red: WARN не удалось записать redTree: ' + error.message);
+      }
+    }
+  } finally {
+    const remove = git(repo, ['worktree', 'remove', '--force', wt]);
+    if (remove.exitCode !== 0) {
+      try { fs.rmSync(wt, { recursive: true, force: true }); } catch { /* ignore */ }
+      git(repo, ['worktree', 'prune']);
+    }
+  }
+  process.exit(status);
+}
+
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
   const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria);
@@ -73,13 +149,26 @@ try {
   const baseSha = base.stdout.trim();
   const head = git(repo, ['rev-parse', 'HEAD']);
   const headSha = head.exitCode === 0 ? head.stdout.trim() : '';
-  if (lockCheck.expected.contractCommit !== headSha) {
-    console.error('task-red: контракт закоммичен в ' + lockCheck.expected.contractCommit + ', а HEAD ' + headSha + '.');
+  const contractCommit = lockCheck.expected.contractCommit;
+  if (contractCommit !== headSha) {
+    /*
+     * 0118 (2.6.102): чужой коммит после контракта — не повод отказывать в
+     * красном, но и не повод молча мерить HEAD. --at-contract гоняет красный в
+     * worktree на contractCommit; без флага остаётся прежний отказ с подсказкой.
+     */
+    if (argv['at-contract'] === true) {
+      runRedAtContract({ contractCommit, headSha, files, meta, taskDir, repo, argv });
+    }
+    console.error('task-red: контракт закоммичен в ' + contractCommit + ', а HEAD ' + headSha + '.');
     console.error('Красный прогон идёт только на контрактном коммите; после правки контракта перезапустите task-hash --write.');
-    reportFatal('task-red', 'контракт закоммичен в ' + lockCheck.expected.contractCommit + ', а HEAD ' + headSha + '.', { stderr: false, json: Boolean(argv.json) });
+    if (!argv.json) {
+      console.log('Если контракт не менялся, а HEAD сдвинули чужие коммиты, красный доказывается на контрактном дереве:');
+      console.log('  task-red --task ' + relPosix(repo, taskDir) + ' --at-contract');
+    }
+    reportFatal('task-red', 'контракт закоммичен в ' + contractCommit + ', а HEAD ' + headSha + '.', { stderr: false, json: Boolean(argv.json) });
     const hint = lockOrderHint(
-      { errors: ['contractCommit: ожидалось ' + lockCheck.expected.contractCommit + ', сейчас ' + headSha] },
-      changedSinceContract(lockCheck.expected.contractCommit),
+      { errors: ['contractCommit: ожидалось ' + contractCommit + ', сейчас ' + headSha] },
+      changedSinceContract(contractCommit),
     );
     if (hint) {
       console.error(hint);
@@ -254,6 +343,8 @@ try {
     /* 0057 (WC-35): версия 5 — results несут checkDefect, redExpectation — дефекты и окно. */
     version: 5,
     kind: 'red',
+    /* 0118 (2.6.102): чем именно сделан артефакт — иначе по red.json не видно. */
+    tool: TOOL,
     task: String(meta.id),
     createdAt: new Date().toISOString(),
     base: baseRef,

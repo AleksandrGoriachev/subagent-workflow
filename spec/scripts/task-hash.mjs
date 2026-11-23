@@ -160,15 +160,32 @@ try {
      * содержимым — попытка подменить проверки под результат, а не правка задания.
      */
     if (exists(files.red)) {
-      const red = readJson(files.red);
       const previous = exists(files.lock) ? readJson(files.lock) : null;
-      if (red.redProven && previous && !sameLockContract(previous, current)) {
-        const errors = ['контракт изменился после красного прогона; критерии и проверки заморожены'];
-        if (argv.json) console.log(JSON.stringify({ ok: false, errors }, null, 2));
+      if (previous && !sameLockContract(previous, current)) {
+        /*
+         * 0118 (2.6.102): перезамок после красного запрещён при ЛЮБОМ red.json, а
+         * не только при redProven=true. Исторические артефакты (до 2.6.97) поля
+         * redProven не имеют, и guard пропускал молчаливую привязку замка к
+         * дереву, на котором красный не прогонялся (kanban, задание 0014).
+         */
+        const onlyCommit = sameLockContract(
+          { ...previous, contractCommit: null },
+          { ...current, contractCommit: null },
+        );
+        const reason = onlyCommit
+          ? 'замок привязан к ' + String(previous.contractCommit).slice(0, 12) + ', HEAD ' + String(current.contractCommit).slice(0, 12)
+            + '; после красного прогона перезамок запрещён'
+          : 'контракт изменился после красного прогона; критерии и проверки заморожены';
+        if (argv.json) console.log(JSON.stringify({ ok: false, errors: [reason] }, null, 2));
         else {
-          console.error('task-hash: ' + errors[0]);
-          console.error('Нужна новая версия задания: новый каталог/ID, новый красный прогон. Перезапись criteria.lock после красного запрещена.');
-          reportFatal('task-hash', errors[0], { stderr: false });
+          console.error('task-hash: ' + reason);
+          if (onlyCommit) {
+            console.error('Чужие коммиты после контракта перезамка не требуют: красный доказывается на контрактном дереве —');
+            console.error('  node spec/scripts/task-red.mjs --task <dir> --at-contract');
+          } else {
+            console.error('Нужна новая версия задания: новый каталог/ID, новый красный прогон. Перезапись criteria.lock после красного запрещена.');
+          }
+          reportFatal('task-hash', reason, { stderr: false });
         }
         process.exit(1);
       }
