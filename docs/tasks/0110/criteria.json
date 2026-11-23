@@ -1,0 +1,96 @@
+{
+  "task": "0110",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Could not find",
+      "C2": "no headDrift",
+      "C3": "no headDrift"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "headDrift: чужие коммиты, конфликт путей, не-предок",
+      "command": "node --test plugin/test/head-drift.test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/head-drift.test.mjs",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0
+      },
+      "effect": {
+        "observable": "задание принимается после чужих релизных коммитов, если контракт не менялся и пути задания не задеты",
+        "threshold": "C1: headDrift допускает чужие коммиты вне путей задания; пересечение с allowedPaths и не-предок дают отказ",
+        "measuredBy": "C2"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "verify несёт headDrift",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-verify.mjs','utf8');if(!s.includes('headDrift')){console.log('no headDrift');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-verify.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C3",
+      "title": "accept несёт headDrift",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-accept.mjs','utf8');if(!s.includes('headDrift')){console.log('no headDrift');process.exit(1)}\"",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "selftest зелёный",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    }
+  ]
+}
