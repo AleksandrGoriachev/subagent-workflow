@@ -1,0 +1,187 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0114",
+  "title": "2.6.100: границы verify — только свои незакоммиченные изменения; headDrift терпит чужие allowedPaths",
+  "risk": "medium",
+  "taskFileSha256": "ab37b05c52f847fd71c7ac318eacf34115c272d0e8f256261b5d6372958be060",
+  "criteriaSha256": "5253a965a983984c5b3b6cf77a42ab786ea93aff285d2b2f33ccc6716c31a76b",
+  "criteriaJsonSha256": "5dfe6a45c48f39d0364e1cf2d556dc9edd70be9cd88053274fd576db2d322b7a",
+  "contractCommit": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+  "baseCommit": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+  "candidateCommit": "0a907494d1ef8dad2a4fb302180f271381a8c335",
+  "tree": "d8a15acdc3937a9a28e3c94a19dfd2ee61c98eb5",
+  "worktreeDigest": "fb563a1ccf31546518590ff03658ccc6928919d7af393b25401419e78b37860e",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "3fcf66d51691e9a3660d6250655fc956",
+    "runKind": "accept",
+    "startedAt": "2026-11-23T14:22:33.084Z",
+    "finishedAt": "2026-11-23T14:23:42.276Z",
+    "durationMs": 69200,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "5d7b73fbcf6b6e33b42298e5548ad394845103a6acbb55180db60b7e18404f3f",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "задание принимается после чужих коммитов и чужих артефактов: verify видит только свои незакоммиченные изменения",
+      "threshold": "C1/C2: ownChanges реализован и используется verify; C3: headDrift терпит чужие allowedPaths, но не правку своего каталога; C4 selftest",
+      "measuredBy": "C3"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C3"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+    "contractCommit": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+    "criteriaJsonSha256": "5dfe6a45c48f39d0364e1cf2d556dc9edd70be9cd88053274fd576db2d322b7a",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/lib/common.mjs','utf8');if(!s.includes('export function ownChanges')){console.log('no ownChanges');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1056,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-verify.mjs','utf8');if(!s.includes('ownChanges(')){console.log('no ownChanges in verify');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1211,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node --test plugin/test/head-drift.test.mjs",
+      "exitCode": 0,
+      "durationMs": 21537,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 55474,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-23T14:23:43.580Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "60a29834b4346e1c4ea1c225b9c1719c6e090712",
+    "taskFileSha256": "ab37b05c52f847fd71c7ac318eacf34115c272d0e8f256261b5d6372958be060",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 1,
+    "digest": "45536a8e8f22ee7f6c498eaa297fcb9a73497255f1850925cb28f2adf45543f2",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "ekWQQdJSxsDzTNJVvrdWy8DgHGJB/olB2TI0AhYSeHCRLbh0/5ye4R9TuYTzlwLta3H5nCBBOZmCTGIM/WYBAQ=="
+}
