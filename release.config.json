@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.104",
+  "version": "2.6.105",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.104 — ворота одной командой и видимый лог",
+  "releaseName": "2.6.105 — честные отказы ворот",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0123",
-  "releaseCommand": "node tools/release.mjs release 2.6.104",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.104",
+  "task": "docs/tasks/0125",
+  "releaseCommand": "node tools/release.mjs release 2.6.105",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.105",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
