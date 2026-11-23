@@ -800,6 +800,8 @@ try {
     bypasses,
     red: red
       ? {
+          kind: red.redKind || 'proven',
+          noRed: red.noRed || null,
           baseSha: red.baseSha,
           contractCommit: red.contractCommit,
           criteriaJsonSha256: red.criteriaJsonSha256,

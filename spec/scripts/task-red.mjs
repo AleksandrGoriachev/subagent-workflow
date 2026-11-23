@@ -212,7 +212,7 @@ try {
   const executed = results.length;
   const failed = results.filter((r) => !r.passed);
   const allGreen = executed > 0 && failed.length === 0;
-  const redExpectation = evaluateRedExpectation(criteria.redExpect, results);
+  const redExpectation = evaluateRedExpectation(criteria.redExpect, results, { risk: meta.risk });
   if (meta.risk !== 'low' && !redExpectation.configured) {
     redExpectation.errors.push('нет redExpect: для risk=' + meta.risk + ' объявите mustFail/mustPass');
     redExpectation.ok = false;
@@ -247,6 +247,8 @@ try {
     reasonDiagnostics.push({ id, reason, passed: result.passed, match, stdout: firstLines(result.stdout), stderr: firstLines(result.stderr) });
   }
   const redProven = redExpectation.ok;
+  /* 0108: noRed — осознанный отказ от красного; отличается от «не доказан». */
+  const redKind = redExpectation.noRed ? 'noRed' : 'proven';
 
   const output = {
     /* 0057 (WC-35): версия 5 — results несут checkDefect, redExpectation — дефекты и окно. */
@@ -267,6 +269,8 @@ try {
     failedIds: failed.map((r) => r.id),
     allGreen,
     redProven,
+    redKind,
+    noRed: redExpectation.noRed,
     redExpectation,
     bypasses,
     log: path.basename(files.redLog),
@@ -283,7 +287,7 @@ try {
     task: String(meta.id),
     head: headSha,
     criteria: gateCriteriaOf(results),
-    verdict: redProven ? 'red-proven' : 'red-not-proven',
+    verdict: redProven ? (redKind === 'noRed' ? 'red-noRed' : 'red-proven') : 'red-not-proven',
     bypasses,
     exitSummary: 'exit=' + (redProven ? 0 : 1) + '; failed=' + failed.length + '/' + executed,
   }));
@@ -294,7 +298,8 @@ try {
   } else {
     printSummary('task-red: ' + meta.id + ' (base ' + baseSha.slice(0, 12) + ')', results);
     console.log('');
-    if (redProven) console.log('Красный доказан: ' + failed.length + ' из ' + executed + ' проверок падают по ожиданию задания.');
+    if (redProven && redKind === 'noRed') console.log('Красный не требуется (noRed): ' + redExpectation.noRed.reason);
+  else if (redProven) console.log('Красный доказан: ' + failed.length + ' из ' + executed + ' проверок падают по ожиданию задания.');
     else if (redExpectation.errors.length) {
       console.log('Красный НЕ доказан:');
       for (const error of redExpectation.errors) console.log('  ' + error);

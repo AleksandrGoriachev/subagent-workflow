@@ -1774,18 +1774,25 @@ export function redReasonWindow(redExpect) {
   return Number.isInteger(value) && value >= 1 && value <= 10000 ? value : RED_REASON_WINDOW;
 }
 
-export function evaluateRedExpectation(redExpect, results) {
+export function evaluateRedExpectation(redExpect, results, options = {}) {
   const list = Array.isArray(results) ? results : [];
+  /*
+   * 0108 (2.6.97): e2e-смоук существующего сценария не имеет критерия, который
+   * обязан упасть. redExpect.noRed.reason — осознанный отказ от красного,
+   * разрешён только для risk=low; во всех остальных случаях mustFail пуст —
+   * отказ, как раньше.
+   */
+  const risk = String((options && options.risk) || '');
   const shape = (checkDefects, reasonChecks, window) => ({ checkDefects, reasonChecks, reasonWindow: window });
   if (redExpect === undefined || redExpect === null) {
     return {
-      configured: false, ok: list.some((r) => !r.passed), errors: [], mustFail: [], mustPass: [],
+      configured: false, ok: list.some((r) => !r.passed), errors: [], mustFail: [], mustPass: [], noRed: null,
       ...shape([], [], RED_REASON_WINDOW),
     };
   }
   if (typeof redExpect !== 'object' || Array.isArray(redExpect)) {
     return {
-      configured: true, ok: false, errors: ['redExpect должен быть объектом'], mustFail: [], mustPass: [],
+      configured: true, ok: false, errors: ['redExpect должен быть объектом'], mustFail: [], mustPass: [], noRed: null,
       ...shape([], [], RED_REASON_WINDOW),
     };
   }
@@ -1811,7 +1818,13 @@ export function evaluateRedExpectation(redExpect, results) {
     errors.push('дефект проверки: критерий ' + entry.id + ' — ' + entry.name + ': ' + entry.line
       + '. Отказ самой проверки, а не доказанный красный: устраните ошибку в проверке.');
   }
-  if (mustFail.length === 0) errors.push('redExpect.mustFail пуст: неясно, что обязано упасть');
+  const noRedRaw = redExpect.noRed && typeof redExpect.noRed === 'object' && !Array.isArray(redExpect.noRed) ? redExpect.noRed : null;
+  const noRedReason = noRedRaw && typeof noRedRaw.reason === 'string' ? noRedRaw.reason.trim() : '';
+  const noRed = mustFail.length === 0 && noRedReason !== '' && risk === 'low' ? { reason: noRedReason } : null;
+  if (mustFail.length === 0 && !noRed) {
+    const hint = noRedReason === '' ? '' : ' (noRed разрешён только для risk=low)';
+    errors.push('redExpect.mustFail пуст: неясно, что обязано упасть' + hint);
+  }
   for (const id of mustFail) {
     const result = byId.get(id);
     if (!result) { errors.push('redExpect: нет критерия ' + id); continue; }
@@ -1841,6 +1854,7 @@ export function evaluateRedExpectation(redExpect, results) {
   }
   return {
     configured: true, ok: errors.length === 0, errors, mustFail, mustPass,
+    noRed: noRed && errors.length === 0 ? noRed : null,
     ...shape(checkDefects, reasonChecks, window),
   };
 }

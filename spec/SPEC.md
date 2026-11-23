@@ -708,6 +708,13 @@
    `selftest`, `deployed-copy`. Версии пакета и плагина этой задачей не
    двигаются — их двигает релиз архитектора после приёмки.
 
+Версия 2.6.97: `redExpect.noRed.reason` — осознанный отказ от красного для `risk: low`, когда на базе
+зелёный e2e-смоук существующего сценария. При пустом `mustFail` и непустой причине `task-red` пишет
+`redKind: "noRed"`, `redProven: true` (состояние решено) и причину; `task-verify` принимает только
+`risk: low`, пишет `redKind`/`noRed` и различает `red-noRed` (осознанный отказ) и `red-not-proven`
+(красный не доказан); `task-accept` переносит `red.kind`/`red.noRed` в `acceptance.json`.
+`task-lint` запрещает `noRed` при непустом `mustFail` и у не-low.
+
 Версия 2.6.96: скорость и мониторинг. Тесты плагина по умолчанию идут параллельно
 (`--test-concurrency` = cpus−1, минимум 2; `WF_TEST_CONCURRENCY=1` — последовательно): причина прежних
 флейков устранена в 2.6.93. `tools/task-monitor.mjs` читает `docs/tasks/*` и даёт по задаче стадию,

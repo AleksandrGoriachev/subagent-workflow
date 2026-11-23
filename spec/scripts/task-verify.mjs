@@ -95,7 +95,17 @@ try {
     if (red.version !== 4 && red.version !== 5) {
       fail('red.json: версия ' + red.version + ' неизвестна — принимаются версии 4 (исторические записи) и 5 (текущий формат); перезапустите task-red');
     }
-    if (!red.redProven) fail('red.json: redProven=false — красный не доказан');
+    /*
+     * 0108 (2.6.97): два разных состояния. noRed — осознанный отказ от красного
+     * (только low, с причиной); отсутствие доказанного красного — red-not-proven.
+     */
+    if (red.redKind === 'noRed') {
+      if (meta.risk !== 'low') fail('red-noRed: noRed разрешён только для risk=low (сейчас ' + meta.risk + ')');
+      const reason = red.noRed && typeof red.noRed.reason === 'string' ? red.noRed.reason.trim() : '';
+      if (reason === '') fail('red-noRed: нет причины noRed');
+    } else if (!red.redProven) {
+      fail('red-not-proven: красный не доказан (redProven=false)');
+    }
     if (red.redExpectation && red.redExpectation.ok !== true) fail('red.json: красный не совпал с redExpect');
     if (red.baseSha !== headSha) fail('HEAD изменился после красного прогона (' + red.baseSha + ' -> ' + headSha + '); коммит исполнителя запрещён, перезапустите task-red');
     if (red.contractCommit !== lockCheck.expected.contractCommit) fail('red.json относится к другому контракту');
@@ -265,6 +275,8 @@ try {
     bypasses,
     red: red
       ? {
+          kind: red.redKind || 'proven',
+          noRed: red.noRed || null,
           baseSha: red.baseSha,
           contractCommit: red.contractCommit,
           criteriaJsonSha256: red.criteriaJsonSha256,

@@ -460,6 +460,11 @@ for (const problem of registryCheck.problems) error(problem);
           error('criteria.json: redExpect.noRed должен быть объектом { reason: "почему красного нет" }');
         } else if (typeof noRed.reason !== 'string' || noRed.reason.trim() === '') {
           error('criteria.json: redExpect.noRed.reason пуст — причина отсутствия красного обязательна (2.6.4, F-5)');
+        } else if (mustFail !== null && mustFail.length > 0) {
+          /* 0108 (2.6.97): noRed при непустом mustFail — двойное заявление. */
+          error('criteria.json: redExpect.noRed при непустом mustFail — выберите одно: ждать падения или объявить причину отказа');
+        } else if (meta.risk !== 'low') {
+          error('criteria.json: redExpect.noRed разрешён только для risk=low');
         }
       }
       /*
