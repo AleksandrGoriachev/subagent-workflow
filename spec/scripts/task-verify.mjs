@@ -211,11 +211,18 @@ try {
    * Границы и секреты проверяются ещё раз ПОСЛЕ критериев: setup, тест или
    * teardown может создать файл вне allowlist. Раньше такой файл попадал в
    * кандидатный коммит, хотя в changedPaths его не было.
+   *
+   * 0120 (2.6.103): база — HEAD и ownChanges, как в первой проверке. Дифф от
+   * contractCommit тянул чужие коммиты (kanban 0014: артефакты 0015..0020,
+   * package.json, coordination/** за 21 коммит) и валил задание за то, чего оно
+   * не делало: 2.6.100 применила ownChanges только к первой проверке, а эта
+   * осталась на старой базе.
    */
-  const changed = diffPaths(repo, headSha);
+  const changed = ownChanges(diffPaths(repo, 'HEAD'), taskRel);
   const outside = changed.filter((p) => !matchesAny(p, allowedDiff));
   const contractAfter = checkContractCommitted(repo, taskDir, meta);
-  const diffText = readDiffText(repo, headSha);
+  /* 0120 (2.6.103): скан секретов — тоже только по своим незакоммиченным изменениям. */
+  const diffText = readDiffText(repo, 'HEAD');
   const secrets = scanSecrets(diffText);
   const violations = [];
   for (const p of outside) violations.push('файл вне allowedPaths: ' + p);
