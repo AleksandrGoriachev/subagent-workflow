@@ -1,0 +1,195 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0110",
+  "title": "2.6.98: headDrift — контракт сверяется по хешам, а не по равенству HEAD",
+  "risk": "medium",
+  "taskFileSha256": "b20b4e4aec18e072a933b72f5d422ae248f814e607c9e626d212cb0994a754e5",
+  "criteriaSha256": "2bdc04bdec1b9d876c217c90fdea9ca28e2d8300b9589955159ed3aed8bdd043",
+  "criteriaJsonSha256": "70098c2d6281ca86e0f389d5f914ec66797fced00111b41749a11914e9ac236f",
+  "contractCommit": "a01e3e7e90004c8e678a1bd00cbf06e9b7ab9b76",
+  "baseCommit": "a01e3e7e90004c8e678a1bd00cbf06e9b7ab9b76",
+  "candidateCommit": "a1d9f8c7eb61afb1437d258cb4330c305c70f8f2",
+  "tree": "c72abd356bb4d1a5f122c57e15b094d752d24dc1",
+  "worktreeDigest": "7624ce7912b270660141997c3beea71ede3196ff3fbd7f29999c02e7b1e5e343",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-ba966ecd-86bd-4412-871e-61d3edf046d5",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "ac4b37de-5eb9-4adb-8b9a-657068f77dc8",
+    "model": "deepseek-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness",
+    "node": "judge"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "bd971fe47d385b929a97546afff86210",
+    "runKind": "accept",
+    "startedAt": "2026-11-23T11:15:41.057Z",
+    "finishedAt": "2026-11-23T11:17:03.151Z",
+    "durationMs": 82095,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "6daef31f0e5d5ee077c7d7305a3989df24fa6ce4d2f30039b27f5cd2898a8fe1",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "задание принимается после чужих релизных коммитов, если контракт не менялся и пути задания не задеты",
+      "threshold": "C1: headDrift допускает чужие коммиты вне путей задания; пересечение с allowedPaths и не-предок дают отказ",
+      "measuredBy": "C2"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C2"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "a01e3e7e90004c8e678a1bd00cbf06e9b7ab9b76",
+    "contractCommit": "a01e3e7e90004c8e678a1bd00cbf06e9b7ab9b76",
+    "criteriaJsonSha256": "70098c2d6281ca86e0f389d5f914ec66797fced00111b41749a11914e9ac236f",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node --test plugin/test/head-drift.test.mjs",
+      "exitCode": 0,
+      "durationMs": 19156,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-verify.mjs','utf8');if(!s.includes('headDrift')){console.log('no headDrift');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 990,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/task-accept.mjs','utf8');if(!s.includes('headDrift')){console.log('no headDrift');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1124,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 68067,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-23T11:17:05.079Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "a01e3e7e90004c8e678a1bd00cbf06e9b7ab9b76",
+    "taskFileSha256": "b20b4e4aec18e072a933b72f5d422ae248f814e607c9e626d212cb0994a754e5",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 1,
+    "digest": "d65f37e7045e37ae03a3633715e9539378c55559392ded06e095eaeee1c4e0f2",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия с ключом приёмщика",
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "1yrA22qb0QBHz+SZnG/hG025T/IDtDeVwG0MFIc/vAcOIFZC8X+i3lJxWq+EPbMLdmFLSRRQ/jHy7FaLUomCBA=="
+}
