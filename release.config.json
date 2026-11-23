@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.98",
+  "version": "2.6.99",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.98 — headDrift: приёмка при чужих коммитах",
+  "releaseName": "2.6.99 — проверка по изменённым файлам",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0111",
-  "releaseCommand": "node tools/release.mjs release 2.6.98",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.98",
+  "task": "docs/tasks/0113",
+  "releaseCommand": "node tools/release.mjs release 2.6.99",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.99",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
