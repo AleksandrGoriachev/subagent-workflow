@@ -225,9 +225,26 @@ export function headCommit(repo) {
 }
 
 export function filesAtCommit(repo, rev) {
+  const result = filesAtCommitDetailed(repo, rev);
+  return result.ok ? result.files : null;
+}
+
+/**
+ * 0124 (2.6.105): тот же список, но с причиной отказа. Пустой ответ git и «файла
+ * нет» — разные вещи: на 0123 транзиентный пустой ls-tree дал 354 строки
+ * «файл контракта не закоммичен» при закоммиченных файлах, и прогон пришлось
+ * повторять. Теперь вызывающий отличает сбой чтения от отсутствия файла.
+ */
+export function filesAtCommitDetailed(repo, rev) {
   const r = git(repo, ['ls-tree', '-r', '--name-only', '-z', rev]);
-  if (r.exitCode !== 0) return null;
-  return r.stdout.split('\0').filter(Boolean).map(toPosix).sort();
+  if (r.exitCode !== 0) {
+    return {
+      ok: false,
+      error: 'git ls-tree ' + String(rev).slice(0, 12) + ': exit ' + r.exitCode
+        + ' ' + String(r.stderr || '').trim().slice(0, 160),
+    };
+  }
+  return { ok: true, files: r.stdout.split('\0').filter(Boolean).map(toPosix).sort() };
 }
 
 /**
@@ -241,8 +258,27 @@ export function checkContractCommitted(repo, taskDir, meta) {
     return { ok: false, errors: ['в репозитории нет HEAD: контракт задания не закоммичен'], files: [], contractCommit: null };
   }
   const taskRel = relPosix(repo, taskDir);
-  const headFiles = filesAtCommit(repo, head) || [];
+  /*
+   * 0124 (2.6.105): сбой чтения дерева не должен выглядеть как «файл не
+   * закоммичен». Пустой ответ повторяем один раз (транзиент) и, если он снова
+   * пуст при непустом рабочем дереве, говорим «git не ответил», а не «нет файла».
+   */
+  let headFilesRaw = filesAtCommitDetailed(repo, head);
+  if (!headFilesRaw.ok || headFilesRaw.files.length === 0) headFilesRaw = filesAtCommitDetailed(repo, head);
   const workFiles = listRepoFiles(repo, { includeUntracked: true });
+  if (!headFilesRaw.ok || (headFilesRaw.files.length === 0 && workFiles.length > 0)) {
+    const why = headFilesRaw.ok
+      ? 'git вернул пустой список файлов ' + String(head).slice(0, 12) + ' при непустом рабочем дереве'
+      : headFilesRaw.error;
+    return {
+      ok: false,
+      errors: ['git не ответил на чтение дерева (' + why + ') — это сбой чтения, а не «файл не закоммичен»; повторите прогон'],
+      files: [],
+      contractCommit: head,
+      gitReadFailed: true,
+    };
+  }
+  const headFiles = headFilesRaw.files;
   const protectedPatterns = Array.isArray(meta.protectedPaths) ? meta.protectedPaths : [];
   const isArtifact = (file) => file.startsWith(taskRel + '/') && TASK_ARTIFACTS.has(file.split('/').pop());
   const files = new Set([taskRel + '/task.md', taskRel + '/criteria.json']);
@@ -1047,6 +1083,32 @@ export function hasAcceptedRecord(file, expectedTask) {
     if (typeof record.task !== 'string' || record.task !== String(expectedTask)) return false;
   }
   return true;
+}
+
+/*
+ * 0124 (2.6.105): повторная приёмка того же контракта — не штатный цикл.
+ * Замер structure: 16 лишних прогонов review/accept. Повтор разрешён только с
+ * явной причиной (--rework, попадает в notes записи) или --force; смена контракта —
+ * обычная работа, а не переделка.
+ */
+export function acceptanceRepeatGuard(previous, contractCommit, options = {}) {
+  const rework = typeof options.rework === 'string' ? options.rework.trim() : '';
+  const force = options.force === true;
+  if (!previous || typeof previous !== 'object' || Array.isArray(previous)) return { action: 'allow', rework };
+  if (previous.status !== 'accepted') return { action: 'allow', rework };
+  const same = String(previous.contractCommit || '') === String(contractCommit || '');
+  if (!same) return { action: 'allow', rework };
+  if (rework !== '') return { action: 'rework', rework };
+  if (force) return { action: 'force', rework: '' };
+  return { action: 'refuse', rework: '' };
+}
+
+/** Пометки записи приёмки: причина обхода и причина переделки — в одном поле. */
+export function acceptanceNotes(note, rework) {
+  const parts = [];
+  if (typeof note === 'string' && note.trim() !== '') parts.push(note.trim());
+  if (typeof rework === 'string' && rework.trim() !== '') parts.push('rework: ' + rework.trim());
+  return parts.join('; ');
 }
 
 export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) {

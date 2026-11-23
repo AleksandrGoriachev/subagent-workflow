@@ -14,7 +14,13 @@
  * Печатает: GATE <действие> JOB <id>, LOG <абсолютный путь>, вердикт DONE/TIMEOUT/STALE
  * (первой строкой, как у job.mjs) и хвост лога последних N строк (по умолчанию 20).
  * Код возврата — код ребёнка; --tail 0 отключает хвост.
+ *
+ * 0124 (2.6.105): доступность действия проверяется по факту, а не по списку.
+ * В развёрнутой копии нет tools/check-tests.mjs и spec/selftest.mjs, и раньше
+ * gate.mjs молча запускал несуществующий файл и падал «Cannot find module».
+ * Теперь недоступное действие названо в справке и отказывает с причиной.
  */
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSyncPipeFree } from './lib/common.mjs';
@@ -23,23 +29,40 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.resolve(HERE, '..', '..');
 const JOB = path.join(HERE, 'job.mjs');
 
+/*
+ * Кандидаты путей: сначала раскладка пакета (scripts/ под spec/), затем
+ * раскладка развёрнутой копии (scripts/ в корне движка). Первый существующий
+ * файл становится действием; недоступное действие в справке помечено.
+ */
+const ROOT = path.resolve(HERE, '..');
 const ACTIONS = {
-  red: path.join(HERE, 'task-red.mjs'),
-  verify: path.join(HERE, 'task-verify.mjs'),
-  accept: path.join(HERE, 'task-accept.mjs'),
-  hash: path.join(HERE, 'task-hash.mjs'),
-  lint: path.join(HERE, 'task-lint.mjs'),
-  tests: path.join(PKG, 'tools', 'check-tests.mjs'),
-  selftest: path.join(PKG, 'spec', 'selftest.mjs'),
+  red: [path.join(HERE, 'task-red.mjs')],
+  verify: [path.join(HERE, 'task-verify.mjs')],
+  accept: [path.join(HERE, 'task-accept.mjs')],
+  hash: [path.join(HERE, 'task-hash.mjs')],
+  lint: [path.join(HERE, 'task-lint.mjs')],
+  tests: [path.join(PKG, 'tools', 'check-tests.mjs'), path.join(ROOT, 'tools', 'check-tests.mjs')],
+  selftest: [path.join(PKG, 'spec', 'selftest.mjs'), path.join(ROOT, 'spec', 'selftest.mjs'), path.join(HERE, 'selftest.mjs')],
 };
+const resolved = {};
+const unavailable = [];
+for (const [name, candidates] of Object.entries(ACTIONS)) {
+  const hit = candidates.find((candidate) => fs.existsSync(candidate));
+  if (hit) resolved[name] = hit;
+  else unavailable.push(name);
+}
 const NL = String.fromCharCode(10);
 const DEFAULT_TAIL = 20;
 const WAIT_TIMEOUT_SEC = 600;
 
 function usage() {
-  process.stdout.write('gate: node spec/scripts/gate.mjs <' + Object.keys(ACTIONS).join('|') + '> [аргументы...] [--tail N]' + NL);
+  const available = Object.keys(resolved).join('|');
+  process.stdout.write('gate: node spec/scripts/gate.mjs <' + (available || 'нет доступных действий') + '> [аргументы...] [--tail N]' + NL);
   process.stdout.write('  Ворота запускаются сторожем job.mjs; печатается id, путь лога, вердикт и хвост лога.' + NL);
   process.stdout.write('  --tail 0 отключает хвост; --tail N — N последних строк (по умолчанию ' + DEFAULT_TAIL + ').' + NL);
+  if (unavailable.length > 0) {
+    process.stdout.write('  Недоступно в этой копии движка: ' + unavailable.join(', ') + NL);
+  }
 }
 
 /* Свои ключи отделяем от аргументов действия: у ворот свои. */
@@ -80,9 +103,15 @@ if (argv.length === 0 || argv[0] === '--help' || argv[0] === '-h') {
   process.exit(argv.length === 0 ? 2 : 0);
 }
 const action = String(argv[0]);
-const script = ACTIONS[action];
-if (!script) {
+if (!Object.prototype.hasOwnProperty.call(ACTIONS, action)) {
   process.stderr.write('gate: неизвестное действие «' + action + '»' + NL);
+  usage();
+  process.exit(2);
+}
+const script = resolved[action];
+if (!script) {
+  const expected = ACTIONS[action].map((candidate) => path.relative(PKG, candidate)).join(' | ');
+  process.stderr.write('gate: действие «' + action + '» недоступно в этой копии движка (искал: ' + expected + ')' + NL);
   usage();
   process.exit(2);
 }

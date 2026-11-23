@@ -17,7 +17,7 @@ import {
   readJson, writeJson, computeWorktreeDigest, sha256File, relPosix, truncate, loadConfig,
   attributionGap, nodeConsistency, formatGateRow, formatGateSummary,
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
-  headCommit,
+  headCommit, acceptanceRepeatGuard, acceptanceNotes,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
 import { sessionModelFact } from './lib/session-model.mjs';
@@ -45,7 +45,7 @@ if (argv.help) {
   console.log('       [--node <узел>] [--deviation "<причина>"]');
   console.log('       [--allow-missing-red] [--allow-manual] [--allow-declared-actor]');
   console.log('       [--review <review.json>] [--reuse-verify] [--report-read] [--report-read-reason <text>]');
-  console.log('       [--dry-run] [--force] [--json]');
+  console.log('       [--dry-run] [--force] [--rework "<почему повторная приёмка>"] [--json]');
   console.log('Запись подписывается Ed25519; для high-risk нужен ключ human-* и --human <кто>.');
   process.exit(0);
 }
@@ -541,7 +541,22 @@ try {
   );
   if (rolesApplied.errors.length) fail('роли: ' + rolesApplied.errors.join('; '));
   for (const warning of rolesApplied.warnings) console.warn('task-accept: WARN ' + warning);
-  if (exists(files.acceptance) && !argv.force) fail('acceptance.json уже существует; используйте --force');
+  /*
+   * 0124 (2.6.105): повторная приёмка того же контракта — только с причиной.
+   * Замер structure: 16 лишних прогонов review/accept. Теперь повтор без причины
+   * отказывает и называет --rework, а причина переделки попадает в notes записи;
+   * --force остаётся аварийным обходом.
+   */
+  let reworkReason = '';
+  if (exists(files.acceptance)) {
+    const previousAcceptance = readJson(files.acceptance);
+    const repeat = acceptanceRepeatGuard(previousAcceptance, contractCommit, { rework: argv.rework, force: argv.force === true });
+    if (repeat.action === 'refuse') {
+      fail('задание уже принято по контракту ' + String(contractCommit).slice(0, 12)
+        + '; повторная приёмка — только с --rework "<почему переделка>" (попадёт в notes записи) или с новым контрактом');
+    }
+    if (repeat.action === 'rework') reworkReason = repeat.rework;
+  }
 
   if (argv['dry-run']) {
     if (!exists(files.verify)) fail('dry-run: нет verify.json; сначала выполните task-verify');
@@ -845,7 +860,7 @@ try {
         }
       : null,
     releaseReady,
-    notes: argv.note ? String(argv.note) : '',
+    notes: acceptanceNotes(argv.note, reworkReason),
     ...(deviation !== '' ? { deviation } : {}),
   };
 

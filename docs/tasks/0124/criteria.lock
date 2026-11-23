@@ -1,0 +1,277 @@
+{
+  "version": 3,
+  "task": "0124",
+  "taskFileSha256": "84eab5a2852ab53f8a7c83507b9d4c2ee86ae81e47d02c1c1452822fec6d35f1",
+  "criteriaSha256": "a18f8e07c3407cfb67a93e708c50327b5052b39cbbfa29b48c73abc8ad05e829",
+  "criteriaJsonSha256": "4201c1ad56eee55a90a5154b3eb2195241fc0e517af2ccb16f52217c3c97c32b",
+  "attackSha256": null,
+  "contractCommit": "7b29de7791dbabf75b989499634f2763c9c18e12",
+  "protected": [
+    {
+      "path": "plugin/lib/anchors.js",
+      "sha256": "f3228753eaab837c86086db936669af1cf87ec474d1572c6dd1c021c76670618"
+    },
+    {
+      "path": "plugin/lib/api.js",
+      "sha256": "a65668e6c5d4c7799b7bb1d2e096dab07e43b0c54080da1540a863849d6faf55"
+    },
+    {
+      "path": "plugin/lib/archive.mjs",
+      "sha256": "487dbdac38dec91f22a8990a8e429ca6961104a277de4537e3c777210d116583"
+    },
+    {
+      "path": "plugin/lib/checks.js",
+      "sha256": "71e5a9642c8b39c09409ce16487c3c538c3a384e0440874df8f1008d5cfb6947"
+    },
+    {
+      "path": "plugin/lib/client.js",
+      "sha256": "2e3f875d67267d8ee6d1aab255c74344c414062218f4bf8a398a7d81169b1b5e"
+    },
+    {
+      "path": "plugin/lib/compat.js",
+      "sha256": "af430ed633f146715e835d03b61597773283119bdb1955faf909b959e27a44aa"
+    },
+    {
+      "path": "plugin/lib/deploy.js",
+      "sha256": "ebd65d1e3ccfccbd97bbf34e29c468c3d7851a38080f362c49c6bc686b41bc5b"
+    },
+    {
+      "path": "plugin/lib/engine-root.js",
+      "sha256": "f56baa2bce360db90b5e7f0d21d1e66d9fa6a10ec7e3e74a532b302fc1810c7f"
+    },
+    {
+      "path": "plugin/lib/fetch-retry.mjs",
+      "sha256": "a604a7c8c78afaf0ce8e4ceb996c7a1284b96d5384bb1e59448381b2caac6820"
+    },
+    {
+      "path": "plugin/lib/guard.js",
+      "sha256": "0fce3ebbbe7dcc1713cfe0d795e5e8bd7af063bc44f7513b3a60bdaeda2a584c"
+    },
+    {
+      "path": "plugin/lib/imperative.js",
+      "sha256": "d98bb3c7ec294b05fefd13a8141f4656567e2607bf60ca78183ee096b4f0b24d"
+    },
+    {
+      "path": "plugin/lib/index.js",
+      "sha256": "b0a8efae77aeaaf6623c8658eb9bb6698127b8aa1c0e5eaf10895138972e5994"
+    },
+    {
+      "path": "plugin/lib/loop-guard.js",
+      "sha256": "b07e0561ff821166196f533f56efdf41cc65167f751eef363ead0dd005cc1605"
+    },
+    {
+      "path": "plugin/lib/plugin-update.mjs",
+      "sha256": "55958a201b00b641d3a0252961c477826be9773095269458b999edde3bcee00d"
+    },
+    {
+      "path": "plugin/lib/release-check.mjs",
+      "sha256": "842c2ef3469ad496b3c70ab902ca67dfd79a0a3accb186bcf8d6e63bdc5ca83f"
+    },
+    {
+      "path": "plugin/lib/release-source.mjs",
+      "sha256": "17942ccf3f8aef1f6990b718080399b62721dc6463bb9440f6e5fe36fe2a7d9a"
+    },
+    {
+      "path": "plugin/lib/state.js",
+      "sha256": "ba0e7b43137ff312a5f0ed29856aaf86503b1de9929078b39bcc60319ae7ff3b"
+    },
+    {
+      "path": "plugin/lib/tasks-write.mjs",
+      "sha256": "c0c62b16fede3c3ef13bfaff695bbb535f8834f69ef4c57ee8a637c033df0a9e"
+    },
+    {
+      "path": "plugin/lib/wait-guard.js",
+      "sha256": "104480f1a0e73a7c7b9225b7fb1839220e2ae275e161deb5605538191ce65071"
+    },
+    {
+      "path": "plugin/tools/dev-server.mjs",
+      "sha256": "ed0be126adfc3a9da369333d85bc54671be2886796d689ab53fb80ef064ee15a"
+    },
+    {
+      "path": "plugin/tools/test.mjs",
+      "sha256": "2abe0e7dbf658f431c93163076281e255fff655cf41f2ca43657926358f8ac6d"
+    },
+    {
+      "path": "spec/checks/gate-runner.mjs",
+      "sha256": "1cade8088e628fdad453a56db3c2d87fd9cf21ab78f0779d3648ceab85f1cdfb"
+    },
+    {
+      "path": "spec/checks/job-log-paths.mjs",
+      "sha256": "562a47504e800ab43df8c3545d43d9f956a8f52996db846ee929a0255566be25"
+    },
+    {
+      "path": "spec/checks/wait-guard.mjs",
+      "sha256": "f373de96272de3798410106e472cc7042806bf173d364d88db5e5b8bebf1669e"
+    },
+    {
+      "path": "spec/scripts/task-verify.mjs",
+      "sha256": "93877b0664a05f646f1b2d6531020b7be225e0b9b0c0712f529429e3d23b2d7e"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "spec/scripts/lib/common.mjs",
+      "spec/scripts/task-accept.mjs",
+      "spec/scripts/gate.mjs",
+      "spec/checks/verify-git-read.mjs",
+      "spec/checks/gate-availability.mjs",
+      "spec/checks/accept-rework.mjs",
+      "spec/SPEC.md",
+      "docs/tasks/0124/**"
+    ],
+    "protectedPaths": [
+      "plugin/lib/**",
+      "plugin/tools/**",
+      "spec/checks/wait-guard.mjs",
+      "spec/checks/job-log-paths.mjs",
+      "spec/checks/gate-runner.mjs",
+      "spec/scripts/task-verify.mjs"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0124/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/verify-git-read.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GITREAD OK c1"
+        },
+        "covers": [
+          "spec/checks/verify-git-read.mjs",
+          "spec/scripts/lib/common.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/verify-git-read.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GITREAD OK c2"
+        },
+        "covers": [
+          "spec/checks/verify-git-read.mjs",
+          "spec/scripts/lib/common.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/checks/gate-availability.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 300000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATEAV OK c1"
+        },
+        "covers": [
+          "spec/checks/gate-availability.mjs",
+          "spec/scripts/gate.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node spec/checks/gate-availability.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 180000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATEAV OK c2"
+        },
+        "covers": [
+          "spec/checks/gate-availability.mjs",
+          "spec/scripts/gate.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C5",
+        "command": "node spec/checks/accept-rework.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "REWORK OK c1"
+        },
+        "covers": [
+          "spec/checks/accept-rework.mjs",
+          "spec/scripts/lib/common.mjs",
+          "spec/scripts/task-accept.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C6",
+        "command": "node spec/checks/accept-rework.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "REWORK OK c2"
+        },
+        "covers": [
+          "spec/checks/accept-rework.mjs",
+          "spec/scripts/lib/common.mjs",
+          "spec/scripts/task-accept.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C7",
+        "command": "node spec/selftest.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "SELFTEST OK"
+        },
+        "covers": [
+          "spec/SPEC.md",
+          "spec/scripts/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C8",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "tools/check-tests.mjs"
+        ],
+        "tags": [
+          "slow"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-23T21:06:00.353Z",
+  "tool": "subagent-workflow/2.6.104"
+}
