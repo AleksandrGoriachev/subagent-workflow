@@ -15,7 +15,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => {
@@ -56,9 +56,19 @@ const spec = read('spec/SPEC.md');
 expect('spec/SPEC.md', version !== null && spec !== null && spec.includes('Версия: ' + version),
   spec === null ? 'нет файла' : (spec.split(/\r?\n/).find((line) => line.startsWith('Версия:')) || ''));
 
-const common = read('spec/scripts/lib/common.mjs');
-const toolLine = common === null ? '' : (common.split(/\r?\n/).find((line) => line.includes('export const TOOL')) || '');
-expect('spec/scripts/lib/common.mjs', version !== null && toolLine.includes("'subagent-workflow/" + version + "'"), toolLine);
+/*
+ * 0116 (2.6.101): TOOL больше не литерал, а вычисляется из VERSION. Проверяем
+ * исполнением (импорт common.mjs и сравнение значения), а не поиском строки:
+ * иначе check-version требовал бы правки common.mjs на каждом bump.
+ */
+let toolValue = '';
+try {
+  const toolModule = await import(pathToFileURL(path.join(root, 'spec/scripts/lib/common.mjs')).href);
+  toolValue = String(toolModule.TOOL || '');
+} catch (error) {
+  toolValue = '';
+}
+expect('spec/scripts/lib/common.mjs', version !== null && toolValue === 'subagent-workflow/' + version, toolValue || '(TOOL не прочитан)');
 
 const changelog = read('CHANGELOG.md');
 const firstSection = changelog === null ? '' : (changelog.split(/\r?\n/).find((line) => line.startsWith('## ')) || '');

@@ -1,11 +1,11 @@
 {
   "version": 3,
   "task": "0116",
-  "taskFileSha256": "b4e0c8d494a9c5e2dffb479b6da1d076ef31f25450f976797f0b3640642050c7",
+  "taskFileSha256": "f84117ca5b978545b771587e191a0b2c293db4c72300817d07a0b7c76cc8c53d",
   "criteriaSha256": "a7162a1dd0679e1478e643f073b556671b38c8d4d17c8e7a1b560ab5095856c2",
-  "criteriaJsonSha256": "449a1f2c00f4edcf6f1d82949fd6cfa927cf498a8b80bf6b88dae26f8730796d",
+  "criteriaJsonSha256": "a8cc18a5f8aa624a1620fceab69c02336898f8fa7356c9c53c98d9b16bd14c59",
   "attackSha256": null,
-  "contractCommit": "bbf3aaf3ff92d24e2c1bfbea1774ca14117f077d",
+  "contractCommit": "06f5193a6db20ad25596210c5149dccb5b7a162b",
   "protected": [
     {
       "path": "plugin/lib/anchors.js",
@@ -370,99 +370,19 @@
     {
       "path": "spec/checks/workspace-imperative.mjs",
       "sha256": "cc519cbfeab21af90b3d318ff3aad444dbbc3d6197fd49501d02cecd79bd3703"
-    },
-    {
-      "path": "tools/check-tests.mjs",
-      "sha256": "175590e7b85ea36fee022c9d2f2803d303ae10874c5580acdbb90fd2feab8577"
-    },
-    {
-      "path": "tools/check-version.mjs",
-      "sha256": "20e91141352cfe112c33d994e54dd298313fb7f5a123faed0a6c631faea101ee"
-    },
-    {
-      "path": "tools/commit.ps1",
-      "sha256": "ac8de7d1ba84c606f17e2ef95309d10d945fdb687430faaab141a8bd37234991"
-    },
-    {
-      "path": "tools/contract-lint.mjs",
-      "sha256": "9bb5ad4cd94dc9021a9ee453ecd7c87e04ff68cdbc45609724947d4d4ef64b74"
-    },
-    {
-      "path": "tools/exchange-inbox.mjs",
-      "sha256": "13db8a961f0ec958e066302de03c9e5b097057b94c86fbe1c8f33eaf8d99541d"
-    },
-    {
-      "path": "tools/launch-metrics.mjs",
-      "sha256": "b1e827404a184aead1ad0c9d13640266c350e99e22ba1d2a2ebe4cfd7b470e17"
-    },
-    {
-      "path": "tools/lib/github-token.mjs",
-      "sha256": "1a6e507c07a93b367899d34ec93f1f641a39be403e98d38c826efe0855dfb130"
-    },
-    {
-      "path": "tools/migrate-anchors-sides.mjs",
-      "sha256": "f2bb0957bdec31abf31e4e42eb38f63298d8edb4fd21be89fd096d1eaab71aa8"
-    },
-    {
-      "path": "tools/pack-plugin.mjs",
-      "sha256": "bff83bcb67e977827f4de3a694fcd3e1a40aa61df506983f14e4838d5905d6ed"
-    },
-    {
-      "path": "tools/pack.mjs",
-      "sha256": "24307ad474ac93776e50888add5b3740e7f3a94d2205820ec44eb195269ed3f0"
-    },
-    {
-      "path": "tools/release-draft.mjs",
-      "sha256": "ce70201e82f19f4dad9a488477ae002fa092682f8bf9ea50d70519a95e2e54c0"
-    },
-    {
-      "path": "tools/release-publish.mjs",
-      "sha256": "f88d32c4027987f379e361ef57953a7bd050b270d87954c42880faf9ad1de6d3"
-    },
-    {
-      "path": "tools/release-smoke.mjs",
-      "sha256": "50410d8b378a2f279db0acd7e1e136a569d2eea2f5e9f310bd449f41db1df248"
-    },
-    {
-      "path": "tools/release.mjs",
-      "sha256": "6202a33596e33f8b328df0e76496899188b445f8d2620fde12f532204f840dff"
-    },
-    {
-      "path": "tools/stopline-accept.mjs",
-      "sha256": "60365c69b21cb3b36ea8c5fe1b3ab34ad9b628612270e1037a4285fcc55939df"
-    },
-    {
-      "path": "tools/structure-approve.mjs",
-      "sha256": "a25fb0f4c75a93aace24612ebe244d2c4e024aa406e33374a6cb7a53e71b88c1"
-    },
-    {
-      "path": "tools/task-monitor.mjs",
-      "sha256": "e53f37583d56e5901be20c42b354b760f5fd884b5c5fcbe6c3dc71e122e2fd1c"
-    },
-    {
-      "path": "tools/task-next-id.mjs",
-      "sha256": "9ecd05196b5c7592b3040c970c40f12365ff0a197b669a8c6897e2016c7e2681"
-    },
-    {
-      "path": "tools/task-register.mjs",
-      "sha256": "ee06a564dabe8b0d5036dea1aad4932fef1f87549555fcfdc4ea78c1f7928c39"
-    },
-    {
-      "path": "tools/verify.mjs",
-      "sha256": "c1885759d5026aee95cc637643265fb928e025c164eb26033720846702d4dfdf"
     }
   ],
   "contract": {
     "allowedPaths": [
       "spec/scripts/lib/common.mjs",
+      "tools/check-version.mjs",
       "spec/SPEC.md",
       "docs/tasks/0116/**"
     ],
     "protectedPaths": [
       "plugin/lib/**",
       "plugin/tools/**",
-      "spec/checks/**",
-      "tools/**"
+      "spec/checks/**"
     ],
     "redAllowDirty": [
       "docs/tasks/0116/**"
@@ -512,7 +432,8 @@
         },
         "covers": [
           "CHANGELOG.md",
-          "README.md"
+          "README.md",
+          "tools/check-version.mjs"
         ],
         "tags": [
           "fast"
@@ -537,6 +458,6 @@
       }
     ]
   },
-  "createdAt": "2026-11-23T16:10:50.214Z",
+  "createdAt": "2026-11-23T16:14:45.402Z",
   "tool": "subagent-workflow/2.6.100"
 }

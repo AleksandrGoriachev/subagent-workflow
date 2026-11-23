@@ -1,0 +1,161 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "1ab5c7decb8918b4a36e71c293ef6e80",
+  "runKind": "accept",
+  "task": "0116",
+  "createdAt": "2026-11-23T16:23:16.751Z",
+  "headSha": "06f5193a6db20ad25596210c5149dccb5b7a162b",
+  "contractCommit": "06f5193a6db20ad25596210c5149dccb5b7a162b",
+  "criteriaSha256": "a7162a1dd0679e1478e643f073b556671b38c8d4d17c8e7a1b560ab5095856c2",
+  "criteriaJsonSha256": "a8cc18a5f8aa624a1620fceab69c02336898f8fa7356c9c53c98d9b16bd14c59",
+  "taskFileSha256": "f84117ca5b978545b771587e191a0b2c293db4c72300817d07a0b7c76cc8c53d",
+  "changedPaths": [
+    "docs/tasks/0116/criteria.lock",
+    "docs/tasks/0116/gates.jsonl",
+    "docs/tasks/0116/gates.jsonl.tip",
+    "docs/tasks/0116/red.json",
+    "docs/tasks/0116/verify.executor.json",
+    "docs/tasks/0116/verify.json",
+    "spec/SPEC.md",
+    "spec/scripts/lib/common.mjs",
+    "tools/check-version.mjs"
+  ],
+  "coverage": {
+    "declared": 8,
+    "covered": [
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "tools/check-version.mjs",
+        "criterion": "C3"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node -e \"const s=require('fs').readFileSync('spec/scripts/lib/common.mjs','utf8');if(/TOOL\\s*=\\s*'subagent-workflow\\/\\d+\\.\\d+\\.\\d+'/u.test(s)){console.log('literal version');process.exit(1)}\"",
+      "exitCode": 0,
+      "durationMs": 1675,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"Promise.all([import('./spec/scripts/lib/common.mjs'),import('node:fs')]).then(([m,fs])=>{const v=JSON.parse(fs.readFileSync('package.json','utf8')).version;if(m.TOOL!=='subagent-workflow/'+v){console.log('TOOL mismatch: '+m.TOOL);process.exit(1)}console.log('ok')})\"",
+      "exitCode": 0,
+      "durationMs": 1656,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ok\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 1620,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e50815a6a641654c59e90fb468320b4c6eab9651812a5802a98835af56a7d9a8",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.6.100\nPASS  package.json                  — 2.6.100\nPASS  README.md                     — # subagent-workflow 2.6.100 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.6.100. Дата: 2026-11-23.\nPASS  spec/scripts/lib/common.mjs   — subagent-workflow/2.6.100\nPASS  CHANGELOG.md                  — ## 2.6.100 — 2026-11-23 (панель 0.9.38)\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.6.100:»\nPASS  plugin/package.json           — 0.9.38\nплагин — 0.9.38\n\nVERSION OK: 2.6.100\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 0,
+      "durationMs": 68800,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "dcb8ebb589fbb8bca9a8fa0978e17319d6b330654406052a8098ef494ce81561",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "06f5193a6db20ad25596210c5149dccb5b7a162b",
+    "contractCommit": "06f5193a6db20ad25596210c5149dccb5b7a162b",
+    "criteriaJsonSha256": "a8cc18a5f8aa624a1620fceab69c02336898f8fa7356c9c53c98d9b16bd14c59",
+    "failed": 1,
+    "failedIds": [
+      "C1"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1"
+      ],
+      "mustPass": [
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "06f5193a6db20ad25596210c5149dccb5b7a162b",
+  "headDrift": null,
+  "worktreeDigest": "ac42007dc62a0bb3bd84b4498333cf48061d8d59b90cb10b76ad012fde0a13e4",
+  "log": "verify.log"
+}
