@@ -62,6 +62,7 @@
       "cwd": ".",
       "covers": [
         "spec/selftest.mjs",
+        "spec/scripts/task-accept.mjs",
         "spec/SPEC.md"
       ],
       "timeoutMs": 900000,
