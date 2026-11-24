@@ -68,16 +68,39 @@ export function readRuleset(repoRoot) {
   const policy = config.policy && typeof config.policy === 'object' ? config.policy : {};
   const version = anchorsText === '' ? 0 : 1;
   let signature = null;
-  if (approval && approval.signature && typeof approval.signature === 'object') {
+  /* 0141/2.6.111: якоря подписаны плоской строкой (signature рядом с keyId), а не
+     только вложенным объектом: читаем обе формы, иначе ruleset строится с signature=null. */
+  const nestedSignature = Boolean(approval && approval.signature && typeof approval.signature === 'object' && !Array.isArray(approval.signature));
+  const flatSignature = Boolean(approval && typeof approval.signature === 'string' && approval.signature !== '');
+  if (nestedSignature || flatSignature) {
+    const fields = nestedSignature
+      ? {
+          keyId: approval.signature.keyId || approval.keyId || null,
+          covers: approval.signature.covers || null,
+          hash: approval.hash || null,
+          at: approval.at || approval.signature.at || null,
+          /* 0144 (Grok): движок проверяет подпись сам — нужны сырые поля, а не флаг. */
+          by: approval.by || null,
+          value: approval.signature.value || null,
+        }
+      : {
+          /* 0141/2.6.111: плоская форма 0.2 — keyId лежит рядом с подписью, covers — в anchors. */
+          keyId: approval.keyId || null,
+          covers: approval.covers || approval.anchors || null,
+          hash: approval.hash || null,
+          at: approval.at || null,
+          by: approval.by || null,
+          value: approval.signature,
+        };
     let verified = false;
     let reason = 'подпись не проверена';
     try {
       const acceptorsFile = path.join(root, '..', 'docs', 'subagent-workflow', 'acceptors.json');
       const acceptors = readJson(acceptorsFile);
       const list = acceptors && Array.isArray(acceptors.acceptors) ? acceptors.acceptors : [];
-      const keyId = String(approval.signature.keyId || approval.keyId || '');
+      const keyId = String(fields.keyId || '');
       /* 0162: ключ выбирается по дате подписи — при ротации у keyId несколько эпох. */
-      const picked = selectAcceptorEntry(list, keyId, approval.at || approval.signature.at);
+      const picked = selectAcceptorEntry(list, keyId, fields.at);
       const key = picked.entry;
       if (!key) reason = 'ключ ' + keyId + ' не найден в acceptors.json';
       else if (key.kind !== 'human') reason = 'ключ ' + keyId + ' не человеческий';
@@ -86,17 +109,7 @@ export function readRuleset(repoRoot) {
     } catch (error) {
       reason = 'ошибка проверки: ' + String(error && error.message ? error.message : error);
     }
-    signature = {
-      keyId: approval.signature.keyId || approval.keyId || null,
-      covers: approval.signature.covers || null,
-      hash: approval.hash || null,
-      at: approval.at || null,
-      /* 0144 (Grok): движок проверяет подпись сам — нужны сырые поля, а не флаг. */
-      by: approval.by || null,
-      value: approval.signature.value || null,
-      verified,
-      reason,
-    };
+    signature = { ...fields, verified, reason };
   }
   return {
     version,

@@ -27,6 +27,16 @@ export const REQUIRED_FIELDS = {
   action: ['task', 'run', 'cmd', 'paths', 'writer', 'at'],
 };
 
+/*
+ * 0141/2.6.111: null — значение, а не «нет поля». Конвертер по замыслу пишет
+ * signature=null, когда подписи якорей нет, поэтому послабление точечное:
+ * только ruleset.signature. Для остальных видов и полей null по-прежнему
+ * означает отсутствие поля (инвариант задания 0141).
+ */
+export const NULLABLE_FIELDS = {
+  ruleset: ['signature'],
+};
+
 /**
  * 0143: канонизация пути для C3/C8.
  *
@@ -90,7 +100,8 @@ export function lineHash(line) {
 export function validateFact(row) {
   if (!row || typeof row !== 'object' || Array.isArray(row)) return { ok: false, problem: 'запись не объект' };
   if (!FACT_KINDS.includes(row.kind)) return { ok: false, problem: 'неизвестный kind: ' + String(row.kind || '') };
-  const missing = REQUIRED_FIELDS[row.kind].filter((field) => row[field] === undefined || row[field] === null || row[field] === '');
+  const nullable = NULLABLE_FIELDS[row.kind] || [];
+  const missing = REQUIRED_FIELDS[row.kind].filter((field) => row[field] === undefined || row[field] === '' || (row[field] === null && !nullable.includes(field)));
   if (missing.length > 0) return { ok: false, problem: row.kind + ': нет полей ' + missing.join(', ') };
   return { ok: true, problem: null };
 }

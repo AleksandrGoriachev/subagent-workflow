@@ -1,0 +1,210 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0141",
+  "createdAt": "2026-11-24T23:29:10.753Z",
+  "headSha": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+  "contractCommit": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+  "criteriaSha256": "7a162d7c3d9e508ee66c68062dd810c58e9b0fb1993494a314adf563d5291ff1",
+  "criteriaJsonSha256": "d4937ef893733447b342b2dd9a89b553d5bb8509ab4a4603e8ba6f6e242de318",
+  "taskFileSha256": "298482a00c50fe57a3cfee060f7dc0f772d97673da6ce6b359dcaa669e87a87b",
+  "changedPaths": [
+    "docs/tasks/0141/criteria.lock",
+    "docs/tasks/0141/gates.jsonl",
+    "docs/tasks/0141/gates.jsonl.tip",
+    "docs/tasks/0141/red.json",
+    "spec/SPEC.md",
+    "spec/checks/facts-ruleset.mjs",
+    "spec/lib/facts.mjs",
+    "spec/scripts/facts-convert.mjs"
+  ],
+  "coverage": {
+    "declared": 10,
+    "covered": [
+      {
+        "path": "spec/checks/facts-ruleset.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/lib/facts.mjs",
+        "criterion": "C2"
+      },
+      {
+        "path": "spec/scripts/facts-convert.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C1",
+        "observable": "тень снова считает вердикт: факт ruleset строится из реальных якорей",
+        "threshold": "в facts-convert нет ошибки «ruleset: нет полей signature»; у факта signature.keyId не пуст при плоской подписи",
+        "measuredBy": "C4"
+      }
+    ],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/facts-ruleset.mjs c1",
+      "exitCode": 0,
+      "durationMs": 761,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "b19242635801d0612585f4e0d35e93ea97a6fbf0b8711375079946dd3ad8f1d0",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RULESET OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/facts-ruleset.mjs c2",
+      "exitCode": 0,
+      "durationMs": 815,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "5c736c8ac17b674345b7dfa2d48cfccd3c6ea97f8f401fc1b131b55e68400620",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RULESET OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/facts-ruleset.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1047,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "7847453431df1116759d149dc512251c8ebe719fc3b434abd42bb81b8ae8de65",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RULESET OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/facts-ruleset.mjs c4",
+      "exitCode": 0,
+      "durationMs": 1277,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "238e54cf10e622c7889b1eb1dec275b91e0ddf39d6e6c95e89a02cb183d11544",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RULESET OK c4\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 63418,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "34ef4204cd88bcfaf16eb38438b9d66a93c991b966597d8ffd1b9521ad7b9b37",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: теневые прогоны совпадают с приёмкой\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n✔ c1: traversal и абсолютный путь не проходят (6.8025ms)\n✔ c2: факты другого run — C10 fail (395.3412ms)\n✔ c3: конфликтные доказательства гейта — C5 fail (519.43ms)\n✔ c4: пустой объявленный план запрещает действия (700.6125ms)\n✔ c5: C9 требует проверенной подписи (480.2901ms)\n✔ c\n…[truncated 2727 chars]",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 5,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+    "contractCommit": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+    "criteriaJsonSha256": "d4937ef893733447b342b2dd9a89b553d5bb8509ab4a4603e8ba6f6e242de318",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "mustPass": [
+        "C5"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+  "headDrift": null,
+  "worktreeDigest": "f450dce6e1e0dc625dd7997994abe4b855daaf339367a1493139526b4b5258fb",
+  "log": "verify.log"
+}
