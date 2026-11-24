@@ -3,14 +3,13 @@
 <!-- TASK-META
 {
   "id": "0135",
-  "version": 1,
+  "version": 2,
   "title": "Приёмка: отказ на чужие незакоммиченные правки и снимок дерева",
   "risk": "medium",
   "created": "2026-11-24",
   "owner": "координатор",
   "executor": "subagent:coordinator",
   "acceptor": "subagent:judge",
-  "acceptorNode": "judge",
   "issuedBy": { "kind": "agent", "session": "session-lead", "model": "deepseek-flash" },
   "base": "HEAD",
   "criteria": "criteria.json",
@@ -21,7 +20,8 @@
   "decisions": [
     { "id": "D1", "class": "mechanical", "question": "Что проверять на приёмке вместо «чистоты дерева»", "chosen": "Не грязноту (работа исполнителя по протоколу не закоммичена), а потери: отслеживаемые незакоммиченные правки вне кандидата, которые уничтожит git reset --hard.", "options": ["Полный запрет грязного дерева", "Отказ по потерям"], "impact": "internal", "evidence": { "kind": "criterion", "ref": "C1" }, "reversible": true },
     { "id": "D2", "class": "mechanical", "question": "Аварийный обход", "chosen": "--allow-extras: печатает названные пути, пишет обход в bypasses и notes записи. Без него — отказ accept-foreign-worktree.", "options": ["Нет обхода", "Обход с записью"], "impact": "internal", "evidence": { "kind": "criterion", "ref": "C3" }, "reversible": true },
-    { "id": "D3", "class": "mechanical", "question": "Стэш", "chosen": "Движок не видит, кто создал стэш: пишем снимок git stash list в запись и предупреждаем; запрет — правило промптов проекта.", "options": ["Отказ при непустом стэше", "Снимок и предупреждение"], "impact": "internal", "evidence": { "kind": "criterion", "ref": "C2" }, "reversible": true }
+    { "id": "D3", "class": "mechanical", "question": "Стэш", "chosen": "Движок не видит, кто создал стэш: пишем снимок git stash list в запись и предупреждаем; запрет — правило промптов проекта.", "options": ["Отказ при непустом стэше", "Снимок и предупреждение"], "impact": "internal", "evidence": { "kind": "criterion", "ref": "C2" }, "reversible": true },
+    { "id": "D4", "class": "mechanical", "question": "Объявлять ли acceptorNode (v2)", "chosen": "Не объявлять: корень пакета не является корнем спавна структуры (root-not-allowed), журнал запусков пишется под корнем default-workspace, поэтому свидетельство запуска для repo=пакет не находится. Роль приёмщика подтверждается отдельной сессией и ключом; отсутствие узла объясняется --deviation (движок даёт warn, как и у 112 предыдущих заданий).", "options": ["Оставить acceptorNode", "Убрать acceptorNode"], "impact": "internal", "evidence": { "kind": "criterion", "ref": "C3" }, "reversible": true }
   ],
   "resultShape": { "artifact": "запись приёмки с блоком worktree + отказ accept-foreign-worktree", "format": "код+запись", "criterion": "C3" },
   "securityReview": false,
