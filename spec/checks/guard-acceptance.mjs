@@ -107,6 +107,31 @@ function stage(repo, rel, text = 'x\n') {
   git(repo, ['add', rel]);
 }
 
+/*
+ * 0139/2.6.110: контракт нового задания с проверками в checks/**. allowedPaths
+ * намеренно не пересекается с protectedPaths (F-7): после замка проверки меняет
+ * только активное задание, и оно не должно покрывать checks/**.
+ */
+function writeNewContract(repo, id = '0002', options = {}) {
+  const allowedPaths = options.allowedPaths || ['src/**'];
+  const protectedPaths = options.protectedPaths || ['checks/**'];
+  const dir = path.join(repo, 'docs', 'tasks', id);
+  write(path.join(dir, 'task.md'), ['# Задание ' + id + '. Новый контракт', '',
+    '<!-- TASK-META',
+    JSON.stringify({
+      id, version: 1, title: 'новый контракт', risk: 'medium', created: '2026-11-24',
+      owner: 'координатор', executor: 'subagent:executor', acceptor: 'subagent:judge',
+      base: 'HEAD', criteria: 'criteria.json', allowedPaths, protectedPaths,
+      hashExclude: [], decisions: [],
+    }, null, 2),
+    '-->', '', '## Цель', '', 'Заглушка.', ''].join('\n'));
+  write(path.join(dir, 'criteria.json'), JSON.stringify({
+    task: id,
+    criteria: [{ id: 'C1', title: 'c', command: 'node -e "1"', expect: { exitCode: 0 } }],
+  }, null, 2) + '\n');
+  return dir;
+}
+
 function cleanup(repo) {
   try { fs.rmSync(repo, { recursive: true, force: true }); } catch { /* ignore */ }
 }
@@ -201,6 +226,71 @@ const CASES = {
         ok: allowed.code === 0 && denied.code === 1 && text,
         detail: 'allowed=' + allowed.code + ' protected=' + denied.code + ' text=' + text
           + ' ' + denied.out.trim().slice(0, 240),
+      };
+    } finally { cleanup(repo); }
+  },
+  /*
+   * 0139/2.6.110: новый контракт с проверками в checks/** коммитится вместе с
+   * контрактом. task.md и criteria.json застейджены, замка ещё нет, задания нет
+   * в HEAD — контрактный коммит покрывает protectedPaths контракта. После
+   * criteria.lock правило выключено: checks/c2.php снова не покрыт.
+   */
+  'contract-checks'() {
+    const repo = makeRepo({ task: false });
+    try {
+      writeNewContract(repo);
+      stage(repo, 'checks/c1.php', '<?php return 1;\n');
+      git(repo, ['add', 'docs/tasks/0002']);
+      const contract = guard(repo, ['--staged']);
+      /* Замок не коммитится: он появляется в рабочем дереве, как после task-hash --write. */
+      write(path.join(repo, 'docs', 'tasks', '0002', 'criteria.lock'),
+        JSON.stringify({ version: 3, task: '0002', contractCommit: '0'.repeat(40), protected: [] }, null, 2) + '\n');
+      stage(repo, 'checks/c2.php', '<?php return 2;\n');
+      const locked = guard(repo, ['--staged']);
+      const ok = contract.code === 0 && locked.code === 1;
+      return {
+        ok,
+        detail: 'contract=' + contract.code + ' afterLock=' + locked.code
+          + ' ' + (ok ? locked.out : contract.out).trim().slice(0, 240),
+      };
+    } finally { cleanup(repo); }
+  },
+  /*
+   * 0139/2.6.110, негатив: контрактный коммит нового задания покрывает ТОЛЬКО
+   * protectedPaths. Код (src/a.js) им не покрывается, хотя src/** есть в
+   * allowedPaths нового контракта: до замка задание не активно.
+   */
+  'contract-code'() {
+    const repo = makeRepo({ task: false });
+    try {
+      writeNewContract(repo);
+      stage(repo, 'src/a.js', 'export const a = 1;\n');
+      git(repo, ['add', 'docs/tasks/0002']);
+      const result = guard(repo, ['--staged']);
+      const mentionsPath = result.out.includes('src/a.js');
+      const explains = /не покрыт/i.test(result.out);
+      return {
+        ok: result.code === 1 && mentionsPath && explains,
+        detail: 'exit=' + result.code + ' path=' + mentionsPath + ' explains=' + explains
+          + ' ' + result.out.trim().slice(0, 240),
+      };
+    } finally { cleanup(repo); }
+  },
+  /*
+   * 0139/2.6.110: документация после приёмки идёт по метке. docs/** — не
+   * защищённый корень, закрытое задание (acceptance.json) метку не отменяет.
+   */
+  'docs-after-accept'() {
+    const repo = makeRepo();
+    try {
+      write(path.join(repo, 'docs', 'tasks', '0001', 'acceptance.json'),
+        JSON.stringify({ task: '0001', status: 'accepted', version: 6 }, null, 2) + '\n');
+      stage(repo, 'docs/architecture/report.md', '# отчёт по заданию\n');
+      const result = guard(repo, ['--staged', '--message', 'docs: отчёт после приёмки [workflow-bypass: документация]']);
+      const allowed = /обход по метке/.test(result.out);
+      return {
+        ok: result.code === 0 && allowed,
+        detail: 'exit=' + result.code + ' bypass=' + allowed + ' ' + result.out.trim().slice(0, 240),
       };
     } finally { cleanup(repo); }
   },

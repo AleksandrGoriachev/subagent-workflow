@@ -15,6 +15,13 @@
  *   4. в сообщении коммита есть метка обхода guard.bypassMarker — осознанный
  *      разовый обход; он остаётся в аудите (--audit).
  *
+ * 0139/2.6.110: контрактный коммит НОВОГО задания (task.md и criteria.json
+ * впервые появляются вместе в коммите/индексе, criteria.lock ещё нет, task.md
+ * нет в дереве HEAD или предыдущего коммита) покрывает пути из protectedPaths
+ * этого контракта — иначе проверки в checks/** нельзя закоммитить вместе с
+ * контрактом. Правило узкое: allowedPaths и произвольные пути оно не покрывает,
+ * а после появления замка не действует.
+ *
  * Режимы:
  *   --staged [--message <text>]   проверка индекса (exit 1 + пути, если не покрыто)
  *   --range <from..to>            проверка каждого коммита диапазона
@@ -129,7 +136,7 @@ function parseTaskMetaSafe(text) {
   }
 }
 
-function taskFromMeta(id, dir, meta, { hasLock, hasAcceptance, hasClosure }) {
+function taskFromMeta(id, dir, meta, { hasLock, hasAcceptance, hasClosure, newContract = false }) {
   /*
    * 2.6.82: закрытое без приёмки задание — не работа. Оно не расширяет
    * allowedPaths (active=false) и не покрывает свой каталог (open=false);
@@ -140,16 +147,33 @@ function taskFromMeta(id, dir, meta, { hasLock, hasAcceptance, hasClosure }) {
     id: String(meta.id || id),
     dir,
     allowedPaths: Array.isArray(meta.allowedPaths) ? meta.allowedPaths.map(String) : [],
+    /*
+     * 0139/2.6.110: protectedPaths контракта — единственное, что покрывает
+     * контрактный коммит нового задания; allowedPaths он не расширяет.
+     */
+    protectedPaths: Array.isArray(meta.protectedPaths) ? meta.protectedPaths.map(String) : [],
     active: hasLock && !hasAcceptance && !closed,
     open: !hasAcceptance && !closed,
     closed,
+    newContract: newContract === true,
   };
 }
 
-/** Состояние заданий в рабочем дереве — для проверки индекса. */
-export function coverageFromWorktree(repo, config) {
+/**
+ * Состояние заданий в рабочем дереве — для проверки индекса.
+ *
+ * 0139/2.6.110: options.staged — набор путей индекса. С ним задание, чей
+ * task.md отсутствует в HEAD и чьи task.md и criteria.json застейджены вместе
+ * без criteria.lock, помечается newContract: это контрактный коммит нового
+ * задания. Без options.staged (вызовы проверок) признак остаётся false.
+ */
+export function coverageFromWorktree(repo, config, options = {}) {
   const tasksDirRel = toPosix(config.tasksDir || 'docs/tasks');
   const tasksDir = path.join(repo, tasksDirRel);
+  const staged = options.staged instanceof Set ? options.staged : null;
+  const cache = options.cache instanceof Map ? options.cache : new Map();
+  /* Дерево HEAD нужно только проверке индекса: у аудита и --range своё дерево. */
+  const inHead = staged === null ? null : taskIdsInTree(repo, config, 'HEAD', cache);
   const tasks = [];
   let entries = [];
   try {
@@ -164,13 +188,49 @@ export function coverageFromWorktree(repo, config) {
     if (!exists(taskMd)) continue;
     const meta = parseTaskMetaSafe(readText(taskMd));
     if (!meta) continue;
-    tasks.push(taskFromMeta(entry.name, tasksDirRel + '/' + entry.name, meta, {
-      hasLock: exists(path.join(dir, 'criteria.lock')),
-      hasAcceptance: exists(path.join(dir, 'acceptance.json')),
-      hasClosure: exists(path.join(dir, 'closure.json')),
+    const hasLock = exists(path.join(dir, 'criteria.lock'));
+    const hasAcceptance = exists(path.join(dir, 'acceptance.json'));
+    const hasClosure = exists(path.join(dir, 'closure.json'));
+    const dirRel = tasksDirRel + '/' + entry.name;
+    const newContract = staged !== null
+      && !hasLock && !hasAcceptance && !hasClosure
+      && !inHead.has(entry.name)
+      && staged.has(dirRel + '/task.md')
+      && staged.has(dirRel + '/criteria.json');
+    tasks.push(taskFromMeta(entry.name, dirRel, meta, {
+      hasLock, hasAcceptance, hasClosure, newContract,
     }));
   }
   return { tasksDirRel, tasks };
+}
+
+/**
+ * 0139/2.6.110: какие задания уже имеют task.md в дереве ревизии. Нужно, чтобы
+ * отличить контрактный коммит НОВОГО задания от правки существующего: правило
+ * покрытия protectedPaths действует только для нового контракта. Несуществующая
+ * ревизия (корневой коммит или ещё не рождённый HEAD) даёт пустое множество.
+ */
+function taskIdsInTree(repo, config, rev, cache) {
+  const cacheKey = 'ids:' + rev;
+  if (cache.has(cacheKey)) return cache.get(cacheKey);
+  const tasksDirRel = toPosix(config.tasksDir || 'docs/tasks');
+  const prefix = tasksDirRel + '/';
+  const ids = new Set();
+  const listing = git(repo, ['ls-tree', '-r', '-z', '--full-tree', rev, '--', tasksDirRel]);
+  if (listing.exitCode === 0) {
+    for (const chunk of String(listing.stdout || '').split('\u0000')) {
+      if (!chunk) continue;
+      const match = /^\d+ \w+ [0-9a-f]+\t(.+)$/u.exec(chunk);
+      if (!match) continue;
+      const file = toPosix(match[1]);
+      if (!file.startsWith(prefix) || !file.endsWith('/task.md')) continue;
+      const rest = file.slice(prefix.length);
+      const slash = rest.indexOf('/');
+      if (slash > 0) ids.add(rest.slice(0, slash));
+    }
+  }
+  cache.set(cacheKey, ids);
+  return ids;
 }
 
 /**
@@ -184,6 +244,8 @@ function coverageFromCommit(repo, config, rev, cache) {
   const tasksDirRel = toPosix(config.tasksDir || 'docs/tasks');
   const prefix = tasksDirRel + '/';
   const tasks = [];
+  /* 0139/2.6.110: для newContract нужно знать, было ли задание в предыдущем дереве. */
+  const parentIds = taskIdsInTree(repo, config, rev + '^', cache);
   const listing = git(repo, ['ls-tree', '-r', '-z', '--full-tree', rev, '--', tasksDirRel]);
   if (listing.exitCode === 0) {
     const byTask = new Map();
@@ -212,10 +274,20 @@ function coverageFromCommit(repo, config, rev, cache) {
       }
       const meta = parseTaskMetaSafe(text);
       if (!meta) continue;
+      const hasLock = files.has('criteria.lock');
+      const hasAcceptance = files.has('acceptance.json');
+      const hasClosure = files.has('closure.json');
+      /*
+       * 0139/2.6.110: контрактный коммит нового задания — task.md и
+       * criteria.json есть в коммите, замка нет, а в дереве предыдущего
+       * коммита task.md этого задания ещё не было. Только такой коммит
+       * покрывает protectedPaths контракта.
+       */
+      const newContract = !hasLock && !hasAcceptance && !hasClosure
+        && files.has('criteria.json')
+        && !parentIds.has(id);
       tasks.push(taskFromMeta(id, prefix + id, meta, {
-        hasLock: files.has('criteria.lock'),
-        hasAcceptance: files.has('acceptance.json'),
-        hasClosure: files.has('closure.json'),
+        hasLock, hasAcceptance, hasClosure, newContract,
       }));
     }
   }
@@ -268,7 +340,8 @@ function firstLine(text) {
 
 /**
  * Чем покрыт путь: guard.allow, каталог задания (целиком — пока открыто, только
- * артефакты — после закрытия), allowedPaths задания, активного в этом дереве.
+ * артефакты — после закрытия), protectedPaths контракта нового задания,
+ * allowedPaths задания, активного в этом дереве.
  */
 function coverageHit(rel, coverage, guard) {
   if (matchesAny(rel, guard.allow)) return 'guard.allow';
@@ -280,6 +353,15 @@ function coverageHit(rel, coverage, guard) {
         return 'запись задания ' + task.id;
       }
       continue;
+    }
+    /*
+     * 0139/2.6.110: контрактный коммит нового задания покрывает только
+     * protectedPaths этого контракта. allowedPaths тут не участвует: у нового
+     * задания ещё нет замка (active=false), а расширять правило на код нельзя.
+     * После появления criteria.lock правило выключено (newContract=false).
+     */
+    if (task.newContract && !task.active && task.protectedPaths.length > 0 && matchesAny(rel, task.protectedPaths)) {
+      return 'контракт задания ' + task.id;
     }
     if (task.active && task.allowedPaths.length > 0 && matchesAny(rel, task.allowedPaths)) {
       return 'задание ' + task.id;
@@ -297,6 +379,16 @@ function evaluate(paths, coverage, guard) {
     else uncovered.push(rel);
   }
   return { covered, uncovered };
+}
+
+/**
+ * 0139/2.6.110: контракты новых заданий в проверяемом дереве — для текста
+ * отказа: покрыты только их protectedPaths, остальные проверки надо объявить там.
+ */
+function contractsOf(coverage) {
+  return coverage.tasks
+    .filter((task) => task.newContract)
+    .map((task) => ({ id: task.id, protectedPaths: task.protectedPaths }));
 }
 
 /** Один коммит: метка из его сообщения, покрытие — из его дерева. */
@@ -323,8 +415,16 @@ function evaluateCommit(repo, config, guard, rev, cache) {
     }
     return { rev, message, bypass: true, covered: paths.map((p) => ({ path: p, by: 'bypass' })), uncovered: [] };
   }
-  const result = evaluate(paths, coverageFromCommit(repo, config, rev, cache), guard);
-  return { rev, message, bypass: false, covered: result.covered, uncovered: result.uncovered };
+  const coverage = coverageFromCommit(repo, config, rev, cache);
+  const result = evaluate(paths, coverage, guard);
+  return {
+    rev,
+    message,
+    bypass: false,
+    covered: result.covered,
+    uncovered: result.uncovered,
+    contracts: contractsOf(coverage),
+  };
 }
 
 function guardRel(repo) {
@@ -343,12 +443,28 @@ function hints(repo, guard) {
   ];
 }
 
-function printStagedUncovered(repo, uncovered, guard) {
+/**
+ * 0139/2.6.110: отказ для непокрытого пути объясняет правило контрактного
+ * коммита — покрыты только protectedPaths контракта, проверки вне их
+ * объявляются в protectedPaths, а не меткой.
+ */
+function contractHint(contracts) {
+  const lines = [];
+  for (const contract of contracts || []) {
+    const paths = contract.protectedPaths.length > 0 ? contract.protectedPaths.join(', ') : 'пусто';
+    lines.push('  контракт нового задания ' + contract.id + ' покрывает только protectedPaths (' + paths
+      + '): проверки вне protectedPaths надо объявить в protectedPaths контракта');
+  }
+  return lines;
+}
+
+function printStagedUncovered(repo, uncovered, guard, contracts) {
   const header = guard.mode === 'warn'
     ? 'task-guard: WARN — изменение вне активного задания (guard.mode=warn, коммит не отклонён)'
     : 'task-guard: коммит отклонён — изменение вне активного задания';
   const lines = [header];
   for (const rel of uncovered) lines.push('  не покрыт: ' + rel);
+  lines.push(...contractHint(contracts));
   lines.push('');
   lines.push(...hints(repo, guard));
   console.error(lines.join('\n'));
@@ -359,9 +475,14 @@ function printRangeUncovered(repo, range, failures, guard) {
     ? 'task-guard: WARN — в диапазоне есть коммиты вне заданий (guard.mode=warn, пуш не отклонён)'
     : 'task-guard: пуш отклонён — в диапазоне есть коммиты вне активных заданий';
   const lines = [header, '  диапазон: ' + range];
+  const contracts = [];
   for (const failure of failures) {
     lines.push('  ' + failure.rev.slice(0, 12) + ' ' + firstLine(failure.message) + ' — не покрыт: ' + failure.uncovered.join(', '));
+    for (const contract of failure.contracts || []) {
+      if (!contracts.some((seen) => seen.id === contract.id)) contracts.push(contract);
+    }
   }
+  lines.push(...contractHint(contracts));
   lines.push('');
   lines.push(...hints(repo, guard));
   console.error(lines.join('\n'));
@@ -408,7 +529,10 @@ function auditRange(repo, config, guard, range) {
 }
 
 function auditStaged(repo, config, guard) {
-  const result = evaluate(stagedPaths(repo), coverageFromWorktree(repo, config), guard);
+  /* 0139/2.6.110: аудит показывает то же покрытие, что и --staged: контракт нового задания. */
+  const paths = stagedPaths(repo);
+  const coverage = coverageFromWorktree(repo, config, { staged: new Set(paths) });
+  const result = evaluate(paths, coverage, guard);
   const lines = ['task-guard: аудит индекса (сообщение создаваемого коммита здесь недоступно — его видит commit-msg)'];
   for (const rel of result.uncovered) lines.push('  не покрыт: ' + rel);
   lines.push('  итог: покрыто ' + result.covered.length + ', не покрыто ' + result.uncovered.length);
@@ -464,11 +588,11 @@ function main() {
      * Сообщение создаваемого коммита передаёт commit-msg: у индекса его нет.
      * Для --range --message не используется — там сообщения читаются из коммитов.
      */
+    const paths = stagedPaths(repo);
     const message = typeof argv.message === 'string' ? argv.message : '';
     if (hasMarker(message, guard.bypassMarker)) {
       /* 0109 (WC-75): та же проверка, что и для готовых коммитов: метка не прикрывает код. */
-      const staged = stagedPaths(repo);
-      const verdict = bypassViolation(staged);
+      const verdict = bypassViolation(paths);
       if (!verdict.ok) {
         console.error('task-guard: метка "' + guard.bypassMarker + '" не действует на защищённые пути: ' + verdict.risky.slice(0, 3).join(', '));
         console.error('task-guard: нужен контракт задачи (allowedPaths) и артефакты ворот, а не метка');
@@ -477,9 +601,14 @@ function main() {
       console.log('task-guard: обход по метке "' + guard.bypassMarker + '" — коммит допущен, след остаётся в аудите');
       return 0;
     }
-    const result = evaluate(stagedPaths(repo), coverageFromWorktree(repo, config), guard);
+    /*
+     * 0139/2.6.110: индексу передаём набор путей, чтобы coverageFromWorktree
+     * увидел контрактный коммит нового задания и его protectedPaths.
+     */
+    const coverage = coverageFromWorktree(repo, config, { staged: new Set(paths) });
+    const result = evaluate(paths, coverage, guard);
     if (result.uncovered.length === 0) return 0;
-    printStagedUncovered(repo, result.uncovered, guard);
+    printStagedUncovered(repo, result.uncovered, guard, contractsOf(coverage));
     /* При выключенном флаге режим warn не смягчает: задание обязательно (2.6.87). */
     return guard.enabled && guard.mode === 'warn' ? 0 : 1;
   }
