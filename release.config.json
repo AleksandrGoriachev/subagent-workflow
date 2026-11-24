@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.108",
-  "panelVersion": "0.9.38",
-  "releaseName": "2.6.108 — честный счётчик повторов",
+  "version": "2.6.109",
+  "panelVersion": "0.9.39",
+  "releaseName": "2.6.109 — безопасная приёмка и честные версии панели",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0134",
-  "releaseCommand": "node tools/release.mjs release 2.6.108",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.108",
+  "task": "docs/tasks/0137",
+  "releaseCommand": "node tools/release.mjs release 2.6.109",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.109",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
@@ -20,7 +20,7 @@
   "panelMetadataField": {
     "file": "package.json",
     "key": "dshPanelVersion",
-    "value": "0.9.38"
+    "value": "0.9.39"
   },
   "credentialSource": {
     "path": "~/.git-credentials",
