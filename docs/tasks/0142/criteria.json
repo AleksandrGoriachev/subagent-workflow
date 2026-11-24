@@ -16,8 +16,8 @@
     ],
     "reasonWindow": 25,
     "reasons": {
-      "C1": "неизвестный кейс",
-      "C2": "неизвестный кейс",
+      "C1": "usage: node spec/checks/facts-ruleset.mjs",
+      "C2": "usage: node spec/checks/facts-ruleset.mjs",
       "C3": "VERSION DRIFT FAIL",
       "C5": "SELFTEST FAILED",
       "C6": "вердикт rejected",
