@@ -16,8 +16,11 @@
  * (packageRoot/../VERSION) — установка не требует сети. После pack, в том числе
  * при ошибке, vendor убирается: в репозитории не остаётся копии спеки.
  *
- * --plan — показать версию и имена ассетов, ничего не собирая и не записывая
- * (эту ветку использует spec/checks/acceptance-schema.mjs).
+ * 0136 (2.6.109): --plan первой строкой называет обе линии версий —
+ * «панель@версия (движок версия)»; stageVendor сверяет вложенный vendor/VERSION
+ * с версией пакета, иначе панель соврала бы о версии движка. --plan по-прежнему
+ * ничего не собирает и не записывает (эту ветку использует
+ * spec/checks/acceptance-schema.mjs).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,6 +33,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGIN = path.join(ROOT, 'plugin');
 const DIST = path.join(ROOT, 'dist');
 const MANIFEST = path.join(PLUGIN, 'package.json');
+/* Версия пакета движка: то, что VERSION обязан подтверждать (0136). */
+const ROOT_MANIFEST = path.join(ROOT, 'package.json');
 const PLAN = process.argv.includes('--plan');
 /* Источник вложенной спеки: то, что уезжает в архив пакета. */
 const SPEC = path.join(ROOT, 'spec');
@@ -43,6 +48,28 @@ const VENDOR_MARKER = 'vendor/spec/scripts/init.mjs';
 function die(message) {
   console.error('pack-plugin: ' + message);
   process.exit(1);
+}
+
+/*
+ * 0136 (2.6.109): версия движка — из VERSION, версия панели — из
+ * plugin/package.json. В плане они печатаются рядом, чтобы расхождение было
+ * видно до сборки, а не после установки.
+ */
+function engineVersion() {
+  if (!fs.existsSync(SPEC_VERSION)) die('нет ' + SPEC_VERSION + ' — версию движка взять негде');
+  const value = fs.readFileSync(SPEC_VERSION, 'utf8').trim();
+  if (value === '') die('пустой ' + SPEC_VERSION + ' — версию движка вложить нечем');
+  return value;
+}
+
+/* 0136 (2.6.109): версия, объявленная корневым package.json (VERSION пакета). */
+function declaredEngineVersion() {
+  try {
+    return String(JSON.parse(fs.readFileSync(ROOT_MANIFEST, 'utf8')).version || '').trim();
+  } catch (error) {
+    die('не читается ' + ROOT_MANIFEST + ': ' + error.message);
+    return '';
+  }
 }
 
 /*
@@ -71,17 +98,23 @@ function removeVendor() {
   }
 }
 
-function stageVendor() {
+function stageVendor(engine) {
   if (!fs.existsSync(path.join(SPEC, 'scripts', 'init.mjs'))) {
     die('в ' + SPEC + ' нет scripts/init.mjs — панели нечего запускать');
   }
-  const version = fs.readFileSync(SPEC_VERSION, 'utf8').trim();
-  if (version === '') die('пустой ' + SPEC_VERSION + ' — версию движка вложить нечем');
+  /*
+   * 0136 (2.6.109): вложенный vendor/VERSION и версия пакета — один движок.
+   * Расхождение означает, что сборка панели соврёт о версии движка.
+   */
+  const declared = declaredEngineVersion();
+  if (engine !== declared) {
+    die('vendor/VERSION ' + engine + ' не совпадает с VERSION пакета ' + declared + ': сборка панели соврёт о версии движка');
+  }
   /* Остаток прошлой неудачной сборки не должен попасть в новый tarball. */
   removeVendor();
   copyTree(SPEC, VENDOR_SPEC);
-  fs.writeFileSync(VENDOR_VERSION, version + '\n');
-  console.log('  vendor    ' + path.relative(ROOT, VENDOR_SPEC) + ' + VERSION ' + version);
+  fs.writeFileSync(VENDOR_VERSION, engine + '\n');
+  console.log('  vendor    ' + path.relative(ROOT, VENDOR_SPEC) + ' + VERSION ' + engine);
 }
 
 function cleanupVendor() {
@@ -134,8 +167,10 @@ const versioned = name + '-' + version + '.tgz';
 const stable = name + '.tgz';
 const versionedPath = path.join(DIST, versioned);
 const stablePath = path.join(DIST, stable);
+/* 0136 (2.6.109): движок берём из VERSION — первой строкой плана он рядом с панелью. */
+const engine = engineVersion();
 
-console.log('pack-plugin: ' + name + '@' + version);
+console.log('pack-plugin: ' + name + '@' + version + ' (движок ' + engine + ')');
 console.log('  versioned ' + versionedPath);
 console.log('  stable    ' + stablePath);
 if (PLAN) {
@@ -167,7 +202,7 @@ const args = process.platform === 'win32'
 
 let failure = null;
 try {
-  stageVendor();
+  stageVendor(engine);
   const packed = spawnSyncPipeFree(command, args, { cwd: PLUGIN, encoding: 'utf8', windowsHide: true });
   const output = String(packed.stdout || '') + String(packed.stderr || '');
   if (packed.error) {

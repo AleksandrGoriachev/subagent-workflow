@@ -1,0 +1,226 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "b1f96485d19af9a5dac42492f4e9c777",
+  "runKind": "accept",
+  "task": "0136",
+  "createdAt": "2026-11-24T15:37:34.360Z",
+  "headSha": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+  "contractCommit": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+  "criteriaSha256": "d54cf088efd247ff1af5e9dde08829d5252d72a5985eb3bbc3cd729e6670ea98",
+  "criteriaJsonSha256": "b93fde6928febca88ed2ada0a94b4ad74326c42073a0d40c27bfbb3c29b01de3",
+  "taskFileSha256": "6dc841e758d0118ab0b3f5db41f8666673086448e953b9a82849a5431a64b486",
+  "changedPaths": [
+    "docs/tasks/0136/criteria.lock",
+    "docs/tasks/0136/gates.jsonl",
+    "docs/tasks/0136/gates.jsonl.tip",
+    "docs/tasks/0136/red.json",
+    "docs/tasks/0136/verify.executor.json",
+    "docs/tasks/0136/verify.json",
+    "package.json",
+    "plugin/lib/client.js",
+    "plugin/lib/compat.js",
+    "plugin/package.json",
+    "spec/checks/panel-version.mjs",
+    "tools/pack-plugin.mjs"
+  ],
+  "coverage": {
+    "declared": 11,
+    "covered": [
+      {
+        "path": "package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/client.js",
+        "criterion": "C2"
+      },
+      {
+        "path": "plugin/lib/compat.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/checks/panel-version.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "tools/pack-plugin.mjs",
+        "criterion": "C3"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": false,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C1",
+        "observable": "в консоли панель и движок подписаны каждый своей версией, без подмены номера панели версией движка",
+        "threshold": "0.9.39 и 2.6.108 не выдаются за одну версию: строки «Версия сборки панели: v…» нет, есть «движок в этой сборке панели» и пояснение о раздельной нумерации",
+        "measuredBy": "C2"
+      }
+    ],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/panel-version.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1272,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "fee12630fb9d29564710c7b649a9075ed941f22ac568281bd78831cf65cb3b2f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/panel-version.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1322,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "ee643993622aa714422e9650749357dc84162f79a9d43df5064a65594f033eae",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node tools/pack-plugin.mjs --plan",
+      "exitCode": 0,
+      "durationMs": 1289,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c867856124067deda27bdf69288e298148e1d06eb02f9eb9182dd46decb9aa10",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "pack-plugin: dsh-workflow-console@0.9.39 (движок 2.6.108)\n  versioned C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\dist\\dsh-workflow-console-0.9.39.tgz\n  stable    C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\dist\\dsh-workflow-console.tgz\n  vendor    plugin\\vendor\\spec + VERSION (на время сборки, потом убирается)\n  plan      сборка не выполнялась\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 158399,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "3c87b91b1456f87f3204a352dadc649eba4d19868dee1457a600c0009602a1b3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 50 файл(ов)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/panel-version.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1011,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "0814d027ca490e0fb44f870b68e99b06335178c1eafc1b7435d78c4dd4ed1344",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL OK c3\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 5,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+    "contractCommit": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+    "criteriaJsonSha256": "b93fde6928febca88ed2ada0a94b4ad74326c42073a0d40c27bfbb3c29b01de3",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C5"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 3,
+          "total": 5,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+  "headDrift": null,
+  "worktreeDigest": "dbf65e5868635a73690f4166b27186cd5ab06be0ae1c3ddcfd816732ab877d30",
+  "log": "verify.log"
+}
