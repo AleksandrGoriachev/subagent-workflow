@@ -6,16 +6,17 @@
     "mustFail": [
       "C1",
       "C2",
+      "C3",
       "C5"
     ],
     "mustPass": [
-      "C3",
       "C4"
     ],
     "reasonWindow": 25,
     "reasons": {
       "C1": "Cannot find module",
       "C2": "Cannot find module",
+      "C3": "0.9.38",
       "C5": "Cannot find module"
     }
   },
