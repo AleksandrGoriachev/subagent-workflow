@@ -1,0 +1,212 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0139",
+  "title": "Контрактный коммит покрывает protectedPaths нового задания",
+  "risk": "medium",
+  "taskFileSha256": "8afd365fbb1df9804f412d123a380047361797ac8cdc164fcdc860a5c8992fd4",
+  "criteriaSha256": "6816778cff5ec55d7222a34e4130a697dfbc2b2f5ff185960ac5a63ff9b3889f",
+  "criteriaJsonSha256": "a20480917ec7fc438d47ecdc58b5c50a79c0f7062d9b12fb1be21b9768c18a36",
+  "contractCommit": "f922f9805deb4fe4a66ea50f10a42b1e3436fabb",
+  "baseCommit": "f922f9805deb4fe4a66ea50f10a42b1e3436fabb",
+  "candidateCommit": "2c2661c785da7664d48d6615fc14f066988174f5",
+  "tree": "42795804ddbaa79bfa521d6a434cc27394ef11e9",
+  "worktreeDigest": "504d7655dd3e8d7add9cd49a663af235f0d798e77f912f2517d560eb44f5a052",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "3c3305f0-9616-4436-b865-43779a61d402",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "8ff098655d0d12ab0d8ce869f70c9235",
+    "runKind": "accept",
+    "startedAt": "2026-11-24T21:54:03.732Z",
+    "finishedAt": "2026-11-24T21:55:20.490Z",
+    "durationMs": 76769,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "83cf1224556ebd56ebe46945619db72731dae87bdf1a6113cc50d0624a4f6511",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "проект с проверками в checks/** штатно коммитит контракт и ставит замок",
+      "threshold": "guard --staged проходит (exit 0) для task.md+criteria.json+checks/**, а после criteria.lock изменение checks/** отклоняется",
+      "measuredBy": "C2"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "f922f9805deb4fe4a66ea50f10a42b1e3436fabb",
+    "contractCommit": "f922f9805deb4fe4a66ea50f10a42b1e3436fabb",
+    "criteriaJsonSha256": "a20480917ec7fc438d47ecdc58b5c50a79c0f7062d9b12fb1be21b9768c18a36",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C5"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/guard-acceptance.mjs --case contract-checks",
+      "exitCode": 0,
+      "durationMs": 16498,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/guard-acceptance.mjs --case contract-code",
+      "exitCode": 0,
+      "durationMs": 14485,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/guard-acceptance.mjs --case docs-after-accept",
+      "exitCode": 0,
+      "durationMs": 13904,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 64591,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node -e \"const t=require('fs').readFileSync('spec/SPEC.md','utf8');if(t.includes('молча выходит 0')){console.log('SPEC: ложное утверждение про enabled=false осталось');process.exit(1);}console.log('SPEC OK')\"",
+      "exitCode": 0,
+      "durationMs": 775,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-24T21:55:22.030Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "f922f9805deb4fe4a66ea50f10a42b1e3436fabb",
+    "taskFileSha256": "8afd365fbb1df9804f412d123a380047361797ac8cdc164fcdc860a5c8992fd4",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 3,
+    "digest": "34282ce68c064e6a62ecfe0cea41efb6539d0a285b93830d0fe3533451197226",
+    "assumed": [],
+    "confirmed": 3
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "f922f9805deb4fe4a66ea50f10a42b1e3436fabb",
+    "head": "f922f9805deb4fe4a66ea50f10a42b1e3436fabb",
+    "trackedChanges": 3,
+    "extras": [],
+    "stashes": [
+      "stash@{0} WIP on main: 777ce9f task 0130: контракт — covers для task-accept"
+    ]
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "+8o91KwvBuk2vRO2I1csVGv9T0S1dxD2WLHcGnDaOtPc3CG9JjQagngkVjNTpqKUinjy+bxWB5qxw4vda6TXCg=="
+}
