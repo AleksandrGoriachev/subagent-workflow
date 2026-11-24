@@ -61,6 +61,7 @@ function makeRoot(withJournal) {
     const rows = [
       { kind: 'red', verdict: 'red-proven' },
       { kind: 'verify', verdict: 'green' },
+      { kind: 'verify', verdict: 'green' },
       { kind: 'accept', verdict: 'accepted' },
     ];
     write(path.join(dir, 'gates.jsonl'), rows.map((row) => JSON.stringify(row)).join(String.fromCharCode(10)) + String.fromCharCode(10));
@@ -81,11 +82,13 @@ function c1() {
   const fixture = makeRoot(true);
   try {
     const row = healthOf(fixture.root);
-    truthy(row.attempts && row.attempts.red === 1 && row.attempts.verify === 1 && row.attempts.accept === 1,
+    truthy(row.attempts && row.attempts.red === 1 && row.attempts.verify === 2 && row.attempts.accept === 1,
       'счётчики неверны: ' + JSON.stringify(row.attempts));
-    truthy(row.attempts.total === 3, 'total не 3: ' + row.attempts.total);
+    truthy(row.attempts.total === 4, 'total не 4: ' + row.attempts.total);
+    /* Базовая линия: red=1, verify=2 (исполнитель + приёмщик), accept=1 — без повторов. */
+    truthy(row.attempts.repeats === 0, 'повторов быть не должно на базовой линии: ' + row.attempts.repeats);
+    truthy(!row.flags.some((flag) => flag.startsWith('attempts:')), 'флаг attempts на базовой линии: ' + JSON.stringify(row.flags));
     truthy(Array.isArray(row.attempts.rework) && row.attempts.rework[0] === 'переделал проверку', 'rework не прочитан: ' + JSON.stringify(row.attempts.rework));
-    truthy(row.flags.includes('attempts:3'), 'нет флага attempts:3: ' + JSON.stringify(row.flags));
     truthy(row.flags.includes('rework:1'), 'нет флага rework:1: ' + JSON.stringify(row.flags));
   } finally { fs.rmSync(fixture.root, { recursive: true, force: true }); }
   console.log('MONATT OK c1');

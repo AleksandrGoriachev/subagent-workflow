@@ -98,8 +98,21 @@ export function taskHealth(dir, now = new Date(), stallHours = DEFAULT_STALL_HOU
    * счётчик попыток в run-store; отдельного поля в записи приёмки нет (схема требует
    * fresh:true для medium/high), поэтому считаем из журнала ворот и notes записи.
    */
+  /*
+   * 0133 (2.6.108): флаг — только ПОВТОРЫ. Обычный принятый пакет имеет red=1,
+   * verify=1, accept=1 (три стадии), и это не «попытки»: счёт total>1 давал флаг
+   * на каждой принятой задаче (79 из 110 после 2.6.107). Повтор — то, что сверх
+   * первой стадии каждого вида.
+   */
   const attempts = countAttempts(dir);
-  if (attempts.total > 1) flags.push('attempts:' + attempts.total);
+  /*
+   * Базовая линия: принятый пакет — red=1, verify=2 (исполнитель + свежий прогон
+   * приёмщика), accept=1. Повтор — второй red или второй accept; verify в норме
+   * уже двойной, поэтому его считаем только свыше двух.
+   */
+  const repeats = Math.max(0, attempts.red - 1) + Math.max(0, attempts.accept - 1) + Math.max(0, attempts.verify - 2);
+  attempts.repeats = repeats;
+  if (repeats > 0) flags.push('attempts:' + repeats);
   if (attempts.rework.length > 0) flags.push('rework:' + attempts.rework.length);
   return {
     id: String(meta.id || path.basename(dir)),
