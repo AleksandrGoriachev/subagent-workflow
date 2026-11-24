@@ -1,0 +1,210 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0141",
+  "title": "Тень движка: факт ruleset строится и проходит схему",
+  "risk": "medium",
+  "taskFileSha256": "298482a00c50fe57a3cfee060f7dc0f772d97673da6ce6b359dcaa669e87a87b",
+  "criteriaSha256": "7a162d7c3d9e508ee66c68062dd810c58e9b0fb1993494a314adf563d5291ff1",
+  "criteriaJsonSha256": "d4937ef893733447b342b2dd9a89b553d5bb8509ab4a4603e8ba6f6e242de318",
+  "contractCommit": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+  "baseCommit": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+  "candidateCommit": "a83c0132edfb1b885284d83566c21cf9da53854c",
+  "tree": "ef095f07eb0fd8c53c796b744c8db3a63c356c99",
+  "worktreeDigest": "f450dce6e1e0dc625dd7997994abe4b855daaf339367a1493139526b4b5258fb",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "7f31e97c-c30d-4fcd-a7d4-366001a1d41f",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "951de2d066df355dd386b8fefd55e461",
+    "runKind": "accept",
+    "startedAt": "2026-11-24T23:30:20.297Z",
+    "finishedAt": "2026-11-24T23:31:38.096Z",
+    "durationMs": 77809,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "14273c18d52db4996f731dc4aba10cb0a3dd18a3f1ca09f89a157bcd3563598d",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "тень снова считает вердикт: факт ruleset строится из реальных якорей",
+      "threshold": "в facts-convert нет ошибки «ruleset: нет полей signature»; у факта signature.keyId не пуст при плоской подписи",
+      "measuredBy": "C4"
+    }
+  ],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+    "contractCommit": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+    "criteriaJsonSha256": "d4937ef893733447b342b2dd9a89b553d5bb8509ab4a4603e8ba6f6e242de318",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "mustPass": [
+        "C5"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/facts-ruleset.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1020,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/facts-ruleset.mjs c2",
+      "exitCode": 0,
+      "durationMs": 882,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/facts-ruleset.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1049,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/facts-ruleset.mjs c4",
+      "exitCode": 0,
+      "durationMs": 1317,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 64856,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-24T23:31:39.630Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+    "taskFileSha256": "298482a00c50fe57a3cfee060f7dc0f772d97673da6ce6b359dcaa669e87a87b",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 2,
+    "digest": "a06df7ec8eed9756d86a0e502b4fe79a6f2f4e6c3f90422280bf6950b1af2bf4",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+    "head": "1ed6fab491a07cfdc29dd2bd21eb9f270a52c31e",
+    "trackedChanges": 3,
+    "extras": [],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "jDsw7GK3+Y6DeqeMxTIlbo3/wpCeWPZHnMPFt46OqQViZW6V+HOp+qGKP7IkVPb5C7x1HfST9rI+kwgdEStKAA=="
+}
