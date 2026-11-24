@@ -1,0 +1,120 @@
+{
+  "task": "0136",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C5"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C5": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Согласованность версии панели",
+      "command": "node spec/checks/panel-version.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/compat.js",
+        "plugin/package.json",
+        "package.json",
+        "spec/checks/panel-version.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "effect": {
+        "observable": "в консоли панель и движок подписаны каждый своей версией, без подмены номера панели версией движка",
+        "threshold": "0.9.39 и 2.6.108 не выдаются за одну версию: строки «Версия сборки панели: v…» нет, есть «движок в этой сборке панели» и пояснение о раздельной нумерации",
+        "measuredBy": "C2"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Подписи версий в консоли",
+      "command": "node spec/checks/panel-version.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/client.js",
+        "spec/checks/panel-version.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "План сборки называет обе версии",
+      "command": "node tools/pack-plugin.mjs --plan",
+      "cwd": ".",
+      "covers": [
+        "tools/pack-plugin.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "pack-plugin: dsh-workflow-console@0.9.39 (движок 2.6.108)"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/**",
+        "tools/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Негатив: расхождение версий панели ловится",
+      "command": "node spec/checks/panel-version.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/panel-version.mjs",
+        "plugin/lib/compat.js"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL OK c3"
+      }
+    }
+  ]
+}

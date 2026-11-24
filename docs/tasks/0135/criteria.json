@@ -1,0 +1,118 @@
+{
+  "task": "0135",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C5"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module",
+      "C5": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Правила потерь от reset --hard",
+      "command": "node spec/checks/accept-worktree.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/checks/accept-worktree.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "AWORKTREE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Роль в финализации и снимок стэшей",
+      "command": "node spec/checks/accept-worktree.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs",
+        "spec/scripts/lib/common.mjs",
+        "spec/checks/accept-worktree.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "AWORKTREE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Отказ на фикстуре и блок worktree в записи",
+      "command": "node spec/checks/accept-worktree.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs",
+        "spec/scripts/task-check-acceptance.mjs",
+        "spec/templates/acceptance.schema.json",
+        "spec/checks/accept-worktree.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "AWORKTREE OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "tools/check-tests.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Негатив: что потерей не считается",
+      "command": "node spec/checks/accept-worktree.mjs c4",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/checks/accept-worktree.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "AWORKTREE OK c4"
+      }
+    }
+  ]
+}
