@@ -1,0 +1,118 @@
+{
+  "task": "0142",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "неизвестный кейс",
+      "C2": "неизвестный кейс",
+      "C3": "VERSION DRIFT FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Плоская подпись правил покрывает документ",
+      "command": "node spec/checks/facts-ruleset.mjs c5",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/facts-convert.mjs",
+        "spec/engine.mjs",
+        "spec/checks/facts-ruleset.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "effect": {
+        "observable": "тень движка не отвергает приёмку из-за формы подписи якорей",
+        "threshold": "C9 pass при плоской подписи: факт несёт covers='document', движок принимает 'document' наравне с 'hash+by+at'",
+        "measuredBy": "C2"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "RULESET OK c5"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: неизвестное покрытие отвергается",
+      "command": "node spec/checks/facts-ruleset.mjs c6",
+      "cwd": ".",
+      "covers": [
+        "spec/engine.mjs",
+        "spec/checks/facts-ruleset.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "RULESET OK c6"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Нет литерала версии панели в проверке",
+      "command": "node spec/checks/version-drift.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/panel-version.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION DRIFT OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Прежние кейсы facts-ruleset живы",
+      "command": "node spec/checks/facts-ruleset.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/facts-ruleset.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "RULESET OK c1"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "tools/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
