@@ -37,6 +37,32 @@ function metaOf(text) {
   }
 }
 
+/** Попытки red/verify/accept из gates.jsonl и причины переделок из notes записи. */
+export function countAttempts(dir) {
+  const counts = { red: 0, verify: 0, accept: 0 };
+  let rework = [];
+  const journal = path.join(dir, 'gates.jsonl');
+  if (fs.existsSync(journal)) {
+    let text = '';
+    try { text = fs.readFileSync(journal, 'utf8'); } catch { text = ''; }
+    for (const line of text.replaceAll(String.fromCharCode(13), '').split(String.fromCharCode(10))) {
+      if (line.trim() === '') continue;
+      try {
+        const row = JSON.parse(line);
+        const kind = String((row && row.kind) || '');
+        if (Object.prototype.hasOwnProperty.call(counts, kind)) counts[kind] += 1;
+      } catch { /* битая строка журнала счётчик не валит */ }
+    }
+  }
+  const acceptance = readJson(path.join(dir, 'acceptance.json'));
+  const notes = acceptance && typeof acceptance.notes === 'string' ? acceptance.notes : '';
+  rework = notes.split(';').map((part) => part.trim())
+    .filter((part) => part.startsWith('rework:'))
+    .map((part) => part.slice('rework:'.length).trim())
+    .filter(Boolean);
+  return { ...counts, total: counts.red + counts.verify + counts.accept, rework };
+}
+
 /** Стадия и флаги одной задачи. */
 export function taskHealth(dir, now = new Date(), stallHours = DEFAULT_STALL_HOURS) {
   const taskFile = path.join(dir, 'task.md');
@@ -67,8 +93,17 @@ export function taskHealth(dir, now = new Date(), stallHours = DEFAULT_STALL_HOU
   const lastAt = stamps.length ? new Date(Math.max(...stamps)) : null;
   const stalledHours = lastAt ? Math.round(((now.getTime() - lastAt.getTime()) / 3600000) * 10) / 10 : null;
   if (!closed && !accepted && stalledHours !== null && stalledHours > stallHours) flags.push('stalled');
+  /*
+   * 0131 (2.6.107): попытки и переделки — в карточке задачи. Замер structure просил
+   * счётчик попыток в run-store; отдельного поля в записи приёмки нет (схема требует
+   * fresh:true для medium/high), поэтому считаем из журнала ворот и notes записи.
+   */
+  const attempts = countAttempts(dir);
+  if (attempts.total > 1) flags.push('attempts:' + attempts.total);
+  if (attempts.rework.length > 0) flags.push('rework:' + attempts.rework.length);
   return {
     id: String(meta.id || path.basename(dir)),
+    attempts,
     title: String(meta.title || ''),
     risk: String(meta.risk || ''),
     stage,
