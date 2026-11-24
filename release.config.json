@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.109",
+  "version": "2.6.110",
   "panelVersion": "0.9.39",
-  "releaseName": "2.6.109 — безопасная приёмка и честные версии панели",
+  "releaseName": "2.6.110 — контрактное задание коммитится с проверками в checks/**",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0137",
-  "releaseCommand": "node tools/release.mjs release 2.6.109",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.109",
+  "task": "docs/tasks/0140",
+  "releaseCommand": "node tools/release.mjs release 2.6.110",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.110",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
