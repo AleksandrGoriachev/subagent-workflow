@@ -1,0 +1,212 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0136",
+  "title": "Панель 0.9.39: подписи версий в консоли и проверка сборки",
+  "risk": "medium",
+  "taskFileSha256": "6dc841e758d0118ab0b3f5db41f8666673086448e953b9a82849a5431a64b486",
+  "criteriaSha256": "d54cf088efd247ff1af5e9dde08829d5252d72a5985eb3bbc3cd729e6670ea98",
+  "criteriaJsonSha256": "b93fde6928febca88ed2ada0a94b4ad74326c42073a0d40c27bfbb3c29b01de3",
+  "contractCommit": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+  "baseCommit": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+  "candidateCommit": "507f4ee2a908486848339aea0a18f8f4efd94448",
+  "tree": "9039a2f911dcc762621de68afb408a6f127790ed",
+  "worktreeDigest": "dbf65e5868635a73690f4166b27186cd5ab06be0ae1c3ddcfd816732ab877d30",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "2efdb91c-131d-499d-b88d-53d37b44bc84",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "b1f96485d19af9a5dac42492f4e9c777",
+    "runKind": "accept",
+    "startedAt": "2026-11-24T15:34:45.404Z",
+    "finishedAt": "2026-11-24T15:37:35.070Z",
+    "durationMs": 169679,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "fe048936fee31a370590e805be15db42247ba23fa16bdd4b8ce2ec44f42218cf",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "в консоли панель и движок подписаны каждый своей версией, без подмены номера панели версией движка",
+      "threshold": "0.9.39 и 2.6.108 не выдаются за одну версию: строки «Версия сборки панели: v…» нет, есть «движок в этой сборке панели» и пояснение о раздельной нумерации",
+      "measuredBy": "C2"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+    "contractCommit": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+    "criteriaJsonSha256": "b93fde6928febca88ed2ada0a94b4ad74326c42073a0d40c27bfbb3c29b01de3",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C5"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 3,
+          "total": 5,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/panel-version.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1272,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/panel-version.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1322,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node tools/pack-plugin.mjs --plan",
+      "exitCode": 0,
+      "durationMs": 1289,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 158399,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/panel-version.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1011,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-24T15:37:36.413Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+    "taskFileSha256": "6dc841e758d0118ab0b3f5db41f8666673086448e953b9a82849a5431a64b486",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 4,
+    "digest": "1c93008bdbf24760418702b10dc86291ae61ad9fc3ca3a4ecdc0a592e359dc04",
+    "assumed": [],
+    "confirmed": 4
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+    "head": "9ac9b9e93aefae31ef4a4a326730ddc78f117d4d",
+    "trackedChanges": 5,
+    "extras": [],
+    "stashes": [
+      "stash@{0} WIP on main: 777ce9f task 0130: контракт — covers для task-accept"
+    ]
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "k24rhLeImeFVj0dBN3PVHUNXGLg9ENiRyx3Le+TI30zt4zGP79WAQ9lFNFpt01exswRWzb0V0yzHdWeJq5otBw=="
+}
