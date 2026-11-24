@@ -619,6 +619,13 @@ try {
 
   if (fresh) {
     writeProgress('verify');
+    /*
+     * 0130 (2.6.107): прогон приёмки идёт минутами, а stdout до конца пуст — при
+     * зависании (0127: 13 минут) снаружи не видно, что вообще происходит. Печатаем
+     * старт с таймаутом: число строк в журнале сторожа даёт понять, где встали.
+     */
+    console.log('task-accept: свежий прогон verify (таймаут '
+      + Math.round((Number(process.env.TASK_VERIFY_TIMEOUT_MS) || config.verifyTimeoutMs) / 1000) + ' с)');
     const nonce = crypto.randomBytes(16).toString('hex');
     const args = [VERIFY_SCRIPT, '--task', taskDir, '--repo', repo, '--json'];
     if (argv['allow-missing-red']) args.push('--allow-missing-red');

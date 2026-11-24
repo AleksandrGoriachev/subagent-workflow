@@ -1086,6 +1086,22 @@ export function hasAcceptedRecord(file, expectedTask) {
 }
 
 /*
+ * 0130 (2.6.107): «зависло» — отдельный вердикт, а не отказ проверки. Приёмка 0127
+ * зависла в selftest на 13 минут (ребёнок task-check-acceptance без прогресса), и
+ * снаружи это выглядело пустым логом. Функция даёт общий текст для throw/report.
+ */
+export function hungMessage(result, label, timeoutMs) {
+  if (!result) return null;
+  const status = result.status === undefined ? null : result.status;
+  if (status !== null) return null;
+  const signal = typeof result.signal === 'string' && result.signal !== '' ? result.signal : null;
+  const error = result.error && result.error.message ? String(result.error.message) : '';
+  const seconds = Math.round(Number(timeoutMs || 0) / 1000);
+  return '«' + label + '» не ответил за ' + seconds + ' с (signal=' + (signal || 'нет')
+    + (error ? ', error=' + error.slice(0, 120) : '') + ') — это зависание, а не отказ проверки';
+}
+
+/*
  * 0124 (2.6.105): повторная приёмка того же контракта — не штатный цикл.
  * Замер structure: 16 лишних прогонов review/accept. Повтор разрешён только с
  * явной причиной (--rework, попадает в notes записи) или --force; смена контракта —

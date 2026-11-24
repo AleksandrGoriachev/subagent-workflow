@@ -66,19 +66,28 @@ export function affectedTests(changed, repo) {
   return [...selected].sort();
 }
 
+/*
+ * 0130 (2.6.107): у ребёнка есть таймаут. Зависший selftest/тесты иначе держат
+ * весь прогон и оставляют пустой вывод; по таймауту ребёнок снимается, и это
+ * названо отдельно (timedOut), а не выдаётся за падение проверки.
+ */
+const CHILD_TIMEOUT_MS = Number(process.env.WF_CHECK_TESTS_TIMEOUT_MS) || 900000;
+
 /* Вывод ребёнка — в файл, а не в пайп: песочница не даёт именованных каналов. */
-function runChildToFile(child) {
+export function runChildToFile(child) {
   return new Promise((resolve) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-ct-'));
     const file = path.join(dir, 'out');
     const fd = fs.openSync(file, 'w');
     const started = Date.now();
+    const limit = Number(child.timeoutMs) > 0 ? Number(child.timeoutMs) : CHILD_TIMEOUT_MS;
+    let timedOut = false;
     const finish = (code) => {
       let output = '';
       try { fs.closeSync(fd); } catch { /* ignore */ }
       try { output = fs.readFileSync(file, 'utf8'); } catch { /* ignore */ }
       try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* ignore */ }
-      resolve({ code: Number.isInteger(code) ? code : 1, output, durationMs: Date.now() - started });
+      resolve({ code: timedOut ? 124 : (Number.isInteger(code) ? code : 1), output, durationMs: Date.now() - started, timedOut, timeoutMs: limit });
     };
     let proc;
     try {
@@ -87,8 +96,12 @@ function runChildToFile(child) {
       finish(127);
       return;
     }
-    proc.on('error', () => finish(127));
-    proc.on('close', (code) => finish(code === null ? 1 : code));
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try { proc.kill('SIGKILL'); } catch { /* ignore */ }
+    }, limit);
+    proc.on('error', () => { clearTimeout(timer); finish(127); });
+    proc.on('close', (code) => { clearTimeout(timer); finish(code === null ? 1 : code); });
   });
 }
 
@@ -132,7 +145,10 @@ async function main() {
     if (result.output) process.stdout.write(result.output);
     if (result.code !== 0) {
       failed = true;
-      process.stdout.write('check-tests: ' + result.name + ' упал (exit=' + result.code + ', ' + result.durationMs + ' ms)' + String.fromCharCode(10));
+      const why = result.timedOut
+        ? 'снят по таймауту ' + Math.round(Number(result.timeoutMs || 0) / 1000) + ' с'
+        : 'упал (exit=' + result.code + ')';
+      process.stdout.write('check-tests: ' + result.name + ' ' + why + ', ' + result.durationMs + ' ms' + String.fromCharCode(10));
     }
   }
   return failed ? 1 : 0;

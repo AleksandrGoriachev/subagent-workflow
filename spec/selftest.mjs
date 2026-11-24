@@ -9,7 +9,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPair, signRecord } from './scripts/sign.mjs';
-import { summarizeDecisions, evaluateEffects, TOOL, loadConfig, spawnSyncPipeFree } from './scripts/lib/common.mjs';
+import { summarizeDecisions, evaluateEffects, TOOL, loadConfig, spawnSyncPipeFree, hungMessage } from './scripts/lib/common.mjs';
 import { detectActor, assessIndependence } from './scripts/actor.mjs';
 import { classifyAcceptance, loadBaseline, baselineEntry, isExpired, baselineCandidates, shouldFail } from './scripts/lib/regress.mjs';
 
@@ -25,7 +25,9 @@ function report(label, ok, detail) {
 }
 
 function git(repo, args) {
-  const r = spawnSyncPipeFree('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  const r = spawnSyncPipeFree('git', ['-C', repo, ...args], { encoding: 'utf8', timeout: GIT_TIMEOUT_MS });
+  const hung = hungMessage(r, 'git ' + args[0], GIT_TIMEOUT_MS);
+  if (hung) throw new Error(hung);
   if (r.status !== 0) throw new Error('git ' + args.join(' ') + ': ' + r.stderr);
   return r.stdout.trim();
 }
@@ -39,8 +41,20 @@ function sha(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
+/*
+ * 0130 (2.6.107): у каждой вложенной проверки есть таймаут. Без него зависший
+ * ребёнок (0130: task-check-acceptance в selftest) держал весь прогон и оставлял
+ * пустой лог — снаружи не отличить от работы.
+ */
+const CHECKER_TIMEOUT_MS = Number(process.env.WF_SELFTEST_CHECKER_TIMEOUT_MS) || 180000;
+const GIT_TIMEOUT_MS = 120000;
+const DOCTOR_TIMEOUT_MS = 300000;
+
 function runChecker(file, repo, keys, extra = []) {
-  return spawnSyncPipeFree(process.execPath, [CHECKER, '--file', file, '--repo', repo, '--keys', keys, '--task', 'docs/tasks/0001', ...extra], { encoding: 'utf8' });
+  const result = spawnSyncPipeFree(process.execPath, [CHECKER, '--file', file, '--repo', repo, '--keys', keys, '--task', 'docs/tasks/0001', ...extra], { encoding: 'utf8', timeout: CHECKER_TIMEOUT_MS });
+  const hung = hungMessage(result, 'task-check-acceptance ' + path.basename(String(file)), CHECKER_TIMEOUT_MS);
+  if (hung) throw new Error(hung);
+  return result;
 }
 
 try {
@@ -653,7 +667,12 @@ try {
   const doctorTask = (id, risk) => write(path.join(doctorRepo, 'docs', 'tasks', id, 'task.md'),
     '# Задание ' + id + '\n\n<!-- TASK-META\n{ "id": "' + id + '", "risk": "' + risk + '" }\n-->\n');
   doctorTask('0001', 'medium');
-  const doctor = () => spawnSyncPipeFree(process.execPath, [DOCTOR, '--repo', doctorRepo], { encoding: 'utf8' });
+  const doctor = () => {
+    const result = spawnSyncPipeFree(process.execPath, [DOCTOR, '--repo', doctorRepo], { encoding: 'utf8', timeout: DOCTOR_TIMEOUT_MS });
+    const hung = hungMessage(result, 'doctor', DOCTOR_TIMEOUT_MS);
+    if (hung) throw new Error(hung);
+    return result;
+  };
   const quietDoctor = doctor();
   report('doctor: без задач risk: high про ключ human-* молчит',
     /задач risk: high нет — ключ human-\* не нужен/.test(quietDoctor.stdout),
