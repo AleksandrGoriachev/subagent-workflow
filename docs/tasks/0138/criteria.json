@@ -1,0 +1,119 @@
+{
+  "task": "0138",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C5"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "FAIL contract-checks",
+      "C2": "FAIL contract-code",
+      "C3": "FAIL docs-after-accept",
+      "C5": "SPEC: ложное"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Контракт с проверками в checks/** коммитится",
+      "command": "node spec/checks/guard-acceptance.mjs --case contract-checks",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-guard.mjs",
+        "spec/checks/guard-acceptance.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "effect": {
+        "observable": "проект с проверками в checks/** штатно коммитит контракт и ставит замок",
+        "threshold": "guard --staged проходит (exit 0) для task.md+criteria.json+checks/**, а после criteria.lock изменение checks/** отклоняется",
+        "measuredBy": "C2"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS contract-checks"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: код контрактным коммитом не покрыт",
+      "command": "node spec/checks/guard-acceptance.mjs --case contract-code",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-guard.mjs",
+        "spec/checks/guard-acceptance.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS contract-code"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Документация после приёмки идёт по метке",
+      "command": "node spec/checks/guard-acceptance.mjs --case docs-after-accept",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-guard.mjs",
+        "spec/checks/guard-acceptance.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PASS docs-after-accept"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "tools/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "SPEC не утверждает ложного про enabled",
+      "command": "node -e \"const t=require('fs').readFileSync('spec/SPEC.md','utf8');const bad=/при `.enabled !== true`. скрипт молча выходит 0/i.test(t);if(bad){console.log('SPEC: ложное утверждение про enabled=false осталось');process.exit(1);}console.log('SPEC OK')\"",
+      "cwd": ".",
+      "covers": [
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SPEC OK"
+      }
+    }
+  ]
+}
