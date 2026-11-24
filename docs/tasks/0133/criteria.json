@@ -1,0 +1,128 @@
+{
+  "task": "0133",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Базовая линия без флага",
+      "command": "node spec/checks/monitor-flags.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "tools/task-monitor.mjs",
+        "spec/checks/monitor-flags.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "MFLAGS OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Второй accept — повтор",
+      "command": "node spec/checks/monitor-flags.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "tools/task-monitor.mjs",
+        "spec/checks/monitor-flags.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "MFLAGS OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Счётчики по-прежнему верны",
+      "command": "node spec/checks/monitor-attempts.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/monitor-attempts.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "MONATT OK c1"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Пустой журнал",
+      "command": "node spec/checks/monitor-attempts.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/monitor-attempts.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "MONATT OK c2"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "selftest",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Проверка по изменённым файлам",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
