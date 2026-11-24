@@ -131,6 +131,16 @@ function run() {
     warnings.push(...effectApplied.warnings);
   }
   if (record.status !== 'accepted') note('статус записи: ' + record.status);
+  /*
+   * 0135 (2.6.109): снимок рабочего дерева — часть записи с 2.6.109. Отсутствие
+   * блока не ошибка и не note: записи до 2.6.109 — история. Непустой extras
+   * значит, что приёмка прошла с обходом --allow-extras: правки вне кандидата
+   * были, и это видно в записи, а не только в выводе.
+   */
+  if (record.worktree) {
+    const extras = Array.isArray(record.worktree.extras) ? record.worktree.extras : [];
+    if (extras.length > 0) note('в рабочем дереве были правки вне кандидата: ' + extras.join(', '));
+  }
 
   /*
    * 0094 (WC-48): legacy-запись без подписи. Формат с keyId/signature/acceptorRun
@@ -508,16 +518,35 @@ try {
     warnings,
   };
   if (argv.json) console.log(JSON.stringify(result, null, 2));
-  else if (errors.length === 0) {
-    console.log('check-acceptance: запись корректна');
-    console.log('  task    ' + record.task + ' (risk=' + record.risk + ')');
-    console.log('  actor   ' + (record.actor ? record.actor.kind + ' / ' + record.actor.session : 'нет'));
-    console.log('  level   ' + (record.independence ? record.independence.level : 'нет'));
-    console.log('  key     ' + record.keyId);
-    for (const warning of warnings) console.log('  WARN ' + warning);
-  } else {
-    for (const error of errors) console.error('check-acceptance: ERROR ' + error);
-    for (const warning of warnings) console.error('  WARN ' + warning);
+  else {
+    /*
+     * 0135 (2.6.109): блок worktree печатается, даже если запись получила
+     * ошибку (extras — note): снимок дерева нужен читателю именно тогда, когда
+     * что-то не так. Нет блока — историческая запись, строк нет.
+     */
+    if (record.worktree) {
+      const wt = record.worktree;
+      const headBefore = wt.headBefore || '—';
+      const head = wt.head || '—';
+      const tracked = Number.isInteger(wt.trackedChanges) ? String(wt.trackedChanges) : '—';
+      const stashes = Array.isArray(wt.stashes) ? wt.stashes : [];
+      const extras = Array.isArray(wt.extras) ? wt.extras : [];
+      console.log('  worktree headBefore ' + headBefore + ' → head ' + head);
+      console.log('  worktree trackedChanges ' + tracked);
+      console.log('  worktree stashes ' + (stashes.length > 0 ? stashes.join('; ') : 'нет'));
+      console.log('  worktree extras ' + (extras.length > 0 ? extras.join(', ') : 'нет'));
+    }
+    if (errors.length === 0) {
+      console.log('check-acceptance: запись корректна');
+      console.log('  task    ' + record.task + ' (risk=' + record.risk + ')');
+      console.log('  actor   ' + (record.actor ? record.actor.kind + ' / ' + record.actor.session : 'нет'));
+      console.log('  level   ' + (record.independence ? record.independence.level : 'нет'));
+      console.log('  key     ' + record.keyId);
+      for (const warning of warnings) console.log('  WARN ' + warning);
+    } else {
+      for (const error of errors) console.error('check-acceptance: ERROR ' + error);
+      for (const warning of warnings) console.error('  WARN ' + warning);
+    }
   }
   process.exit(errors.length === 0 ? 0 : 1);
 } catch (err) {

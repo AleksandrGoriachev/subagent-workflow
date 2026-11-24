@@ -1261,6 +1261,185 @@ export function reportFatal(gate, message, options = {}) {
   if (lines.length > 0) console.log(prefix + lines[0]);
 }
 
+/*
+ * 0135 (2.6.109): снимок рабочего дерева для приёмки.
+ *
+ * «Потеря» — только то, что уничтожит git reset --hard: незакоммиченные правки
+ * ОТСЛЕЖИВАЕМЫХ файлов вне кандидата. untracked reset --hard не удаляет, удалённый
+ * файл восстанавливает из HEAD — поэтому ни то, ни другое потерей не считается.
+ * Разбор — docs/INCIDENT-GIT-REBASE-ANSWER.md, раздел 8.
+ */
+function decodeGitQuoted(body) {
+  /*
+   * git status --porcelain цитирует пути C-строками: кавычки, обратные слэши и
+   * восьмеричные байты UTF-8 (\321\216 → «ю»). Собираем байты и декодируем
+   * один раз: побайтовый String.fromCharCode дал бы mojibake и путь не совпал
+   * бы с keep.
+   */
+  const bytes = [];
+  const simple = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, '\\': 92 };
+  for (let i = 0; i < body.length; i += 1) {
+    const ch = body[i];
+    if (ch !== '\\') {
+      for (const byte of Buffer.from(ch, 'utf8')) bytes.push(byte);
+      continue;
+    }
+    const next = body[i + 1];
+    if (next === undefined) { bytes.push(92); break; }
+    i += 1;
+    if (Object.prototype.hasOwnProperty.call(simple, next)) { bytes.push(simple[next]); continue; }
+    if (/[0-7]/u.test(next)) {
+      let oct = next;
+      while (oct.length < 3 && /[0-7]/u.test(body[i + 1] || '')) { i += 1; oct += body[i]; }
+      bytes.push(parseInt(oct, 8));
+      continue;
+    }
+    for (const byte of Buffer.from(next, 'utf8')) bytes.push(byte);
+  }
+  return Buffer.from(bytes).toString('utf8');
+}
+
+/** Путь в кавычках начиная с text[start] === '"': значение и позиция после кавычки. */
+function readQuotedPath(text, start) {
+  let i = start + 1;
+  let body = '';
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '\\') { body += ch + (text[i + 1] || ''); i += 2; continue; }
+    if (ch === '"') return { value: decodeGitQuoted(body), end: i + 1 };
+    body += ch;
+    i += 1;
+  }
+  return { value: decodeGitQuoted(body), end: i };
+}
+
+/**
+ * 0135 (2.6.109): разбор строк git status --porcelain -uall (v1).
+ * Возвращает [{ code, path, index, worktree }], где code — двухбуквенный XY,
+ * path — конечный путь (у переименования/копии — новый), index/worktree — буквы
+ * X и Y по отдельности. Кавычки git и old -> new разбираются здесь же: снаружи
+ * пути уже обычные строки.
+ */
+export function parsePorcelainStatus(text) {
+  const entries = [];
+  for (const line of String(text).split(/\r?\n/u)) {
+    if (line.length < 4 || line[2] !== ' ') continue;
+    const code = line.slice(0, 2);
+    const index = code[0];
+    const worktree = code[1];
+    const rest = line.slice(3);
+    let finalPath = rest;
+    if (index === 'R' || index === 'C') {
+      let after = '';
+      if (rest.startsWith('"')) {
+        const old = readQuotedPath(rest, 0);
+        after = rest.slice(old.end);
+        if (after.startsWith(' -> ')) after = after.slice(4);
+      } else {
+        const arrow = rest.indexOf(' -> ');
+        after = arrow === -1 ? rest : rest.slice(arrow + 4);
+      }
+      finalPath = after.startsWith('"') ? readQuotedPath(after, 0).value : after;
+    } else if (rest.startsWith('"')) {
+      finalPath = readQuotedPath(rest, 0).value;
+    }
+    entries.push({ code, path: finalPath, index, worktree });
+  }
+  return entries;
+}
+
+function pathSet(value) {
+  const out = new Set();
+  if (value === undefined || value === null) return out;
+  for (const item of typeof value === 'string' ? [value] : [...value]) {
+    const p = toPosix(String(item));
+    if (p !== '') out.add(p);
+  }
+  return out;
+}
+
+/**
+ * 0135 (2.6.109): пути отслеживаемых незакоммиченных правок вне набора keep
+ * (и вне ignored), которые уничтожит git reset --hard.
+ * untracked (??) и удалённые в рабочем дереве ( D) в потери не входят:
+ * первых reset --hard не трогает, вторые восстанавливает из HEAD.
+ */
+export function extrasAtRisk(entries, options = {}) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const keep = pathSet(opts.keep);
+  const ignored = pathSet(opts.ignored);
+  const extras = [];
+  for (const entry of Array.isArray(entries) ? entries : []) {
+    if (!entry || typeof entry !== 'object') continue;
+    const code = String(entry.code || '');
+    if (code === '??' || code === '!!') continue;
+    /*
+     * Только чистое удаление в рабочем дереве ( D): reset --hard восстановит
+     * файл из HEAD, работы не потеряет. MD/RD несут правку в индексе — их
+     * reset --hard выбросит, поэтому они остаются потерей.
+     */
+    if (code === ' D') continue;
+    const p = toPosix(String(entry.path || ''));
+    if (p === '' || keep.has(p) || ignored.has(p)) continue;
+    extras.push(p);
+  }
+  return [...new Set(extras)].sort();
+}
+
+/** 0135 (2.6.109): снимок git stash list --format=%gd %s; стэши читаются, не меняются. */
+export function stashSnapshot(repo) {
+  const r = git(repo, ['stash', 'list', '--format=%gd %s']);
+  if (r.exitCode !== 0) return [];
+  return r.stdout.split(/\r?\n/u).map((line) => line.replace(/[ \t]+$/u, '')).filter((line) => line !== '');
+}
+
+/**
+ * 0135 (2.6.109): один снимок дерева для записи приёмки:
+ * headBefore (HEAD на входе, можно передать), head (HEAD сейчас), trackedChanges
+ * (число отслеживаемых незакоммиченных правок), extras (что уничтожит reset --hard)
+ * и stashes. Только чтение.
+ */
+export function worktreeSnapshot(repo, options = {}) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const headBefore = typeof opts.headBefore === 'string' && opts.headBefore !== '' ? opts.headBefore : headCommit(repo);
+  const status = git(repo, ['status', '--porcelain', '-uall']);
+  if (status.exitCode !== 0) fail('worktreeSnapshot: git status: ' + status.stderr.trim());
+  const entries = parsePorcelainStatus(status.stdout);
+  const trackedChanges = entries.filter((entry) => entry.code !== '??' && entry.code !== '!!').length;
+  return {
+    headBefore,
+    head: headCommit(repo),
+    trackedChanges,
+    extras: extrasAtRisk(entries, { keep: opts.keep, ignored: opts.ignored }),
+    stashes: stashSnapshot(repo),
+  };
+}
+
+/**
+ * 0135 (2.6.109): подсказка «Финализация» отдельной строкой называет роль —
+ * координатор (архитектор/релиз-инженер), не приёмщик, — и предупреждает рядом с
+ * git reset --hard, что он уничтожит незакоммиченные отслеживаемые правки вне
+ * кандидата. Случай из INCIDENT-GIT-REBASE-ANSWER: приёмщик прочитал шаги как свои
+ * и выполнил reset → cherry-pick → stash.
+ */
+export function finalizationLines(options = {}) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const candidate = String(opts.candidate || '');
+  const acceptanceRel = String(opts.acceptanceRel || '');
+  const gateRel = String(opts.gateRel || '');
+  const checkScriptRel = String(opts.checkScriptRel || '');
+  const match = /(?:^|\/)tasks\/([^/]+)\//u.exec(acceptanceRel);
+  const taskId = String(opts.taskId || (match ? match[1] : ''));
+  return [
+    'Финализация — выполняет координатор (архитектор/релиз-инженер); приёмщик git не двигает, шаги ниже — не его обязанность.',
+    '  git reset --hard ' + candidate + '   # рабочее дерево уже равно кандидату; ВНИМАНИЕ: reset --hard уничтожит незакоммиченные отслеживаемые правки вне кандидата',
+    '  git add ' + acceptanceRel + ' ' + gateRel,
+    '  git commit -m "task ' + taskId + ': приёмка (metadata)"',
+    '  # gates.jsonl несёт строку accept: без git add её выбросит reset --hard',
+    'Проверка записи: node ' + checkScriptRel + ' --file ' + acceptanceRel + ' --repo .',
+  ];
+}
+
 export function dirtyPaths(repo) {
   const set = new Set();
   for (const args of [

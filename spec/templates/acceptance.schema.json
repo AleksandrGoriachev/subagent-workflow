@@ -26,6 +26,18 @@
     "candidateCommit": { "type": "string", "minLength": 7 },
     "tree": { "type": "string", "minLength": 7 },
     "worktreeDigest": { "type": "string", "minLength": 16 },
+    "worktree": {
+      "type": "object",
+      "required": ["headBefore", "head", "trackedChanges", "extras", "stashes"],
+      "properties": {
+        "headBefore": { "type": ["string", "null"], "minLength": 7 },
+        "head": { "type": ["string", "null"], "minLength": 7 },
+        "trackedChanges": { "type": "integer", "minimum": 0 },
+        "extras": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "stashes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
     "issuedBy": {
       "type": "object",
       "required": ["kind", "session"],

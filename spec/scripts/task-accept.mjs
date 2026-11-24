@@ -18,6 +18,7 @@ import {
   attributionGap, nodeConsistency, formatGateRow, formatGateSummary,
   summarizeDecisions, evaluateEffects, gateRecord, gateCriteriaOf, gateJournalFile, appendGateRecord,
   headCommit, acceptanceRepeatGuard, acceptanceNotes,
+  worktreeSnapshot, finalizationLines,
 } from './lib/common.mjs';
 import { policyOf, applyLevel, modelLevel, familyOf } from './lib/policy.mjs';
 import { sessionModelFact } from './lib/session-model.mjs';
@@ -45,7 +46,7 @@ if (argv.help) {
   console.log('       [--node <узел>] [--deviation "<причина>"]');
   console.log('       [--allow-missing-red] [--allow-manual] [--allow-declared-actor]');
   console.log('       [--review <review.json>] [--reuse-verify] [--report-read] [--report-read-reason <text>]');
-  console.log('       [--dry-run] [--force] [--rework "<почему повторная приёмка>"] [--json]');
+  console.log('       [--dry-run] [--force] [--allow-extras] [--rework "<почему повторная приёмка>"] [--json]');
   console.log('Запись подписывается Ed25519; для high-risk нужен ключ human-* и --human <кто>.');
   process.exit(0);
 }
@@ -288,6 +289,8 @@ function createCandidate(repoRoot, filesToAdd, message, pathsToRemove = []) {
 }
 
 try {
+  /* 0135 (2.6.109): HEAD на входе приёмки — часть снимка worktree в записи. */
+  const headBefore = headCommit(repo);
   const { files, taskMd, meta, criteria } = readTask(taskDir);
   /*
    * 0119 (WC-79): доказательство приёмки теперь лежит в кандидатном коммите
@@ -895,6 +898,37 @@ try {
   const ignored = ignoredPaths(repo, candidatePaths);
   const candidateFiles = candidatePaths.filter((file) => !ignored.has(file));
   /*
+   * 0135 (2.6.109): до подписи записи — снимок дерева. reset --hard уничтожит
+   * только незакоммиченные правки ОТСЛЕЖИВАЕМЫХ файлов вне кандидата; untracked и
+   * удалённые он не теряет. Правки чужой задачи в кандидата не входят — это отказ
+   * accept-foreign-worktree с названными путями (случай INCIDENT-GIT-REBASE-ANSWER).
+   * Обход --allow-extras пишется в bypasses и notes, чтобы CI/аудит его видел.
+   */
+  let extrasNote = '';
+  const worktree = worktreeSnapshot(repo, { keep: candidateFiles, ignored, headBefore });
+  if (worktree.extras.length > 0) {
+    const extrasList = worktree.extras.join(', ');
+    if (!argv['allow-extras']) {
+      fail('accept-foreign-worktree: ' + worktree.extras.length
+        + ' незакоммиченных отслеживаемых правок вне кандидата (reset --hard их уничтожит): ' + extrasList
+        + '; аварийный обход — --allow-extras --note "<причина>" (попадёт в bypasses и notes записи)');
+    }
+    bypasses.allowExtras = true;
+    extrasNote = 'allow-extras: ' + extrasList;
+  }
+  /*
+   * 0135 (2.6.109): стэш движок не создаёт и не видит, кто его создал. Врать
+   * «дерево чистое» нельзя — печатаем предупреждение и пишем снимок в запись.
+   */
+  if (worktree.stashes.length > 0) {
+    console.log('task-accept: WARN в репозитории есть стэш (' + worktree.stashes.length + '): '
+      + worktree.stashes.join('; ') + ' — движок не видит, кто его создал; проверьте, что стэш не чужой');
+  }
+  body.worktree = worktree;
+  if (extrasNote !== '') {
+    body.notes = acceptanceNotes(argv.note ? String(argv.note) + '; ' + extrasNote : extrasNote, reworkReason);
+  }
+  /*
    * 0011: запись текущего задания передаётся в кандидат явно — createCandidate
    * удаляет её из индекса после read-tree HEAD, чтобы metadata-коммит не
    * наследовался кандидатом. Записи других заданий не затрагиваются.
@@ -991,17 +1025,12 @@ try {
     for (const row of verify.results || []) console.log(formatGateRow(row));
     console.log(formatGateSummary(verify.results || []));
     console.log('');
-    console.log('Финализация (дерево кода остаётся деревом кандидата):');
-    console.log('  git reset --hard ' + candidate.commit + '   # рабочее дерево уже равно кандидату');
     /*
      * 0097 (WC-32): строка accept пишется в gates.jsonl уже после сборки
      * кандидата, поэтому reset --hard её выбрасывает, если не добавить файл в
      * индекс. Печатаем оба пути — иначе журнал молча теряет приёмку.
      */
     const gateRel = relPosix(repo, path.join(taskDir, 'gates.jsonl'));
-    console.log('  git add ' + acceptanceRel + ' ' + gateRel);
-    console.log('  git commit -m "task ' + meta.id + ': приёмка (metadata)"');
-    console.log('  # gates.jsonl несёт строку accept: без git add её выбросит reset --hard');
     /*
      * 0011 (F-2): путь к проверке записи вычисляется от самого скрипта
      * относительно корня репозитория. В пакете это spec/scripts/…, в
@@ -1009,7 +1038,18 @@ try {
      * «scripts/…» в развёрнутой копии не существовало.
      */
     const checkScriptRel = relPosix(repo, path.join(SCRIPT_DIR, 'task-check-acceptance.mjs'));
-    console.log('Проверка записи: node ' + checkScriptRel + ' --file ' + acceptanceRel + ' --repo .');
+    /*
+     * 0135 (2.6.109): подсказку собирает finalizationLines — первая строка
+     * называет роль (координатор, не приёмщик), рядом с reset --hard стоит
+     * предупреждение о незакоммиченных отслеживаемых правках вне кандидата.
+     */
+    for (const line of finalizationLines({
+      candidate: candidate.commit,
+      acceptanceRel,
+      gateRel,
+      checkScriptRel,
+      taskId: meta.id,
+    })) console.log(line);
   }
 } catch (err) {
   if (argv.json) console.log(JSON.stringify({ ok: false, errors: [err.message] }, null, 2));
