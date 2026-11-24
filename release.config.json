@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.107",
+  "version": "2.6.108",
   "panelVersion": "0.9.38",
-  "releaseName": "2.6.107 — зависания названы, попытки видны",
+  "releaseName": "2.6.108 — честный счётчик повторов",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0132",
-  "releaseCommand": "node tools/release.mjs release 2.6.107",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.107",
+  "task": "docs/tasks/0134",
+  "releaseCommand": "node tools/release.mjs release 2.6.108",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.108",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
