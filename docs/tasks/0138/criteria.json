@@ -17,7 +17,7 @@
       "C1": "FAIL contract-checks",
       "C2": "FAIL contract-code",
       "C3": "FAIL docs-after-accept",
-      "C5": "SPEC: ложное"
+      "C5": "ложное утверждение"
     }
   },
   "criteria": [
@@ -101,7 +101,7 @@
     {
       "id": "C5",
       "title": "SPEC не утверждает ложного про enabled",
-      "command": "node -e \"const t=require('fs').readFileSync('spec/SPEC.md','utf8');const bad=/при `.enabled !== true`. скрипт молча выходит 0/i.test(t);if(bad){console.log('SPEC: ложное утверждение про enabled=false осталось');process.exit(1);}console.log('SPEC OK')\"",
+      "command": "node -e \"const t=require('fs').readFileSync('spec/SPEC.md','utf8');if(t.includes('молча выходит 0')){console.log('SPEC: ложное утверждение про enabled=false осталось');process.exit(1);}console.log('SPEC OK')\"",
       "cwd": ".",
       "covers": [
         "spec/SPEC.md"
