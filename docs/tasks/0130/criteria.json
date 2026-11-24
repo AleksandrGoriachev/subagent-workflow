@@ -1,0 +1,93 @@
+{
+  "task": "0130",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Вердикт «зависло»",
+      "command": "node spec/checks/hung-child.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/checks/hung-child.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "HUNG OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Ребёнок снят по таймауту",
+      "command": "node spec/checks/hung-child.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs",
+        "spec/checks/hung-child.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "HUNG OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "selftest",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs",
+        "spec/SPEC.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Проверка по изменённым файлам",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "tools/check-tests.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
