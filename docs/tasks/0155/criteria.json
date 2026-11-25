@@ -1,0 +1,91 @@
+{
+  "task": "0155",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "usage: node spec/checks/lint-hints.mjs"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Дегенеративный критерий ловится до красного",
+      "command": "node spec/checks/lint-hints.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/lint-hints.mjs",
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LINTHINTS OK c3"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Прежнее предупреждение mustPass цело",
+      "command": "node spec/checks/lint-hints.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/lint-hints.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LINTHINTS OK c1"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Негатив: существующий файл не даёт предупреждения",
+      "command": "node spec/checks/lint-hints.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/lint-hints.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LINTHINTS OK c2"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Контроль: чужая проверка не сломана",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gate-evidence.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
+      }
+    }
+  ]
+}
