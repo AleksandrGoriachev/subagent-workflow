@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.111",
+  "version": "2.6.112",
   "panelVersion": "0.9.39",
-  "releaseName": "2.6.111 — тень движка снова считает",
+  "releaseName": "2.6.112 — обслуживание доказательств и документации",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0147",
-  "releaseCommand": "node tools/release.mjs release 2.6.111",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.111",
+  "task": "docs/tasks/0150",
+  "releaseCommand": "node tools/release.mjs release 2.6.112",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.112",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
@@ -41,7 +41,7 @@
   ],
   "failurePolicy": "stop-and-rollback-draft",
   "acceptance": {
-    "task": "docs/tasks/0147",
+    "task": "docs/tasks/0150",
     "rule": "приёмка следует за candidate-коммитом выпуска: вердикт подписывает отдельная сессия приёмщика"
   }
 }
