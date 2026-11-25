@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.112",
+  "version": "2.6.113",
   "panelVersion": "0.9.39",
-  "releaseName": "2.6.112 — обслуживание доказательств и документации",
+  "releaseName": "2.6.113 — развёртывание не вендорит код движка",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0150",
-  "releaseCommand": "node tools/release.mjs release 2.6.112",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.112",
+  "task": "docs/tasks/0152",
+  "releaseCommand": "node tools/release.mjs release 2.6.113",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.113",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
@@ -41,7 +41,7 @@
   ],
   "failurePolicy": "stop-and-rollback-draft",
   "acceptance": {
-    "task": "docs/tasks/0150",
+    "task": "docs/tasks/0152",
     "rule": "приёмка следует за candidate-коммитом выпуска: вердикт подписывает отдельная сессия приёмщика"
   }
 }
