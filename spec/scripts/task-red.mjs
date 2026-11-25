@@ -30,6 +30,44 @@ function firstLines(text, max = 5) {
   return { head: lines.slice(0, max), rest: Math.max(0, lines.length - max) };
 }
 
+/*
+ * 0156 (R1 письма structure--243): причины красного из факта, а не из головы.
+ * Стоило structure трёх отмен заданий: причина в redExpect.reasons пишется «по
+ * смыслу», а движок сверяет её как ПОДСТРОКУ вывода в вердиктной зоне; узнаётся
+ * это отказом после заморозки criteria.lock. Флаг --propose-reasons печатает
+ * готовый блок reasons из фактического вывода упавших mustFail.
+ */
+function proposeReasons(results, mustFail, reasonWindow) {
+  const block = {};
+  for (const r of results) {
+    if (!mustFail.includes(String(r.id)) || r.passed) continue;
+    const combined = String(r.stdout || '') + NL + String(r.stderr || '');
+    const lines = combined.split(/\r?\n/u).map((line) => line.trim()).filter((line) => line !== '');
+    if (lines.length === 0) continue;
+    const window = reasonWindow > 0 ? lines.slice(-reasonWindow) : lines;
+    const pick = window.find((line) => /fail|error|cannot|not found|missing|отказ|ошибк|провал|не |нет /iu.test(line))
+      || window[window.length - 1]
+      || '';
+    if (pick === '') continue;
+    block[r.id] = pick.length > 160 ? pick.slice(0, 160) : pick;
+  }
+  return block;
+}
+
+function printProposedReasons(results, mustFail, reasonWindow) {
+  const proposed = proposeReasons(results, mustFail, reasonWindow);
+  const ids = Object.keys(proposed);
+  console.log('');
+  if (ids.length === 0) {
+    console.log('Предложить причины нечего: ни один mustFail не упал — красного нет.');
+    return;
+  }
+  console.log('Причины красного из фактического вывода — вставьте блок в criteria.json:');
+  console.log('"reasons": ' + JSON.stringify(proposed, null, 2));
+  console.log('Каждая строка — подстрока вывода в вердиктной зоне (' + reasonWindow + ' непустых строк);'
+    + ' не пересказывайте её «по смыслу».');
+}
+
 function printSummary(title, rows) {
   console.log(title);
   for (const r of rows) {
@@ -475,6 +513,7 @@ try {
       }
       console.log('  Полный вывод критериев: ' + files.redLog);
     }
+    if (argv['propose-reasons']) printProposedReasons(results, declaredMustFail, reasonWindow);
     console.log('Артефакты: ' + files.red + ', ' + files.redLog);
   }
   process.exit(redProven ? 0 : 1);
