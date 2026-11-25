@@ -1,0 +1,74 @@
+{
+  "task": "0156",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Причина берётся из фактического вывода",
+      "command": "node spec/checks/red-propose-reasons.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/red-propose-reasons.mjs",
+        "spec/scripts/task-red.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "RED-PROPOSE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: без красного причин не предлагают",
+      "command": "node spec/checks/red-propose-reasons.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/red-propose-reasons.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "RED-PROPOSE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Контроль: чужая проверка не сломана",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gate-evidence.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
+      }
+    }
+  ]
+}
