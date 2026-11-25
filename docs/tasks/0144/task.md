@@ -80,4 +80,5 @@ node 25, Windows. Проверки — `node spec/checks/gate-evidence.mjs c1|c2
 | C3 | `node spec/engine.mjs --task 0142 --workspace .` | `вердикт accepted` |
 | C4 | `node -e "…agree…"` (тень 0142) | `SHADOW OK 0142` |
 | C5 | `node tools/check-tests.mjs` | exit 0 |
+| C6 | `node -e "…evaluateGates…"` (контроль) | `GATES CONTROL OK` — обычное покрытие гейтов не сломано |
 <!-- CRITERIA:END -->

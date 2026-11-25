@@ -5,17 +5,18 @@
   "redExpect": {
     "mustFail": [
       "C1",
+      "C2",
       "C3",
       "C4",
       "C5"
     ],
     "mustPass": [
-      "C2"
+      "C6"
     ],
     "reasonWindow": 25,
     "reasons": {
       "C1": "Cannot find module",
-      "C2": "usage: node spec/checks/gate-evidence.mjs",
+      "C2": "Cannot find module",
       "C3": "вердикт rejected",
       "C4": "agree",
       "C5": "SELFTEST FAILED"
@@ -114,6 +115,23 @@
       ],
       "expect": {
         "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Контроль: обычное покрытие гейтов не сломано",
+      "command": "node -e \"import('./spec/lib/policy.mjs').then((m)=>{const r=m.evaluateGates([{gate:'red',exit:0,verdict:'red-proven'},{gate:'verify',exit:0,verdict:'accepted'}],['red','verify'],true);if(r.status!=='pass'){console.log('control: '+r.status+' — '+r.detail);process.exit(1);}console.log('GATES CONTROL OK');}).catch((e)=>{console.log('control: '+e.message);process.exit(1);})\"",
+      "cwd": ".",
+      "covers": [
+        "spec/lib/policy.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATES CONTROL OK"
       }
     }
   ]
