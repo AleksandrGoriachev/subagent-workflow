@@ -1,10 +1,10 @@
 {
-  "at": "2026-11-24T23:31:44.512Z",
+  "at": "2026-11-24T23:53:34.795Z",
   "task": "0141",
   "run": "0141:1",
-  "engineVerdict": "rejected",
+  "engineVerdict": "accepted",
   "acceptanceStatus": "accepted",
-  "agree": false,
+  "agree": true,
   "report": [
     {
       "id": "C1",
@@ -43,8 +43,8 @@
     },
     {
       "id": "C9",
-      "status": "fail",
-      "detail": "подпись правил не покрывает hash+by+at"
+      "status": "pass",
+      "detail": "правила подписаны и проверены: human-user"
     },
     {
       "id": "C10",
