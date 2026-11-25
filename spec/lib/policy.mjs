@@ -41,6 +41,23 @@ export function mandatoryGates(ruleset, risk) {
   return gates;
 }
 
+/*
+ * 0144/2.6.111: red-unproven — факт неудачной попытки, а не доказательство
+ * против. Журнал ворот append-only, повтор красного после неудачи штатен:
+ * строка red-unproven не участвует в оценке (сырой red-not-proven из
+ * gates.jsonl — та же диагностика, task-red.mjs пишет её дословно).
+ * «Выбрать успешный дубль» по-прежнему запрещено: среди настоящих доказательств
+ * (red-proven, passed) два разных exit одного гейта — конфликт и отказ, а без
+ * успешного доказательства гейт остаётся непокрытым. Диагностика не покрывает
+ * гейт и не отменяет конфликт настоящих доказательств.
+ */
+const RED_DIAGNOSTIC_VERDICTS = new Set(['red-unproven', 'red-not-proven']);
+
+function withoutRedDiagnostics(evidence) {
+  return (Array.isArray(evidence) ? evidence : [])
+    .filter((row) => !RED_DIAGNOSTIC_VERDICTS.has(String((row && row.verdict) || '')));
+}
+
 /**
  * Оценка C5: все обязательные гейты покрыты успешным фактом evidence.
  * @param {object[]} evidence — строки facts (kind=evidence).
@@ -48,6 +65,8 @@ export function mandatoryGates(ruleset, risk) {
  * @returns {{status: 'pass'|'fail'|'not-applicable', detail: string, missing: string[]}}
  */
 export function evaluateGates(evidence, gates, rulesetPresent) {
+  /* 0144/2.6.111: диагностика неудачной попытки красного — не доказательство. */
+  const proofs = withoutRedDiagnostics(evidence);
   /*
    * 0144 (находка Grok): конфликт доказательств проверяется ДО ruleset. Иначе без
    * политики «pass и fail одновременно» проходили как not-applicable, а итог был
@@ -55,7 +74,7 @@ export function evaluateGates(evidence, gates, rulesetPresent) {
    */
   const byGateAny = new Map();
   const conflictedAny = new Set();
-  for (const row of Array.isArray(evidence) ? evidence : []) {
+  for (const row of proofs) {
     const gate = String(row.gate || '');
     if (gate === '') continue;
     if (!byGateAny.has(gate)) byGateAny.set(gate, row);
@@ -73,10 +92,12 @@ export function evaluateGates(evidence, gates, rulesetPresent) {
   /*
    * 0143: конфликтные доказательства одного гейта (и pass, и fail) — отказ.
    * «Выбрать успешный дубль» — это и есть способ пройти гейт задним числом.
+   * 0144/2.6.111: решение принимается по настоящим доказательствам (proofs), а
+   * диагностические строки red-unproven/red-not-proven сюда не попадают.
    */
   const byGate = new Map();
   const conflicted = new Set();
-  for (const row of evidence) {
+  for (const row of proofs) {
     const gate = String(row.gate || '');
     if (gate === '') continue;
     const previous = byGate.get(gate);
