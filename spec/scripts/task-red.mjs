@@ -102,6 +102,42 @@ function runRedAtContract({ contractCommit, headSha, files, meta, taskDir, repo,
       const source = path.join(childTask, path.basename(file));
       if (exists(source)) fs.copyFileSync(source, file);
     }
+    /*
+     * 0148 (2.6.112): строки журнала ворот оставались в контрактном worktree, и
+     * доказательство красного приходилось доставать из red.json (обход 0146).
+     * Переносим их в журнал задания через appendGateRecord: prev пересчитывается,
+     * поэтому цепочка журнала не рвётся, а повторный --at-contract не дублирует
+     * строку того же гейта.
+     */
+    try {
+      const childJournal = path.join(childTask, 'gates.jsonl');
+      if (exists(childJournal)) {
+        const parentJournal = gateJournalFile(taskDir);
+        const seen = new Set();
+        if (exists(parentJournal)) {
+          for (const line of fs.readFileSync(parentJournal, 'utf8').split('\n')) {
+            if (line.trim() === '') continue;
+            try {
+              const row = JSON.parse(line);
+              seen.add(String(row.kind) + '|' + String(row.head) + '|' + String(row.verdict));
+            } catch { /* битая строка не мешает переносу */ }
+          }
+        }
+        let moved = 0;
+        for (const line of fs.readFileSync(childJournal, 'utf8').split('\n')) {
+          if (line.trim() === '') continue;
+          let row;
+          try { row = JSON.parse(line); } catch { continue; }
+          const key = String(row.kind) + '|' + String(row.head) + '|' + String(row.verdict);
+          if (seen.has(key)) continue;
+          const appended = appendGateRecord(parentJournal, row);
+          if (appended && appended.ok) { seen.add(key); moved += 1; }
+        }
+        if (moved > 0) console.log('task-red: журнал ворот: перенесено строк из контрактного worktree: ' + moved);
+      }
+    } catch (error) {
+      console.error('task-red: WARN не удалось перенести журнал ворот: ' + error.message);
+    }
     if (exists(files.red)) {
       try {
         const red = readJson(files.red);

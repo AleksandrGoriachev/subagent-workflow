@@ -737,6 +737,20 @@ try {
   console.error('SELFTEST ERROR: ' + err.stack);
 }
 /*
+ * 0148 (2.6.112): усечение больших файлов документации. Перезапись CHANGELOG.md
+ * по неполному чтению вырезала 1222 строки истории, и это заметил только
+ * git diff. Порог и WF_ALLOW_TRUNCATION=1 — в самой проверке.
+ */
+try {
+  const truncation = await import('./checks/no-truncation.mjs');
+  const result = truncation.checkRepo(process.cwd());
+  report('NO-TRUNCATION: SPEC.md и CHANGELOG.md не потеряли строк', result.ok === true, (result.problems || []).join('; '));
+} catch (err) {
+  failed += 1;
+  console.error('SELFTEST ERROR: ' + err.stack);
+}
+
+/*
  * 0190: A13 действует только если его проверяет наш же selftest. Раньше selftest
  * был зелёным при красном anchor-freshness — то есть правило обходилось нами же.
  */

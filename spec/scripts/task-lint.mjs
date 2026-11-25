@@ -444,6 +444,28 @@ for (const problem of registryCheck.problems) error(problem);
       for (const id of (mustFail || [])) if (mustPass.includes(id)) error('criteria.json: критерий ' + id + ' одновременно mustFail и mustPass');
       const declared = new Set([...(mustFail || []), ...mustPass]);
       for (const c of criteria.criteria) if (!isManual(c) && !declared.has(String(c.id))) error('criteria.json: критерий ' + c.id + ' не указан в redExpect');
+      /*
+       * 0148 (2.6.112): mustPass на файл, которого ещё нет, не может быть зелёным
+       * до работы — такое место в mustFail. Стоило двух переделок контракта
+       * (0142, 0146): preflight падал «mustPass не зелёный на базе». WARN, а не
+       * ERROR: команда может создавать файл намеренно.
+       */
+      for (const id of mustPass) {
+        const hintCriterion = criteria.criteria.find((c) => String(c.id) === id);
+        if (!hintCriterion) continue;
+        const hintCommand = String(hintCriterion.command || '');
+        const hintTokens = hintCommand.match(/[A-Za-z0-9_@./\\-]+\.(?:mjs|js|cjs|ts|ps1|sh|php|py|rb|go|cs|java)\b/gu) || [];
+        const hintReported = new Set();
+        for (const token of hintTokens) {
+          const rel = token.replace(/\\/gu, '/');
+          if (rel.startsWith('http') || hintReported.has(rel)) continue;
+          const abs = path.isAbsolute(rel) ? rel : path.join(repo, rel);
+          if (exists(abs)) continue;
+          hintReported.add(rel);
+          warn('criteria.json: mustPass ' + id + ' ссылается на файл, которого ещё нет: ' + rel
+            + ' — до работы критерий зелёным не станет; его место в mustFail');
+        }
+      }
       if (redExpect.reasons !== undefined) {
         if (typeof redExpect.reasons !== 'object' || redExpect.reasons === null || Array.isArray(redExpect.reasons)) {
           error('criteria.json: redExpect.reasons должен быть объектом');
