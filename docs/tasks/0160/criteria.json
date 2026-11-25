@@ -1,0 +1,95 @@
+{
+  "task": "0160",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Отметка развёртывания доезжает до /api/status",
+      "command": "node spec/checks/panel-deploy-notice.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/panel-deploy-notice.mjs",
+        "plugin/lib/api.js",
+        "plugin/lib/engine-root.js"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-NOTICE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Без отметки и на битом файле панель не падает",
+      "command": "node spec/checks/panel-deploy-notice.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/panel-deploy-notice.mjs",
+        "plugin/lib/engine-root.js"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-NOTICE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Полный набор тестов панели",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/client.js",
+        "plugin/test/client.test.mjs",
+        "plugin/test/engine-root.test.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Контроль: чужая проверка не сломана",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gate-evidence.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
+      }
+    }
+  ]
+}
