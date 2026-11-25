@@ -5,7 +5,7 @@
   "criteriaSha256": "99acba89f01f7939c22eb094d6acddadce87bd8f077f5fae03ea0da8bba03de3",
   "criteriaJsonSha256": "124239b51aadf99cceb7263a203cf5745304e53bdd4d8ead83713fd84f3af5a9",
   "attackSha256": null,
-  "contractCommit": "83161f904e8c8f348ca2f2747bf11664d8b55d63",
+  "contractCommit": "7ffc935a672ad98a1d66d59296618f7a1e1c13e3",
   "protected": [
     {
       "path": "plugin/BACKLOG.md",
@@ -548,6 +548,6 @@
       }
     ]
   },
-  "createdAt": "2026-11-25T00:34:16.112Z",
+  "createdAt": "2026-11-25T00:50:24.622Z",
   "tool": "subagent-workflow/2.6.110"
 }

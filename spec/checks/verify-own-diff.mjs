@@ -79,7 +79,7 @@ function script(repo, name) {
 }
 
 /* Репозиторий: контракт заперт, красный noRed доказан на contractCommit. */
-function makeRepo() {
+function makeRepo(options = {}) {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-owndiff-'));
   git(repo, ['init', '-q']);
   git(repo, ['config', 'user.email', 'p@l']);
@@ -91,7 +91,7 @@ function makeRepo() {
     id: ID, version: 1, title: 'т', risk: 'low', created: '2026-11-04', owner: 'a',
     executor: 'subagent:executor', acceptor: 'subagent:judge',
     issuedBy: { kind: 'agent', session: 'issuer', model: 'm' }, base: 'HEAD', criteria: 'criteria.json',
-    allowedPaths: ['lib/**', TASK + '/**'], protectedPaths: [],
+    allowedPaths: ['lib/**', TASK + '/**', ...(Array.isArray(options.extraAllowed) ? options.extraAllowed : [])], protectedPaths: [],
     redAllowDirty: [TASK + '/**'], decisions: [], securityReview: false, humanSignoff: false, followUps: [],
   };
   const body = ['# Задание ' + ID, '', '<!-- TASK-META', JSON.stringify(meta, null, 2), '-->', '', '## Цель', '', 'x', '',
@@ -106,7 +106,7 @@ function makeRepo() {
     redExpect: { mustFail: [], mustPass: ['C1'], reasons: {}, noRed: { reason: 'смоук существующего поведения' } },
     criteria: [{
       id: 'C1', title: 't', command: 'node lib/checked/probe.mjs', cwd: '.', timeoutMs: 120000,
-      covers: ['lib/checked/**'], tags: ['fast'], expect: { exitCode: 0, stdoutContains: 'ok' },
+      covers: ['lib/checked/**', ...(Array.isArray(options.extraCovers) ? options.extraCovers : [])], tags: ['fast'], expect: { exitCode: 0, stdoutContains: 'ok' },
     }],
   };
   write(path.join(dir, 'criteria.json'), JSON.stringify(criteria, null, 2) + '\n');
@@ -178,6 +178,31 @@ function c2() {
   console.log('OWNDIFF OK c2');
 }
 
+/*
+ * 0145 (2.6.111): чужой артефакт, объявленный в allowedPaths, — своё изменение;
+ * не объявленный — по-прежнему не наше (в changedPaths не попадает).
+ */
+function c4() {
+  const declared = makeRepo({ extraAllowed: ['docs/tasks/0099/**'], extraCovers: ['docs/tasks/0099/**'] });
+  try {
+    write(path.join(declared.repo, 'docs', 'tasks', '0099', 'engine-shadow.json'), '{"agree":true}\n');
+    const r = verify(declared.repo, declared.dir);
+    truthy(r.code === 0, 'verify отказал для объявленного чужого артефакта (exit ' + r.code + '): ' + r.out.trim().slice(-500));
+    const paths = (r.record && r.record.changedPaths) || [];
+    truthy(paths.includes('docs/tasks/0099/engine-shadow.json'), 'объявленный чужой артефакт не попал в changedPaths: ' + JSON.stringify(paths));
+  } finally { fs.rmSync(declared.repo, { recursive: true, force: true }); }
+
+  const plain = makeRepo();
+  try {
+    write(path.join(plain.repo, 'docs', 'tasks', '0099', 'engine-shadow.json'), '{"agree":true}\n');
+    const r = verify(plain.repo, plain.dir);
+    truthy(r.code === 0, 'verify отказал из-за необъявленного чужого артефакта (exit ' + r.code + '): ' + r.out.trim().slice(-500));
+    const paths = (r.record && r.record.changedPaths) || [];
+    truthy(!paths.includes('docs/tasks/0099/engine-shadow.json'), 'необъявленный чужой артефакт попал в changedPaths: ' + JSON.stringify(paths));
+  } finally { fs.rmSync(plain.repo, { recursive: true, force: true }); }
+  console.log('OWNDIFF OK c4');
+}
+
 function c3() {
   const fx = makeRepo();
   try {
@@ -191,10 +216,10 @@ function c3() {
   console.log('OWNDIFF OK c3');
 }
 
-const table = { c1, c2, c3 };
+const table = { c1, c2, c3, c4 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/verify-own-diff.mjs c1|c2|c3');
+  console.log('usage: node spec/checks/verify-own-diff.mjs c1|c2|c3|c4');
   process.exit(2);
 }
 try {

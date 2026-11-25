@@ -426,10 +426,89 @@ function c4() {
   console.log('AWORKTREE OK c4');
 }
 
-const table = { c1, c2, c3, c4 };
+/* ---------- c5: чужой артефакт, объявленный в allowedPaths ---------- */
+function c5() {
+  const fixture = makeInitRepo('wf-aw-declared-');
+  try {
+    addLowTask(fixture.repo, '0001');
+    /* Контракт объявляет чужой артефакт: покрытие и границы задаёт allowedPaths. */
+    const taskMd = path.join(fixture.repo, 'docs', 'tasks', '0001', 'task.md');
+    const body = fs.readFileSync(taskMd, 'utf8').replace(
+      '"allowedPaths": [\n    "docs/tasks/0001/**"\n  ]',
+      '"allowedPaths": [\n    "docs/tasks/0001/**",\n    "docs/tasks/0099/engine-shadow.json"\n  ]',
+    );
+    fs.writeFileSync(taskMd, body);
+    const criteriaFile = path.join(fixture.repo, 'docs', 'tasks', '0001', 'criteria.json');
+    const criteria = JSON.parse(fs.readFileSync(criteriaFile, 'utf8'));
+    criteria.criteria[0].covers = ['docs/tasks/0099/engine-shadow.json'];
+    fs.writeFileSync(criteriaFile, JSON.stringify(criteria, null, 2) + '\n');
+
+    write(path.join(fixture.repo, 'docs', 'tasks', '0099', 'engine-shadow.json'), '{"agree":false}\n');
+    commitAll(fixture.repo, 'task 0001: контракт с чужим артефактом [workflow-bypass: фикстура 0145]');
+
+    const hash = nodeAt(fixture.repo, 'task-hash.mjs', ['--task', 'docs/tasks/0001', '--write']);
+    check(hash.code === 0, 'c5: task-hash не прошёл: ' + tail(hash.out));
+    const verify = nodeAt(fixture.repo, 'task-verify.mjs', ['--task', 'docs/tasks/0001', '--allow-missing-red']);
+    check(verify.code === 0, 'c5: task-verify не прошёл: ' + tail(verify.out));
+
+    /* Правка объявленного чужого артефакта — своё изменение, обход не нужен. */
+    write(path.join(fixture.repo, 'docs', 'tasks', '0099', 'engine-shadow.json'), '{"agree":true}\n');
+    const accept = nodeAt(fixture.repo, 'task-accept.mjs', acceptArgs(fixture.keys));
+    check(accept.code === 0, 'c5: приёмка отказала на объявленном артефакте: ' + tail(accept.out));
+    check(!accept.out.includes('accept-foreign-worktree'), 'c5: сработал отказ на объявленный путь: ' + tail(accept.out));
+    const record = JSON.parse(fs.readFileSync(path.join(fixture.repo, 'docs', 'tasks', '0001', 'acceptance.json'), 'utf8'));
+    check(Array.isArray(record.worktree && record.worktree.extras) && record.worktree.extras.length === 0,
+      'c5: объявленный путь попал в extras: ' + JSON.stringify(record.worktree && record.worktree.extras));
+    const checker = nodeAt(fixture.repo, 'task-check-acceptance.mjs', ['--file', 'docs/tasks/0001/acceptance.json', '--repo', '.']);
+    check(!/в рабочем дереве были правки вне кандидата/u.test(checker.out), 'c5: проверка записи видит несуществующие правки: ' + tail(checker.out));
+  } finally {
+    cleanup(fixture.repo);
+    cleanup(fixture.keys);
+  }
+  console.log('AWORKTREE OK c5');
+}
+
+/* ---------- c6: объяснённый extras — WARN, без объяснения — ERROR ---------- */
+function c6() {
+  const fixture = makeInitRepo('wf-aw-explained-');
+  try {
+    addLowTask(fixture.repo, '0001');
+    write(path.join(fixture.repo, 'docs', 'tasks', '0099', 'task.md'), '# Задание 0099\n');
+    commitAll(fixture.repo, 'task 0001: контракт [workflow-bypass: фикстура 0145]');
+    const hash = nodeAt(fixture.repo, 'task-hash.mjs', ['--task', 'docs/tasks/0001', '--write']);
+    check(hash.code === 0, 'c6: task-hash не прошёл: ' + tail(hash.out));
+    const verify = nodeAt(fixture.repo, 'task-verify.mjs', ['--task', 'docs/tasks/0001', '--allow-missing-red']);
+    check(verify.code === 0, 'c6: task-verify не прошёл: ' + tail(verify.out));
+    fs.appendFileSync(path.join(fixture.repo, 'docs', 'tasks', '0099', 'task.md'), '\n# чужая правка\n');
+    const accept = nodeAt(fixture.repo, 'task-accept.mjs', [
+      ...acceptArgs(fixture.keys), '--allow-extras', '--note', '0145: фикстура объяснённого обхода',
+    ]);
+    check(accept.code === 0, 'c6: --allow-extras не продолжил приёмку: ' + tail(accept.out));
+
+    const explained = nodeAt(fixture.repo, 'task-check-acceptance.mjs', ['--file', 'docs/tasks/0001/acceptance.json', '--repo', '.']);
+    check(explained.code === 0, 'c6: объяснённый extras не принят (exit ' + explained.code + '): ' + tail(explained.out));
+    check(explained.out.includes('в рабочем дереве были правки вне кандидата'), 'c6: WARN не назвал правки: ' + tail(explained.out));
+    check(!/check-acceptance: ERROR/u.test(explained.out), 'c6: объяснённый extras дал ERROR: ' + tail(explained.out));
+
+    /* Тот же extras без обхода: WARN не применяется, extras остаётся ошибкой. */
+    const bare = JSON.parse(fs.readFileSync(path.join(fixture.repo, 'docs', 'tasks', '0001', 'acceptance.json'), 'utf8'));
+    delete bare.bypasses.allowExtras;
+    const bareFile = path.join(fixture.repo, 'docs', 'tasks', '0001', 'acceptance-bare.json');
+    fs.writeFileSync(bareFile, JSON.stringify(bare, null, 2) + '\n');
+    const strict = nodeAt(fixture.repo, 'task-check-acceptance.mjs', ['--file', 'docs/tasks/0001/acceptance-bare.json', '--repo', '.']);
+    check(strict.code !== 0, 'c6: extras без обхода принят (exit 0)');
+    check(strict.out.includes('в рабочем дереве были правки вне кандидата'), 'c6: отказ не назвал extras: ' + tail(strict.out));
+  } finally {
+    cleanup(fixture.repo);
+    cleanup(fixture.keys);
+  }
+  console.log('AWORKTREE OK c6');
+}
+
+const table = { c1, c2, c3, c4, c5, c6 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/accept-worktree.mjs c1|c2|c3|c4');
+  console.log('usage: node spec/checks/accept-worktree.mjs c1|c2|c3|c4|c5|c6');
   process.exit(2);
 }
 try {

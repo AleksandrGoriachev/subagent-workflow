@@ -1459,14 +1459,21 @@ export function dirtyPaths(repo) {
  * после контракта чужой, поэтому границы проверяются по незакоммиченным путям,
  * а артефакты чужих заданий и рантайм-каталог .dsh не считаются изменениями.
  */
-export function ownChanges(paths, taskRel) {
+export function ownChanges(paths, taskRel, patterns = []) {
   const own = String(taskRel || '').split('\\').join('/').replace(/\/+$/u, '') + '/';
   const list = [];
   for (const raw of Array.isArray(paths) ? paths : []) {
     const p = toPosix(String(raw));
     if (p === '' || p.startsWith('.dsh/')) continue;
     if (p.startsWith('docs/tasks/')) {
-      if (!p.startsWith(own)) continue;
+      /*
+       * 0145 (2.6.111): чужой каталог задания не свой, ЕСЛИ путь не объявлен в
+       * контракте явно. Задача, которой разрешено исправить артефакт другой
+       * задачи (allowedPaths), обязана провести его через кандидата; иначе
+       * приёмка упирается в accept-foreign-worktree, а артефакт коммитится мимо
+       * кандидата. Список объявленных путей приходит снаружи (meta.allowedPaths).
+       */
+      if (!p.startsWith(own) && !matchesAny(p, Array.isArray(patterns) ? patterns : [])) continue;
     }
     list.push(p);
   }

@@ -140,7 +140,7 @@ try {
    * коммиты (релизы, другие задания) в дифф не входят, артефакты чужих заданий
    * и .dsh отбрасываются: они не наши и не должны блокировать verify.
    */
-  const changedBefore = ownChanges(diffPaths(repo, 'HEAD'), taskRel);
+  const changedBefore = ownChanges(diffPaths(repo, 'HEAD'), taskRel, meta.allowedPaths);
   const outsideBefore = changedBefore.filter((p) => !matchesAny(p, allowedDiff));
   if (outsideBefore.length) {
     console.error('task-verify: изменения вне разрешённых путей:');
@@ -218,7 +218,7 @@ try {
    * не делало: 2.6.100 применила ownChanges только к первой проверке, а эта
    * осталась на старой базе.
    */
-  const changed = ownChanges(diffPaths(repo, 'HEAD'), taskRel);
+  const changed = ownChanges(diffPaths(repo, 'HEAD'), taskRel, meta.allowedPaths);
   const outside = changed.filter((p) => !matchesAny(p, allowedDiff));
   const contractAfter = checkContractCommitted(repo, taskDir, meta);
   /* 0120 (2.6.103): скан секретов — тоже только по своим незакоммиченным изменениям. */

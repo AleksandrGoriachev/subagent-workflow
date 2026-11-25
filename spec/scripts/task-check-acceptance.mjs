@@ -139,7 +139,21 @@ function run() {
    */
   if (record.worktree) {
     const extras = Array.isArray(record.worktree.extras) ? record.worktree.extras : [];
-    if (extras.length > 0) note('в рабочем дереве были правки вне кандидата: ' + extras.join(', '));
+    if (extras.length > 0) {
+      /*
+       * 0145 (2.6.111): непустой extras при записанном обходе --allow-extras и
+       * причине в notes — объяснённое состояние, а не дефект записи: обход по
+       * решению 0135 (D2) существует ровно для случаев, когда правки вне
+       * кандидата неизбежны. Без обхода или без причины — прежний отказ.
+       */
+      const bypassed = record.bypasses && record.bypasses.allowExtras === true;
+      const reason = String(record.notes || '').trim();
+      if (bypassed && reason !== '') {
+        warnings.push('в рабочем дереве были правки вне кандидата, объяснённые обходом allow-extras: ' + extras.join(', ') + ' (' + reason + ')');
+      } else {
+        note('в рабочем дереве были правки вне кандидата: ' + extras.join(', '));
+      }
+    }
   }
 
   /*
