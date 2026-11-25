@@ -1,0 +1,245 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0142",
+  "title": "C9: плоская подпись правил и литерал панели в проверке",
+  "risk": "medium",
+  "taskFileSha256": "ffe785f7e1f780500b59eff9d65f4f831c0a612f6e1bd1aa3ad91e9586ebb40b",
+  "criteriaSha256": "a359095aa9ba756aaef5c619f44d4e316010cf98eb72cbfa5672f9b5316c0200",
+  "criteriaJsonSha256": "aa9484e19c2ca9331576ca297498acbf28f46a36090bff559b5ac9dc50619966",
+  "contractCommit": "b961bb0c7f7a02a1ac625bd8cdf3ec5d2284fbd2",
+  "baseCommit": "b961bb0c7f7a02a1ac625bd8cdf3ec5d2284fbd2",
+  "candidateCommit": "1377d987b5a0234af8069a17b0514c960b798dce",
+  "tree": "f9217c8ca3a375114bdb9d1c25d84454e9a6d9b3",
+  "worktreeDigest": "ac23f7246d7411c1ea6818ab02a7b984f3b1c4572433273d98c6ba266b2174a5",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "4c146854-7ca2-477f-98e0-1f174ede8d9e",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "095fb1a48e7dff4024678d7fd66692b6",
+    "runKind": "accept",
+    "startedAt": "2026-11-25T00:02:43.053Z",
+    "finishedAt": "2026-11-25T00:03:59.103Z",
+    "durationMs": 76063,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "32b0ee31d3ce141de7b95a69198ad65c98041a57b28e2e99d87f796fbd8b0be5",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "тень движка не отвергает приёмку из-за формы подписи якорей",
+      "threshold": "C9 pass при плоской подписи: факт несёт covers='document', движок принимает 'document' наравне с 'hash+by+at'",
+      "measuredBy": "C2"
+    }
+  ],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false,
+    "allowExtras": true
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "b961bb0c7f7a02a1ac625bd8cdf3ec5d2284fbd2",
+    "contractCommit": "b961bb0c7f7a02a1ac625bd8cdf3ec5d2284fbd2",
+    "criteriaJsonSha256": "aa9484e19c2ca9331576ca297498acbf28f46a36090bff559b5ac9dc50619966",
+    "failed": 6,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C5",
+      "C6",
+      "C7"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 84,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 1,
+          "total": 72,
+          "window": 25
+        },
+        {
+          "id": "C6",
+          "ok": true,
+          "distance": 11,
+          "total": 12,
+          "window": 25
+        },
+        {
+          "id": "C7",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/facts-ruleset.mjs c5",
+      "exitCode": 0,
+      "durationMs": 979,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/facts-ruleset.mjs c6",
+      "exitCode": 0,
+      "durationMs": 1025,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/version-drift.mjs",
+      "exitCode": 0,
+      "durationMs": 1155,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/facts-ruleset.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1004,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 62702,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/engine.mjs --task 0141 --workspace .",
+      "exitCode": 0,
+      "durationMs": 811,
+      "passed": true
+    },
+    {
+      "id": "C7",
+      "command": "node -e \"const s=require('./docs/tasks/0141/engine-shadow.json');if(s.agree!==true){console.log('тень 0141: agree=' + s.agree + ' вердикт ' + s.engineVerdict);process.exit(1);}console.log('SHADOW OK 0141: agree=true')\"",
+      "exitCode": 0,
+      "durationMs": 731,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-25T00:04:00.551Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "b961bb0c7f7a02a1ac625bd8cdf3ec5d2284fbd2",
+    "taskFileSha256": "ffe785f7e1f780500b59eff9d65f4f831c0a612f6e1bd1aa3ad91e9586ebb40b",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 3,
+    "digest": "968c94cd39ce09ede7a0160b880562854dbf115ed585567cd6982f120de5164d",
+    "assumed": [],
+    "confirmed": 3
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "docs/tasks/0141/engine-shadow.json — исправленный артефакт другой задачи; ownChanges() не пускает пути docs/tasks/<чужой id> в кандидата, поэтому путь вне кандидата законно; коммитится координатором отдельно после приёмки; allow-extras: docs/tasks/0141/engine-shadow.json",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "b961bb0c7f7a02a1ac625bd8cdf3ec5d2284fbd2",
+    "head": "b961bb0c7f7a02a1ac625bd8cdf3ec5d2284fbd2",
+    "trackedChanges": 7,
+    "extras": [
+      "docs/tasks/0141/engine-shadow.json"
+    ],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "JiTtjx+IM+pLM2AMJo1i5OygcSr3nxEGj0L+L1gHEyF4NT7uU08KQLF6p/DKHHlGLPYqwq4ptOyniF0senpIDg=="
+}
