@@ -179,6 +179,60 @@ function writeEngineRootsLink(workspace, engine) {
   return { ok: true, file };
 }
 
+/*
+ * 0151: уведомление координатора о решении развёртывания. Три следа: файл в
+ * развёрнутом каталоге (машинно-читаемый), строка машинного журнала — работает и
+ * для внешнего движка, когда воркспейс не трогается, — и строка stdout в сессию,
+ * которая разворачивала.
+ */
+const DEPLOY_NOTICES_ENV = 'WF_DEPLOY_NOTICES';
+const DEPLOY_NOTICES_REL = path.join('.dsh', 'workflow', 'deploy-notices.jsonl');
+
+/** Файл журнала уведомлений: env WF_DEPLOY_NOTICES или <home>/.dsh/workflow/deploy-notices.jsonl. */
+function deployNoticesFile(env = process.env) {
+  const override = env && typeof env[DEPLOY_NOTICES_ENV] === 'string' ? env[DEPLOY_NOTICES_ENV].trim() : '';
+  if (override.length > 0) return path.resolve(override);
+  const home = (env && (env.USERPROFILE || env.HOME)) || os.homedir();
+  return path.resolve(home, DEPLOY_NOTICES_REL);
+}
+
+/** Дописать запись в машинный журнал уведомлений; сбой журнала не ломает развёртывание. */
+function appendDeployNotice(record, env = process.env) {
+  const file = deployNoticesFile(env);
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.appendFileSync(file, JSON.stringify(record) + String.fromCharCode(10));
+  } catch (error) {
+    return { ok: false, file, error: String(error && error.message ? error.message : error) };
+  }
+  return { ok: true, file };
+}
+
+/** Запись уведомления: что решено, что от этого стало машинным и что делать клону/CI. */
+function deployNoticeRecord({ mode, policy, workspace, engineRoot, engineVersion, ignored, machineLocal, action }) {
+  let notice;
+  if (mode === 'external') {
+    notice = 'движок внешний: воркспейс не изменён, развёртывание и обновление идут в репозиторий движка';
+  } else if (policy === 'gitignore') {
+    notice = 'код движка не вендорится: каталог docs/subagent-workflow/ в .gitignore проекта, '
+      + 'в коммиты проекта попадают только задания и их доказательства';
+  } else {
+    notice = 'включён вендоринг: развёрнутая копия живёт в git проекта, обновления движка видны в его диффах';
+  }
+  return {
+    version: 1,
+    at: new Date().toISOString(),
+    mode,
+    policy,
+    engine: { version: engineVersion || null, root: engineRoot },
+    workspace,
+    ignored: Array.isArray(ignored) ? ignored : [],
+    machineLocal: Array.isArray(machineLocal) ? machineLocal : [],
+    coordinator: { notice, action },
+    actor: String(process.env.DSH_SESSION_ID || process.env.TASK_ACTOR_SESSION || 'unknown'),
+  };
+}
+
 const argv = args(process.argv.slice(2));
 if (argv.help) {
   console.log('Usage: node init.mjs --repo <dir> [--tasks docs/tasks] [--logs local|commit]');
@@ -188,6 +242,9 @@ if (argv.help) {
   console.log('       [--external <dir>] записать связь воркспейса с внешним движком и выйти;');
   console.log('                        ничего не разворачивается, карта: ~/.dsh/workflow/engine-roots.json');
   console.log('       [--git-init]     git init, если репозитория ещё нет, и продолжить развёртывание');
+  console.log('       [--deploy-policy gitignore|vendored] что делать с развёрнутой копией: gitignore');
+  console.log('                        (по умолчанию) — код движка не вендорится, docs/subagent-workflow/');
+  console.log('                        уходит в .gitignore проекта; vendored — прежнее поведение');
   console.log('       Хуки (2.6.87): локальный git config core.hooksPath docs/subagent-workflow/hooks;');
   console.log('       активное задание обязательно для коммита всегда; флаг guard.enabled');
   console.log('       включает аудит и проверку диапазона (--range), а не обязательность задания.');
@@ -208,6 +265,19 @@ const workflowDir = 'docs/subagent-workflow';
 const logs = String(argv.logs || 'local');
 const force = Boolean(argv.force);
 if (!['local', 'commit'].includes(logs)) { console.error('init: --logs local|commit'); process.exit(1); }
+
+/*
+ * 0151: политика развёртывания. Решение владельца пакета — «код движка не
+ * вендорится»: каталог docs/subagent-workflow/ уходит в .gitignore проекта, а
+ * конфиг, ключи и хуки становятся продуктом развёртывания (клон обязан
+ * выполнить init до ворот и до check-acceptance в CI). vendored — прежнее
+ * поведение для проектов, которые осознанно держат копию в своей истории.
+ */
+const deployPolicy = String(argv['deploy-policy'] || 'gitignore').trim().toLowerCase();
+if (!['gitignore', 'vendored'].includes(deployPolicy)) {
+  console.error('init: --deploy-policy gitignore|vendored');
+  process.exit(1);
+}
 
 /*
  * 2.6.14 (0039): init --external <путь> только объявляет связь и выходит.
@@ -234,6 +304,25 @@ if (argv.external !== undefined) {
     console.error('init: --external: ' + written.error);
     process.exit(1);
   }
+  /*
+   * 0151: воркспейс не трогается (инвариант 2.6.9), поэтому уведомление идёт
+   * только в машинный журнал и в строку вывода: файл в воркспейсе нарушил бы
+   * инвариант «--external ничего не разворачивает».
+   */
+  const externalNotice = deployNoticeRecord({
+    mode: 'external',
+    policy: deployPolicy,
+    workspace: repo,
+    engineRoot: engineDir,
+    engineVersion: version,
+    ignored: [],
+    machineLocal: [],
+    action: 'воркспейс не изменён: движок читается по карте ' + written.file,
+  });
+  const externalJournal = appendDeployNotice(externalNotice);
+  if (externalJournal.ok !== true) console.warn('init: WARN журнал уведомлений: ' + externalJournal.error);
+  console.log('init: координатору — ' + externalNotice.coordinator.notice);
+  console.log('  journal     ' + externalJournal.file);
   console.log('init: связь записана в карту движков');
   console.log('  workspace   ' + repo);
   console.log('  engine      ' + engineDir + ' (версия ' + version + ')');
@@ -465,6 +554,16 @@ appendIgnore('# subagent-workflow: журнал включения guard', guard
  */
 const nodePathRel = path.posix.join(workflowDir, '.node-path');
 appendIgnore('# subagent-workflow: node для хуков', nodePathRel);
+/*
+ * 0151: решение владельца пакета — код движка не вендорится. Строка ставится
+ * последней из наших: она накрывает и .node-path выше, и хуки, и скрипты.
+ * Политика запоминается на случай, если строка уже была (повторный init не
+ * должен ломать счёт уведомления).
+ */
+const deployIgnoreRel = workflowDir + '/';
+const deployIgnoreAdded = deployPolicy === 'gitignore'
+  ? appendIgnore('# subagent-workflow: код движка разворачивается, а не вендорится (0151)', deployIgnoreRel)
+  : false;
 
 /*
  * VERSION последним (2.6.3, B2). Только здесь, после файлов, конфига, хуков и
@@ -479,6 +578,44 @@ if (sourceVersion) {
   } else {
     versionSkipped = true;
   }
+}
+
+/*
+ * 0151: уведомление координатора. Файл лежит в развёрнутом каталоге (при политике
+ * gitignore он не попадает в коммиты — это след машины, а не истории), строка
+ * машинного журнала остаётся и после смены каталога, а stdout видит сессия,
+ * которая разворачивала.
+ */
+const machineLocal = deployPolicy === 'gitignore'
+  ? [
+    path.posix.join(workflowDir, 'workflow.config.json'),
+    path.posix.join(workflowDir, 'acceptors.json'),
+    path.posix.join(workflowDir, 'hooks'),
+  ]
+  : [];
+const localNotice = deployNoticeRecord({
+  mode: 'local',
+  policy: deployPolicy,
+  workspace: repo,
+  engineRoot: packageRoot,
+  engineVersion: deployedVersion || sourceVersion,
+  ignored: deployPolicy === 'gitignore' ? [deployIgnoreRel] : [],
+  machineLocal,
+  action: deployPolicy === 'gitignore'
+    ? 'клон обязан выполнить init до ворот и до check-acceptance в CI: конфиг, ключи и хуки не в истории'
+    : 'копия движка в истории: обновление движка требует коммита и обхода task-guard',
+});
+const noticeFile = path.join(dest, 'deploy-notice.json');
+try {
+  fs.writeFileSync(noticeFile, JSON.stringify(localNotice, null, 2) + String.fromCharCode(10));
+} catch (error) {
+  console.warn('init: WARN уведомление не записано: ' + String(error && error.message ? error.message : error));
+}
+const noticeJournal = appendDeployNotice(localNotice);
+if (noticeJournal.ok !== true) console.warn('init: WARN журнал уведомлений: ' + noticeJournal.error);
+if (deployPolicy === 'gitignore') {
+  console.log('init: координатору — ' + localNotice.coordinator.notice);
+  console.log('  notice      ' + path.posix.join(workflowDir, 'deploy-notice.json'));
 }
 
 console.log('init: рабочее пространство ' + (existedBefore ? 'обновлено' : 'готово'));
@@ -525,3 +662,7 @@ console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-hash.mjs') + 
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-lint.mjs') + ' --task ' + tasksDir + '/0001 --strict');
 console.log('  node ' + path.posix.join(workflowDir, 'scripts/task-red.mjs')  + ' --task ' + tasksDir + '/0001 --base HEAD');
 console.log('  guard: активное задание обязательно для коммита всегда; guard.enabled в ' + path.posix.join(workflowDir, 'workflow.config.json') + ' включает аудит и --range');
+console.log('');
+console.log('Координатору: ' + localNotice.coordinator.notice);
+console.log('  что делать: ' + localNotice.coordinator.action);
+console.log('  журнал:     ' + noticeJournal.file);
