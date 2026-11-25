@@ -1,0 +1,151 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0157",
+  "createdAt": "2026-11-25T23:37:25.309Z",
+  "headSha": "668572c17291c0ef6c6ee3d46f7ad9d428bdfad1",
+  "contractCommit": "668572c17291c0ef6c6ee3d46f7ad9d428bdfad1",
+  "criteriaSha256": "66a719fd03d3d0d7bfba31637fd5892ab88644d4b600206157e8d3630a3af4c8",
+  "criteriaJsonSha256": "b91e3261d158fa4936fe18bc2fc238448e19664b725a8f348cebc1257fff50a8",
+  "taskFileSha256": "0bf9f78b5c649567adaa6527a1683dfd9bb6f5a197c2491e2a8adb7b6a6ebdb9",
+  "changedPaths": [
+    "docs/tasks/0157/criteria.lock",
+    "docs/tasks/0157/gates.jsonl",
+    "docs/tasks/0157/gates.jsonl.tip",
+    "docs/tasks/0157/red.json",
+    "spec/checks/lint-probe-mustpass.mjs",
+    "spec/scripts/task-lint.mjs"
+  ],
+  "coverage": {
+    "declared": 4,
+    "covered": [
+      {
+        "path": "spec/checks/lint-probe-mustpass.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-lint.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/lint-probe-mustpass.mjs c1",
+      "exitCode": 0,
+      "durationMs": 21146,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c3819498c7e81ab88956e9ef367f3a28c7bae3110aaaf16b26a267783aa04bf8",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LINT-PROBE OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/lint-probe-mustpass.mjs c2",
+      "exitCode": 0,
+      "durationMs": 36054,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e42b4793bb8f0730abcd97f77f2e641921b50c4e00b9294811d6199d7e123a7a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LINT-PROBE OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 994,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f76c4b25e582e5c778f207648213e9e86f72ec6f46c38c822d0a1aa229c376c1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATE-EVIDENCE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "668572c17291c0ef6c6ee3d46f7ad9d428bdfad1",
+    "contractCommit": "668572c17291c0ef6c6ee3d46f7ad9d428bdfad1",
+    "criteriaJsonSha256": "b91e3261d158fa4936fe18bc2fc238448e19664b725a8f348cebc1257fff50a8",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "668572c17291c0ef6c6ee3d46f7ad9d428bdfad1",
+  "headDrift": null,
+  "worktreeDigest": "2796f00ccdf3e6ace9fc9d4dff8c38450edbb0b75cf754a0270d7e8d5d0cde1d",
+  "log": "verify.log"
+}

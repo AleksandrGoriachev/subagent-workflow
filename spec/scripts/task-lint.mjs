@@ -4,7 +4,7 @@ import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
   DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects, hasAcceptedRecord,
-  patternsIntersect, reportFatal, metaAttributionGap, matchesAny,
+  patternsIntersect, reportFatal, metaAttributionGap, matchesAny, runCommand,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -662,6 +662,32 @@ for (const problem of registryCheck.problems) error(problem);
   if (meta.base) {
     const ref = git(repo, ['rev-parse', '--verify', String(meta.base) + '^{commit}']);
     if (ref.exitCode !== 0) warn('TASK-META.base не разрешается в коммит: ' + meta.base);
+  }
+
+  /*
+   * 0157 (R3 письма structure--243): mustPass, красный уже на базе, останавливает
+   * красный прогон (у structure — 40 минут на задании 0355). По явному флагу
+   * прогоняем не-manual mustPass и называем те, что уже не зелёные. По умолчанию
+   * флаг выключен: это та же работа, что preflight делает один раз, а lint обязан
+   * оставаться дешёвым. Код возврата не меняется — решение принимают ворота.
+   */
+  if (argv['probe-mustpass'] === true && criteria && Array.isArray(criteria.criteria)) {
+    const probeIds = new Set((criteria.redExpect && Array.isArray(criteria.redExpect.mustPass)
+      ? criteria.redExpect.mustPass
+      : []).map(String));
+    for (const probe of criteria.criteria) {
+      if (!probeIds.has(String(probe.id)) || isManual(probe)) continue;
+      const probeCommand = String(probe.command || '').trim();
+      if (probeCommand === '') continue;
+      const declaredTimeout = Number(probe.timeoutMs) > 0 ? Number(probe.timeoutMs) : 120000;
+      const run = await runCommand(probeCommand, { cwd: repo, timeoutMs: Math.min(declaredTimeout, 120000) });
+      if (run.exitCode === 0) continue;
+      const probeLines = (String(run.stdout || '') + NL + String(run.stderr || ''))
+        .split(/\r?\n/u).map((line) => line.trim()).filter((line) => line !== '');
+      const first = probeLines.length > 0 ? probeLines[0].slice(0, 160) : 'вывода нет';
+      warn('criteria.json: mustPass ' + probe.id + ' уже красный на базе (exit ' + run.exitCode + '): ' + first
+        + ' — red остановится на preflight по mustPass; объявите noRed/уберите страж или почините его');
+    }
   }
 
   if (argv.json) {
