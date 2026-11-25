@@ -16,7 +16,7 @@
     "reasonWindow": 25,
     "reasons": {
       "C1": "Cannot find module",
-      "C2": "usage: node spec/checks/red-evidence.mjs",
+      "C2": "Cannot find module",
       "C3": "вердикт rejected",
       "C4": "agree",
       "C5": "SELFTEST FAILED"
