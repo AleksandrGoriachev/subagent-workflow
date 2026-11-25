@@ -84,13 +84,22 @@ export function readRuleset(repoRoot) {
           value: approval.signature.value || null,
         }
       : {
-          /* 0141/2.6.111: плоская форма 0.2 — keyId лежит рядом с подписью, covers — в anchors. */
+          /*
+           * 0142/2.6.111: плоская форма 0.2 — keyId лежит рядом с подписью, а
+           * sign.mjs signingBody подписывает ВЕСЬ документ без полей подписи
+           * (то есть hash, by и at тоже). Поэтому фактическое покрытие —
+           * 'document', а не путь к anchors.json: иначе движок (C9) отвергает
+           * подпись, которая на деле покрывает больше, а не меньше.
+           * Сам подписанный документ сохраняем в факте: движок проверяет
+           * подпись криптографически и без него не может восстановить тело.
+           */
           keyId: approval.keyId || null,
-          covers: approval.covers || approval.anchors || null,
+          covers: 'document',
           hash: approval.hash || null,
           at: approval.at || null,
           by: approval.by || null,
           value: approval.signature,
+          document: approval,
         };
     let verified = false;
     let reason = 'подпись не проверена';

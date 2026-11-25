@@ -35,11 +35,27 @@ export function verifyRulesSignature(ruleset, acceptors) {
     const keyId = String(signature.keyId || '');
     const key = (Array.isArray(acceptors) ? acceptors : []).find((item) => item && item.keyId === keyId);
     if (!key || key.kind !== 'human') return false;
-    const body = canonicalizeRules({ hash: signature.hash, by: signature.by, at: signature.at });
+    /*
+     * 0142/2.6.111: тело подписи зависит от формы (sign.mjs signingBody).
+     * Вложенная форма (covers 'hash+by+at') подписывает ровно три поля.
+     * Плоская ('document') — весь документ без полей подписи, поэтому факт
+     * несёт сам подписанный документ: без него тело не восстановить и
+     * проверка C9 не может быть криптографической.
+     */
+    const body = signature.covers === 'document' && signature.document && typeof signature.document === 'object'
+      ? canonicalizeRules(withoutSignatureFields(signature.document))
+      : canonicalizeRules({ hash: signature.hash, by: signature.by, at: signature.at });
     return crypto.verify(null, Buffer.from(body, 'utf8'), crypto.createPublicKey(key.publicKeyPem), Buffer.from(signature.value, 'base64'));
   } catch {
     return false;
   }
+}
+
+/* 0142/2.6.111: поля, которые не входят в тело подписи (sign.mjs SIGNATURE_FIELDS). */
+function withoutSignatureFields(record) {
+  const copy = { ...record };
+  for (const field of ['signature', 'signatureAlgorithm', 'keyId', 'publicKeyFingerprint']) delete copy[field];
+  return copy;
 }
 
 function canonicalizeRules(value) {
@@ -129,7 +145,8 @@ export function evaluateTask(read, options = {}) {
   if (!rulesetPresent) c9 = { status: 'not-applicable', detail: 'ruleset отсутствует' };
   else if (!ruleset.signature) c9 = { status: 'fail', detail: 'правила не подписаны' };
   else if (ruleset.signature.verified !== true) c9 = { status: 'fail', detail: 'подпись правил не подтверждена: ' + String(ruleset.signature.reason || 'причина не указана') };
-  else if (ruleset.signature.covers !== 'hash+by+at') c9 = { status: 'fail', detail: 'подпись правил не покрывает hash+by+at' };
+  /* 0142/2.6.111: плоская подпись покрывает 'document', вложенная — 'hash+by+at'. */
+  else if (ruleset.signature.covers !== 'hash+by+at' && ruleset.signature.covers !== 'document') c9 = { status: 'fail', detail: 'подпись правил не покрывает hash+by+at или document: covers=' + JSON.stringify(ruleset.signature.covers) };
   else if (ruleset.signature.hash !== ruleset.anchors_hash) c9 = { status: 'fail', detail: 'подпись правил относится к другому anchors.json' };
   else if (options.acceptors && !verifyRulesSignature(ruleset, options.acceptors)) c9 = { status: 'fail', detail: 'подпись правил не сходится с ключом (проверено движком)' };
   else c9 = { status: 'pass', detail: 'правила подписаны и проверены: ' + ruleset.signature.keyId };

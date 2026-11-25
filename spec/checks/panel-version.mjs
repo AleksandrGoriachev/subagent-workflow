@@ -3,9 +3,9 @@
  * 0136 (2.6.109): панель и движок нумеруются раздельно — и подписи это говорят.
  *
  * Проверки:
- *  c1 — 0.9.39 в plugin/lib/compat.js (PLUGIN_VERSION), plugin/package.json
+ *  c1 — PLUGIN_VERSION в plugin/lib/compat.js (источник истины), plugin/package.json
  *       (version), корневом package.json (dshPanelVersion) и TOOL из
- *       plugin/lib/state.js. TOOL выводится из PLUGIN_VERSION, поэтому
+ *       plugin/lib/state.js сверяются с ним. TOOL выводится из PLUGIN_VERSION, поэтому
  *       проверяется исполнением, а не поиском строки;
  *  c2 — в plugin/lib/client.js нет «Версия сборки панели: v…», есть
  *       «Движок в этой сборке панели» и пояснение о раздельной нумерации;
@@ -30,8 +30,18 @@ if (!fs.existsSync(path.join(ROOT, 'spec'))) {
   process.exit(0);
 }
 
-/* Ожидаемая версия панели. Движок живёт отдельно (2.6.x) и здесь не сверяется. */
-export const PANEL_VERSION = '0.9.39';
+/*
+ * Ожидаемая версия панели — PLUGIN_VERSION из plugin/lib/compat.js: это источник
+ * истины (TOOL в state.js тоже выводится из него). Движок живёт отдельно (2.6.x)
+ * и здесь не сверяется. 0142/2.6.111: литерал текущей версии в проверке
+ * запрещён (version-drift) — версия читается, а не помнится в коде проверки.
+ */
+const PLUGIN_VERSION_RE = /export const PLUGIN_VERSION\s*=\s*'([^']*)'/;
+export const PANEL_VERSION = (() => {
+  const compat = readText(ROOT, 'plugin/lib/compat.js');
+  const match = compat === null ? null : compat.match(PLUGIN_VERSION_RE);
+  return match ? match[1] : null;
+})();
 /* Файлы, которых достаточно, чтобы прогнать проверку c1 на копии. */
 const PANEL_FILES = [
   'plugin/lib/compat.js',
@@ -211,7 +221,8 @@ async function c3() {
     fs.writeFileSync(compatPath, patched);
 
     const result = await checkPanelVersions(bad);
-    truthy(!result.ok, 'копия с расхождением (compat 0.9.38, package 0.9.39) признана согласованной: проверка молчит');
+    /* 0142/2.6.111: в тексте — только подменённая версия; текущую версию литералом держать нельзя. */
+    truthy(!result.ok, 'копия с расхождением (compat 0.9.38, package — текущая версия) признана согласованной: проверка молчит');
     truthy(
       result.problems.some((item) => item.includes('0.9.38')),
       'в сообщении о расхождении нет версии 0.9.38: ' + result.problems.join('; '),

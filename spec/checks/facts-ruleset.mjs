@@ -11,6 +11,12 @@
  *  c3 — негатив: битая подпись и чужой keyId не дают verified=true, reason заполнен;
  *       неизвестный kind и ruleset без version по-прежнему отвергаются;
  *  c4 — реальная конвертация docs/tasks/0139 во временный workspace даёт цепь с ruleset.
+ *  c5 — 0142/2.6.111: плоская подпись якорей несёт covers='document' (sign.mjs
+ *       подписывает весь документ без полей подписи), и C9 движка проходит на
+ *       реальных фактах с реальными acceptors: движок проверяет подпись сам;
+ *  c6 — негатив: неизвестное покрытие (covers='unknown') и неподтверждённая
+ *       подпись (verified=false) получают C9 fail; detail называет фактическое
+ *       значение покрытия, а не только ожидаемое.
  *
  * Временные каталоги — в os.tmpdir(): воркспейс проверкой не засоряется.
  */
@@ -31,6 +37,7 @@ if (!fs.existsSync(path.join(PKG, 'spec'))) {
 const { readRuleset, convertToWorkspace } = await import(pathToFileURL(path.join(PKG, 'spec', 'scripts', 'facts-convert.mjs')).href);
 const { validateFact, readFactFile } = await import(pathToFileURL(path.join(PKG, 'spec', 'lib', 'facts.mjs')).href);
 const { generateKeyPair } = await import(pathToFileURL(path.join(PKG, 'spec', 'scripts', 'sign.mjs')).href);
+const { evaluateTask, loadAcceptors: loadEngineAcceptors } = await import(pathToFileURL(path.join(PKG, 'spec', 'engine.mjs')).href);
 
 /* BOM пишут Windows-инструменты: JSON.parse на нём падает, как и в конвертере. */
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/u, ''));
@@ -156,10 +163,59 @@ function c4() {
   }
 }
 
-const table = { c1, c2, c3, c4 };
+/* C9 по факту ruleset: остальные ограничения кейсам c5/c6 не нужны, цепь — не предмет. */
+function c9Of(ruleset, acceptors) {
+  const read = { rows: [rulesetRow(ruleset)], ok: true, problems: [] };
+  const result = evaluateTask(read, { acceptors });
+  return result.report.find((item) => item.id === 'C9') || { status: 'missing', detail: 'C9 нет в отчёте движка' };
+}
+
+/*
+ * c5 (0142/2.6.111): плоская подпись якорей (signature — строка) подписывает
+ * весь документ, поэтому факт обязан нести covers='document'. Проверка не
+ * доверяет полю verified: C9 считается на реальных acceptors, и движок сам
+ * сверяет подпись с человеческим ключом.
+ */
+function c5() {
+  const ruleset = readRuleset(PKG);
+  const signature = ruleset.signature;
+  need(signature && typeof signature === 'object' && !Array.isArray(signature), 'ruleset.signature не объект: ' + JSON.stringify(signature));
+  need(signature.covers === 'document', "covers плоской подписи не 'document': " + JSON.stringify(signature.covers));
+  need(signature.verified === true, 'плоская подпись не подтверждена человеческим ключом: ' + String(signature.reason));
+  const acceptors = loadEngineAcceptors(path.resolve(PKG, '..'));
+  need(Array.isArray(acceptors) && acceptors.length > 0, 'acceptors.json не прочитан: движку нечем проверить подпись');
+  const c9 = c9Of(ruleset, acceptors);
+  need(c9.status === 'pass', 'C9 не прошёл на реальных фактах: ' + c9.status + ' — ' + String(c9.detail));
+  const form = validateFact(rulesetRow(ruleset));
+  need(form.ok, 'ruleset не проходит схему: ' + String(form.problem));
+  console.log('RULESET OK c5');
+}
+
+/*
+ * c6 (0142/2.6.111, негатив): «принимаем document» не означает «принимаем всё».
+ * Неизвестное покрытие — отказ, и detail называет фактическое значение. Вторая
+ * половина — неподтверждённая подпись: verified=false остаётся отказом C9.
+ */
+function c6() {
+  const ruleset = readRuleset(PKG);
+  const signature = ruleset.signature;
+  need(signature && typeof signature === 'object' && !Array.isArray(signature), 'ruleset.signature не объект: ' + JSON.stringify(signature));
+  const acceptors = loadEngineAcceptors(path.resolve(PKG, '..'));
+  need(Array.isArray(acceptors) && acceptors.length > 0, 'acceptors.json не прочитан: движку нечем проверить подпись');
+
+  const unknown = c9Of({ ...ruleset, signature: { ...signature, covers: 'unknown' } }, acceptors);
+  need(unknown.status === 'fail', 'неизвестное покрытие прошло C9: ' + unknown.status);
+  need(String(unknown.detail).includes('unknown'), 'detail не называет фактическое покрытие: ' + String(unknown.detail));
+
+  const unverified = c9Of({ ...ruleset, signature: { ...signature, verified: false, reason: 'подпись не проверена' } }, acceptors);
+  need(unverified.status === 'fail', 'неподтверждённая подпись прошла C9: ' + unverified.status);
+  console.log('RULESET OK c6');
+}
+
+const table = { c1, c2, c3, c4, c5, c6 };
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/facts-ruleset.mjs c1|c2|c3|c4');
+  console.log('usage: node spec/checks/facts-ruleset.mjs c1|c2|c3|c4|c5|c6');
   process.exit(2);
 }
 try {
