@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0040",
+  "status": "closed",
+  "reason": "поведение давно в коде панели: panelOlder() и подсказка «понижение движка запрещено» в plugin/lib/client.js; тесты panel-older.mjs покрывают. Задание осталось черновиком с 2026-11-05 и не начиналось (нет criteria.lock/red/verify)",
+  "by": "lead",
+  "at": "2026-11-25T13:32:45.202Z",
+  "successor": null,
+  "evidence": []
+}
