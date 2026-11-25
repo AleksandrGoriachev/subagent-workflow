@@ -1,0 +1,138 @@
+{
+  "task": "0148",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [
+      "C6"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module",
+      "C4": "Cannot find module",
+      "C5": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Журнал красного при --at-contract",
+      "command": "node spec/checks/red-at-contract-journal.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-red.mjs",
+        "spec/checks/red-at-contract-journal.mjs"
+      ],
+      "timeoutMs": 600000,
+      "tags": [
+        "slow"
+      ],
+      "effect": {
+        "observable": "красный, доказанный на контрактном дереве, оставляет строку в журнале задания",
+        "threshold": "gates.jsonl задания содержит строку kind=red с head=contractCommit, prev пересчитан, повтор не дублирует",
+        "measuredBy": "C2"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "REDJOURNAL OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "WARN: mustPass на несуществующий файл",
+      "command": "node spec/checks/lint-hints.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-lint.mjs",
+        "spec/checks/lint-hints.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LINTHINTS OK c1"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Негатив: существующий файл молчит",
+      "command": "node spec/checks/lint-hints.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/lint-hints.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LINTHINTS OK c2"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Защита от усечения ловит потерю строк",
+      "command": "node spec/checks/no-truncation.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/no-truncation.mjs",
+        "spec/selftest.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "NOTRUNC OK c1"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Текущий репозиторий проходит проверку усечения",
+      "command": "node spec/checks/no-truncation.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/no-truncation.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "NOTRUNC OK c2"
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "tools/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
