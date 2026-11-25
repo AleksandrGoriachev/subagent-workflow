@@ -1,0 +1,74 @@
+{
+  "task": "0157",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Красный mustPass назван до прогона",
+      "command": "node spec/checks/lint-probe-mustpass.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/lint-probe-mustpass.mjs",
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LINT-PROBE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: без флага и на зелёном тишина",
+      "command": "node spec/checks/lint-probe-mustpass.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/lint-probe-mustpass.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LINT-PROBE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Контроль: чужая проверка не сломана",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gate-evidence.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
+      }
+    }
+  ]
+}
