@@ -4,7 +4,7 @@ import {
   parseArgv, readTask, verifyLock, exists, git, repoRoot, extractCriteriaBlock,
   scanSecrets, isManual, decisionEvidenceKind, DECISION_CLASSES, DECISION_IMPACTS,
   DECISION_EVIDENCE_KINDS, loadConfig, readJson, evaluateEffects, hasAcceptedRecord,
-  patternsIntersect, reportFatal, metaAttributionGap,
+  patternsIntersect, reportFatal, metaAttributionGap, matchesAny,
 } from './lib/common.mjs';
 import { policyOf, applyLevel } from './lib/policy.mjs';
 import { evaluateAttack } from './lib/attack.mjs';
@@ -450,20 +450,36 @@ for (const problem of registryCheck.problems) error(problem);
        * (0142, 0146): preflight падал «mustPass не зелёный на базе». WARN, а не
        * ERROR: команда может создавать файл намеренно.
        */
-      for (const id of mustPass) {
-        const hintCriterion = criteria.criteria.find((c) => String(c.id) === id);
-        if (!hintCriterion) continue;
+      /*
+       * 0155 (R2 письма structure--243): кроме прежнего предупреждения про
+       * mustPass, ловим ДЕГЕНЕРАТИВНЫЙ критерий — команда запускает файл,
+       * которого нет ни в HEAD, ни в allowedPaths задания. Такой критерий и на
+       * базе, и на кандидате проверяет «Module not found», а не дефект: красный
+       * формально доказан, чувствительности нет (случаи structure 0358/0359).
+       */
+      const allowed = Array.isArray(meta.allowedPaths) ? meta.allowedPaths : [];
+      const hintReported = new Set();
+      for (const hintCriterion of criteria.criteria) {
+        if (isManual(hintCriterion)) continue;
+        const hintId = String(hintCriterion.id);
         const hintCommand = String(hintCriterion.command || '');
         const hintTokens = hintCommand.match(/[A-Za-z0-9_@./\\-]+\.(?:mjs|js|cjs|ts|ps1|sh|php|py|rb|go|cs|java)\b/gu) || [];
-        const hintReported = new Set();
         for (const token of hintTokens) {
           const rel = token.replace(/\\/gu, '/');
-          if (rel.startsWith('http') || hintReported.has(rel)) continue;
+          if (rel.startsWith('http')) continue;
           const abs = path.isAbsolute(rel) ? rel : path.join(repo, rel);
           if (exists(abs)) continue;
-          hintReported.add(rel);
-          warn('criteria.json: mustPass ' + id + ' ссылается на файл, которого ещё нет: ' + rel
-            + ' — до работы критерий зелёным не станет; его место в mustFail');
+          const key = hintId + '|' + rel;
+          if (hintReported.has(key)) continue;
+          hintReported.add(key);
+          if (mustPass.includes(hintId)) {
+            warn('criteria.json: mustPass ' + hintId + ' ссылается на файл, которого ещё нет: ' + rel
+              + ' — до работы критерий зелёным не станет; его место в mustFail');
+          } else if (!matchesAny(rel, allowed)) {
+            warn('criteria.json: критерий ' + hintId + ' дегенеративный: файла ' + rel
+              + ' нет и он не объявлен в allowedPaths — ворота проверят «Module not found», а не дефект;'
+              + ' объявите путь в allowedPaths или перенесите критерий в mustPass-совместимое место');
+          }
         }
       }
       if (redExpect.reasons !== undefined) {

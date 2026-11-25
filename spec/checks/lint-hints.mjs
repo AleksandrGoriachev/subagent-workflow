@@ -39,8 +39,8 @@ function copyTree(from, to) {
   }
 }
 
-/* Репозиторий с одним заданием; command и наличие файла задаются снаружи. */
-function makeRepo({ command, fileExists }) {
+/* Репозиторий с одним заданием; command, наличие файла, границы и место в redExpect — снаружи. */
+function makeRepo({ command, fileExists, allowedPaths, placement = 'mustPass' }) {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-linthints-'));
   git(repo, ['init', '-q']);
   git(repo, ['config', 'user.email', 'p@l']);
@@ -51,7 +51,7 @@ function makeRepo({ command, fileExists }) {
     id: '0001', version: 1, title: 'т', risk: 'low', created: '2026-11-25', owner: 'a',
     executor: 'subagent:executor', acceptor: 'subagent:judge',
     issuedBy: { kind: 'agent', session: 's', model: 'm' }, base: 'HEAD', criteria: 'criteria.json',
-    allowedPaths: ['docs/tasks/0001/**', 'spec/checks/**'], protectedPaths: [],
+    allowedPaths: Array.isArray(allowedPaths) ? allowedPaths : ['docs/tasks/0001/**', 'spec/checks/**'], protectedPaths: [],
     redAllowDirty: ['docs/tasks/0001/**'], hashExclude: [], decisions: [],
   };
   const body = ['# Задание 0001', '', '<!-- TASK-META', JSON.stringify(meta, null, 2), '-->', '',
@@ -62,7 +62,9 @@ function makeRepo({ command, fileExists }) {
   write(path.join(dir, 'task.md'), body);
   const criteria = {
     task: '0001', setup: [], teardown: [],
-    redExpect: { mustFail: [], mustPass: ['C1'], reasons: {}, noRed: { reason: 'фикстура подсказки' } },
+    redExpect: placement === 'mustFail'
+      ? { mustFail: ['C1'], mustPass: [], reasons: { C1: 'проба' } }
+      : { mustFail: [], mustPass: ['C1'], reasons: {}, noRed: { reason: 'фикстура подсказки' } },
     criteria: [{ id: 'C1', title: 't', command, covers: ['docs/tasks/0001/**'], expect: { exitCode: 0 }, tags: ['fast'] }],
   };
   write(path.join(dir, 'criteria.json'), JSON.stringify(criteria, null, 2) + '\n');
@@ -102,11 +104,36 @@ const table = {
       console.log('LINTHINTS OK c2');
     } finally { fs.rmSync(repo, { recursive: true, force: true }); }
   },
+  /*
+   * c3 (0155, R2 письма structure--243): критерий, чей файл отсутствует и НЕ
+   * объявлен в allowedPaths, проверяет «Module not found», а не дефект — красный
+   * формально доказан, чувствительности нет. Контроль: тот же путь, объявленный
+   * в allowedPaths, предупреждения не даёт (работа его создаст).
+   */
+  c3() {
+    const command = 'node spec/checks/probe-lint-hint.mjs';
+    const missing = makeRepo({ command, fileExists: false, allowedPaths: ['docs/tasks/0001/**'], placement: 'mustFail' });
+    try {
+      const r = lint(missing);
+      if (r.code !== 0) throw new Error('lint отказал на фикстуре (exit ' + r.code + '): ' + r.out.trim().slice(-400));
+      if (!/дегенеративн/u.test(r.out)) throw new Error('WARN о дегенеративном критерии не напечатан: ' + r.out.trim().slice(-400));
+      if (!r.out.includes('spec/checks/probe-lint-hint.mjs')) throw new Error('WARN не называет путь файла: ' + r.out.trim().slice(-400));
+      if (!/C1/u.test(r.out)) throw new Error('WARN не называет критерий: ' + r.out.trim().slice(-400));
+    } finally { fs.rmSync(missing, { recursive: true, force: true }); }
+
+    const declared = makeRepo({ command, fileExists: false, allowedPaths: ['docs/tasks/0001/**', 'spec/checks/**'], placement: 'mustFail' });
+    try {
+      const r = lint(declared);
+      if (r.code !== 0) throw new Error('lint отказал на контрольной фикстуре (exit ' + r.code + '): ' + r.out.trim().slice(-400));
+      if (/дегенеративн/u.test(r.out)) throw new Error('WARN напечатан, хотя путь объявлен в allowedPaths: ' + r.out.trim().slice(-400));
+    } finally { fs.rmSync(declared, { recursive: true, force: true }); }
+    console.log('LINTHINTS OK c3');
+  },
 };
 
 const which = process.argv[2];
 if (!table[which]) {
-  console.log('usage: node spec/checks/lint-hints.mjs c1|c2');
+  console.log('usage: node spec/checks/lint-hints.mjs c1|c2|c3');
   process.exit(2);
 }
 try {

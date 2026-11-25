@@ -1,0 +1,116 @@
+{
+  "version": 5,
+  "kind": "red",
+  "tool": "subagent-workflow/2.6.113",
+  "task": "0155",
+  "createdAt": "2026-11-25T22:58:04.552Z",
+  "base": "HEAD",
+  "baseSha": "9353ec570219d02e9391d351f0e7e3ea75f34cd9",
+  "headSha": "9353ec570219d02e9391d351f0e7e3ea75f34cd9",
+  "contractCommit": "9353ec570219d02e9391d351f0e7e3ea75f34cd9",
+  "criteriaSha256": "1c4c32ecb54b2bcef557eb267521f5bb64e341734e9ea0d28cb039fadb778dff",
+  "criteriaJsonSha256": "56a78403bd76d64ee43f4a6c4f46a385b434cfa2e54134e096e14ab9c1622d93",
+  "dirtyPaths": [
+    "docs/tasks/0155/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/lint-hints.mjs c3",
+      "exitCode": 2,
+      "durationMs": 446,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 2 != 0",
+        "stdout не содержит: LINTHINTS OK c3"
+      ],
+      "stdoutSha256": "5686285b6c176b5e257a64fed0ea819b5604f961f60491920c2363ac7352cf20",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "usage: node spec/checks/lint-hints.mjs c1|c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/lint-hints.mjs c1",
+      "exitCode": 0,
+      "durationMs": 12660,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "869844a678164a857fa5d00654270aa6c66537519ff884a119f5c65b7b93427e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LINTHINTS OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/lint-hints.mjs c2",
+      "exitCode": 0,
+      "durationMs": 12669,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e3acd2027db81b5e8d38223a763dbebad33a6f9fe6dcef782c5e4d00e8e327ef",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LINTHINTS OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 441,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f76c4b25e582e5c778f207648213e9e86f72ec6f46c38c822d0a1aa229c376c1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATE-EVIDENCE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 1,
+  "failedIds": [
+    "C1"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redKind": "proven",
+  "noRed": null,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "noRed": null,
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}
