@@ -1,0 +1,153 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "346cbe9578fec91876ebbfc083c2835a",
+  "runKind": "accept",
+  "task": "0158",
+  "createdAt": "2026-11-25T23:50:58.691Z",
+  "headSha": "1bb1d9f6fab9297f3edf885f62dd7dd0cf704ee3",
+  "contractCommit": "1bb1d9f6fab9297f3edf885f62dd7dd0cf704ee3",
+  "criteriaSha256": "b03d4628d1b019cf42d0adbaddf104e00cc59a32134b7d71fdd13af6e823b4b7",
+  "criteriaJsonSha256": "e5779d706bf4dc361a78dd3602e0f6139c09e228f23f4805eb7fb82d1742c54e",
+  "taskFileSha256": "ad1fde58890cfe8964c6ebc0ec68396edadfa2c9505c77f3fc566b2bb2b5f6c0",
+  "changedPaths": [
+    "docs/tasks/0158/criteria.lock",
+    "docs/tasks/0158/gates.jsonl",
+    "docs/tasks/0158/gates.jsonl.tip",
+    "docs/tasks/0158/red.json",
+    "docs/tasks/0158/verify.executor.json",
+    "docs/tasks/0158/verify.json",
+    "spec/checks/review-cli.mjs",
+    "spec/scripts/check-review.mjs"
+  ],
+  "coverage": {
+    "declared": 4,
+    "covered": [
+      {
+        "path": "spec/checks/review-cli.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/check-review.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/review-cli.mjs c1",
+      "exitCode": 0,
+      "durationMs": 20164,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "ead0354b6b74bd02acca7c911bc78cc248a0527459e4d34d7b3ae4b0d60cf41b",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REVIEW-CLI OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/review-cli.mjs c2",
+      "exitCode": 0,
+      "durationMs": 21428,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "68b74d5b4c32416303cd97a20336d0a7455b64ffc22cc6bdfc7e36f1cdead7f8",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "REVIEW-CLI OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1088,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f76c4b25e582e5c778f207648213e9e86f72ec6f46c38c822d0a1aa229c376c1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATE-EVIDENCE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "1bb1d9f6fab9297f3edf885f62dd7dd0cf704ee3",
+    "contractCommit": "1bb1d9f6fab9297f3edf885f62dd7dd0cf704ee3",
+    "criteriaJsonSha256": "e5779d706bf4dc361a78dd3602e0f6139c09e228f23f4805eb7fb82d1742c54e",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "1bb1d9f6fab9297f3edf885f62dd7dd0cf704ee3",
+  "headDrift": null,
+  "worktreeDigest": "00b0b803f6ee042f21c688465448f7500672e1053aa9c82a2580586ce90c9f90",
+  "log": "verify.log"
+}
