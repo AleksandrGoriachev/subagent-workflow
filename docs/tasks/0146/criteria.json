@@ -1,0 +1,120 @@
+{
+  "task": "0146",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [
+      "C2"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "usage: node spec/checks/red-evidence.mjs",
+      "C3": "вердикт rejected",
+      "C4": "agree",
+      "C5": "SELFTEST FAILED"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Красный из red.json при пустом журнале",
+      "command": "node spec/checks/red-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/facts-convert.mjs",
+        "spec/checks/red-evidence.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "slow"
+      ],
+      "effect": {
+        "observable": "приёмка через task-red --at-contract перестаёт расходиться с тенью движка",
+        "threshold": "у 0144 появляется evidence red exit=0 verdict=red-proven; C5 pass; тень agree=true",
+        "measuredBy": "C3"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "RED-EVIDENCE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: без redProven гейт не покрыт",
+      "command": "node spec/checks/red-evidence.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/facts-convert.mjs",
+        "spec/checks/red-evidence.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "RED-EVIDENCE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Движок принимает 0144",
+      "command": "node spec/engine.mjs --task 0144 --workspace .",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/facts-convert.mjs",
+        "docs/facts/0144.jsonl"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "вердикт accepted"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Тень 0144 согласна",
+      "command": "node -e \"const s=require('./docs/tasks/0144/engine-shadow.json');if(s.agree!==true){console.log('тень 0144: agree=' + s.agree + ' вердикт ' + s.engineVerdict);process.exit(1);}console.log('SHADOW OK 0144')\"",
+      "cwd": ".",
+      "covers": [
+        "docs/tasks/0144/engine-shadow.json"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SHADOW OK 0144"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "tools/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
