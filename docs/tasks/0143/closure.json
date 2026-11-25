@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0143",
+  "status": "superseded",
+  "reason": "контракт заперт, но красный не доказан: preflight mustPass (check-tests) красный из-за расхождения тени 0142; объём переносится в 0145 после 0144",
+  "by": "lead",
+  "at": "2026-11-25T00:11:38.938Z",
+  "successor": "0145",
+  "evidence": []
+}
