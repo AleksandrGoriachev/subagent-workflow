@@ -1,0 +1,229 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0146",
+  "title": "C5: красный из red.json при отсутствии строки журнала",
+  "risk": "medium",
+  "taskFileSha256": "1485f85139b1d14953970ef59a6354af58ba0cc8daf157571fe288381db47b8c",
+  "criteriaSha256": "912a4150168d2845af397807a30937dcb2b2bfd4f4678c3ed3991cfe34e3210d",
+  "criteriaJsonSha256": "b0b102c5a46e478392585917f355eb2bd432fd39b045d6d2fb33708ad8c6e0c6",
+  "contractCommit": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+  "baseCommit": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+  "candidateCommit": "d576adeedb96a2493041b1dac1ace0dc98dce8ed",
+  "tree": "1629ef5e7fb412df6062e609f128f0a8cf48b3e0",
+  "worktreeDigest": "0f9b24e34749cf0ed5e4950f0229dba178910bb077790c08fed967a2b308cda1",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "32bc485b-b716-47f0-8c64-f33be4d608f7",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "ce8853f20295cecd1c56351ad02e3e66",
+    "runKind": "accept",
+    "startedAt": "2026-11-25T00:47:45.376Z",
+    "finishedAt": "2026-11-25T00:48:48.714Z",
+    "durationMs": 63339,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "9aa20d7bfd786b346c75b9fb0360d84ce45bc600da00fd11ce59eee2987f63eb",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "приёмка через task-red --at-contract перестаёт расходиться с тенью движка",
+      "threshold": "у 0144 появляется evidence red exit=0 verdict=red-proven; C5 pass; тень agree=true",
+      "measuredBy": "C3"
+    }
+  ],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false,
+    "allowExtras": true
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+    "contractCommit": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+    "criteriaJsonSha256": "b0b102c5a46e478392585917f355eb2bd432fd39b045d6d2fb33708ad8c6e0c6",
+    "failed": 5,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "mustPass": [
+        "C6"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 11,
+          "total": 12,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C5",
+          "ok": true,
+          "distance": 1,
+          "total": 72,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/red-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1229,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/red-evidence.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1262,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/engine.mjs --task 0144 --workspace .",
+      "exitCode": 0,
+      "durationMs": 988,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('./docs/tasks/0144/engine-shadow.json');if(s.agree!==true){console.log('тень 0144: agree=' + s.agree + ' вердикт ' + s.engineVerdict);process.exit(1);}console.log('SHADOW OK 0144')\"",
+      "exitCode": 0,
+      "durationMs": 859,
+      "passed": true
+    },
+    {
+      "id": "C5",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 51885,
+      "passed": true
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 661,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-25T00:48:49.940Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+    "taskFileSha256": "1485f85139b1d14953970ef59a6354af58ba0cc8daf157571fe288381db47b8c",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 2,
+    "digest": "29041cb77d34832d64a025b9d27048aba48c34384cdb2f68b60434a5dafa584c",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "docs/facts/0144.jsonl и docs/tasks/0144/engine-shadow.json — пересчитанные доказательства другой задачи (следствие того же исправления); ownChanges не пускает пути docs/tasks/<чужой id> в кандидата — исправление в 0145; коммитится координатором отдельно после приёмки; allow-extras: docs/tasks/0144/engine-shadow.json",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+    "head": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+    "trackedChanges": 5,
+    "extras": [
+      "docs/tasks/0144/engine-shadow.json"
+    ],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "PKboLlzHnNbRORztV9mk3CDMj/Z3QV5RyaIFsXEPRMU6ewfH5X3h9JxHum9eTjtlQrN1m4hJlZnPIsHdtp7cCQ=="
+}
