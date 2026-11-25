@@ -1,0 +1,116 @@
+{
+  "task": "0151",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module",
+      "C4": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "init игнорирует каталог движка и не вендорит копию",
+      "command": "node spec/checks/deploy-ignore.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/init.mjs",
+        "spec/checks/deploy-ignore.mjs",
+        "spec/checks/deployed-copy.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOY-IGNORE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "уведомление координатора: файл, машинный журнал, строка вывода",
+      "command": "node spec/checks/deploy-ignore.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/init.mjs",
+        "spec/checks/deploy-ignore.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOY-IGNORE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "init --external не трогает воркспейс, уведомляет журналом",
+      "command": "node spec/checks/deploy-ignore.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/init.mjs",
+        "spec/checks/deploy-ignore.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOY-IGNORE OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "негативный контроль: без строки в .gitignore проверка краснеет; opt-out vendored",
+      "command": "node spec/checks/deploy-ignore.mjs c4",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/init.mjs",
+        "spec/checks/deploy-ignore.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DEPLOY-IGNORE OK c4"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Контроль: чужая проверка не сломана",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gate-evidence.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
+      }
+    }
+  ]
+}
