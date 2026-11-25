@@ -1,0 +1,120 @@
+{
+  "task": "0143",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "usage: node spec/checks/verify-own-diff.mjs c1|c2|c3",
+      "C2": "usage: node spec/checks/accept-worktree.mjs c1|c2|c3|c4",
+      "C3": "usage: node spec/checks/accept-worktree.mjs c1|c2|c3|c4"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Чужой путь из allowedPaths — свой",
+      "command": "node spec/checks/verify-own-diff.mjs c4",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-verify.mjs",
+        "spec/checks/verify-own-diff.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "effect": {
+        "observable": "задача может провести через кандидата артефакт другой задачи, если он в allowedPaths",
+        "threshold": "ownChanges с patterns оставляет docs/tasks/0141/engine-shadow.json, без patterns — выбрасывает; verify.changedPaths содержит путь",
+        "measuredBy": "C2"
+      },
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "OWN-DIFF OK c4"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Снимок дерева по тому же правилу",
+      "command": "node spec/checks/accept-worktree.mjs c5",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs",
+        "spec/scripts/lib/common.mjs",
+        "spec/checks/accept-worktree.mjs"
+      ],
+      "timeoutMs": 300000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "AWORKTREE OK c5"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Объяснённый extras — WARN, без обхода — ERROR",
+      "command": "node spec/checks/accept-worktree.mjs c6",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-check-acceptance.mjs",
+        "spec/checks/accept-worktree.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "AWORKTREE OK c6"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Прежние кейсы own-diff живы",
+      "command": "node spec/checks/verify-own-diff.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/verify-own-diff.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "OWN-DIFF OK c1"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "tools/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    }
+  ]
+}
