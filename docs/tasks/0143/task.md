@@ -74,9 +74,9 @@ node 25, Windows. Проверки — `node spec/checks/verify-own-diff.mjs c4`
 
 | ID | Проверка | Ожидание |
 | --- | --- | --- |
-| C1 | `node spec/checks/verify-own-diff.mjs c4` | `OWN-DIFF OK c4` — чужой путь из allowedPaths свой, иначе нет |
+| C1 | `node spec/checks/verify-own-diff.mjs c4` | `OWNDIFF OK c4` — чужой путь из allowedPaths свой, иначе нет |
 | C2 | `node spec/checks/accept-worktree.mjs c5` | `AWORKTREE OK c5` — снимок/extras по тому же правилу |
 | C3 | `node spec/checks/accept-worktree.mjs c6` | `AWORKTREE OK c6` — объяснённый extras: WARN, без обхода: ERROR |
-| C4 | `node spec/checks/verify-own-diff.mjs c1` | `OWN-DIFF OK c1` — прежние кейсы живы |
+| C4 | `node spec/checks/verify-own-diff.mjs c1` | `OWNDIFF OK c1` — прежние кейсы живы |
 | C5 | `node tools/check-tests.mjs` | exit 0 |
 <!-- CRITERIA:END -->

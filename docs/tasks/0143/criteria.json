@@ -41,7 +41,7 @@
       },
       "expect": {
         "exitCode": 0,
-        "stdoutContains": "OWN-DIFF OK c4"
+        "stdoutContains": "OWNDIFF OK c4"
       }
     },
     {
@@ -96,7 +96,7 @@
       ],
       "expect": {
         "exitCode": 0,
-        "stdoutContains": "OWN-DIFF OK c1"
+        "stdoutContains": "OWNDIFF OK c1"
       }
     },
     {
