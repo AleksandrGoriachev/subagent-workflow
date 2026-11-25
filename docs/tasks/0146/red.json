@@ -1,0 +1,191 @@
+{
+  "version": 5,
+  "kind": "red",
+  "tool": "subagent-workflow/2.6.110",
+  "task": "0146",
+  "createdAt": "2026-11-25T00:42:38.888Z",
+  "base": "HEAD",
+  "baseSha": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+  "headSha": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+  "contractCommit": "cf899256b7131f826d7dc5fabffe76349b4431d7",
+  "criteriaSha256": "912a4150168d2845af397807a30937dcb2b2bfd4f4678c3ed3991cfe34e3210d",
+  "criteriaJsonSha256": "b0b102c5a46e478392585917f355eb2bd432fd39b045d6d2fb33708ad8c6e0c6",
+  "dirtyPaths": [
+    "docs/tasks/0146/criteria.lock",
+    "docs/tasks/0146/gates.jsonl",
+    "docs/tasks/0146/gates.jsonl.tip"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/red-evidence.mjs c1",
+      "exitCode": 1,
+      "durationMs": 653,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: RED-EVIDENCE OK c1"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "234d6cf9c008a35746509a2e88e28fa7ea089c56f1ee5e79d8580364de598ceb",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\red-evidence.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/red-evidence.mjs c2",
+      "exitCode": 1,
+      "durationMs": 772,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: RED-EVIDENCE OK c2"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "234d6cf9c008a35746509a2e88e28fa7ea089c56f1ee5e79d8580364de598ceb",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\red-evidence.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C3",
+      "command": "node spec/engine.mjs --task 0144 --workspace .",
+      "exitCode": 1,
+      "durationMs": 838,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: вердикт accepted"
+      ],
+      "stdoutSha256": "1cbf7deca92ebc4192467a387a82ed5849384690ec30b0bc1d9bb44a8466b96f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "engine: 0144 — вердикт rejected (run 0144:1, применимо 8, pass 7)\n  C1 pass: контракт и запуск согласованы\n  C2 not-applicable: контракт не объявляет sealedTest — обязанности нет\n  C3 pass: дифф не касается запрещённых путей\n  C4 pass: суждение совпадает с диффом этого run\n  C5 fail: гейты без успешного доказательства: red\n  C7 pass: цепь цела\n  C8 pass: действия не выходят за план (9 путей; журнал исполнителя отсутствует — контроль сужен до диффа)\n  C9 pass: правила подписаны и проверены: human-user\n  C10 pass: свидетельство единственно и согласовано\n  C11 not-applicable: роли записаны не полностью: executor=coordinator, факт=null, reviewer=null, acceptor=null\n  C6 not-applicable: release-факты к задаче не относятся\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const s=require('./docs/tasks/0144/engine-shadow.json');if(s.agree!==true){console.log('тень 0144: agree=' + s.agree + ' вердикт ' + s.engineVerdict);process.exit(1);}console.log('SHADOW OK 0144')\"",
+      "exitCode": 1,
+      "durationMs": 726,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: SHADOW OK 0144"
+      ],
+      "stdoutSha256": "69b15ab379e74dcdc1b579fd0cd7f762790c3a3f3220de3f5d8dd83d7525439b",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "тень 0144: agree=false вердикт rejected\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 1,
+      "durationMs": 45612,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0"
+      ],
+      "stdoutSha256": "d43a766596321616fa975efe22b2c8d53c77d79cfcd34bc40bd453fcbb7a2d00",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nFAIL  SHADOW: теневые прогоны совпадают с приёмкой\n      расходятся: 0144\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST FAILED: 1\ncheck-tests: selftest упал (exit=1), 44665 ms\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 395,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f76c4b25e582e5c778f207648213e9e86f72ec6f46c38c822d0a1aa229c376c1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATE-EVIDENCE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 5,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redKind": "proven",
+  "noRed": null,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "mustPass": [
+      "C6"
+    ],
+    "noRed": null,
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 11,
+        "total": 12,
+        "window": 25
+      },
+      {
+        "id": "C4",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C5",
+        "ok": true,
+        "distance": 1,
+        "total": 72,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

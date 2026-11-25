@@ -241,6 +241,26 @@ export function convertTask(taskDir, options = {}) {
       evidenceHashes.push(artifactHash);
       rows.push({ kind: 'evidence', task: taskId, run: runId, gate, artifact_hash: artifactHash, exit, verdict, writer: 'acceptor' });
     }
+    /*
+     * 0146 (2.6.111): красный мог быть доказан на контрактном дереве
+     * (task-red --at-contract) — тогда строка журнала остаётся во временном
+     * worktree, а в задании лежит только red.json. Доказательство берём из
+     * red.json, но только при redProven=true и прошедшем redExpectation; при
+     * наличии строки red в журнале приоритет у журнала, и мы сюда не заходим.
+     */
+    const redRowPresent = rows.some((row) => row.kind === 'evidence' && row.gate === 'red');
+    if (!redRowPresent) {
+      const redFile = path.join(dir, 'red.json');
+      if (fs.existsSync(redFile)) {
+        const red = readJson(redFile) || {};
+        const proven = red.redProven === true && (!red.redExpectation || red.redExpectation.ok !== false);
+        if (proven) {
+          const redHash = sha256Text(fs.readFileSync(redFile, 'utf8'));
+          evidenceHashes.push(redHash);
+          rows.push({ kind: 'evidence', task: taskId, run: runId, gate: 'red', artifact_hash: redHash, exit: 0, verdict: 'red-proven', writer: 'acceptor' });
+        }
+      }
+    }
   } else {
     const verifyLog = path.join(dir, 'verify.log');
     const artifactHash = sha256Text(fs.existsSync(verifyLog) ? fs.readFileSync(verifyLog, 'utf8') : fs.readFileSync(path.join(dir, 'verify.json'), 'utf8'));

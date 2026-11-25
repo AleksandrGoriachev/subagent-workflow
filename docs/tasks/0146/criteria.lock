@@ -1,11 +1,11 @@
 {
   "version": 3,
   "task": "0146",
-  "taskFileSha256": "45eade691530d58e4721a9862fadb18f8a0d2138f976b0b290e32655b9ed4718",
-  "criteriaSha256": "5ac48160d09cbfee564c3391bbcf6c44b3b717e62f84a18bb0d0b6b3f0ae595e",
-  "criteriaJsonSha256": "5c50fbb7b45c3d751be27585ca4a5716079e1ea30a79764e6a550fdc91f6f2ec",
+  "taskFileSha256": "1485f85139b1d14953970ef59a6354af58ba0cc8daf157571fe288381db47b8c",
+  "criteriaSha256": "912a4150168d2845af397807a30937dcb2b2bfd4f4678c3ed3991cfe34e3210d",
+  "criteriaJsonSha256": "b0b102c5a46e478392585917f355eb2bd432fd39b045d6d2fb33708ad8c6e0c6",
   "attackSha256": null,
-  "contractCommit": "ed48cfeb6120af7ad9792fc3d7083b235ed33f33",
+  "contractCommit": "cf899256b7131f826d7dc5fabffe76349b4431d7",
   "protected": [
     {
       "path": "plugin/BACKLOG.md",
@@ -546,9 +546,25 @@
         "tags": [
           "slow"
         ]
+      },
+      {
+        "id": "C6",
+        "command": "node spec/checks/gate-evidence.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 60000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATE-EVIDENCE OK c1"
+        },
+        "covers": [
+          "spec/lib/policy.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
       }
     ]
   },
-  "createdAt": "2026-11-25T00:38:28.964Z",
+  "createdAt": "2026-11-25T00:41:46.054Z",
   "tool": "subagent-workflow/2.6.110"
 }
