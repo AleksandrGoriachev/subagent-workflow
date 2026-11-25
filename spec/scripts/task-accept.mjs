@@ -182,10 +182,22 @@ function validateVerify(verify, lockCheck, contractCommit, nonce) {
   if (nonce !== null && verify.acceptanceNonce !== nonce) fail('verify.json не содержит nonce приёмщика: результат не от свежего прогона');
 }
 
-function ignoredPaths(repoRoot, paths) {
+/*
+ * 0154: кандидат не должен терять ОТСЛЕЖИВАЕМЫЙ путь, попавший под правило
+ * .gitignore. Дефект из письма structure--241 (задача 0352): удаление
+ * `structure/graph.json` было объявлено контрактом и лежало в
+ * verify.changedPaths, но путь под правилом `/structure/` отбрасывался —
+ * `git check-ignore` отвечает и на отслеживаемый файл. Кандидат собирался без
+ * него, и read-tree HEAD возвращал старую версию файла.
+ *
+ * Отбрасываем только НЕотслеживаемые игнорируемые пути: они и есть мусор
+ * рабочего дерева. Принцип «кандидат несёт только пути контракта» не меняется —
+ * фильтр список не расширяет, он лишь перестаёт выкидывать объявленное.
+ */
+export function ignoredPaths(repoRoot, paths) {
   if (paths.length === 0) return new Set();
-  const r = runSync('git check-ignore -- ' + paths.map(quoteArg).join(' '), { cwd: repoRoot });
-  if (r.exitCode !== 0 && r.exitCode !== 1) fail('git check-ignore: ' + r.stderr.trim());
+  const r = runSync('git ls-files --others --ignored --exclude-standard -- ' + paths.map(quoteArg).join(' '), { cwd: repoRoot });
+  if (r.exitCode !== 0) fail('git ls-files --others --ignored: ' + r.stderr.trim());
   return new Set(r.stdout.split(/\r?\n/).filter(Boolean));
 }
 

@@ -1,0 +1,151 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0154",
+  "createdAt": "2026-11-25T22:45:16.898Z",
+  "headSha": "f1a9cb306ee62122c73b8b7f2a72b0ab13ed71fc",
+  "contractCommit": "f1a9cb306ee62122c73b8b7f2a72b0ab13ed71fc",
+  "criteriaSha256": "98b43e886902d1731661555ee884e9065c29dc15eb065f66e78935c27b79cfff",
+  "criteriaJsonSha256": "026a60f71874d0f26905dc7db7066374e01087b4398e8b3c13e44e5862d337ef",
+  "taskFileSha256": "1c3780607fff2e5b0a124f847221476b36fd90fbec6dc49e899da0db2c1fb948",
+  "changedPaths": [
+    "docs/tasks/0154/criteria.lock",
+    "docs/tasks/0154/gates.jsonl",
+    "docs/tasks/0154/gates.jsonl.tip",
+    "docs/tasks/0154/red.json",
+    "spec/checks/candidate-ignored-delete.mjs",
+    "spec/scripts/task-accept.mjs"
+  ],
+  "coverage": {
+    "declared": 4,
+    "covered": [
+      {
+        "path": "spec/checks/candidate-ignored-delete.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-accept.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/candidate-ignored-delete.mjs c1",
+      "exitCode": 0,
+      "durationMs": 6159,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "30a37f5fdd8150dbc25b50e226746ab6ee8cccadb4504a443908ed69399436e3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "CANDIDATE-IGNORED OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/candidate-ignored-delete.mjs c2",
+      "exitCode": 0,
+      "durationMs": 5149,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "6eeff3c75fd0c62619b48d76717297b5431b5906d218de807338d8a30ee5e80e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "CANDIDATE-IGNORED OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1025,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f76c4b25e582e5c778f207648213e9e86f72ec6f46c38c822d0a1aa229c376c1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATE-EVIDENCE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "f1a9cb306ee62122c73b8b7f2a72b0ab13ed71fc",
+    "contractCommit": "f1a9cb306ee62122c73b8b7f2a72b0ab13ed71fc",
+    "criteriaJsonSha256": "026a60f71874d0f26905dc7db7066374e01087b4398e8b3c13e44e5862d337ef",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "f1a9cb306ee62122c73b8b7f2a72b0ab13ed71fc",
+  "headDrift": null,
+  "worktreeDigest": "0f4bac42191a67511ed71b654bd3e0f58b33644ebba33581e5cc7ca54dcb49eb",
+  "log": "verify.log"
+}
