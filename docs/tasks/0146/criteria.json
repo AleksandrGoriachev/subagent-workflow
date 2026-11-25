@@ -10,7 +10,7 @@
       "C5"
     ],
     "mustPass": [
-      "C2"
+      "C6"
     ],
     "reasonWindow": 25,
     "reasons": {
@@ -114,6 +114,23 @@
       ],
       "expect": {
         "exitCode": 0
+      }
+    },
+    {
+      "id": "C6",
+      "title": "Контроль: правило гейтов не сломано",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/lib/policy.mjs"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
       }
     }
   ]

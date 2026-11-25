@@ -78,4 +78,5 @@ node 25, Windows. Проверки — `node spec/checks/red-evidence.mjs c1|c2`
 | C3 | `node spec/engine.mjs --task 0144 --workspace .` | `вердикт accepted` |
 | C4 | `node -e "…agree…"` (тень 0144) | `SHADOW OK 0144` |
 | C5 | `node tools/check-tests.mjs` | exit 0 |
+| C6 | `node spec/checks/gate-evidence.mjs c1` (контроль) | `GATE-EVIDENCE OK c1` — правило гейтов не сломано |
 <!-- CRITERIA:END -->
