@@ -1,0 +1,116 @@
+{
+  "task": "0150",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "2.6.111",
+      "C2": "VERSION OK: 2.6.111",
+      "C3": "preflight: не пройден"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Версии выпуска и панели",
+      "command": "node -e \"const fs=require('fs');const v=fs.readFileSync('VERSION','utf8').trim();const p=require('./package.json');const pl=require('./plugin/package.json');process.stdout.write([v,p.version,pl.version,p.dshPanelVersion].join('|'))\"",
+      "cwd": ".",
+      "covers": [
+        "VERSION",
+        "package.json",
+        "plugin/package.json"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "2.6.112|2.6.112|0.9.39|0.9.39"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Согласованность файлов версии",
+      "command": "node tools/check-version.mjs",
+      "cwd": ".",
+      "covers": [
+        "VERSION",
+        "README.md",
+        "spec/SPEC.md",
+        "CHANGELOG.md"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.6.112"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Предполёт выпуска с ассетами",
+      "command": "node tools/release.mjs preflight 2.6.112",
+      "cwd": ".",
+      "covers": [
+        "release.config.json",
+        "tools/release.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "preflight: OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Регресс набора",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "tools/**",
+        "plugin/**"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Негатив: отсутствующий выпуск отклоняется",
+      "command": "node tools/release.mjs preflight 2.6.999",
+      "cwd": ".",
+      "covers": [
+        "tools/release.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 1
+      }
+    }
+  ]
+}
