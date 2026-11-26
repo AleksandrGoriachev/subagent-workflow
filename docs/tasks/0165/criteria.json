@@ -76,19 +76,19 @@
     },
     {
       "id": "C4",
-      "title": "Контроль: покрытие гейта не сломано",
-      "command": "node spec/checks/guard-acceptance.mjs c1",
+      "title": "Контроль: реестр отклонений тени не сломан",
+      "command": "node spec/checks/shadow-reconcile.mjs c1",
       "cwd": ".",
       "covers": [
-        "spec/checks/guard-acceptance.mjs"
+        "spec/checks/shadow-reconcile.mjs"
       ],
-      "timeoutMs": 240000,
+      "timeoutMs": 120000,
       "tags": [
         "fast"
       ],
       "expect": {
         "exitCode": 0,
-        "stdoutContains": "OK c1"
+        "stdoutContains": "SHADOW-RECONCILE OK c1"
       }
     }
   ]

@@ -77,5 +77,5 @@ node 25, Windows. Тяжёлые прогоны — только стороже�
 | C1 | `node spec/checks/guard-causes.mjs c1` | `GUARD-CAUSES OK c1` (нет META / битый JSON названы) |
 | C2 | `node spec/checks/guard-causes.mjs c2` | `GUARD-CAUSES OK c2` (принято, не заперто — с рецептом) |
 | C3 | `node spec/checks/guard-causes.mjs c3` | `GUARD-CAUSES OK c3` (путь назван, покрытый проходит) |
-| C4 | `node spec/checks/guard-acceptance.mjs c1` | `OK c1` (контроль: покрытие гейта не сломано) |
+| C4 | `node spec/checks/shadow-reconcile.mjs c1` | `SHADOW-RECONCILE OK c1` (контроль: существующие проверки не сломаны) |
 <!-- CRITERIA:END -->
