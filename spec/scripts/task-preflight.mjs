@@ -122,6 +122,46 @@ if (contractMode) {
     }
   }
 
+  /* 0171: аудит отвечает на два вопроса одним входом — что нужно запуску и что нужно приёмке. */
+  if (argv.audit === true) {
+    const lightTask = meta !== null && String(meta.mode || '') === 'light';
+    const acceptMissing = [];
+    if (!lightTask && !fs.existsSync(path.resolve(taskDir, criteriaRel))) {
+      acceptMissing.push('criteria.json — обычной задаче нужен файл критериев, лёгкой — mode=light и checks');
+    }
+    if (!lightTask && !fs.existsSync(path.join(taskDir, 'criteria.lock'))) {
+      acceptMissing.push('criteria.lock — node spec/scripts/task-hash.mjs --task ' + taskRel + ' --repo . --write');
+    }
+    /* Красный нужен не всем: low — noRed с причиной, любой риск — доказанный redProven; light — не доказывается. */
+    let redReady = false;
+    const redFile = path.join(taskDir, 'red.json');
+    if (fs.existsSync(redFile)) {
+      try {
+        const red = JSON.parse(fs.readFileSync(redFile, 'utf8'));
+        redReady = red.redProven === true || (red.redKind === 'noRed' && red.noRed && typeof red.noRed.reason === 'string' && red.noRed.reason.trim() !== '');
+      } catch { redReady = false; }
+    }
+    if (!lightTask && meta !== null && String(meta.risk || '') !== 'low' && !redReady) {
+      acceptMissing.push('red.json — node spec/scripts/task-red.mjs --task ' + taskRel + ' --repo .');
+    }
+    if (!lightTask && meta !== null && String(meta.risk || '') === 'low' && !redReady) {
+      acceptMissing.push('red.json с noRed.reason или прогон verify --allow-missing-red (тогда обход требует --note)');
+    }
+    const acceptorNode = meta !== null && typeof meta.acceptorNode === 'string' ? meta.acceptorNode.trim() : '';
+    const deviation = meta !== null && typeof meta.deviation === 'string' ? meta.deviation.trim() : '';
+    if (acceptorNode === '' && deviation === '') {
+      acceptMissing.push('приёмщик: acceptorNode (узел) или deviation (причина) в TASK-META');
+    }
+    const runOk = problems.length === 0;
+    const acceptOk = acceptMissing.length === 0;
+    if (argv.json === true) {
+      console.log(JSON.stringify({ task: id, run: { ok: runOk, missing: problems }, accept: { ok: acceptOk, missing: acceptMissing } }, null, 2));
+    } else {
+      console.log('для запуска: ' + (runOk ? 'ok' : 'не хватает: ' + problems.join('; ')));
+      console.log('для приёмки: ' + (acceptOk ? 'ok' : 'не хватает: ' + acceptMissing.join('; ')));
+    }
+    process.exit(0);
+  }
   if (problems.length > 0) {
     for (const problem of problems) console.log('ПРЕФЛАЙТ: ' + problem);
     console.log('префлайт: отказ, причин ' + problems.length);

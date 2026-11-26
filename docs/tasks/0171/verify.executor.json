@@ -1,0 +1,190 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0171",
+  "createdAt": "2026-11-26T20:03:30.782Z",
+  "headSha": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "vcs": "git",
+  "contractCommit": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "criteriaSha256": "a28422105ae2a2152f88e8c5751aab7418e22a3036c8fcda6147c6fc18f97bd7",
+  "criteriaJsonSha256": "96b49918f2749cc63225c678cebeece49473acffab2f135fcbd1bb78a3761167",
+  "taskFileSha256": "0dfca0aee30d5d263850ffdd3fb4224b4ba8c451747de85a04b9fbe585aa11bb",
+  "changedPaths": [
+    "INSTALL.md",
+    "docs/tasks/0171/criteria.lock",
+    "docs/tasks/0171/gates.jsonl",
+    "docs/tasks/0171/gates.jsonl.tip",
+    "docs/tasks/0171/red.json",
+    "spec/checks/preflight-audit.mjs",
+    "spec/scripts/task-preflight.mjs"
+  ],
+  "coverage": {
+    "declared": 6,
+    "covered": [
+      {
+        "path": "spec/checks/preflight-audit.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-preflight.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": true,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C3",
+        "observable": "структура получает один ответ: для запуска не хватает X, для приёмки Y — без второго валидатора",
+        "threshold": "C3 зелёный: JSON {run,accept} парсится и называет недостающее",
+        "measuredBy": "C1"
+      }
+    ],
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C3",
+        "carrier": "C3",
+        "measuredBy": "C1"
+      }
+    ],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/preflight-audit.mjs c1",
+      "exitCode": 0,
+      "durationMs": 2741,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "574e022ec4b2f7605c9f6f615b74aacb5ab35cfdb91e4d1dbe284778394555e0",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PREFLIGHT-AUDIT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/preflight-audit.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1044,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f418f279dc58780ad0a231f6fe5f6a2ba81c2888d731c22ee240bc40cb0cecbe",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PREFLIGHT-AUDIT OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/preflight-audit.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1795,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f25de94fbd85c1bfebe2d1b82d34dbc3db5e402c09a7a4dbc5a7dd1c7040c2fa",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PREFLIGHT-AUDIT OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "exitCode": 0,
+      "durationMs": 4037,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "ee3020de1dd578cb7776de612cc5acd2ec225c30b1af724f2832a035535e162e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "TASK-PREFLIGHT OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+    "contractCommit": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+    "criteriaJsonSha256": "96b49918f2749cc63225c678cebeece49473acffab2f135fcbd1bb78a3761167",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "headDrift": null,
+  "worktreeDigest": "c3ad1e476cc7547573a1552fb01f6546c0f899adc02ae963ef9bf995e94b216a",
+  "log": "verify.log"
+}

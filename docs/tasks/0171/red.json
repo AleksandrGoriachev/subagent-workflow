@@ -1,0 +1,138 @@
+{
+  "version": 5,
+  "kind": "red",
+  "tool": "subagent-workflow/2.6.114",
+  "task": "0171",
+  "createdAt": "2026-11-26T20:01:38.817Z",
+  "base": "HEAD",
+  "baseSha": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "headSha": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "contractCommit": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "criteriaSha256": "a28422105ae2a2152f88e8c5751aab7418e22a3036c8fcda6147c6fc18f97bd7",
+  "criteriaJsonSha256": "96b49918f2749cc63225c678cebeece49473acffab2f135fcbd1bb78a3761167",
+  "dirtyPaths": [
+    "docs/tasks/0171/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/preflight-audit.mjs c1",
+      "exitCode": 1,
+      "durationMs": 857,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: PREFLIGHT-AUDIT OK c1"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "1c2c20b5c58f6fd20c19632570c9f2418b973500a53bf806e1a055ceaf28ddad",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\preflight-audit.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/preflight-audit.mjs c2",
+      "exitCode": 1,
+      "durationMs": 858,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: PREFLIGHT-AUDIT OK c2"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "1c2c20b5c58f6fd20c19632570c9f2418b973500a53bf806e1a055ceaf28ddad",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\preflight-audit.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/preflight-audit.mjs c3",
+      "exitCode": 1,
+      "durationMs": 845,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: PREFLIGHT-AUDIT OK c3"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "1c2c20b5c58f6fd20c19632570c9f2418b973500a53bf806e1a055ceaf28ddad",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\preflight-audit.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "exitCode": 0,
+      "durationMs": 2975,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "ee3020de1dd578cb7776de612cc5acd2ec225c30b1af724f2832a035535e162e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "TASK-PREFLIGHT OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 3,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redKind": "proven",
+  "noRed": null,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "noRed": null,
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

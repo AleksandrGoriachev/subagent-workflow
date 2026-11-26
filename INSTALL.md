@@ -227,3 +227,25 @@ node spec/scripts/init.mjs --repo ../my-project --force
 
 Полный порядок, ловушки и откат — `deploy/UPDATE.md`. Ключи при обновлении не меняются:
 `--force` обновляет файлы пакета и не трогает ключ.
+
+## Контракт задания и два слоя
+
+Один контракт читают два слоя, и вопросы у них разные: «почему узел не запускается» и «почему приёмка не проходит».
+
+| Что | Слой workflow (этот пакет) | Слой structure (плагин графа) |
+| --- | --- | --- |
+| Задание | `docs/tasks/<id>/task.md`, блок `TASK-META` | тот же каталог: имя из четырёх цифр |
+| Границы правки | `TASK-META.allowedPaths` | `TASK-META.allowedPaths` (гейт записи) |
+| Кто принимает | поле `TASK-META.acceptor` (роль) | ребро приёмки в графе и `acceptorNode` (запущенный узел) |
+| Проверки | `criteria.json` + `criteria.lock` (или `mode=light` + `checks`) | не читает |
+| Красный | `red.json` (кроме low/light) | не читает |
+
+Проверить оба слоя до работы:
+
+```sh
+node spec/scripts/task-preflight.mjs --contract --audit --task docs/tasks/0164
+node spec/scripts/task-preflight.mjs --contract --audit --json --task docs/tasks/0164
+```
+
+Ответ называет недостающее по имени: «для запуска: …», «для приёмки: …». Structure может звать тот же вход
+перед спавном узла и не держать второй валидатор; `--json` отдаёт `{ run: { ok, missing }, accept: { ok, missing } }`.
