@@ -1,0 +1,112 @@
+{
+  "version": 5,
+  "kind": "red",
+  "tool": "subagent-workflow/2.6.113",
+  "task": "0161",
+  "createdAt": "2026-11-26T00:31:16.736Z",
+  "base": "HEAD",
+  "baseSha": "ec87d32775cfe353c5466055f66b2c26d8902f52",
+  "headSha": "ec87d32775cfe353c5466055f66b2c26d8902f52",
+  "contractCommit": "ec87d32775cfe353c5466055f66b2c26d8902f52",
+  "criteriaSha256": "7fa47907c151e18d19e004326830170273b1d05a72a7fac5ab682bb56fc7a10e",
+  "criteriaJsonSha256": "8ab51f987c6354eadca428eb92546212aeaf1131642590aa0ef4a9af72c9d105",
+  "dirtyPaths": [
+    "docs/tasks/0161/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/shadow-diagnosis.mjs c1",
+      "exitCode": 1,
+      "durationMs": 459,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: SHADOW-DIAG OK c1"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "ab8a13ed2115be8c9aa3970f63f379421814bb5336bd6b628038aedb43e57df0",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\shadow-diagnosis.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/shadow-diagnosis.mjs c2",
+      "exitCode": 1,
+      "durationMs": 435,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: SHADOW-DIAG OK c2"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "ab8a13ed2115be8c9aa3970f63f379421814bb5336bd6b628038aedb43e57df0",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\shadow-diagnosis.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 503,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f76c4b25e582e5c778f207648213e9e86f72ec6f46c38c822d0a1aa229c376c1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATE-EVIDENCE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 3,
+  "failed": 2,
+  "failedIds": [
+    "C1",
+    "C2"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redKind": "proven",
+  "noRed": null,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3"
+    ],
+    "noRed": null,
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

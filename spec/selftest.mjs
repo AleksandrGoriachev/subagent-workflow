@@ -732,6 +732,10 @@ try {
   const summary = shadow.summarize(shadow.collectShadow(process.cwd()).rows);
   report('SHADOW: теневые прогоны совпадают с приёмкой', summary.disagree.length === 0,
     summary.disagree.length === 0 ? '' : 'расходятся: ' + summary.disagree.map((row) => row.task).join(', '));
+  /* 0161: расхождение объясняется данными — гейт, exit и файл фактов. */
+  for (const row of summary.disagree) {
+    for (const line of shadow.explainShadowRow(process.cwd(), row)) console.log('      объяснение ' + line);
+  }
 } catch (err) {
   failed += 1;
   console.error('SELFTEST ERROR: ' + err.stack);
