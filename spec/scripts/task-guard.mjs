@@ -104,10 +104,12 @@ const USAGE = [
   'Usage: node task-guard.mjs --repo <dir> --staged [--message <text>]',
   '       node task-guard.mjs --repo <dir> --range <from..to>',
   '       node task-guard.mjs --repo <dir> --audit [--range <from..to>]',
+  '       node task-guard.mjs --repo <dir> --diagnose [--paths "a,b"]',
   '',
   '  --staged    проверить индексированные изменения (exit 1, если путь не покрыт)',
   '  --range     проверить каждый коммит диапазона (сообщения читаются из коммитов)',
   '  --audit     печатать метки обхода и нарушения; всегда exit 0',
+  '  --diagnose  назвать причину, почему задание не активно (--paths — ещё и покрытие)',
   '  --message   сообщение создаваемого коммита для поиска метки (только --staged)',
 ].join('\n');
 
@@ -127,13 +129,26 @@ function guardSettings(config) {
   };
 }
 
-function parseTaskMetaSafe(text) {
+/**
+ * 0165: та же проверка, но с причиной. Гейт обязан сказать, ПОЧЕМУ задание не
+ * стало активным: «вне активного задания» без причины стоило получаса на случай.
+ */
+function inspectTaskMeta(text) {
+  const match = String(text || '').match(/<!--\s*TASK-META\s*([\s\S]*?)-->/u);
+  if (!match) return { meta: null, problem: 'нет блока TASK-META в task.md' };
   try {
-    const meta = parseTaskMeta(text);
-    return meta && typeof meta === 'object' && !Array.isArray(meta) ? meta : null;
-  } catch {
-    return null;
+    const meta = JSON.parse(match[1].trim());
+    if (!meta || typeof meta !== 'object' || Array.isArray(meta)) {
+      return { meta: null, problem: 'TASK-META должна быть объектом' };
+    }
+    return { meta, problem: null };
+  } catch (error) {
+    return { meta: null, problem: 'TASK-META не разбирается как JSON: ' + String(error && error.message ? error.message : error) };
   }
+}
+
+function parseTaskMetaSafe(text) {
+  return inspectTaskMeta(text).meta;
 }
 
 function taskFromMeta(id, dir, meta, { hasLock, hasAcceptance, hasClosure, newContract = false }) {
@@ -391,6 +406,56 @@ function contractsOf(coverage) {
     .map((task) => ({ id: task.id, protectedPaths: task.protectedPaths }));
 }
 
+/**
+ * 0165: почему у пути нет активного задания. Сканирует каталоги заданий в
+ * рабочем дереве и называет причину по каждому, кто не стал активным, и что
+ * именно поправить. Только чтение; покрытие не меняет.
+ */
+function taskDiagnostics(repo, config, paths = []) {
+  const tasksDirRel = toPosix(config.tasksDir || 'docs/tasks');
+  const tasksDir = path.join(repo, tasksDirRel);
+  let entries = [];
+  try {
+    entries = exists(tasksDir) ? fs.readdirSync(tasksDir, { withFileTypes: true }) : [];
+  } catch {
+    entries = [];
+  }
+  const lines = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+    const dirRel = tasksDirRel + '/' + entry.name;
+    const dir = path.join(tasksDir, entry.name);
+    if (!exists(path.join(dir, 'task.md'))) {
+      lines.push(dirRel + ': нет task.md — гейт не видит контракта');
+      continue;
+    }
+    const inspected = inspectTaskMeta(readText(path.join(dir, 'task.md')));
+    if (inspected.problem) {
+      lines.push(dirRel + ': ' + inspected.problem + ' — задание не считается активным');
+      continue;
+    }
+    if (exists(path.join(dir, 'closure.json'))) {
+      lines.push(dirRel + ': задание закрыто (closure.json) — правки оформляются новым заданием');
+      continue;
+    }
+    if (exists(path.join(dir, 'acceptance.json'))) {
+      lines.push(dirRel + ': задание принято (acceptance.json) — правки оформляются новым заданием');
+      continue;
+    }
+    if (!exists(path.join(dir, 'criteria.lock'))) {
+      lines.push(dirRel + ': нет criteria.lock — контракт не заперт, задание не активно (node spec/scripts/task-hash.mjs --task ' + dirRel + ' --repo . --write)');
+      continue;
+    }
+    const allowed = Array.isArray(inspected.meta.allowedPaths) ? inspected.meta.allowedPaths.map(String) : [];
+    const uncovered = paths.filter((rel) => !matchesAny(rel, allowed));
+    if (paths.length > 0 && uncovered.length > 0) {
+      lines.push(dirRel + ': активное задание, но allowedPaths не покрывает: ' + uncovered.join(', ')
+        + ' (allowedPaths: ' + (allowed.length > 0 ? allowed.join(', ') : 'пусто') + ')');
+    }
+  }
+  return lines;
+}
+
 /** Один коммит: метка из его сообщения, покрытие — из его дерева. */
 function evaluateCommit(repo, config, guard, rev, cache) {
   const message = commitMessage(repo, rev);
@@ -458,12 +523,19 @@ function contractHint(contracts) {
   return lines;
 }
 
-function printStagedUncovered(repo, uncovered, guard, contracts) {
+function printStagedUncovered(repo, uncovered, guard, contracts, diagnostics = []) {
   const header = guard.mode === 'warn'
     ? 'task-guard: WARN — изменение вне активного задания (guard.mode=warn, коммит не отклонён)'
     : 'task-guard: коммит отклонён — изменение вне активного задания';
   const lines = [header];
   for (const rel of uncovered) lines.push('  не покрыт: ' + rel);
+  /* 0165: причина, а не только констатация. Не больше десяти строк — отказ читают. */
+  if (diagnostics.length > 0) {
+    const shown = diagnostics.slice(0, 10);
+    lines.push('  причин неактивности: ' + diagnostics.length);
+    for (const line of shown) lines.push('  ПРИЧИНА ' + line);
+    if (diagnostics.length > shown.length) lines.push('  … ещё ' + (diagnostics.length - shown.length));
+  }
   lines.push(...contractHint(contracts));
   lines.push('');
   lines.push(...hints(repo, guard));
@@ -549,12 +621,13 @@ function main() {
   const repo = path.resolve(String(argv.repo || process.cwd()));
   if (!exists(repo)) fail('нет каталога: ' + repo, 2);
   const audit = Boolean(argv.audit);
+  const diagnose = Boolean(argv.diagnose);
   const staged = Boolean(argv.staged);
   const rangeValue = argv.range;
   const range = typeof rangeValue === 'string' ? rangeValue.trim() : null;
   if (rangeValue === true) fail('--range требует значение <from..to>', 2);
   if (staged && range) fail('--staged и --range вместе не поддерживаются', 2);
-  if (!staged && !range && !audit) {
+  if (!staged && !range && !audit && !diagnose) {
     console.log(USAGE);
     return 2;
   }
@@ -564,6 +637,14 @@ function main() {
 
   const config = loadConfig(repo);
   const guard = guardSettings(config);
+  /* 0165: причины неактивности без попытки коммита: --diagnose [--paths "a,b"]. */
+  if (diagnose) {
+    const declared = String(argv.paths || '').split(/[,;]/u).map((value) => value.trim()).filter((value) => value !== '');
+    const lines = taskDiagnostics(repo, config, declared);
+    for (const line of lines) console.log('ПРИЧИНА ' + line);
+    console.log('task-guard: диагностика — причин ' + lines.length);
+    return 0;
+  }
   /*
    * 2.6.87: выключенный guard — это выключенный аудит и --range, а не отказ от
    * обязательности задания. Проверка индекса идёт при любом значении флага;
@@ -608,7 +689,7 @@ function main() {
     const coverage = coverageFromWorktree(repo, config, { staged: new Set(paths) });
     const result = evaluate(paths, coverage, guard);
     if (result.uncovered.length === 0) return 0;
-    printStagedUncovered(repo, result.uncovered, guard, contractsOf(coverage));
+    printStagedUncovered(repo, result.uncovered, guard, contractsOf(coverage), taskDiagnostics(repo, config, paths));
     /* При выключенном флаге режим warn не смягчает: задание обязательно (2.6.87). */
     return guard.enabled && guard.mode === 'warn' ? 0 : 1;
   }

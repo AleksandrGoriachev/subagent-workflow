@@ -1,0 +1,176 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "0f3685cf0d54bddf89efc12a1b8e00f0",
+  "runKind": "accept",
+  "task": "0165",
+  "createdAt": "2026-11-26T18:47:28.888Z",
+  "headSha": "e38a8d2c97487a26107fcf2aba80d10cd0ea3e34",
+  "contractCommit": "e38a8d2c97487a26107fcf2aba80d10cd0ea3e34",
+  "criteriaSha256": "f903794e75e83a0296bab24e7db2e7951aee2ebb5e644187edef79771ab103a1",
+  "criteriaJsonSha256": "4ea2b8e95d84cb72edd13a7b0021ad117abf1ee2cb738c2d3ef7e7b1f3615cd6",
+  "taskFileSha256": "1e2520c745948a6fa008fd684c95efb0ca7b469cdfd54fb3b5e037e6440aaa65",
+  "changedPaths": [
+    "docs/tasks/0165/criteria.lock",
+    "docs/tasks/0165/gates.jsonl",
+    "docs/tasks/0165/gates.jsonl.tip",
+    "docs/tasks/0165/red.json",
+    "docs/tasks/0165/verify.executor.json",
+    "docs/tasks/0165/verify.json",
+    "spec/checks/guard-causes.mjs",
+    "spec/scripts/task-guard.mjs"
+  ],
+  "coverage": {
+    "declared": 7,
+    "covered": [
+      {
+        "path": "spec/checks/guard-causes.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-guard.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/guard-causes.mjs c1",
+      "exitCode": 0,
+      "durationMs": 13432,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "b415ce6fe42c673d44c6e466dcdbe455dc668fcb2c4b2bdf81e6786a8cc16995",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GUARD-CAUSES OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/guard-causes.mjs c2",
+      "exitCode": 0,
+      "durationMs": 13879,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "0b0e43ede6c342a8a7f70bf29dc6cac92191420c413f0c5a047ca70d19c5b4ba",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GUARD-CAUSES OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/guard-causes.mjs c3",
+      "exitCode": 0,
+      "durationMs": 13323,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "becc944bb703bba2021866dfb679a6955ee7984c1b52f26a4699b2e9100c6094",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GUARD-CAUSES OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/shadow-reconcile.mjs c1",
+      "exitCode": 0,
+      "durationMs": 3886,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "b549994e10c4a0dca07001d78c851807629bcf17a9e0a340b8bb089789f7cf7b",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "SHADOW-RECONCILE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "e38a8d2c97487a26107fcf2aba80d10cd0ea3e34",
+    "contractCommit": "e38a8d2c97487a26107fcf2aba80d10cd0ea3e34",
+    "criteriaJsonSha256": "4ea2b8e95d84cb72edd13a7b0021ad117abf1ee2cb738c2d3ef7e7b1f3615cd6",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "e38a8d2c97487a26107fcf2aba80d10cd0ea3e34",
+  "headDrift": null,
+  "worktreeDigest": "3349946a5cda073af423b664535ef7eec1616c53240eef57cfe51edb6d7fb62e",
+  "log": "verify.log"
+}
