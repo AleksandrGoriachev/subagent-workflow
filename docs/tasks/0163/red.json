@@ -1,0 +1,164 @@
+{
+  "version": 5,
+  "kind": "red",
+  "tool": "subagent-workflow/2.6.113",
+  "task": "0163",
+  "createdAt": "2026-11-26T11:55:43.867Z",
+  "base": "HEAD",
+  "baseSha": "3d1590b9626539e824268936b8511228d4009663",
+  "headSha": "3d1590b9626539e824268936b8511228d4009663",
+  "contractCommit": "3d1590b9626539e824268936b8511228d4009663",
+  "criteriaSha256": "a73cc54d9eb9089cf1a12b39169b547b79f1854e43bad6c33e15aae2cc3eea9f",
+  "criteriaJsonSha256": "e5b192a929c4a75c82a24aaf2fbd7fe7d1fcdcd33b2a1b66220ddb2a4299abbc",
+  "dirtyPaths": [
+    "docs/tasks/0163/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/shadow-reconcile.mjs c1",
+      "exitCode": 1,
+      "durationMs": 1262,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: SHADOW-RECONCILE OK c1"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "58f4acb1718e23386b2ec1e73a996157b59a2ae57da8b2cd84e1aac0658b54c0",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\shadow-reconcile.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/shadow-reconcile.mjs c2",
+      "exitCode": 1,
+      "durationMs": 1252,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: SHADOW-RECONCILE OK c2"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "58f4acb1718e23386b2ec1e73a996157b59a2ae57da8b2cd84e1aac0658b54c0",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\shadow-reconcile.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C3",
+      "command": "node spec/scripts/engine-shadow-summary.mjs --workspace .",
+      "exitCode": 1,
+      "durationMs": 1448,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: расхождений 0"
+      ],
+      "stdoutSha256": "7cfa59554c35acebb8a7179b1de7227ae75049669a2632b0b5a434452342de75",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "OK   0004 — движок accepted, приёмка accepted\nOK   0030 — движок accepted, приёмка accepted\nOK   0061 — движок accepted, приёмка accepted\nOK   0074 — движок accepted, приёмка accepted\nOK   0076 — движок accepted, приёмка accepted\nDIFF 0080 — движок error, приёмка ?\nDIFF 0081 — движок error, приёмка ?\nDIFF 0082 — движок error, приёмка ?\nDIFF 0083 — движок error, приёмка ?\nDIFF 0084 — движок error, приёмка ?\nDIFF 0085 — движок error, приёмка ?\nDIFF 0087 — движок error, приёмка ?\nDIFF 0088 — движок error, приёмка ?\nDIFF 0089 — движок error, приёмка ?\nDIFF 0090 — движок error, приёмка ?\nDIFF 0091 — движок error, приёмка ?\nDIFF 0092 — движок error, приёмка ?\nDIFF 0093 — движок error, приёмка ?\nDIFF 0094 — движок error, приёмка ?\nDIFF 0095 — движок error, приёмка ?\nDIFF 0096 — движок error, приёмка ?\nDIFF 0097 — движок error, приёмка ?\nDIFF 0098 — движок error, приёмка ?\nDIFF 0100 — движок error, приёмка ?\nDIFF 0101 — движок error, приёмка ?\nDIFF 0102 — движок error, приёмка ?\nDIFF 0103 — движок error, приёмка ?\nDIFF 0104 — движок error, приёмка ?\nDIFF 0105 — движок error, приёмка ?\nDIFF 0106 — движок error, приёмка ?\nDIFF 0107 — движок error, приёмка ?\nDIFF 0108 — движок error, приёмка ?\nDIFF 0109 — движок error, приёмка ?\nDIFF 0110 — движок error, приёмка ?\nDIFF 0111 — движок error, приёмка ?\nDIFF 0112 — движок error, приёмка ?\nDIFF 0113 — движок error, приёмка ?\nDIFF 0114 — движок error, приёмка ?\nDIFF 0115 — движок error, приёмка ?\nDIFF 0116 — движок error, приёмка ?\nDIFF 0117 — движок error, приёмка ?\nDIFF 0118 — движок error, приёмка ?\nDIFF 0119 — движок error, приёмка ?\nDIFF 0120 — движок error, приёмка ?\nDIFF 0121 — движок error, приёмка ?\nDIFF 0122 — движок error, приёмка ?\nDIFF 0123 — движок error, приёмка ?\nDIFF 0124 — движок error, приёмка ?\nDIFF 0125 — движок error, приёмка ?\nDIFF 0126 — движок error, приёмка ?\nDIFF 0127 — движок error, приёмка ?\nDIFF 0128 — движок error, приёмка ?\nDIFF 0129 — движок error, приёмка ?\nDIFF 0130 — движок error, приёмка ?\nDIFF 0131 — движок error, приёмка ?\nDIFF 0132 — движок error, приёмка ?\nDIFF 0133 — движок error, приёмка ?\nDIFF 0134 — движок error, приёмка ?\nOK   0135 — движок accepted, приёмка accepted\nOK   0136 — движок accepted, приёмка accepted\nOK   0137 — движок accepted, приёмка accepted\nOK   0139 — движок accepted, приёмка accepted\nOK   0140 — движок accepted, приёмка accepted\nOK   0141 — движок accepted, приёмка accepted\nOK   0142 — движок accepted, приёмка accepted\nOK   0144 — движок accepted, приёмка accepted\nOK   0145 — движок accepted, приёмка accepted\nOK   0146 — движок accepted, приёмка accepted\nOK   0147 — движок accepted, приёмка accepted\nOK   0148 — движок accepted, приёмка accepted\nOK   0150 — движок accepted, приёмка accepted\nOK   0151 — движок accepted, приёмка accepted\nDIFF 0152 — движок rejected, приёмка accepted [C5]\nOK   0154 — движок accepted, приёмка accepted\nOK   0155 — движок accepted, приёмка accepted\nOK   0156 — движок accepted, приёмка accepted\nOK   0157 — движок accepted, приёмка accepted\nOK   0158 — движок accepted, приёмка accepted\nOK   0160 — движок accepted, приёмка accepted\nOK   0161 — движок accepted, приёмка accepted\nитог: проверено 27, совпало 26, расхождений 1\nпо ограничениям: C5×1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/selftest.mjs",
+      "exitCode": 1,
+      "durationMs": 54206,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: SELFTEST OK"
+      ],
+      "stdoutSha256": "6f4c121a2fa5554496cf5fca1adb6b51328a0b6bc18976707d30e28bea944610",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nFAIL  SHADOW: теневые прогоны совпадают с приёмкой\n      расходятся: 0152\n      объяснение 0152: конфликт гейта verify — доказательства с exit 0 и 1; строки в docs/facts/0152.jsonl\nPASS  NO-TRUNCATION: SPEC.md и CHANGELOG.md не потеряли строк\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST FAILED: 1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/shadow-diagnosis.mjs c1",
+      "exitCode": 0,
+      "durationMs": 2156,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "9b8327056722b2682295ab676070bd5dbdb191d772cdebc7c9fdb8c0be8b8ce4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "SHADOW-DIAG OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 5,
+  "failed": 4,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3",
+    "C4"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redKind": "proven",
+  "noRed": null,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5"
+    ],
+    "noRed": null,
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 1,
+        "total": 82,
+        "window": 25
+      },
+      {
+        "id": "C4",
+        "ok": true,
+        "distance": 0,
+        "total": 73,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

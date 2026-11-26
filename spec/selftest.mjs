@@ -729,12 +729,17 @@ try {
  */
 try {
   const shadow = await import('./scripts/engine-shadow-summary.mjs');
-  const summary = shadow.summarize(shadow.collectShadow(process.cwd()).rows);
-  report('SHADOW: теневые прогоны совпадают с приёмкой', summary.disagree.length === 0,
-    summary.disagree.length === 0 ? '' : 'расходятся: ' + summary.disagree.map((row) => row.task).join(', '));
-  /* 0161: расхождение объясняется данными — гейт, exit и файл фактов. */
-  for (const row of summary.disagree) {
-    for (const line of shadow.explainShadowRow(process.cwd(), row)) console.log('      объяснение ' + line);
+  const collected = shadow.collectShadow(process.cwd());
+  const result = shadow.reconcile(process.cwd(), collected.rows);
+  const problems = [...collected.problems, ...result.problems];
+  const diverged = result.diverged.map((item) => item.row.task);
+  const bad = problems.length > 0 || diverged.length > 0;
+  report('SHADOW: расхождения тени названы или разобраны', !bad,
+    bad ? ((diverged.length > 0 ? 'расходятся: ' + diverged.join(', ') + '; ' : '') + problems.join('; ')) : '');
+  /* 0163: отклонение — решение из реестра, а не тишина: печатаем причину. */
+  for (const item of result.waived) console.log('      отклонение ' + item.row.task + ': ' + item.entry.reason);
+  for (const item of result.diverged) {
+    for (const line of shadow.explainShadowRow(process.cwd(), item.row)) console.log('      объяснение ' + line);
   }
 } catch (err) {
   failed += 1;
