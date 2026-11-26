@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.114",
+  "version": "2.6.115",
   "panelVersion": "0.9.40",
-  "releaseName": "2.6.114 — ворота говорят заранее, расхождение тени названо",
+  "releaseName": "2.6.115 — контракт проверяется до работы",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0159",
-  "releaseCommand": "node tools/release.mjs release 2.6.114",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.114",
+  "task": "docs/tasks/0174",
+  "releaseCommand": "node tools/release.mjs release 2.6.115",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.115",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
@@ -41,7 +41,7 @@
   ],
   "failurePolicy": "stop-and-rollback-draft",
   "acceptance": {
-    "task": "docs/tasks/0159",
+    "task": "docs/tasks/0174",
     "rule": "приёмка следует за candidate-коммитом выпуска: вердикт подписывает отдельная сессия приёмщика"
   }
 }
