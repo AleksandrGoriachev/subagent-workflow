@@ -1,0 +1,201 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0171",
+  "title": "task-preflight --audit: нужды запуска и приёмки названы по отдельности; таблица соответствия слоёв",
+  "risk": "medium",
+  "taskFileSha256": "0dfca0aee30d5d263850ffdd3fb4224b4ba8c451747de85a04b9fbe585aa11bb",
+  "criteriaSha256": "a28422105ae2a2152f88e8c5751aab7418e22a3036c8fcda6147c6fc18f97bd7",
+  "criteriaJsonSha256": "96b49918f2749cc63225c678cebeece49473acffab2f135fcbd1bb78a3761167",
+  "contractCommit": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "baseCommit": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+  "candidateCommit": "3a8fbf6e935d4a1a3a2fdeea45ffaa8816418e2f",
+  "tree": "6898f5724a0ea22cd2b91bb69721da838279802d",
+  "worktreeDigest": "c3ad1e476cc7547573a1552fb01f6546c0f899adc02ae963ef9bf995e94b216a",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "3dc4e426-4245-4500-9880-c9748a95ea00",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "f65835e4dcd5d6a2882f77d3a19610f7",
+    "runKind": "accept",
+    "startedAt": "2026-11-26T20:04:19.161Z",
+    "finishedAt": "2026-11-26T20:04:35.251Z",
+    "durationMs": 16099,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "df61748f2b799b13336f4fab8d880ebd24005c86682d113e1b4507abdecb9618",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C3",
+      "observable": "структура получает один ответ: для запуска не хватает X, для приёмки Y — без второго валидатора",
+      "threshold": "C3 зелёный: JSON {run,accept} парсится и называет недостающее",
+      "measuredBy": "C1"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C3",
+        "carrier": "C3",
+        "measuredBy": "C1"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+    "contractCommit": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+    "criteriaJsonSha256": "96b49918f2749cc63225c678cebeece49473acffab2f135fcbd1bb78a3761167",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/preflight-audit.mjs c1",
+      "exitCode": 0,
+      "durationMs": 2678,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/preflight-audit.mjs c2",
+      "exitCode": 0,
+      "durationMs": 980,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/preflight-audit.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1895,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "exitCode": 0,
+      "durationMs": 3949,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-26T20:04:36.648Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+    "taskFileSha256": "0dfca0aee30d5d263850ffdd3fb4224b4ba8c451747de85a04b9fbe585aa11bb",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 2,
+    "digest": "645b656d444576d20d99838f032b9dae882d592657e32049dd00e63f39ae649e",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+    "head": "d370d5ae77e78a266586551e7b60ad2f29b099e9",
+    "trackedChanges": 2,
+    "extras": [],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "cJQXOCAsHvRThGOiZswTzcbCeLLydNOADa78Iby4MfhTXE/K0vpYkncw0x0eCTj+P0DvvThATJxd2nm/LkCcAg=="
+}
