@@ -249,3 +249,25 @@ node spec/scripts/task-preflight.mjs --contract --audit --json --task docs/tasks
 
 Ответ называет недостающее по имени: «для запуска: …», «для приёмки: …». Structure может звать тот же вход
 перед спавном узла и не держать второй валидатор; `--json` отдаёт `{ run: { ok, missing }, accept: { ok, missing } }`.
+
+## Длинные прогоны и замеры
+
+Политика воркспейса (`enforcement.waitPolicy=fail`) отклоняет паузы дольше 120 секунд внутри инструмента
+и прямой `Start-Sleep`. Штатный способ длинной работы — сторож `scripts/job.mjs`:
+
+```sh
+# запустить тяжёлый прогон и получить id
+node spec/scripts/job.mjs start -- node spec/selftest.mjs
+# дождаться с хвостом лога
+node spec/scripts/job.mjs wait <id> --tail 40
+# прочитать лог позже
+node spec/scripts/job.mjs log <id> --tail 100
+```
+
+Замеры с интервалом (heartbeat: два сэмпла по 60 секунд, watchdog-проверка) делаются тем же сторожем:
+вместо паузы в инструменте запускается сэмплер, а результат забирается через `wait`.
+
+Ворота задания удобнее одной командой: `node spec/scripts/gate.mjs <red|verify|accept|tests> --tail 20`.
+
+Сторож — не способ ждать узел графа: `project_graph_spawn` запускает узел, а штатного `wait/status`
+у плагина structure пока нет (см. раздел «Ожидание узла графа»).
