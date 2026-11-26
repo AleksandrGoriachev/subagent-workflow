@@ -1,0 +1,207 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0159",
+  "createdAt": "2026-11-26T12:27:21.083Z",
+  "headSha": "8be76d51ff74d527989d804d16cd22a128bb11c4",
+  "contractCommit": "8be76d51ff74d527989d804d16cd22a128bb11c4",
+  "criteriaSha256": "580d82ea93d72aaefa60f47bf1109eedf6f793a2e707b394d30b63652cbfbbad",
+  "criteriaJsonSha256": "b685dde6207930dd50c3bffbaf77005e0d6c872adca986c86c205e7f6b12c55a",
+  "taskFileSha256": "a0d830fa1a7e96bff7e99347b08f7a17f8c40ab52568f64be9a43c3e26e45755",
+  "changedPaths": [
+    "CHANGELOG.md",
+    "README.md",
+    "VERSION",
+    "docs/tasks/0159/criteria.lock",
+    "docs/tasks/0159/gates.jsonl",
+    "docs/tasks/0159/gates.jsonl.tip",
+    "docs/tasks/0159/red.json",
+    "package.json",
+    "plugin/lib/compat.js",
+    "plugin/package.json",
+    "release.config.json",
+    "spec/SPEC.md"
+  ],
+  "coverage": {
+    "declared": 12,
+    "covered": [
+      {
+        "path": "VERSION",
+        "criterion": "C1"
+      },
+      {
+        "path": "package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/compat.js",
+        "criterion": "C2"
+      },
+      {
+        "path": "plugin/package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "release.config.json",
+        "criterion": "C3"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node -e \"const fs=require('fs');const v=fs.readFileSync('VERSION','utf8').trim();const p=require('./package.json');const pl=require('./plugin/package.json');process.stdout.write([v,p.version,pl.version,p.dshPanelVersion].join('|'))\"",
+      "exitCode": 0,
+      "durationMs": 591,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "d80d5c28a000b3e47485e6313ac8393e7cfed32afb83d45a288f29c66cf23fcf",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "2.6.114|2.6.114|0.9.40|0.9.40",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 1032,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "830c1c16263fc21fb29332681f653bac4a95cc64f1e97f22b79fc8dc0bfc031f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.6.114\nPASS  package.json                  — 2.6.114\nPASS  README.md                     — # subagent-workflow 2.6.114 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.6.114. Дата: 2026-11-26.\nPASS  spec/scripts/lib/common.mjs   — subagent-workflow/2.6.114\nPASS  CHANGELOG.md                  — ## 2.6.114 — 2026-11-26 (панель 0.9.40)\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.6.114:»\nPASS  plugin/package.json           — 0.9.40\nплагин — 0.9.40\n\nVERSION OK: 2.6.114\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node tools/release.mjs preflight 2.6.114",
+      "exitCode": 0,
+      "durationMs": 6843,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "fc957da667d0326068d77418b85e8a0f7616b99b74c43d24312a1baab9cf6257",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "preflight: OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 172730,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "3c87b91b1456f87f3204a352dadc649eba4d19868dee1457a600c0009602a1b3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 50 файл(ов)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node tools/release.mjs preflight 2.6.999",
+      "exitCode": 1,
+      "durationMs": 6734,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "868930694187b2f7ba05136fb4acf901301ca3fedba47109d84cf1a6ed1fa7b8",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RELEASE ERROR VERSION не равен 2.6.999 (в файле 2.6.114)\nRELEASE ERROR package.json: 2.6.114 != 2.6.999\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.tar.gz\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.tar.gz.sha256\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.zip\nRELEASE ERROR нет ассета subagent-workflow-2.6.999.zip.sha256\npreflight: не пройден\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 5,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "8be76d51ff74d527989d804d16cd22a128bb11c4",
+    "contractCommit": "8be76d51ff74d527989d804d16cd22a128bb11c4",
+    "criteriaJsonSha256": "b685dde6207930dd50c3bffbaf77005e0d6c872adca986c86c205e7f6b12c55a",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4",
+        "C5"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 10,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 7,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "8be76d51ff74d527989d804d16cd22a128bb11c4",
+  "headDrift": null,
+  "worktreeDigest": "3293264ef998ddf28a6872b6bac0ab9a1cc8a6f64c02bed35fb8fee08d6a8514",
+  "log": "verify.log"
+}

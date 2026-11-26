@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.113",
-  "panelVersion": "0.9.39",
-  "releaseName": "2.6.113 — развёртывание не вендорит код движка",
+  "version": "2.6.114",
+  "panelVersion": "0.9.40",
+  "releaseName": "2.6.114 — ворота говорят заранее, расхождение тени названо",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0152",
-  "releaseCommand": "node tools/release.mjs release 2.6.113",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.113",
+  "task": "docs/tasks/0159",
+  "releaseCommand": "node tools/release.mjs release 2.6.114",
+  "preflightCommand": "node tools/release.mjs preflight 2.6.114",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
@@ -20,7 +20,7 @@
   "panelMetadataField": {
     "file": "package.json",
     "key": "dshPanelVersion",
-    "value": "0.9.39"
+    "value": "0.9.40"
   },
   "credentialSource": {
     "path": "~/.git-credentials",
@@ -41,7 +41,7 @@
   ],
   "failurePolicy": "stop-and-rollback-draft",
   "acceptance": {
-    "task": "docs/tasks/0152",
+    "task": "docs/tasks/0159",
     "rule": "приёмка следует за candidate-коммитом выпуска: вердикт подписывает отдельная сессия приёмщика"
   }
 }
