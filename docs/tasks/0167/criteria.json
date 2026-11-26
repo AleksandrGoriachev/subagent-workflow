@@ -1,0 +1,101 @@
+{
+  "task": "0167",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Критерии лёгкой задачи из TASK-META",
+      "command": "node spec/checks/light-task.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/light-task.mjs",
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LIGHT-TASK OK c1"
+      },
+      "effect": {
+        "observable": "лёгкая задача без criteria.json проходит ворота: проверки берутся из TASK-META",
+        "threshold": "C1 зелёный: критерии синтезированы, verifyLock ok, обычная задача без criteria.json отказывает",
+        "measuredBy": "C3"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Линт: light без замка; medium и пустой checks — отказ",
+      "command": "node spec/checks/light-task.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/light-task.mjs",
+        "spec/scripts/task-lint.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LIGHT-TASK OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сквозной verify лёгкой задачи",
+      "command": "node spec/checks/light-task.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/light-task.mjs",
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/task-hash.mjs"
+      ],
+      "timeoutMs": 240000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "LIGHT-TASK OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Контроль: префлайт контракта не сломан",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/task-preflight.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASK-PREFLIGHT OK c1"
+      }
+    }
+  ]
+}
