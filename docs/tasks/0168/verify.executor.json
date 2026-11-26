@@ -1,0 +1,199 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0168",
+  "createdAt": "2026-11-26T19:16:07.978Z",
+  "headSha": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+  "contractCommit": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+  "criteriaSha256": "b2936ab7d11c038e5f7c9baae159fc0ceebf4005ae017e435ffacee23b723147",
+  "criteriaJsonSha256": "d158bef90f30c9202293c1f6010217f9dce330d2f7009b2bd62a976740bbba65",
+  "taskFileSha256": "05ba95b2468075914ea4063b040957d2fb30e1dcd09d8208c68a8e17160fee3f",
+  "changedPaths": [
+    "docs/tasks/0168/criteria.lock",
+    "docs/tasks/0168/gates.jsonl",
+    "docs/tasks/0168/gates.jsonl.tip",
+    "docs/tasks/0168/red.json",
+    "spec/checks/name-policy.mjs",
+    "spec/scripts/engine-shadow-summary.mjs",
+    "spec/scripts/new-task.mjs",
+    "spec/scripts/task-lint.mjs",
+    "spec/templates/task.md"
+  ],
+  "coverage": {
+    "declared": 8,
+    "covered": [
+      {
+        "path": "spec/checks/name-policy.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/engine-shadow-summary.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "spec/scripts/new-task.mjs",
+        "criterion": "C2"
+      },
+      {
+        "path": "spec/scripts/task-lint.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": true,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C1",
+        "observable": "каталог задания с суффиксом назван ошибкой с правилом «только четыре цифры», а не тихо пропущен",
+        "threshold": "C1 зелёный: линт отказывает суффиксу с правилом, каталог из четырёх цифр проходит",
+        "measuredBy": "C3"
+      }
+    ],
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C3"
+      }
+    ],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/name-policy.mjs c1",
+      "exitCode": 0,
+      "durationMs": 3805,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "8e87d86e0d64680ad543dfb1c52be3e5be243dea6cba36d14540611070263463",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NAME-POLICY OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/name-policy.mjs c2",
+      "exitCode": 0,
+      "durationMs": 3268,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "723b0474405824fd80f0c98dddd5b56f9011bc29a44512b2cf82d54b4a3cb744",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NAME-POLICY OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/name-policy.mjs c3",
+      "exitCode": 0,
+      "durationMs": 2295,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "6ce5e5160cbe2717d41fc2226ba269e1d10c9c156c3aac8d7cdd54e1713a1a06",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "NAME-POLICY OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "exitCode": 0,
+      "durationMs": 4918,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "ee3020de1dd578cb7776de612cc5acd2ec225c30b1af724f2832a035535e162e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "TASK-PREFLIGHT OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+    "contractCommit": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+    "criteriaJsonSha256": "d158bef90f30c9202293c1f6010217f9dce330d2f7009b2bd62a976740bbba65",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+  "headDrift": null,
+  "worktreeDigest": "cf2ca45cb5aa883cac57314f45b98caeba483e0da9515d3cb62661e35201080c",
+  "log": "verify.log"
+}

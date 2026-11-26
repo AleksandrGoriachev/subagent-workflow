@@ -34,7 +34,12 @@ const repo = path.resolve(String(argv.repo || '.'));
 const config = loadConfig(repo);
 const workflowDir = path.join(repo, 'docs', 'subagent-workflow');
 const id = String(argv.id);
-if (!/^[0-9A-Za-z._-]+$/.test(id)) { console.error('new-task: недопустимый id'); process.exit(1); }
+/* 0168: каталог задания — ровно четыре цифры. Суффикс гасит поиск активного задания молча. */
+if (!/^[0-9]{4}$/u.test(id)) {
+  console.error('new-task: каталог задания — четыре цифры (например 0168), получено "' + id + '"');
+  console.error('new-task: суффикс после номера (0168-короткое-имя) не допускается: имя каталога состоит только из цифр');
+  process.exit(1);
+}
 const risk = String(argv.risk || 'medium');
 if (!['low', 'medium', 'high'].includes(risk)) { console.error('new-task: --risk low|medium|high'); process.exit(1); }
 const taskDir = path.join(repo, config.tasksDir, id);

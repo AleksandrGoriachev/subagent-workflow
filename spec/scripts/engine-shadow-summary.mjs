@@ -16,8 +16,14 @@ export function collectShadow(workspace) {
   const tasksDir = path.join(String(workspace), 'docs', 'tasks');
   if (!fs.existsSync(tasksDir)) return { ok: false, problems: ['нет каталога задач: ' + tasksDir], rows: [] };
   const rows = [];
+  const unrecognized = [];
   for (const entry of fs.readdirSync(tasksDir, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !/^[0-9]{4}$/u.test(entry.name)) continue;
+    if (!entry.isDirectory()) continue;
+    if (!/^[0-9]{4}$/u.test(entry.name)) {
+      /* 0168: каталог с цифровым префиксом и суффиксом не исчезает из сводки молча. */
+      if (/^[0-9]/u.test(entry.name)) unrecognized.push(entry.name);
+      continue;
+    }
     const file = path.join(tasksDir, entry.name, 'engine-shadow.json');
     if (!fs.existsSync(file)) continue;
     try {
@@ -36,7 +42,7 @@ export function collectShadow(workspace) {
     }
   }
   rows.sort((a, b) => String(a.task).localeCompare(String(b.task)));
-  return { ok: true, rows, problems: [] };
+  return { ok: true, rows, unrecognized, problems: [] };
 }
 
 /**
@@ -238,6 +244,9 @@ if (isMainModule(import.meta.url)) {
     for (const problem of collected.problems) console.log('SHADOW PROBLEM ' + problem);
     process.exitCode = 2;
   } else {
+    for (const name of collected.unrecognized || []) {
+      console.log('WARN каталог задания «' + name + '» не распознан: имя каталога состоит только из четырёх цифр (например 0168)');
+    }
     const result = reconcile(workspace, collected.rows);
     const waived = new Map(result.waived.map((item) => [item.row.task, item]));
     const diverged = new Map(result.diverged.map((item) => [item.row.task, item]));

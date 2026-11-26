@@ -73,6 +73,11 @@ function stepSectionPaths(taskMd) {
 
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
+  /* 0168: имя каталога — четыре цифры; суффикс выключает задание молча, поэтому правило названо. */
+  const dirName = path.basename(taskDir);
+  if (!/^[0-9]{4}$/u.test(dirName)) {
+    error('каталог задания «' + dirName + '»: только четыре цифры (например 0168); суффикс после номера не допускается — переименуйте каталог');
+  }
   /* 0167: лёгкая задача — проверки в TASK-META, без criteria.json и замка. */
   const light = String(meta.mode || '') === 'light';
   if (light && meta.risk !== 'low') error('mode=light: допустим только при risk=low (сейчас ' + meta.risk + ')');
