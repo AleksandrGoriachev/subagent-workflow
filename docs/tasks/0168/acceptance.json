@@ -1,0 +1,201 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0168",
+  "title": "каталог задания из четырёх цифр: шаблон, new-task и линт называют правило, а не молчат",
+  "risk": "medium",
+  "taskFileSha256": "05ba95b2468075914ea4063b040957d2fb30e1dcd09d8208c68a8e17160fee3f",
+  "criteriaSha256": "b2936ab7d11c038e5f7c9baae159fc0ceebf4005ae017e435ffacee23b723147",
+  "criteriaJsonSha256": "d158bef90f30c9202293c1f6010217f9dce330d2f7009b2bd62a976740bbba65",
+  "contractCommit": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+  "baseCommit": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+  "candidateCommit": "e0af288d3d56d5af26e8ba853a9281da351d81a8",
+  "tree": "b05cce3583f95684711abb3fb3f367eaefa67c44",
+  "worktreeDigest": "cf2ca45cb5aa883cac57314f45b98caeba483e0da9515d3cb62661e35201080c",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "e38df7df-4923-45f3-8dcc-e3d88af72122",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "2cce9d0220b4fb6287f2efeb74bf3d38",
+    "runKind": "accept",
+    "startedAt": "2026-11-26T19:17:16.826Z",
+    "finishedAt": "2026-11-26T19:17:34.611Z",
+    "durationMs": 17793,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "7e7d69ae4b2e1da1219eabf980a5e0158cd5ad339b9e5822919c723117a728cf",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "каталог задания с суффиксом назван ошибкой с правилом «только четыре цифры», а не тихо пропущен",
+      "threshold": "C1 зелёный: линт отказывает суффиксу с правилом, каталог из четырёх цифр проходит",
+      "measuredBy": "C3"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C3"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+    "contractCommit": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+    "criteriaJsonSha256": "d158bef90f30c9202293c1f6010217f9dce330d2f7009b2bd62a976740bbba65",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/name-policy.mjs c1",
+      "exitCode": 0,
+      "durationMs": 4217,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/name-policy.mjs c2",
+      "exitCode": 0,
+      "durationMs": 3103,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/name-policy.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1888,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "exitCode": 0,
+      "durationMs": 4838,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-26T19:17:36.520Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+    "taskFileSha256": "05ba95b2468075914ea4063b040957d2fb30e1dcd09d8208c68a8e17160fee3f",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 2,
+    "digest": "c5ed6eed4ff0340f4333ef820c5cff78c93f083daf791acdeb45069f1e80933e",
+    "assumed": [],
+    "confirmed": 2
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+    "head": "cccecec7e3608a20908f47016a344a4f0ba7aeef",
+    "trackedChanges": 4,
+    "extras": [],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "MMKWyVIKKv8KLNchW25MMXKz4D24AHA2YE+XabbiTzsf91iekTk85728Fw0MVAouLFz6+7iReTHrNddMRcgjBw=="
+}
