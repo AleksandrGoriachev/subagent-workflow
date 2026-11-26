@@ -1,0 +1,75 @@
+{
+  "task": "0161",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Конфликт доказательств назван: гейт, exit, файл",
+      "command": "node spec/checks/shadow-diagnosis.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/shadow-diagnosis.mjs",
+        "spec/scripts/engine-shadow-summary.mjs",
+        "spec/selftest.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SHADOW-DIAG OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: без фактов причина не выдумывается",
+      "command": "node spec/checks/shadow-diagnosis.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/shadow-diagnosis.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SHADOW-DIAG OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Контроль: чужая проверка не сломана",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gate-evidence.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
+      }
+    }
+  ]
+}
