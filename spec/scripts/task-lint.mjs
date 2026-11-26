@@ -72,7 +72,24 @@ function stepSectionPaths(taskMd) {
 }
 
 try {
-  const { files, taskMd, meta, criteria } = readTask(taskDir);
+  /*
+   * 0169: без criteria.json отказ называет оба пути, а не печатает стектрейс:
+   * обычная задача — файл критериев рядом с task.md; лёгкая — mode=light и checks.
+   */
+  let read;
+  try {
+    read = readTask(taskDir);
+  } catch (error) {
+    const message = String(error && error.message ? error.message : error);
+    if (/Нет criteria\.json/u.test(message)) {
+      console.log('task-lint: ' + path.basename(taskDir) + ' — ОШИБКИ');
+      console.log('  ERROR ' + message);
+      console.log('  Решение: обычная задача — criteria.json рядом с task.md; лёгкая задача — "mode": "light" и "checks" в TASK-META (раздел «Лёгкая задача» в spec/templates/task.md).');
+      process.exit(1);
+    }
+    throw error;
+  }
+  const { files, taskMd, meta, criteria } = read;
   /* 0168: имя каталога — четыре цифры; суффикс выключает задание молча, поэтому правило названо. */
   const dirName = path.basename(taskDir);
   if (!/^[0-9]{4}$/u.test(dirName)) {
