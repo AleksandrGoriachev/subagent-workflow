@@ -73,6 +73,10 @@ function stepSectionPaths(taskMd) {
 
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
+  /* 0167: лёгкая задача — проверки в TASK-META, без criteria.json и замка. */
+  const light = String(meta.mode || '') === 'light';
+  if (light && meta.risk !== 'low') error('mode=light: допустим только при risk=low (сейчас ' + meta.risk + ')');
+  if (light && (!Array.isArray(meta.checks) || meta.checks.length === 0)) error('mode=light: TASK-META.checks пуст — проверять нечего');
 
 /*
  * 2.6.82: закрытие без приёмки — отдельный факт (closure.json). Задание с ним
@@ -97,7 +101,9 @@ if (exists(path.join(taskDir, 'closure.json'))) {
   const config = loadConfig(repo);
   const policy = policyOf(config);
 
-  const requiredMeta = ['id', 'version', 'risk', 'created', 'owner', 'executor', 'acceptor', 'base', 'criteria', 'allowedPaths'];
+  const requiredMeta = ['id', 'version', 'risk', 'created', 'owner', 'executor', 'acceptor', 'base', 'allowedPaths'];
+  /* 0167: у лёгкой задачи нет criteria.json — поле criteria в TASK-META не требуется. */
+  if (!light) requiredMeta.push('criteria');
   for (const key of requiredMeta) {
     if (meta[key] === undefined || meta[key] === null || meta[key] === '') error('TASK-META: нет поля ' + key);
   }
@@ -284,19 +290,6 @@ for (const problem of registryCheck.problems) error(problem);
     if (!actualHeadings.includes(h)) error('task.md: нет раздела "## ' + h + '"');
   }
 
-  const block = extractCriteriaBlock(taskMd);
-  const tableIds = [];
-  const blockLines = block.replaceAll(String.fromCharCode(13), '').split(NL);
-  for (const line of blockLines) {
-    if (!line.trim().startsWith('|')) continue;
-    if (/^[|: -]+$/.test(line.trim())) continue;
-    const cells = line.split('|').slice(1, -1).map((c) => c.trim());
-    if (cells.length === 0) continue;
-    const first = cells[0].replace(/[*_]/g, '').trim();
-    if (!first || first.toLowerCase() === 'id' || first === '№' || first === '#') continue;
-    tableIds.push(first);
-  }
-  if (tableIds.length === 0) error('Критерии: таблица пуста или не распознана');
   if (criteria.parsed.task && String(criteria.parsed.task) !== id) error('criteria.json.task (' + criteria.parsed.task + ') не совпадает с TASK-META.id (' + id + ')');
   const jsonIds = criteria.criteria.map((c) => String(c.id));
   /* 2.6.88: образ результата обязан ссылаться на существующий критерий. */
@@ -306,10 +299,29 @@ for (const problem of registryCheck.problems) error(problem);
   }
   const dupJson = jsonIds.filter((x, i) => jsonIds.indexOf(x) !== i);
   if (dupJson.length) error('criteria.json: повторяются ID: ' + [...new Set(dupJson)].join(', '));
-  const onlyTable = tableIds.filter((x) => !jsonIds.includes(x));
-  const onlyJson = jsonIds.filter((x) => !tableIds.includes(x));
-  if (onlyTable.length) error('Критерии есть в таблице, но нет в criteria.json: ' + onlyTable.join(', '));
-  if (onlyJson.length) error('Критерии есть в criteria.json, но нет в таблице: ' + onlyJson.join(', '));
+  /*
+   * 0167: у лёгкой задачи нет criteria.json, поэтому сверять таблицу контракта с
+   * файлом не с чем; ID проверок берутся из TASK-META.checks (jsonIds выше).
+   */
+  if (!light) {
+    const block = extractCriteriaBlock(taskMd);
+    const tableIds = [];
+    const blockLines = block.replaceAll(String.fromCharCode(13), '').split(NL);
+    for (const line of blockLines) {
+      if (!line.trim().startsWith('|')) continue;
+      if (/^[|: -]+$/.test(line.trim())) continue;
+      const cells = line.split('|').slice(1, -1).map((c) => c.trim());
+      if (cells.length === 0) continue;
+      const first = cells[0].replace(/[*_]/g, '').trim();
+      if (!first || first.toLowerCase() === 'id' || first === '№' || first === '#') continue;
+      tableIds.push(first);
+    }
+    if (tableIds.length === 0) error('Критерии: таблица пуста или не распознана');
+    const onlyTable = tableIds.filter((x) => !jsonIds.includes(x));
+    const onlyJson = jsonIds.filter((x) => !tableIds.includes(x));
+    if (onlyTable.length) error('Критерии есть в таблице, но нет в criteria.json: ' + onlyTable.join(', '));
+    if (onlyJson.length) error('Критерии есть в criteria.json, но нет в таблице: ' + onlyJson.join(', '));
+  }
 
   for (const c of criteria.criteria) {
     const cid = String(c.id ?? '?');
@@ -359,7 +371,7 @@ for (const problem of registryCheck.problems) error(problem);
   const quality = (message) => (acceptedRecord ? warn : error)(message);
 
   const coversDeclared = criteria.criteria.some((c) => Array.isArray(c.covers) && c.covers.length > 0);
-  if (meta.risk !== 'low' && !coversDeclared) {
+  if (!light && meta.risk !== 'low' && !coversDeclared) {
     const appliedCovers = applyLevel(policy.coverage, ['criteria.json: для risk=' + meta.risk + ' нужен хотя бы один критерий с covers: без него изменённый код может остаться без проверки']);
     errors.push(...appliedCovers.errors);
     warnings.push(...appliedCovers.warnings);
@@ -382,7 +394,8 @@ for (const problem of registryCheck.problems) error(problem);
       if (typeof pattern === 'string' && pattern.trim() !== '') coverPatterns.push(pattern);
     }
   }
-  for (const allowedPath of allowed) {
+  /* 0167: у лёгкой задачи covers не объявляются — проверки наблюдаемые, не пофайловые. */
+  for (const allowedPath of (light ? [] : allowed)) {
     if (typeof allowedPath !== 'string' || allowedPath.trim() === '') continue;
     if (allowedPath === '**' || allowedPath === '**/*' || /\/\*\*$/.test(allowedPath)) continue;
     if (coverPatterns.some((pattern) => patternsIntersect(allowedPath, pattern))) continue;
@@ -641,6 +654,8 @@ for (const problem of registryCheck.problems) error(problem);
     const check = verifyLock(repo, taskDir, meta, taskMd, criteria, { acceptedTolerant: true });
     for (const e of check.errors) quality('criteria.lock: ' + e);
     for (const n of check.notes || []) warn('criteria.lock: ' + n);
+  } else if (light) {
+    /* 0167: лёгкой задаче замок не нужен — фиксировать criteria.json нечего. */
   } else if (strict) error('criteria.lock отсутствует (--strict): выполните task-hash --write');
   else warn('criteria.lock отсутствует: выполните task-hash --write до красного прогона');
 

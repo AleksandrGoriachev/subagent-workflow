@@ -23,6 +23,11 @@ const repo = path.resolve(argv.repo || repoRoot(taskDir));
 
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
+  /* 0167: лёгкой задаче замок не нужен: criteria.json нет, проверки заморожены контрактным коммитом. */
+  if (String(meta.mode || '') === 'light') {
+    console.log('task-hash: лёгкая задача (mode=light) — criteria.lock не требуется: проверки берутся из TASK-META.checks');
+    process.exit(0);
+  }
   const contract = checkContractCommitted(repo, taskDir, meta);
   if (!contract.ok) {
     if (argv.json) {

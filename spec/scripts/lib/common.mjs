@@ -281,7 +281,9 @@ export function checkContractCommitted(repo, taskDir, meta) {
   const headFiles = headFilesRaw.files;
   const protectedPatterns = Array.isArray(meta.protectedPaths) ? meta.protectedPaths : [];
   const isArtifact = (file) => file.startsWith(taskRel + '/') && TASK_ARTIFACTS.has(file.split('/').pop());
-  const files = new Set([taskRel + '/task.md', taskRel + '/criteria.json']);
+  /* 0167: у лёгкой задачи criteria.json нет — контракт фиксирует task.md с checks. */
+  const lightContract = String(meta.mode || '') === 'light';
+  const files = new Set([taskRel + '/task.md', ...(lightContract ? [] : [taskRel + '/criteria.json'])]);
   /*
    * Тот же манифест, что попадёт в criteria.lock (2.6.18): движок
    * (docs/subagent-workflow/**) контрактом задания не считается, если задание не
@@ -457,9 +459,31 @@ export function extractCriteriaBlock(taskMd) {
   return m[1];
 }
 
-export function parseCriteria(taskDir) {
+export function parseCriteria(taskDir, meta = null) {
   const file = path.join(taskDir, 'criteria.json');
-  if (!exists(file)) fail('Нет criteria.json в ' + taskDir);
+  /*
+   * 0167: лёгкая задача (watchdog, утилита) объявляет проверки в TASK-META:
+   * mode=light и checks. Файла criteria.json нет, и он не создаётся; проверки
+   * заморожены контрактным коммитом (task.md входит в taskFileSha256).
+   * Обычная задача без criteria.json по-прежнему отказывает.
+   */
+  const light = meta && typeof meta === 'object' && String(meta.mode || '') === 'light';
+  if (light) {
+    const checks = Array.isArray(meta.checks) ? meta.checks : [];
+    if (checks.length === 0) fail('mode=light: TASK-META.checks пуст — проверять нечего');
+    for (const check of checks) {
+      if (!check || typeof check !== 'object') fail('mode=light: checks должен содержать объекты критериев');
+      if (!check.id) fail('mode=light: у проверки нет id');
+      if (typeof check.command !== 'string' || check.command.trim() === '') fail('mode=light: проверка ' + check.id + ' без command');
+    }
+    const parsed = {
+      task: String(meta.id || ''),
+      criteria: checks,
+      redExpect: { mustFail: [], mustPass: checks.map((check) => String(check.id)), noRed: { reason: 'лёгкая задача: красный не доказывается (mode=light)' } },
+    };
+    return { raw: JSON.stringify(parsed), parsed, criteria: checks, redExpect: parsed.redExpect, setup: [], teardown: [], light: true };
+  }
+  if (!exists(file)) fail('Нет criteria.json в ' + taskDir + ' (для лёгкой задачи укажите mode=light и checks в TASK-META)');
   const raw = readText(file);
   const parsed = JSON.parse(raw);
   const criteria = Array.isArray(parsed) ? parsed : parsed.criteria;
@@ -718,7 +742,7 @@ export function readTask(taskDir) {
   if (!exists(files.taskMd)) fail('Нет task.md в ' + taskDir);
   const taskMd = readText(files.taskMd);
   const meta = parseTaskMeta(taskMd);
-  const criteria = parseCriteria(taskDir);
+  const criteria = parseCriteria(taskDir, meta);
   return { files, taskMd, meta, criteria };
 }
 
@@ -1129,6 +1153,20 @@ export function acceptanceNotes(note, rework) {
 
 export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) {
   const files = taskFiles(taskDir);
+  /*
+   * 0167: лёгкой задаче замок не нужен: фиксировать criteria.json нечего, проверки
+   * заморожены контрактным коммитом. Ожидание всё равно вычисляется (criteria
+   * синтетические, criteriaJsonSha256 — от синтеза), чтобы verify/приёмка видели
+   * те же поля, что и у обычной задачи.
+   */
+  if (meta && typeof meta === 'object' && String(meta.mode || '') === 'light') {
+    const lightContract = checkContractCommitted(repo, taskDir, meta);
+    if (!lightContract.ok) {
+      return { ok: false, errors: ['контракт не зафиксирован в git: ' + lightContract.errors.join('; ')], expected: null, actual: null, light: true };
+    }
+    const lightExpected = computeLock(repo, taskDir, meta, taskMd, criteria, lightContract.contractCommit);
+    return { ok: true, errors: [], notes: ['лёгкая задача (mode=light): criteria.lock не требуется'], expected: lightExpected, actual: null, light: true };
+  }
   if (!exists(files.lock)) return { ok: false, errors: ['criteria.lock отсутствует — выполните task-hash --write'], expected: null, actual: null };
   let lock;
   try { lock = readJson(files.lock); } catch (err) { return { ok: false, errors: [err.message], expected: null, actual: null }; }
