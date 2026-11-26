@@ -1,0 +1,201 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0170",
+  "title": "vcs=none для лёгкой задачи: проверки без git, приёмка с подписью и digest дерева вместо SHA",
+  "risk": "medium",
+  "taskFileSha256": "ebb87a533daf6e9ec94753832f0441b0f446b4385ccc6ac7a12a3b0830dea5fb",
+  "criteriaSha256": "ac70df9c96eae10c58888d605a59b843bf2556a8c064187a3271f4baf0d88b2e",
+  "criteriaJsonSha256": "11dc051034d3bd81c16314a4a66aaea9b862308d9844fb2bb9d792cc73f35536",
+  "contractCommit": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "baseCommit": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "candidateCommit": "08b58dbe9c06f8a52a182dddfe3105188a83cf3b",
+  "tree": "37f762242d591ecd9402d9d534279f26a9b27da7",
+  "worktreeDigest": "ece6dc0dc2554ed1625260019705dde5d04df722ad1ea3ee12a46e5cacb84521",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "70f27c11-1123-409d-9ba9-dea61f87f383",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "3c9edfebe0409bce43e71be5eb2f2cbc",
+    "runKind": "accept",
+    "startedAt": "2026-11-26T19:59:19.671Z",
+    "finishedAt": "2026-11-26T19:59:42.107Z",
+    "durationMs": 22446,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "64160421f5ef394987dfa022fef85c4ca8028622ab730f4b50718c561c025f54",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C3",
+      "observable": "локальная задача принимается без git: запись подписана, коммита нет, digest дерева назван",
+      "threshold": "C3 зелёный: приёмка без git проходит, check-acceptance принимает запись vcs=none",
+      "measuredBy": "C1"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C3",
+        "carrier": "C3",
+        "measuredBy": "C1"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+    "contractCommit": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+    "criteriaJsonSha256": "11dc051034d3bd81c16314a4a66aaea9b862308d9844fb2bb9d792cc73f35536",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/local-task.mjs c1",
+      "exitCode": 0,
+      "durationMs": 5024,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/local-task.mjs c2",
+      "exitCode": 0,
+      "durationMs": 6468,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/local-task.mjs c3",
+      "exitCode": 0,
+      "durationMs": 8254,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/light-task.mjs c1",
+      "exitCode": 0,
+      "durationMs": 9034,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-26T19:59:44.052Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+    "taskFileSha256": "ebb87a533daf6e9ec94753832f0441b0f446b4385ccc6ac7a12a3b0830dea5fb",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 3,
+    "digest": "245103559065524f7e5d0ef261d95fb64acb4fe49988294e0c82e4771a9a1b61",
+    "assumed": [],
+    "confirmed": 3
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+    "head": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+    "trackedChanges": 5,
+    "extras": [],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "Vt7WhAvE492h9tzoC3dpPzMnUV3loroER1OmMfYINPTU63Rbe0cRjk4q0n4ejTSevoY9NxzJoKnfZiZu42GtAw=="
+}
