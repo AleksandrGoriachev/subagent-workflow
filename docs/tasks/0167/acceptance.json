@@ -1,0 +1,201 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0167",
+  "title": "mode: light — наблюдаемые проверки в контракте, без criteria.json и criteria.lock",
+  "risk": "medium",
+  "taskFileSha256": "09772b4c93ff28045f7b6c3583c2b72bb66fca9e1be7fe485bb7add7b7d2789f",
+  "criteriaSha256": "669d6372f31ebdcfff2af08bdceaaf1c762bdfda71ebc75a6682f02a5f82c8c3",
+  "criteriaJsonSha256": "996d2eb47aeeef0fdc2d83be4d7750e3ef451f095f696ca13cfee731b2d53b65",
+  "contractCommit": "44c51b116d91bc328f25670004105bef6e6b3900",
+  "baseCommit": "44c51b116d91bc328f25670004105bef6e6b3900",
+  "candidateCommit": "67b9ec149c675b183df30bbeb17f6ee6804d2a80",
+  "tree": "55f0e2bab1fa1c97b7e477d6d620183f39629312",
+  "worktreeDigest": "1efd8d9fc9d8da39ba205743cd79d726a996d00f0d0916defe7139f0d5a591f1",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-lead",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "89511f8e-5517-4f92-af88-724a4262a701",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "d9f778573e29c31f6a4479e338a4927c",
+    "runKind": "accept",
+    "startedAt": "2026-11-26T19:08:48.257Z",
+    "finishedAt": "2026-11-26T19:09:34.194Z",
+    "durationMs": 45946,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "af8e79de6460fcb31ab236d363b32399def491c12da92b6946ebb21bb23306ca",
+    "verifyLogSha256": null
+  },
+  "effects": [
+    {
+      "criterion": "C1",
+      "observable": "лёгкая задача без criteria.json проходит ворота: проверки берутся из TASK-META",
+      "threshold": "C1 зелёный: критерии синтезированы, verifyLock ok, обычная задача без criteria.json отказывает",
+      "measuredBy": "C3"
+    }
+  ],
+  "effectsRequired": true,
+  "effectConsistency": {
+    "checked": true,
+    "ok": true,
+    "mode": "fail",
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C1",
+        "carrier": "C1",
+        "measuredBy": "C3"
+      }
+    ]
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "44c51b116d91bc328f25670004105bef6e6b3900",
+    "contractCommit": "44c51b116d91bc328f25670004105bef6e6b3900",
+    "criteriaJsonSha256": "996d2eb47aeeef0fdc2d83be4d7750e3ef451f095f696ca13cfee731b2d53b65",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/light-task.mjs c1",
+      "exitCode": 0,
+      "durationMs": 11521,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/light-task.mjs c2",
+      "exitCode": 0,
+      "durationMs": 6626,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/light-task.mjs c3",
+      "exitCode": 0,
+      "durationMs": 29580,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "exitCode": 0,
+      "durationMs": 7643,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-26T19:09:36.539Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "44c51b116d91bc328f25670004105bef6e6b3900",
+    "taskFileSha256": "09772b4c93ff28045f7b6c3583c2b72bb66fca9e1be7fe485bb7add7b7d2789f",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 3,
+    "digest": "3b8e9064330cdfb29d4798c3901b9d1c6373f816d4137e707b1ad24685d0bafc",
+    "assumed": [],
+    "confirmed": 3
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "44c51b116d91bc328f25670004105bef6e6b3900",
+    "head": "44c51b116d91bc328f25670004105bef6e6b3900",
+    "trackedChanges": 3,
+    "extras": [],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "CvBszWA0jpKkmXdvunNuIAwqZvmBpyQ7h2yByXFs0yt1RchGnNhTciCMQghHC7iLzsH/0y8rZrgAV7yZLVBrAA=="
+}
