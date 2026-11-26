@@ -1160,6 +1160,22 @@ export function verifyLock(repo, taskDir, meta, taskMd, criteria, options = {}) 
    * те же поля, что и у обычной задачи.
    */
   if (meta && typeof meta === 'object' && String(meta.mode || '') === 'light') {
+    /* 0170: локальный режим (vcs=none) не требует git: база — хеши task.md и checks. */
+    if (String(meta.vcs || '') === 'none') {
+      const localExpected = {
+        version: 3,
+        task: String(meta.id),
+        taskFileSha256: sha256(canonicalize(taskMd)),
+        criteriaSha256: sha256(canonicalize(extractCriteriaBlock(taskMd))),
+        criteriaJsonSha256: sha256(canonicalize(criteria.raw)),
+        attackSha256: null,
+        contractCommit: null,
+        local: true,
+        createdAt: new Date().toISOString(),
+        tool: TOOL,
+      };
+      return { ok: true, errors: [], notes: ['локальный режим (vcs=none): git не используется, база — хеши контракта'], expected: localExpected, actual: null, light: true, local: true };
+    }
     const lightContract = checkContractCommitted(repo, taskDir, meta);
     if (!lightContract.ok) {
       return { ok: false, errors: ['контракт не зафиксирован в git: ' + lightContract.errors.join('; ')], expected: null, actual: null, light: true };

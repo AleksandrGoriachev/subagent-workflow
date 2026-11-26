@@ -1,0 +1,209 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0170",
+  "createdAt": "2026-11-26T19:58:22.525Z",
+  "headSha": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "vcs": "git",
+  "contractCommit": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "criteriaSha256": "ac70df9c96eae10c58888d605a59b843bf2556a8c064187a3271f4baf0d88b2e",
+  "criteriaJsonSha256": "11dc051034d3bd81c16314a4a66aaea9b862308d9844fb2bb9d792cc73f35536",
+  "taskFileSha256": "ebb87a533daf6e9ec94753832f0441b0f446b4385ccc6ac7a12a3b0830dea5fb",
+  "changedPaths": [
+    "docs/tasks/0170/criteria.lock",
+    "docs/tasks/0170/gates.jsonl",
+    "docs/tasks/0170/gates.jsonl.tip",
+    "docs/tasks/0170/red.json",
+    "spec/checks/local-task.mjs",
+    "spec/scripts/lib/common.mjs",
+    "spec/scripts/task-accept.mjs",
+    "spec/scripts/task-check-acceptance.mjs",
+    "spec/scripts/task-lint.mjs",
+    "spec/scripts/task-verify.mjs"
+  ],
+  "coverage": {
+    "declared": 9,
+    "covered": [
+      {
+        "path": "spec/checks/local-task.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/task-accept.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "spec/scripts/task-check-acceptance.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "spec/scripts/task-lint.mjs",
+        "criterion": "C2"
+      },
+      {
+        "path": "spec/scripts/task-verify.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": true,
+    "checked": true,
+    "mode": "fail",
+    "declared": [
+      {
+        "criterion": "C3",
+        "observable": "локальная задача принимается без git: запись подписана, коммита нет, digest дерева назван",
+        "threshold": "C3 зелёный: приёмка без git проходит, check-acceptance принимает запись vcs=none",
+        "measuredBy": "C1"
+      }
+    ],
+    "links": [
+      {
+        "decision": "D1",
+        "criterion": "C3",
+        "carrier": "C3",
+        "measuredBy": "C1"
+      }
+    ],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/local-task.mjs c1",
+      "exitCode": 0,
+      "durationMs": 5273,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "308cf686fe6faaae4af54027ceaeb6f55e7d33b4fd5691cba124a2e7d8cf9893",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LOCAL-TASK OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/local-task.mjs c2",
+      "exitCode": 0,
+      "durationMs": 6787,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "543ff2ec00bf487ef399a503c912cbb42d231814917f9683b556d6e4e1159180",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LOCAL-TASK OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/local-task.mjs c3",
+      "exitCode": 0,
+      "durationMs": 7875,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "a1dbc9f14efa9dac407e56af7fd03f799a9f239d0325b7ebfcf484754aa083fe",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LOCAL-TASK OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/light-task.mjs c1",
+      "exitCode": 0,
+      "durationMs": 8643,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "5546aae245b28753c8ecdc4a76a5e4c79ca404e745e79ed94b3756b877f57842",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LIGHT-TASK OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+    "contractCommit": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+    "criteriaJsonSha256": "11dc051034d3bd81c16314a4a66aaea9b862308d9844fb2bb9d792cc73f35536",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "headDrift": null,
+  "worktreeDigest": "ece6dc0dc2554ed1625260019705dde5d04df722ad1ea3ee12a46e5cacb84521",
+  "log": "verify.log"
+}

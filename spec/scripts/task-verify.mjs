@@ -55,6 +55,8 @@ function changedSinceContract(contractCommit) {
 
 try {
   const { files, taskMd, meta, criteria } = readTask(taskDir);
+  /* 0170: локальная задача (vcs=none) не использует git: база — хеши контракта, кандидат — digest дерева. */
+  const localMode = String(meta.vcs || '') === 'none';
   const lockCheck = verifyLock(repo, taskDir, meta, taskMd, criteria);
   if (!lockCheck.ok) {
     for (const e of lockCheck.errors) console.error('task-verify: lock: ' + e);
@@ -69,7 +71,7 @@ try {
     }
     process.exit(1);
   }
-  const headSha = lockCheck.expected.contractCommit;
+  const headSha = localMode ? 'local' : lockCheck.expected.contractCommit;
   /* 0110 (2.6.98): чужие коммиты после контракта допустимы, их пути исключаем из границ. */
   const drift = lockCheck.drift || null;
   /*
@@ -77,7 +79,7 @@ try {
    * выпущен, mismatch не должен всплывать у judge после зелёного verify.
    */
   const earlyReviewFile = path.join(taskDir, 'review.json');
-  if ((meta.reviewer || meta.reviewerNode) && exists(earlyReviewFile)) {
+  if (!localMode && (meta.reviewer || meta.reviewerNode) && exists(earlyReviewFile)) {
     const early = validateReviewReceipt({ taskDir, meta });
     if (!early.ok) fail('ранняя проверка квитанции: ' + early.problems.join('; '));
     const earlyReview = readJson(earlyReviewFile);
@@ -140,9 +142,9 @@ try {
    * коммиты (релизы, другие задания) в дифф не входят, артефакты чужих заданий
    * и .dsh отбрасываются: они не наши и не должны блокировать verify.
    */
-  const changedBefore = ownChanges(diffPaths(repo, 'HEAD'), taskRel, meta.allowedPaths);
+  const changedBefore = localMode ? [] : ownChanges(diffPaths(repo, 'HEAD'), taskRel, meta.allowedPaths);
   const outsideBefore = changedBefore.filter((p) => !matchesAny(p, allowedDiff));
-  if (outsideBefore.length) {
+  if (!localMode && outsideBefore.length) {
     console.error('task-verify: изменения вне разрешённых путей:');
     for (const p of outsideBefore) console.error('  ' + p);
     console.error('Разрешено: ' + allowedDiff.join(', '));
@@ -156,6 +158,7 @@ try {
   const logLine = (s) => { log.push(s); };
   logLine('# task-verify ' + meta.id);
   logLine('# head ' + headSha);
+  if (localMode) logLine('# vcs: none — границы и база не проверяются VCS (локальное задание)');
   logLine('# contract ' + lockCheck.expected.contractCommit);
   logLine('# created ' + new Date().toISOString());
   logLine('');
@@ -218,12 +221,12 @@ try {
    * не делало: 2.6.100 применила ownChanges только к первой проверке, а эта
    * осталась на старой базе.
    */
-  const changed = ownChanges(diffPaths(repo, 'HEAD'), taskRel, meta.allowedPaths);
+  const changed = localMode ? [] : ownChanges(diffPaths(repo, 'HEAD'), taskRel, meta.allowedPaths);
   const outside = changed.filter((p) => !matchesAny(p, allowedDiff));
-  const contractAfter = checkContractCommitted(repo, taskDir, meta);
-  /* 0120 (2.6.103): скан секретов — тоже только по своим незакоммиченным изменениям. */
-  const diffText = readDiffText(repo, 'HEAD');
-  const secrets = scanSecrets(diffText);
+  const contractAfter = localMode ? { errors: [] } : checkContractCommitted(repo, taskDir, meta);
+  /* 0120 (2.6.103): скан секретов — тоже только по своим незакоммиченным изменениям; без VCS нечего сканировать. */
+  const diffText = localMode ? '' : readDiffText(repo, 'HEAD');
+  const secrets = localMode ? [] : scanSecrets(diffText);
   const violations = [];
   for (const p of outside) violations.push('файл вне allowedPaths: ' + p);
   for (const e of contractAfter.errors) violations.push('контракт: ' + e);
@@ -276,6 +279,7 @@ try {
     task: String(meta.id),
     createdAt: new Date().toISOString(),
     headSha,
+    vcs: localMode ? 'none' : 'git',
     contractCommit: lockCheck.expected.contractCommit,
     criteriaSha256: lockCheck.expected.criteriaSha256,
     criteriaJsonSha256: lockCheck.expected.criteriaJsonSha256,
@@ -312,7 +316,7 @@ try {
         }
       : null,
     changes: 'own-uncommitted',
-    headAtVerify: headCommit(repo),
+    headAtVerify: localMode ? 'local' : headCommit(repo),
     headDrift: drift && drift.drift
       ? { from: drift.from, to: drift.to, foreignCommits: drift.foreignCommits, paths: drift.paths }
       : null,

@@ -1,0 +1,138 @@
+{
+  "version": 5,
+  "kind": "red",
+  "tool": "subagent-workflow/2.6.114",
+  "task": "0170",
+  "createdAt": "2026-11-26T19:36:03.199Z",
+  "base": "HEAD",
+  "baseSha": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "headSha": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "contractCommit": "1ad19fcead9da73e70905d92b3ec76dadc09dea8",
+  "criteriaSha256": "ac70df9c96eae10c58888d605a59b843bf2556a8c064187a3271f4baf0d88b2e",
+  "criteriaJsonSha256": "11dc051034d3bd81c16314a4a66aaea9b862308d9844fb2bb9d792cc73f35536",
+  "dirtyPaths": [
+    "docs/tasks/0170/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/local-task.mjs c1",
+      "exitCode": 1,
+      "durationMs": 795,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: LOCAL-TASK OK c1"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "17e53f61e813729c5e7e659141b09180b128d892822a25a8fa66ceb4e5f4158a",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\local-task.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/local-task.mjs c2",
+      "exitCode": 1,
+      "durationMs": 609,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: LOCAL-TASK OK c2"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "17e53f61e813729c5e7e659141b09180b128d892822a25a8fa66ceb4e5f4158a",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\local-task.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/local-task.mjs c3",
+      "exitCode": 1,
+      "durationMs": 779,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: LOCAL-TASK OK c3"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "17e53f61e813729c5e7e659141b09180b128d892822a25a8fa66ceb4e5f4158a",
+      "stdoutPreview": "",
+      "stderrPreview": "node:internal/modules/cjs/loader:1450\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\Goryachev\\Documents\\deepseek-harness\\default-workspace\\subagent-workflow-v2\\spec\\checks\\local-task.mjs'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1447:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1233:25)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v25.4.0\r\n"
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/light-task.mjs c1",
+      "exitCode": 0,
+      "durationMs": 5157,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "5546aae245b28753c8ecdc4a76a5e4c79ca404e745e79ed94b3756b877f57842",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "LIGHT-TASK OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 3,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redKind": "proven",
+  "noRed": null,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "noRed": null,
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      },
+      {
+        "id": "C3",
+        "ok": true,
+        "distance": 12,
+        "total": 16,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

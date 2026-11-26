@@ -178,7 +178,8 @@ function validateVerify(verify, lockCheck, contractCommit, nonce) {
   for (const key of ['criteriaSha256', 'criteriaJsonSha256', 'taskFileSha256', 'contractCommit']) {
     if (verify[key] !== lockCheck.expected[key]) fail(key + ' в verify.json не совпадает с lock');
   }
-  if (verify.headSha !== contractCommit) fail('HEAD изменился после verify: ' + verify.headSha + ' -> ' + contractCommit);
+  /* 0170: локальный прогон (vcs=none) не имеет HEAD — сравнение с контрактным коммитом не применимо. */
+  if (verify.vcs !== 'none' && verify.headSha !== contractCommit) fail('HEAD изменился после verify: ' + verify.headSha + ' -> ' + contractCommit);
   if (nonce !== null && verify.acceptanceNonce !== nonce) fail('verify.json не содержит nonce приёмщика: результат не от свежего прогона');
 }
 
@@ -317,6 +318,10 @@ try {
     process.exit(1);
   }
   const contractCommit = lockCheck.expected.contractCommit;
+  /* 0170: локальная задача (vcs=none) — без коммита-кандидата; запись честно говорит, чего нет. */
+  const localVcs = String(meta.vcs || '') === 'none';
+  if (localVcs && (contractCommit === null || contractCommit === undefined) === false) fail('vcs=none: контракт ссылается на коммит ' + contractCommit + ' — локальный режим без VCS');
+  if (localVcs && !argv.note) fail('vcs=none: приёмка без git требует --note с причиной (запись не притворяется коммитом)');
   if (argv['expect-contract'] && String(argv['expect-contract']) !== contractCommit) {
     fail('контрактный коммит ' + contractCommit + ' не совпадает с ожидаемым ' + argv['expect-contract'] + ': задание выдавалось на другом контракте');
   }
@@ -643,7 +648,8 @@ try {
       + Math.round((Number(process.env.TASK_VERIFY_TIMEOUT_MS) || config.verifyTimeoutMs) / 1000) + ' с)');
     const nonce = crypto.randomBytes(16).toString('hex');
     const args = [VERIFY_SCRIPT, '--task', taskDir, '--repo', repo, '--json'];
-    if (argv['allow-missing-red']) args.push('--allow-missing-red');
+    /* 0170: локальная задача не доказывает красный — флаг передаётся сам, но обход виден в записи. */
+    if (argv['allow-missing-red'] || localVcs) args.push('--allow-missing-red');
     if (argv['allow-manual']) args.push('--allow-manual');
     const command = [process.execPath, ...args].map(quoteArg).join(' ');
     const startedAt = new Date();
@@ -696,7 +702,8 @@ try {
   const digest = computeWorktreeDigest(repo, taskDir, meta);
   if (digest !== verify.worktreeDigest) fail('дерево изменилось после verify (digest не совпадает); перезапустите task-verify');
   /* 0110 (2.6.98): после verify разрешены только чужие коммиты; их видно в headDrift. */
-  if (verify.headAtVerify && headCommit(repo) !== verify.headAtVerify) {
+  /* 0170: в локальном режиме HEAD нет — дрейф не проверяется (VCS-гейт). */
+  if (!localVcs && verify.headAtVerify && headCommit(repo) !== verify.headAtVerify) {
     fail('HEAD изменился после verify (' + String(verify.headAtVerify).slice(0, 12) + ' -> ' + String(headCommit(repo)).slice(0, 12) + '); перезапустите task-verify');
   }
 
@@ -794,7 +801,7 @@ try {
     criteriaSha256: lockCheck.expected.criteriaSha256,
     criteriaJsonSha256: lockCheck.expected.criteriaJsonSha256,
     contractCommit,
-    baseCommit: contractCommit,
+    baseCommit: localVcs ? null : contractCommit,
     candidateCommit: null,
     tree: null,
     worktreeDigest: digest,
@@ -907,7 +914,8 @@ try {
     ...artifacts,
     gatesRel,
   ])].filter((file) => file !== acceptanceRel);
-  const ignored = ignoredPaths(repo, candidatePaths);
+  /* 0170: без git игнорируемых путей не бывает — кандидата-коммита тоже нет. */
+  const ignored = localVcs ? new Set() : ignoredPaths(repo, candidatePaths);
   const candidateFiles = candidatePaths.filter((file) => !ignored.has(file));
   /*
    * 0135 (2.6.109): до подписи записи — снимок дерева. reset --hard уничтожит
@@ -917,7 +925,8 @@ try {
    * Обход --allow-extras пишется в bypasses и notes, чтобы CI/аудит его видел.
    */
   let extrasNote = '';
-  const worktree = worktreeSnapshot(repo, { keep: candidateFiles, ignored, headBefore });
+  /* 0170: без VCS снимок git не нужен: кандидат — digest дерева, а не набор путей. */
+  const worktree = localVcs ? { extras: [], stashes: [], local: true } : worktreeSnapshot(repo, { keep: candidateFiles, ignored, headBefore });
   if (worktree.extras.length > 0) {
     const extrasList = worktree.extras.join(', ');
     if (!argv['allow-extras']) {
@@ -963,7 +972,10 @@ try {
   }));
   if (!journalPending.ok) console.log('WARN журнал ворот: ' + journalPending.error);
   let candidate;
-  try {
+  if (localVcs) {
+    /* 0170: кандидат-коммит не создаётся; запись ссылается на digest дерева, а не на SHA. */
+    candidate = { commit: null, tree: null };
+  } else try {
     candidate = createCandidate(
       repo,
       candidateFiles,
@@ -985,6 +997,10 @@ try {
   }
   body.candidateCommit = candidate.commit;
   body.tree = candidate.tree;
+  if (localVcs) {
+    body.vcs = 'none';
+    body.worktreeDigest = digest;
+  }
 
   const record = signRecord(body, { privateKeyPem, keyId });
   writeJson(files.acceptance, record);
@@ -1029,8 +1045,9 @@ try {
       : 'свидетельства запуска нет (TASK-META.acceptorNode не объявлен и --run не передан)'));
     console.log('  releaseReady  ' + releaseReady + (decisionSummary.assumed.length ? ' — есть решения без подтверждения' : ''));
     console.log('  contract      ' + contractCommit);
-    console.log('  candidate     ' + candidate.commit);
-    console.log('  tree          ' + candidate.tree);
+    console.log('  candidate     ' + (candidate.commit || '— (vcs: none, коммита нет)'));
+    console.log('  tree          ' + (candidate.tree || '— (vcs: none)'));
+    if (localVcs) console.log('  vcs           none (база — хеши контракта, кандидат — digest дерева)');
     console.log('  acceptance    ' + files.acceptance);
     console.log('');
     /* 0055: те же строки, что печатают ворота, — приёмщику не нужен повторный прогон. */
@@ -1055,7 +1072,10 @@ try {
      * называет роль (координатор, не приёмщик), рядом с reset --hard стоит
      * предупреждение о незакоммиченных отслеживаемых правках вне кандидата.
      */
-    for (const line of finalizationLines({
+    if (localVcs) {
+      console.log('Финализация: git не используется (vcs: none) — запись и факты остаются в рабочем дереве.');
+      console.log('  проверка записи: node ' + checkScriptRel + ' --file ' + acceptanceRel + ' --repo . --task ' + taskRel);
+    } else for (const line of finalizationLines({
       candidate: candidate.commit,
       acceptanceRel,
       gateRel,

@@ -308,6 +308,20 @@ function run() {
     note('releaseReady=false без review и без assumed-решений');
   }
 
+  /*
+   * 0170: локальная приёмка (vcs: none) — коммита нет по решению контракта. Доказательство:
+   * digest рабочего дерева и подпись приёмщика; поля кандидата/дерева обязаны быть пустыми.
+   */
+  if (record.vcs === 'none') {
+    if (typeof record.worktreeDigest !== 'string' || record.worktreeDigest.trim() === '') {
+      note('vcs=none: нет worktreeDigest — локальному кандидату нечего проверять');
+    } else if (record.candidateCommit || record.tree) {
+      note('vcs=none: запись ссылается на коммит/дерево, которых в локальном режиме быть не может');
+    } else {
+      warnings.push('локальная приёмка (vcs: none): коммита нет, кандидат — digest дерева ' + String(record.worktreeDigest).slice(0, 16));
+    }
+    return record;
+  }
   const candidate = record.candidateCommit;
   if (!candidate) {
     note('нет candidateCommit');

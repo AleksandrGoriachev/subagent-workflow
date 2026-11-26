@@ -99,6 +99,11 @@ try {
   const light = String(meta.mode || '') === 'light';
   if (light && meta.risk !== 'low') error('mode=light: допустим только при risk=low (сейчас ' + meta.risk + ')');
   if (light && (!Array.isArray(meta.checks) || meta.checks.length === 0)) error('mode=light: TASK-META.checks пуст — проверять нечего');
+  /* 0170: без git принимается только лёгкая задача низкого риска — остальным нужны коммиты. */
+  if (String(meta.vcs || '') === 'none') {
+    if (!light) error('vcs=none: допустим только вместе с mode=light (обычной задаче нужны коммиты)');
+    if (meta.risk !== 'low') error('vcs=none: допустим только при risk=low (сейчас ' + meta.risk + ')');
+  }
 
 /*
  * 2.6.82: закрытие без приёмки — отдельный факт (closure.json). Задание с ним
