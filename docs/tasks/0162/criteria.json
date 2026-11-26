@@ -1,0 +1,115 @@
+{
+  "task": "0162",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "mustPass": [
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "расхождений 1",
+      "C4": "SELFTEST FAILED"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Отклонение покрывает расхождение поимённо",
+      "command": "node spec/checks/shadow-reconcile.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/shadow-reconcile.mjs",
+        "spec/scripts/engine-shadow-summary.mjs",
+        "docs/shadow-deviations.json"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SHADOW-RECONCILE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Негатив: отклонение без точной привязки не действует",
+      "command": "node spec/checks/shadow-reconcile.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/shadow-reconcile.mjs",
+        "spec/scripts/engine-shadow-summary.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SHADOW-RECONCILE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Сводка: 0152 — отклонение, исторические — не вычислима",
+      "command": "node spec/scripts/engine-shadow-summary.mjs --workspace .",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/engine-shadow-summary.mjs",
+        "docs/shadow-deviations.json"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "расхождений 0"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Полный selftest пакета",
+      "command": "node spec/selftest.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/selftest.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SELFTEST OK"
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Контроль: объяснение 0161 не сломано",
+      "command": "node spec/checks/shadow-diagnosis.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/shadow-diagnosis.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "SHADOW-DIAG OK c1"
+      }
+    }
+  ]
+}
