@@ -1,0 +1,95 @@
+{
+  "task": "0164",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Префлайт: годный контракт и причины отказа",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/task-preflight.mjs",
+        "spec/scripts/task-preflight.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASK-PREFLIGHT OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Покрытие заявленных путей allowedPaths",
+      "command": "node spec/checks/task-preflight.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/task-preflight.mjs",
+        "spec/scripts/task-preflight.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASK-PREFLIGHT OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Префлайт: id и отсутствие task.md",
+      "command": "node spec/checks/task-preflight.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/task-preflight.mjs",
+        "spec/scripts/task-preflight.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASK-PREFLIGHT OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Контроль: существующие проверки не сломаны",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gate-evidence.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATE-EVIDENCE OK c1"
+      }
+    }
+  ]
+}
