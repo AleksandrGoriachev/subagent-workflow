@@ -10,7 +10,7 @@
   "owner": "координатор",
   "executor": "subagent:coordinator",
   "acceptor": "subagent:judge",
-  "acceptorNode": "judge",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
   "issuedBy": { "kind": "agent", "session": "session-lead", "model": "deepseek-flash" },
   "base": "HEAD",
   "criteria": "criteria.json",
