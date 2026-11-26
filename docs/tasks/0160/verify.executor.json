@@ -1,0 +1,186 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0160",
+  "createdAt": "2026-11-26T00:08:52.356Z",
+  "headSha": "55b9352cd3d4fee95d0a6040bb5b64d20a5cd9a6",
+  "contractCommit": "55b9352cd3d4fee95d0a6040bb5b64d20a5cd9a6",
+  "criteriaSha256": "7af6236b4c41046c6f4729c9113ffd0ee1d3a849d9db58c723248d3f10d3f16d",
+  "criteriaJsonSha256": "11b01efcfecb0dbffd4ac588deb56e7c60c6cdbfc0d136b8e75d1f11ded89c8d",
+  "taskFileSha256": "7f3fc95498129fa9e60fe1ce6318ff4a1296937412fd45340a3b15ecec89c67d",
+  "changedPaths": [
+    "docs/tasks/0160/criteria.lock",
+    "docs/tasks/0160/gates.jsonl",
+    "docs/tasks/0160/gates.jsonl.tip",
+    "docs/tasks/0160/red.json",
+    "plugin/lib/api.js",
+    "plugin/lib/client.js",
+    "plugin/lib/engine-root.js",
+    "plugin/test/client.test.mjs",
+    "plugin/test/engine-root.test.mjs",
+    "spec/checks/panel-deploy-notice.mjs"
+  ],
+  "coverage": {
+    "declared": 9,
+    "covered": [
+      {
+        "path": "plugin/lib/api.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/client.js",
+        "criterion": "C3"
+      },
+      {
+        "path": "plugin/lib/engine-root.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.test.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "plugin/test/engine-root.test.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "spec/checks/panel-deploy-notice.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/panel-deploy-notice.mjs c1",
+      "exitCode": 0,
+      "durationMs": 3471,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "d0324eec93119e0dba778d993091ba94695db451c4bcfb8e61b4f19a0891ad17",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL-NOTICE OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/panel-deploy-notice.mjs c2",
+      "exitCode": 0,
+      "durationMs": 4262,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f8c3f9df73c563a4ad5239b1d4624556d5e7ca05d9276a9fe0580aea48f59b70",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL-NOTICE OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 224804,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "3c87b91b1456f87f3204a352dadc649eba4d19868dee1457a600c0009602a1b3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 50 файл(ов)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node spec/checks/gate-evidence.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1448,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "f76c4b25e582e5c778f207648213e9e86f72ec6f46c38c822d0a1aa229c376c1",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATE-EVIDENCE OK c1\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "55b9352cd3d4fee95d0a6040bb5b64d20a5cd9a6",
+    "contractCommit": "55b9352cd3d4fee95d0a6040bb5b64d20a5cd9a6",
+    "criteriaJsonSha256": "11b01efcfecb0dbffd4ac588deb56e7c60c6cdbfc0d136b8e75d1f11ded89c8d",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 12,
+          "total": 16,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "55b9352cd3d4fee95d0a6040bb5b64d20a5cd9a6",
+  "headDrift": null,
+  "worktreeDigest": "f7ed10fd53753c613f54864a26c02bde1b2b1ff0b85a27982d612d6da8fb6119",
+  "log": "verify.log"
+}

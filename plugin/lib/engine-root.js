@@ -245,6 +245,48 @@ export function hasEngine(root) {
   }
 }
 
+/** Отметка развёртывания, которую пишет init (0151): политика и цена решения. */
+export const DEPLOY_NOTICE_REL = path.join('docs', 'subagent-workflow', 'deploy-notice.json');
+
+/**
+ * Уведомление развёртывания из воркспейса или null.
+ *
+ * 0151: init пишет docs/subagent-workflow/deploy-notice.json — режим
+ * (local|external), политику (gitignore|vendored), что игнорируется, что стало
+ * машинным и что делать клону. Панель показывает это строкой состояния, чтобы
+ * координатор видел решение, а не выводил его из состояния дерева.
+ *
+ * Битый файл, чужая версия записи и пустые поля — это «уведомления нет», а не
+ * исключение: панель обязана открываться и на сломанном файле.
+ */
+export function readDeployNotice(workspace) {
+  const resolved = cleanEnginePath(workspace);
+  if (resolved === null) return null;
+  let data;
+  try {
+    data = JSON.parse(fs.readFileSync(path.join(resolved, DEPLOY_NOTICE_REL), 'utf8'));
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  if (Number(data.version) !== 1) return null;
+  if (data.mode !== 'local' && data.mode !== 'external') return null;
+  if (data.policy !== 'gitignore' && data.policy !== 'vendored') return null;
+  const coordinator = data.coordinator && typeof data.coordinator === 'object' ? data.coordinator : {};
+  const notice = typeof coordinator.notice === 'string' ? coordinator.notice.trim() : '';
+  if (notice.length === 0) return null;
+  return {
+    mode: data.mode,
+    policy: data.policy,
+    at: typeof data.at === 'string' ? data.at : null,
+    engineVersion: data.engine && typeof data.engine.version === 'string' ? data.engine.version : null,
+    ignored: Array.isArray(data.ignored) ? data.ignored.map(String) : [],
+    machineLocal: Array.isArray(data.machineLocal) ? data.machineLocal.map(String) : [],
+    notice,
+    action: typeof coordinator.action === 'string' ? coordinator.action.trim() : '',
+  };
+}
+
 /** Версия развёрнутой копии из маркера VERSION или null. */
 export function engineVersion(root) {
   const resolved = cleanEnginePath(root);

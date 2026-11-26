@@ -1497,6 +1497,24 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             + "предложит развернуть движок здесь.";
         }
 
+        /*
+         * 0151: отметка развёртывания из status.deployNotice. Это решение, а не
+         * состояние дерева: gitignore — код движка не вендорится, vendored —
+         * копия живёт в истории проекта. Нет отметки — панель молчит.
+         */
+        function engineDeployNotice() {
+          const notice = status && status.deployNotice;
+          return notice && typeof notice === "object" && typeof notice.notice === "string" ? notice : null;
+        }
+
+        function deployNoticePolicyText(notice) {
+          if (!notice) return "";
+          if (notice.mode === "external") return "движок внешний: воркспейс не изменяется";
+          if (notice.policy === "vendored") return "вендоринг: копия движка в истории проекта";
+          const ignored = notice.ignored && notice.ignored.length > 0 ? notice.ignored.join(", ") : "docs/subagent-workflow/";
+          return "код движка не вендорится: " + ignored + " в .gitignore";
+        }
+
         /* Незавершённые задания приходят из /api/status (repo.tasksInProgress). */
         function enginePending() {
           const list = status && status.repo && status.repo.tasksInProgress;
@@ -2221,6 +2239,13 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
             );
           }
           const sourceText = engineSourceText(engine.source);
+          /*
+           * 0151: политика развёртывания видна в карточке движка — её выбирает
+           * init, а не состояние дерева. Цена решения (что стало машинным и что
+           * делать клону) печатается рядом: иначе «почему конфига нет в
+           * истории» выясняется по диффу.
+           */
+          const notice = engineDeployNotice();
           return h(
             "section",
             { style: S.section },
@@ -2237,7 +2262,9 @@ const REGRESS_HINT = "Регресс-долг из regress.baseline.json: зад
               ["путь", h("span", { style: S.mono }, fmt(engine.root))],
               ["версия", engineVersionText(engine)],
               ["источник", sourceText],
+              ...(notice ? [["развёртывание", h("span", { style: S.mono }, deployNoticePolicyText(notice))]] : []),
             ]),
+            notice ? h("div", { style: S.hint }, notice.notice + (notice.action ? " " + notice.action : "")) : null,
           );
         }
 

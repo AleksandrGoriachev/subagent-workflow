@@ -54,6 +54,7 @@ import {
 import {
   resolveEngine,
   engineView,
+  readDeployNotice,
   cleanEnginePath,
   engineVersion,
   hasEngine,
@@ -534,6 +535,12 @@ export function createWebHandler(runtime) {
          * воркспейс не меняется: файлы читаются из внешнего репозитория.
          */
         const engine = resolveRuntimeEngine(runtime, selection.root);
+        /*
+         * 0151: отметка развёртывания из воркспейса. Показывается строкой
+         * состояния: политика (gitignore|vendored), что стало машинным и что
+         * делать клону. Нет файла или он битый — просто нет отметки.
+         */
+        const deployNotice = selection.root ? readDeployNotice(selection.root) : null;
         if (!selection.root) {
           sendJson(res, 200, {
             plugin: runtime.plugin,
@@ -545,6 +552,7 @@ export function createWebHandler(runtime) {
             /* 0102: последняя удачная проверка релиза из кэша, без сети на загрузке. */
             latestRelease: readCachedRelease(),
             engine: engineView(engine),
+            deployNotice,
             repo: null,
             error: selection.error,
           });
@@ -559,6 +567,7 @@ export function createWebHandler(runtime) {
             availableVersion: availableVersion(),
             latestRelease: readCachedRelease(),
             engine: engineView(engine),
+            deployNotice,
             repo: null,
             error: 'корень не найден: ' + selection.root,
           });
@@ -575,6 +584,8 @@ export function createWebHandler(runtime) {
           latestRelease: readCachedRelease(),
           /* 2.6.9: движок в воркспейсе, снаружи (карта) или его нет. */
           engine: engineView(engine),
+          /* 0151: что решило развёртывание — политика и её цена, а не догадка. */
+          deployNotice,
           /* Проекты внутри пространства, где workflow развёрнут. */
           projects: discoverNestedProjects(allowedRoots(runtime)),
           repo: repoInfoPayload(info),

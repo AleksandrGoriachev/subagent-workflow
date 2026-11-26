@@ -13,11 +13,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { createWorkflowRuntime, createWebHandler } from '../lib/api.js';
 import {
+  DEPLOY_NOTICE_REL,
   ENGINE_ROOTS_ENV,
   ENGINE_ROOTS_REL,
   enginePathKey,
   engineRootsFile,
   engineView,
+  readDeployNotice,
   readEngineRoots,
   resolveEngine,
 } from '../lib/engine-root.js';
@@ -53,6 +55,62 @@ function writeRoots(file, value) {
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2) + '\n');
   return file;
 }
+
+/* --- отметка развёртывания (0151) ---------------------------------- */
+
+function noticeAt(dir, value) {
+  const file = path.join(dir, DEPLOY_NOTICE_REL);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2) + '\n');
+  return dir;
+}
+
+function noticeRecord(overrides = {}) {
+  return {
+    version: 1,
+    at: '2026-11-26T00:30:00.000Z',
+    mode: 'local',
+    policy: 'gitignore',
+    engine: { version: '2.6.113', root: 'C:/engine' },
+    workspace: 'C:/workspace',
+    ignored: ['docs/subagent-workflow/'],
+    machineLocal: ['docs/subagent-workflow/workflow.config.json', 'docs/subagent-workflow/acceptors.json', 'docs/subagent-workflow/hooks'],
+    coordinator: {
+      notice: 'код движка не вендорится: каталог docs/subagent-workflow/ в .gitignore проекта',
+      action: 'клон обязан выполнить init до ворот',
+    },
+    ...overrides,
+  };
+}
+
+test('readDeployNotice: запись init видна панели как политика и цена', () => {
+  const dir = noticeAt(tempDir('wf-notice-ok-'), noticeRecord());
+  const notice = readDeployNotice(dir);
+  assert.ok(notice, 'уведомление не прочитано');
+  assert.equal(notice.mode, 'local');
+  assert.equal(notice.policy, 'gitignore');
+  assert.deepEqual(notice.ignored, ['docs/subagent-workflow/']);
+  assert.equal(notice.machineLocal.length, 3);
+  assert.match(notice.notice, /не вендорится/u);
+  assert.match(notice.action, /клон/u);
+});
+
+test('readDeployNotice: vendored и external читаются, политика не подменяется', () => {
+  const vendored = readDeployNotice(noticeAt(tempDir('wf-notice-vend-'), noticeRecord({ policy: 'vendored' })));
+  assert.equal(vendored.policy, 'vendored');
+  const external = readDeployNotice(noticeAt(tempDir('wf-notice-ext-'), noticeRecord({ mode: 'external', ignored: [], machineLocal: [] })));
+  assert.equal(external.mode, 'external');
+  assert.deepEqual(external.ignored, []);
+});
+
+test('readDeployNotice: битый файл, чужая версия и пустое уведомление — это «нет отметки»', () => {
+  assert.equal(readDeployNotice(noticeAt(tempDir('wf-notice-broken-'), '{ не json')), null);
+  assert.equal(readDeployNotice(noticeAt(tempDir('wf-notice-ver-'), noticeRecord({ version: 2 }))), null);
+  assert.equal(readDeployNotice(noticeAt(tempDir('wf-notice-mode-'), noticeRecord({ mode: 'remote' }))), null);
+  assert.equal(readDeployNotice(noticeAt(tempDir('wf-notice-policy-'), noticeRecord({ policy: 'whatever' }))), null);
+  assert.equal(readDeployNotice(noticeAt(tempDir('wf-notice-empty-'), noticeRecord({ coordinator: { notice: '   ', action: '' } }))), null);
+  assert.equal(readDeployNotice(tempDir('wf-notice-none-')), null, 'файла нет — не ошибка');
+});
 
 /* --- карта --------------------------------------------------------- */
 
