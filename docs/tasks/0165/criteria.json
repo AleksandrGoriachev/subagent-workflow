@@ -1,0 +1,95 @@
+{
+  "task": "0165",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module",
+      "C3": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Причина: нет META и битый JSON",
+      "command": "node spec/checks/guard-causes.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-causes.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GUARD-CAUSES OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Причина: принято и не заперто — с рецептом",
+      "command": "node spec/checks/guard-causes.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-causes.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GUARD-CAUSES OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Путь назван; покрытый путь проходит",
+      "command": "node spec/checks/guard-causes.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-causes.mjs",
+        "spec/scripts/task-guard.mjs"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GUARD-CAUSES OK c3"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Контроль: покрытие гейта не сломано",
+      "command": "node spec/checks/guard-acceptance.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/guard-acceptance.mjs"
+      ],
+      "timeoutMs": 240000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "OK c1"
+      }
+    }
+  ]
+}
