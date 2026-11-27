@@ -1,0 +1,130 @@
+{
+  "task": "0184",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C4",
+      "C6"
+    ],
+    "mustPass": [
+      "C3",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "нет spec/scripts/lib/accept/progress.mjs",
+      "C2": "task-accept.mjs не разложен",
+      "C4": "SHADOW: расхождения тени названы или разобраны",
+      "C6": "STALE-CHECK FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Модули обслуживания на месте",
+      "command": "node spec/checks/accept-split-0184.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/accept/**"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPT-SPLIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "CLI ≤ 900 строк и маркеры совместимости",
+      "command": "node spec/checks/accept-split-0184.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs",
+        "spec/checks/accept-split.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPT-SPLIT OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Негативный случай: компараторы отвергают потерю маркера и модуля",
+      "command": "node spec/checks/accept-split-0184.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPT-SPLIT OK c3"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Selftest зелёный: отклонение 0181 названо, затронутые тесты зелёные",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**",
+        "docs/shadow-deviations.json"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    },
+    {
+      "id": "C5",
+      "title": "Фильтр путей в CLI на месте",
+      "command": "node spec/checks/candidate-ignored-delete.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CANDIDATE-IGNORED OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C6",
+      "title": "Устаревшая проверка 0183 удалена",
+      "command": "node -e \"const fs=require('fs');if(fs.existsSync('spec/checks/accept-split.mjs')){console.error('STALE-CHECK FAIL: проверка 0183 осталась');process.exit(1);}console.log('STALE-CHECK OK')\"",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/accept-split.mjs"
+      ],
+      "timeoutMs": 60000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "STALE-CHECK OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
