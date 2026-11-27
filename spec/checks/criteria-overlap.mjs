@@ -102,7 +102,7 @@ async function c3() {
     const syntax = spawnSyncPipeFree(process.execPath, ['--check', file], { encoding: 'utf8' });
     truthy(syntax.status === 0, file + ': ' + String(syntax.stderr || '').trim());
   }
-  const source = fs.readFileSync(path.join(PKG, 'spec', 'scripts', 'lib', 'common.mjs'), 'utf8');
+  const source = fs.readFileSync(path.join(PKG, 'spec', 'scripts', 'lib', 'common', 'proc.mjs'), 'utf8');
   truthy(/WF_CRITERIA_PARALLEL/u.test(source), 'нет WF_CRITERIA_PARALLEL');
   truthy(/concurrency/u.test(source), 'нет concurrency');
   console.log('OVERLAP OK c3');

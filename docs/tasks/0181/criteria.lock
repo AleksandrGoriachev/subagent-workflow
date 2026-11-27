@@ -1,0 +1,141 @@
+{
+  "version": 3,
+  "task": "0181",
+  "taskFileSha256": "42241d6e0da5b5b742564c45f139cb10bc5cb8216e8d0b9e71335944aa4dee35",
+  "criteriaSha256": "d940cfbc27f6122f9f135f836408c4c79c06b08aabfeda3e50d8d6fbd685a407",
+  "criteriaJsonSha256": "c8294431db724edbcd7c54de6991042c18c91369e5f6f9b1340c3fd5b1b1356c",
+  "attackSha256": null,
+  "contractCommit": "7c3a6154b16b5cfa36b526d2688b725d7d1647dd",
+  "protected": [
+    {
+      "path": "VERSION",
+      "sha256": "8b4798ab018ef2d00e412f29290de506fa26955e509c018a192949a72d73b648"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e01d9be6ca85bc1aa0a4ff61a04fa991bb9487c58eb37b080433813099998d79"
+    },
+    {
+      "path": "spec/checks/common-split.mjs",
+      "sha256": "3aa381d3174d1e15220407a253989f37de66df85edf375118795eb9a308f11b0"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "spec/scripts/lib/common.mjs",
+      "spec/scripts/lib/common/**",
+      "spec/checks/criteria-overlap.mjs",
+      "spec/checks/gates-journal.mjs",
+      "docs/tasks/0181/**"
+    ],
+    "protectedPaths": [
+      "spec/checks/common-split.mjs",
+      "VERSION",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0181/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/common-split.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 240000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "COMMON-SPLIT OK c1"
+        },
+        "covers": [
+          "spec/scripts/lib/common.mjs",
+          "spec/scripts/lib/common/**"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/common-split.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "COMMON-SPLIT OK c2"
+        },
+        "covers": [
+          "spec/scripts/lib/common.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/checks/common-split.mjs c3",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "COMMON-SPLIT OK c3"
+        },
+        "covers": [
+          "spec/scripts/lib/common.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C5",
+        "command": "node spec/checks/criteria-overlap.mjs c3",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "OVERLAP OK c3"
+        },
+        "covers": [
+          "spec/checks/criteria-overlap.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C6",
+        "command": "node spec/checks/gates-journal.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "GATES OK c2"
+        },
+        "covers": [
+          "spec/checks/gates-journal.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-27T18:36:14.777Z",
+  "tool": "subagent-workflow/2.6.115"
+}

@@ -1,0 +1,292 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "09e2a150e3085f136e72c1f8d5dd143d",
+  "runKind": "accept",
+  "task": "0181",
+  "createdAt": "2026-11-27T18:50:50.862Z",
+  "headSha": "7c3a6154b16b5cfa36b526d2688b725d7d1647dd",
+  "vcs": "git",
+  "contractCommit": "7c3a6154b16b5cfa36b526d2688b725d7d1647dd",
+  "criteriaSha256": "d940cfbc27f6122f9f135f836408c4c79c06b08aabfeda3e50d8d6fbd685a407",
+  "criteriaJsonSha256": "c8294431db724edbcd7c54de6991042c18c91369e5f6f9b1340c3fd5b1b1356c",
+  "taskFileSha256": "42241d6e0da5b5b742564c45f139cb10bc5cb8216e8d0b9e71335944aa4dee35",
+  "changedPaths": [
+    "docs/tasks/0181/criteria.lock",
+    "docs/tasks/0181/gates.jsonl",
+    "docs/tasks/0181/gates.jsonl.tip",
+    "docs/tasks/0181/red.json",
+    "docs/tasks/0181/verify.executor.json",
+    "docs/tasks/0181/verify.json",
+    "spec/checks/criteria-overlap.mjs",
+    "spec/checks/gates-journal.mjs",
+    "spec/scripts/lib/common.mjs",
+    "spec/scripts/lib/common/cli.mjs",
+    "spec/scripts/lib/common/config.mjs",
+    "spec/scripts/lib/common/contract-git.mjs",
+    "spec/scripts/lib/common/criteria.mjs",
+    "spec/scripts/lib/common/decisions.mjs",
+    "spec/scripts/lib/common/engine-version.mjs",
+    "spec/scripts/lib/common/fsio.mjs",
+    "spec/scripts/lib/common/git-base.mjs",
+    "spec/scripts/lib/common/git-status.mjs",
+    "spec/scripts/lib/common/glob.mjs",
+    "spec/scripts/lib/common/journal.mjs",
+    "spec/scripts/lib/common/lock.mjs",
+    "spec/scripts/lib/common/proc.mjs",
+    "spec/scripts/lib/common/red.mjs",
+    "spec/scripts/lib/common/secrets.mjs",
+    "spec/scripts/lib/common/task-contract.mjs"
+  ],
+  "coverage": {
+    "declared": 7,
+    "covered": [
+      {
+        "path": "spec/checks/criteria-overlap.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "spec/checks/gates-journal.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "spec/scripts/lib/common.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/cli.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/config.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/contract-git.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/criteria.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/decisions.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/engine-version.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/fsio.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/git-base.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/git-status.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/glob.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/journal.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/lock.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/proc.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/red.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/secrets.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "spec/scripts/lib/common/task-contract.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/common-split.mjs c1",
+      "exitCode": 0,
+      "durationMs": 915,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "294c1662a3c9b5c0439d11ba2692d538fe643f82dc40e2c66188b41f88a9ba9c",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "COMMON-SPLIT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/common-split.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1041,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "df49d14fb99c3bd921311e786ac86a8791e16e9d97d3e7b8ea9b2e344024a63a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "COMMON-SPLIT OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/common-split.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1055,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e49c305b4c0e6d079ae06278e8d190b83102e8d95e5ca11f7663ba8ab1283f50",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "COMMON-SPLIT OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 202500,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "4c63227fdb9e6028672fdd8afed49adff1386dd31217b34aecfc059eacd9d08f",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: расхождения тени названы или разобраны\n      отклонение 0152: первый verify упал на C3: ассетов 2.6.113 ещё не было в дереве выпуска; после сборки ассетов повторный verify зелёный — исправлено предусловие прогона, доказательство не переписано\nPASS  NO-TRUNCATION: SPEC.md и CHANGELOG.md не потеряли строк\nPASS  ANCHORS: якоря утверждены и не протухли\n\nSELFTEST OK\n✔ c1: traver\n…[truncated 12431 chars]",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/criteria-overlap.mjs c3",
+      "exitCode": 0,
+      "durationMs": 2899,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "acdefa42aa15218c441c777beb298909b3c872a5ab3c725091f4c3c2eea907c5",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "OVERLAP OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node spec/checks/gates-journal.mjs c2",
+      "exitCode": 0,
+      "durationMs": 2891,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "8c41ac4e845f67ef68369792d22c489d52d7001dcd2c34e36e927d5fb3941837",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GATES OK c2\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "7c3a6154b16b5cfa36b526d2688b725d7d1647dd",
+    "contractCommit": "7c3a6154b16b5cfa36b526d2688b725d7d1647dd",
+    "criteriaJsonSha256": "c8294431db724edbcd7c54de6991042c18c91369e5f6f9b1340c3fd5b1b1356c",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "7c3a6154b16b5cfa36b526d2688b725d7d1647dd",
+  "headDrift": null,
+  "worktreeDigest": "3094cf1c854559e1c5f657759ef277b7b792df77fd1c4fdac2b1407e992fb2ef",
+  "log": "verify.log"
+}

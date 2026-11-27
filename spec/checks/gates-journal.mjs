@@ -62,7 +62,7 @@ function c1() {
 }
 
 function c2() {
-  const source = fs.readFileSync(path.join(PKG, 'spec', 'scripts', 'lib', 'common.mjs'), 'utf8');
+  const source = fs.readFileSync(path.join(PKG, 'spec', 'scripts', 'lib', 'common', 'journal.mjs'), 'utf8');
   truthy(/gates\.jsonl/u.test(source), 'в common.mjs нет имени gates.jsonl');
   for (const gate of ['task-red.mjs', 'task-verify.mjs', 'task-accept.mjs']) {
     const file = path.join(PKG, 'spec', 'scripts', gate);
