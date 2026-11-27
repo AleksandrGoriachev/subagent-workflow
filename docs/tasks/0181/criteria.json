@@ -1,0 +1,128 @@
+{
+  "task": "0181",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "нет spec/scripts/lib/common/engine-version.mjs",
+      "C2": "common.mjs не баррель",
+      "C3": "common.mjs не баррель"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "16 модулей на месте, баррель отдаёт 105 имён",
+      "command": "node spec/checks/common-split.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs",
+        "spec/scripts/lib/common/**"
+      ],
+      "timeoutMs": 240000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "COMMON-SPLIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Баррель тонкий: common.mjs только re-export",
+      "command": "node spec/checks/common-split.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "COMMON-SPLIT OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Негативный случай: компараторы отвергают правку барреля и потерю имени",
+      "command": "node spec/checks/common-split.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/common.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "COMMON-SPLIT OK c3"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Selftest и затронутые тесты зелёные",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    },
+    {
+      "id": "C5",
+      "title": "Проверка criteria-overlap читает common/criteria.mjs",
+      "command": "node spec/checks/criteria-overlap.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/criteria-overlap.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "OVERLAP OK c3"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C6",
+      "title": "Проверка gates-journal читает common/journal.mjs",
+      "command": "node spec/checks/gates-journal.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/gates-journal.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GATES OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
