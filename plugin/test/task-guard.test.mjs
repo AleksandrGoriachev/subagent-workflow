@@ -31,10 +31,21 @@ function git(repo, args) {
   return spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
 }
 
+/* 0190: движок копируется целиком: lib/common.mjs — баррель с модулями lib/common/*.mjs. */
+function copyTree(from, to) {
+  fs.mkdirSync(to, { recursive: true });
+  for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
+    const src = path.join(from, entry.name);
+    const dst = path.join(to, entry.name);
+    if (entry.isDirectory()) copyTree(src, dst);
+    else fs.copyFileSync(src, dst);
+  }
+}
+
 function makeRepo({ enabled = false, task = true } = {}) {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-tg-'));
   const engine = path.join(repo, 'docs', 'subagent-workflow');
-  write(path.join(engine, 'scripts', 'lib', 'common.mjs'), fs.readFileSync(path.join(SRC, 'lib', 'common.mjs'), 'utf8'));
+  copyTree(path.join(SRC, 'lib'), path.join(engine, 'scripts', 'lib'));
   write(path.join(engine, 'scripts', 'task-guard.mjs'), fs.readFileSync(path.join(SRC, 'task-guard.mjs'), 'utf8'));
   write(path.join(engine, 'workflow.config.json'), JSON.stringify({
     version: 1,

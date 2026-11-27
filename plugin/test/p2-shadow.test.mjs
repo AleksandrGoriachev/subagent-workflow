@@ -13,9 +13,11 @@ import path from 'node:path';
 /* 0177: путь от файла теста, а не от cwd. */
 const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/u, '$1')), '..', '..');
 const SOURCE = path.join(REPO_ROOT, 'spec', 'scripts', 'task-accept.mjs');
+/* 0188: тело тени вынесено в lib/accept/shadow.mjs; тест идёт за кодом. */
+const SHADOW = path.join(REPO_ROOT, 'spec', 'scripts', 'lib', 'accept', 'shadow.mjs');
 
 test('тень вызывает конвертер и движок, пишет engine-shadow.json', () => {
-  const text = fs.readFileSync(SOURCE, 'utf8');
+  const text = fs.readFileSync(SHADOW, 'utf8');
   assert.match(text, /function engineShadow\(/u);
   assert.match(text, /convertToWorkspace\(taskDir, repo/u);
   assert.match(text, /evaluateWorkspaceTask\(repo, meta\.id/u);
@@ -32,13 +34,13 @@ test('тень не влияет на приёмку: вызов после за
 });
 
 test('тень не пересобирает факты, если цепь уже цела', () => {
-  const text = fs.readFileSync(SOURCE, 'utf8');
+  const text = fs.readFileSync(SHADOW, 'utf8');
   assert.match(text, /existing && existing\.ok/u, 'должна читать существующую цепь');
   assert.match(text, /readFactFile/u);
 });
 
 test('тень не бросает: ошибки перехвачены', () => {
-  const text = fs.readFileSync(SOURCE, 'utf8');
+  const text = fs.readFileSync(SHADOW, 'utf8');
   const start = text.indexOf('function engineShadow(');
   const body = text.slice(start, start + 2400);
   assert.match(body, /catch \(error\)/u);

@@ -1,0 +1,261 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0190",
+  "createdAt": "2026-11-27T22:30:02.414Z",
+  "headSha": "85f92e5e0b2d3055ce0cdd2cbf6aa5b153eafbd2",
+  "vcs": "git",
+  "contractCommit": "85f92e5e0b2d3055ce0cdd2cbf6aa5b153eafbd2",
+  "criteriaSha256": "b5a7cbd85ccaf42e20249db8120dd3363687f0ee4b975878b5c89676cba16f6e",
+  "criteriaJsonSha256": "b71beac04c821868fb7ef9a22835a9d96d4370b82d4d1424890c856105c51212",
+  "taskFileSha256": "9d49fb2be30daaa8ffb95d326437a3cada236fab7bd622aa45a4e24597609a89",
+  "changedPaths": [
+    "docs/CODE-SIZE.md",
+    "docs/tasks/0190/criteria.lock",
+    "docs/tasks/0190/gates.jsonl",
+    "docs/tasks/0190/gates.jsonl.tip",
+    "docs/tasks/0190/red.json",
+    "plugin/lib/api/router.js",
+    "plugin/lib/api/routes/anchors.js",
+    "plugin/lib/api/routes/engine.js",
+    "plugin/lib/api/routes/plugin.js",
+    "plugin/lib/api/routes/release.js",
+    "plugin/lib/api/routes/run.js",
+    "plugin/lib/api/routes/status.js",
+    "plugin/lib/api/routes/writes.js",
+    "plugin/test/p2-shadow.test.mjs",
+    "plugin/test/task-guard.test.mjs",
+    "spec/checks/router-split-0187.mjs",
+    "spec/checks/router-split-0188.mjs",
+    "spec/checks/router-split.mjs"
+  ],
+  "coverage": {
+    "declared": 10,
+    "covered": [
+      {
+        "path": "plugin/lib/api/router.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/routes/anchors.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/routes/engine.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/routes/plugin.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/routes/release.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/routes/run.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/routes/status.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/routes/writes.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/p2-shadow.test.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "plugin/test/task-guard.test.mjs",
+        "criterion": "C4"
+      },
+      {
+        "path": "spec/checks/router-split-0187.mjs",
+        "criterion": "C6"
+      },
+      {
+        "path": "spec/checks/router-split-0188.mjs",
+        "criterion": "C6"
+      },
+      {
+        "path": "spec/checks/router-split.mjs",
+        "criterion": "C6"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/router-split-0190.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1004,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "85d16362ab8df0c2d0f624fa24690cb5982e5eb0df70497f100ea453dee1c271",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ROUTER-SPLIT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/code-size.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1467,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "48cd1fca4098d3069d0e96a3b8fc360943a2b8426820e8de8b6a81b5f63d28b9",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "WARN  plugin/lib/wait-guard.js 841 строк — ревизия при следующей правке (порог 600)\nWARN  spec/scripts/task-accept.mjs 840 строк — ревизия при следующей правке (порог 600)\nWARN  plugin/lib/deploy.js 795 строк — ревизия при следующей правке (порог 600)\nWARN  spec/scripts/task-lint.mjs 751 строк — ревизия при следующей правке (порог 600)\nWARN  spec/scripts/task-guard.mjs 709 строк — ревизия при следующей правке (порог 600)\nWARN  spec/scripts/init.mjs 669 строк — ревизия при следующей правке (порог 600)\nCODE-SIZE OK c1: 255 файлов, максимум 841 строк\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/router-split-0190.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1010,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c872eda9b48884d4d49d439de3484d636e4185bef4d8d01a0abb4050ac04c0a7",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ROUTER-SPLIT OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 225580,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "75812c4ac40d910ae379f7619ad2ff53dd88e676c2235957ec28d97f26a99f6e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 55 файл(ов)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/code-size.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1144,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "6d8437f4e86ffc58d40243d3ba9293fa2bc61d18cd43fd58e34e1b9c6da28fb4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "CODE-SIZE OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node -e \"const fs=require('fs');for(const f of ['spec/checks/router-split.mjs','spec/checks/router-split-0187.mjs','spec/checks/router-split-0188.mjs'])if(fs.existsSync(f)){console.error('STALE-CHECK FAIL: '+f+' остался');process.exit(1);}console.log('STALE-CHECK OK')\"",
+      "exitCode": 0,
+      "durationMs": 893,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "a0092d35ecec5a36368d17f821bce32b10ce9683e3e87dffa73ecd08eb6a8617",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "STALE-CHECK OK\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "85f92e5e0b2d3055ce0cdd2cbf6aa5b153eafbd2",
+    "contractCommit": "85f92e5e0b2d3055ce0cdd2cbf6aa5b153eafbd2",
+    "criteriaJsonSha256": "b71beac04c821868fb7ef9a22835a9d96d4370b82d4d1424890c856105c51212",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C6"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C6"
+      ],
+      "mustPass": [
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C6",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "85f92e5e0b2d3055ce0cdd2cbf6aa5b153eafbd2",
+  "headDrift": null,
+  "worktreeDigest": "0da5d94ad54b0d45ae1517481f3756501b90297c3799a41e47297c992563cf92",
+  "log": "verify.log"
+}
