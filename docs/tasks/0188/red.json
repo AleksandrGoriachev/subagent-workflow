@@ -1,0 +1,168 @@
+{
+  "version": 5,
+  "kind": "red",
+  "tool": "subagent-workflow/2.6.115",
+  "task": "0188",
+  "createdAt": "2026-11-27T22:05:51.647Z",
+  "base": "HEAD",
+  "baseSha": "b676642d0de7a4f1fc81ffe7b161186de462414b",
+  "headSha": "b676642d0de7a4f1fc81ffe7b161186de462414b",
+  "contractCommit": "b676642d0de7a4f1fc81ffe7b161186de462414b",
+  "criteriaSha256": "2bdaa36f4de13e1974e540d9e5d419c60a7d4333d7784913a8b504e933f126cb",
+  "criteriaJsonSha256": "8e9d4687aa76ea7cee9d447c4404c86d38e81a6970dc94975317a85ed76dbc1b",
+  "dirtyPaths": [
+    "docs/tasks/0188/criteria.lock"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/router-split-0188.mjs c1",
+      "exitCode": 1,
+      "durationMs": 677,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: ROUTER-SPLIT OK c1"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "0bf2d33866052bc2b7a518c4b6d777b295bb8baead06e8fe1181c0e0a6ef56b0",
+      "stdoutPreview": "",
+      "stderrPreview": "ROUTER-SPLIT FAIL: нет plugin/lib/api/routes/status.js\n"
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/code-size.mjs c1",
+      "exitCode": 1,
+      "durationMs": 657,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: CODE-SIZE OK c1"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "ef95dc38d28abb25e57b1effa47c36eac6e36ebcbd69ea48be51b33051513fed",
+      "stdoutPreview": "",
+      "stderrPreview": "CODE-SIZE FAIL: нет docs/CODE-SIZE.md: правило не записано\n"
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/router-split-0188.mjs c2",
+      "exitCode": 0,
+      "durationMs": 459,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c872eda9b48884d4d49d439de3484d636e4185bef4d8d01a0abb4050ac04c0a7",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "ROUTER-SPLIT OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 58330,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "38a7ac8615b181482f86a585708c2ce7473d634605e893c4edb823004b56773d",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  regress: medium без красного — нарушение\nPASS  regress: low без красного и без обхода — нарушение\nPASS  regress: low + allowMissingRed — законный долг\nPASS  regress: запись v3 — legacy\nPASS  regress: подпись не сходится — untrusted\nPASS  regress: свежий красный — ok\nPASS  regress: красный от другого контракта — нарушение\nPASS  regress: baseline просрочен\nPASS  regress: baseline находит запись по задаче и статусу\nPASS  regress: задача из baseline с регрессом всё равно валит прогон\nPASS  regress: погашенный долг валит только при --strict и просрочке\nPASS  regress: нарушение не гасится baseline\nPASS  regress: --write-baseline берёт только законный долг\nPASS  regress: нарушения попадают в baseline только с --include-violations\nPASS  запись medium с отдельной сессией принимается\nPASS  подмена поля ломает подпись\nPASS  запись v3 принимается как legacy\nPASS  самоприёмка (сессия = issuedBy) отклоняется\nPASS  medium без аттестованной сессии отклоняется\nPASS  declared-актор не проходит для medium\nPASS  high-risk с ключом агента отклоняется\nPASS  high-risk с человеческим ключом принимается\nPASS  low с declared-актором принимается\nPASS  актор harness: env / separate-session\nPASS  актор runner: env / separate-session\nPASS  актор ci: declared / declared\nPASS  актор manual: declared / declared\nPASS  пустое окружение: none/declared, сессии и источника нет\nPASS  legacy-конфиг: primary → harness, fallback → manual\nPASS  legacy-конфиг не меняет поведения: env/separate-session и declared\nPASS  конфиг без legacy-полей не падает: дефолты подставлены\nPASS  неизвестный вид источника: ошибка конфига, а не сессия\nPASS  модель берётся из modelSources, без них — unknown\nPASS  запись с источником runner и separate-session принимается\nPASS  источник ci с уровнем separate-session отклоняется\nPASS  запись v5 с assumed-решением принимается, но releaseReady=false\nPASS  releaseReady=true при assumed-решениях отклоняется\nPASS  спрятанный assumed ловится по контракту\nPASS  красный прогон от другого контракта отклоняется\nPASS  запись со ссылкой на отсутствующий attack.json отклоняется\nPASS  metadata-коммит с правкой кода отклоняется\nPASS  acceptance внутри кандидата отклоняется\nPASS  U1: решение ссылается на измеритель — связь есть\nPASS  U2: решение ссылается на носитель — связь есть\nPASS  U3: решение вне цепи эффекта — ошибка с именем решения и цепи\nPASS  U4: наружу выходит только несвязанное решение\nPASS  U5: внутреннее решение вне цепи — не нарушение\nPASS  U6: доказательство спецификацией — не применимо\nPASS  U7: manual-критерий — человеческое доказательство, не применимо\nPASS  U8a: mechanical user-visible без эффекта — required ловит, consistency молчит\nPASS  U8b: mechanical user-visible вне цепи — consistency не применяется\nPASS  U9: решений нет — правило молчит, checked=false\nPASS  U10: решение входит во вторую цепь — pass\nPASS  U11: мусор в decisions не роняет проверку\nPASS  U12: невалидный эффект не даёт каскада consistency\nPASS  R1: согласованная запись принимается\nPASS  R2: ok=false при согласованном контракте — расхождение записи\nPASS  R4: links не совпадают с контрактом\nPASS  R5: запись без блока (до 2.4.0) не ломается\nPASS  R6: запись без блока и без флага не ломается\nPASS  R3a: policy.decisions=fail валит несогласованную запись\nPASS  R3b: policy.decisions=warn — предупреждение, запись принимается\nPASS  TOOL совпадает с VERSION\nPASS  doctor: без задач risk: high про ключ human-* молчит\nPASS  doctor: задача risk: high включает предупреждение о human-*\nPASS  W5: обращений в чужие воркспейсы без разрешения нет\nPASS  CORPUS: пять закреплённых задач остаются accepted\nPASS  SHADOW: расхождения тени названы или разобраны\n      отклонение 0152: первый verify упал на C3: ассетов 2.6.113 ещё не было в дереве выпуска; после сборки ассетов повторный verify зелёный — исправлено предусловие прогона, доказательство не переписано\n      отклонение 0181: первый verify 0181 упал на C4: после раскладки common.mjs TOOL стал subagent-workflow/0.0.0 (engine-version ис\n…[truncated 252 chars]",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node spec/checks/code-size.mjs c2",
+      "exitCode": 0,
+      "durationMs": 599,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "6d8437f4e86ffc58d40243d3ba9293fa2bc61d18cd43fd58e34e1b9c6da28fb4",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "CODE-SIZE OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node -e \"const fs=require('fs');for(const f of ['spec/checks/router-split.mjs','spec/checks/router-split-0187.mjs'])if(fs.existsSync(f)){console.error('STALE-CHECK FAIL: '+f+' остался');process.exit(1);}console.log('STALE-CHECK OK')\"",
+      "exitCode": 1,
+      "durationMs": 674,
+      "passed": false,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [
+        "exit code 1 != 0",
+        "stdout не содержит: STALE-CHECK OK"
+      ],
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "25b6d41c86cc010f40599ed01e784cf253a64dc282372ec91bfdf46440a87c25",
+      "stdoutPreview": "",
+      "stderrPreview": "STALE-CHECK FAIL: spec/checks/router-split.mjs остался\n"
+    }
+  ],
+  "executed": 6,
+  "failed": 3,
+  "failedIds": [
+    "C1",
+    "C2",
+    "C6"
+  ],
+  "allGreen": false,
+  "redProven": true,
+  "redKind": "proven",
+  "noRed": null,
+  "redExpectation": {
+    "configured": true,
+    "ok": true,
+    "errors": [],
+    "mustFail": [
+      "C1",
+      "C2",
+      "C6"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "noRed": null,
+    "checkDefects": [],
+    "reasonChecks": [
+      {
+        "id": "C1",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C2",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      },
+      {
+        "id": "C6",
+        "ok": true,
+        "distance": 0,
+        "total": 1,
+        "window": 25
+      }
+    ],
+    "reasonWindow": 25
+  },
+  "bypasses": {
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "log": "red.log"
+}

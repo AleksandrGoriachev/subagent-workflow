@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0188",
+  "status": "superseded",
+  "reason": "verify C4 упал: fixture task-guard.test.mjs копирует один lib/common.mjs, а после раскладки common.mjs он баррель с модулями; тест должен копировать lib целиком",
+  "by": "координатор",
+  "at": "2026-11-27T22:15:27.878Z",
+  "successor": "0189",
+  "evidence": []
+}
