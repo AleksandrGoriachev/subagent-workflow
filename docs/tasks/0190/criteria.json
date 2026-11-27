@@ -1,0 +1,131 @@
+{
+  "task": "0190",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C6"
+    ],
+    "mustPass": [
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "нет plugin/lib/api/routes/status.js",
+      "C2": "CODE-SIZE FAIL",
+      "C6": "STALE-CHECK FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Маршруты по доменам, диспетчер тонкий",
+      "command": "node spec/checks/router-split-0190.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/api/router.js",
+        "plugin/lib/api/routes/**"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ROUTER-SPLIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Порог 900 соблюдён, правило записано",
+      "command": "node spec/checks/code-size.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "docs/CODE-SIZE.md",
+        "plugin/lib/api/router.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CODE-SIZE OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Негативный случай: компаратор отвергает потерянный путь",
+      "command": "node spec/checks/router-split-0190.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/api/router.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ROUTER-SPLIT OK c2"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Полный набор тестов плагина зелёный",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    },
+    {
+      "id": "C5",
+      "title": "Компаратор порога и исключение артефакта",
+      "command": "node spec/checks/code-size.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/code-size.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CODE-SIZE OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C6",
+      "title": "Ложные проверки 0186–0188 удалены",
+      "command": "node -e \"const fs=require('fs');for(const f of ['spec/checks/router-split.mjs','spec/checks/router-split-0187.mjs','spec/checks/router-split-0188.mjs'])if(fs.existsSync(f)){console.error('STALE-CHECK FAIL: '+f+' остался');process.exit(1);}console.log('STALE-CHECK OK')\"",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/router-split.mjs",
+        "spec/checks/router-split-0187.mjs",
+        "spec/checks/router-split-0188.mjs"
+      ],
+      "timeoutMs": 60000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "STALE-CHECK OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
