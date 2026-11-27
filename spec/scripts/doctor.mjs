@@ -236,8 +236,15 @@ if (root) {
       check('acceptors.json читается', false, err.message);
     }
   }
+  /*
+   * 0175: корень движка зависит от того, где запущен doctor. В пакете движок лежит
+   * в spec/ (docs/subagent-workflow — только конфигурация и аудит), в развёрнутой
+   * копии — в docs/subagent-workflow/. Искать копию в пакете — четыре ложных FAIL.
+   */
+  const packageRoot = exists(path.join(root, 'spec', 'scripts', 'doctor.mjs'));
+  const engineRel = packageRoot ? 'spec' : 'docs/subagent-workflow';
   for (const file of ['templates/task.md', 'templates/criteria.json', 'scripts/task-accept.mjs', 'scripts/task-attack.mjs']) {
-    check('есть ' + file, exists(path.join(root, 'docs/subagent-workflow', file)));
+    check('есть ' + engineRel + '/' + file, exists(path.join(root, engineRel, file)));
   }
 
   /*
