@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0184",
+  "status": "superseded",
+  "reason": "удаляемый spec/checks/accept-split.mjs был объявлен в protectedPaths контракта, поэтому verify отверг удаление; переиздано как 0185, где файлы удаления — allowedPaths, а не protectedPaths",
+  "by": "координатор",
+  "at": "2026-11-27T20:58:09.321Z",
+  "successor": "0185",
+  "evidence": []
+}
