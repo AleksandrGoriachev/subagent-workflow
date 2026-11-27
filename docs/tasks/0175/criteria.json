@@ -1,0 +1,75 @@
+{
+  "task": "0175",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "Cannot find module",
+      "C2": "Cannot find module"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "doctor в корне пакета без ложных FAIL",
+      "command": "node spec/checks/doctor-package.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/doctor-package.mjs",
+        "spec/scripts/doctor.mjs"
+      ],
+      "timeoutMs": 240000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DOCTOR-PACKAGE OK c1"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Чужой корень: FAIL называет spec/",
+      "command": "node spec/checks/doctor-package.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/doctor-package.mjs",
+        "spec/scripts/doctor.mjs"
+      ],
+      "timeoutMs": 240000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "DOCTOR-PACKAGE OK c2"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Контроль: префлайт не сломан",
+      "command": "node spec/checks/task-preflight.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/task-preflight.mjs"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "TASK-PREFLIGHT OK c1"
+      }
+    }
+  ]
+}
