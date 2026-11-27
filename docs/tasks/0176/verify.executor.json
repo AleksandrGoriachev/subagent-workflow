@@ -1,0 +1,275 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0176",
+  "createdAt": "2026-11-27T17:20:22.347Z",
+  "headSha": "04bb57ce2b128e9426225e64971e55a72e99fea4",
+  "vcs": "git",
+  "contractCommit": "04bb57ce2b128e9426225e64971e55a72e99fea4",
+  "criteriaSha256": "858d9ad3f57ecb542fb4a0bf7cd5c5acdcb5e622555a7f6b89d8092650dc445d",
+  "criteriaJsonSha256": "2152ae2a65d9d1c86e37a722043549a4ba7764eb3b913b9df3fb430df2921cb7",
+  "taskFileSha256": "0e75d3bd57388c010e38d0eecc39d0cf093a7001305d6d297ce245e37e197e78",
+  "changedPaths": [
+    "docs/tasks/0176/criteria.lock",
+    "docs/tasks/0176/gates.jsonl",
+    "docs/tasks/0176/gates.jsonl.tip",
+    "docs/tasks/0176/red.json",
+    "plugin/client/00-head.js",
+    "plugin/client/01-constants.js",
+    "plugin/client/02-hints.js",
+    "plugin/client/03-styles.js",
+    "plugin/client/04-helpers.js",
+    "plugin/client/05-view.js",
+    "plugin/client/06-engine.js",
+    "plugin/client/07-engine-ui.js",
+    "plugin/client/08-board.js",
+    "plugin/client/09-board-detail.js",
+    "plugin/client/10-card.js",
+    "plugin/client/11-policy.js",
+    "plugin/client/99-tail.js",
+    "plugin/test/client.deploy-notice.test.mjs",
+    "plugin/test/client.deploy.test.mjs",
+    "plugin/test/client.engine-cards.test.mjs",
+    "plugin/test/client.engine.test.mjs",
+    "plugin/test/client.harness.mjs",
+    "plugin/test/client.hints.test.mjs",
+    "plugin/test/client.panel.test.mjs",
+    "plugin/test/client.test.mjs",
+    "plugin/tools/build-client.mjs"
+  ],
+  "coverage": {
+    "declared": 9,
+    "covered": [
+      {
+        "path": "plugin/client/00-head.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/01-constants.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/02-hints.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/03-styles.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/04-helpers.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/05-view.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/06-engine.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/07-engine-ui.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/08-board.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/09-board-detail.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/10-card.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/11-policy.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/client/99-tail.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.deploy-notice.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.deploy.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.engine-cards.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.engine.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.harness.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.hints.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.panel.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/client.test.mjs",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/tools/build-client.mjs",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/panel-split.mjs c1",
+      "exitCode": 0,
+      "durationMs": 2200,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "fa8ae4f909dccfd266d75db1bcffcec7524941eb75d1c608329e5e7dc87c2a2c",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL-SPLIT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/panel-split.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1425,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "8f07c47c87e771c8ac155f5a2724ca1c2fd1fc453d640bf7b30634c0f1761b59",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL-SPLIT OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/panel-split.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1566,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "a0bbfabc60d854bb3e4c7448d5505dfbdefcfb206a8e1d6fc39f3d14ddc8e3c2",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PANEL-SPLIT OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 222103,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "75812c4ac40d910ae379f7619ad2ff53dd88e676c2235957ec28d97f26a99f6e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 55 файл(ов)\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "04bb57ce2b128e9426225e64971e55a72e99fea4",
+    "contractCommit": "04bb57ce2b128e9426225e64971e55a72e99fea4",
+    "criteriaJsonSha256": "2152ae2a65d9d1c86e37a722043549a4ba7764eb3b913b9df3fb430df2921cb7",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "04bb57ce2b128e9426225e64971e55a72e99fea4",
+  "headDrift": null,
+  "worktreeDigest": "f0f5ed1aaa16149b9e13620d21d8d9975a4e215be7cb365e4ad36be52405e952",
+  "log": "verify.log"
+}
