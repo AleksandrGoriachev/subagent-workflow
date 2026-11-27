@@ -1,0 +1,109 @@
+{
+  "task": "0182",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "нет spec/scripts/lib/accept/progress.mjs",
+      "C2": "task-accept.mjs не разложен",
+      "C3": "task-accept.mjs не разложен"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Модули обслуживания на месте",
+      "command": "node spec/checks/accept-split.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/lib/accept/**"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPT-SPLIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "CLI ≤ 900 строк и маркеры совместимости",
+      "command": "node spec/checks/accept-split.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPT-SPLIT OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Негативный случай: компараторы отвергают потерю модуля и маркера",
+      "command": "node spec/checks/accept-split.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "ACCEPT-SPLIT OK c3"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Selftest и затронутые тесты зелёные",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    },
+    {
+      "id": "C5",
+      "title": "CLI синтаксически цел, фильтр путей на месте",
+      "command": "node spec/checks/candidate-ignored-delete.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/scripts/task-accept.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "CANDIDATE-IGNORED OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
