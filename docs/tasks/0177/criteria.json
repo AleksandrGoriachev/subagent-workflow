@@ -5,17 +5,16 @@
   "redExpect": {
     "mustFail": [
       "C1",
-      "C2",
-      "C3"
+      "C2"
     ],
     "mustPass": [
+      "C3",
       "C4"
     ],
     "reasonWindow": 25,
     "reasons": {
       "C1": "нет plugin/lib/state/constants.js",
-      "C2": "state.js не баррель",
-      "C3": "state.js не баррель"
+      "C2": "state.js не баррель"
     }
   },
   "criteria": [
