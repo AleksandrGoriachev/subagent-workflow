@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0189",
+  "status": "superseded",
+  "reason": "контракт невалиден: lint ERROR allowedPaths пересекается с protectedPaths (проверка 0189 попала в оба списка после глобальной замены id); переиздано как 0190 с тремя удаляемыми проверками в allowedPaths",
+  "by": "координатор",
+  "at": "2026-11-27T22:17:57.253Z",
+  "successor": "0190",
+  "evidence": []
+}
