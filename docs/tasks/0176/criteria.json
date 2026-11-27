@@ -1,0 +1,96 @@
+{
+  "task": "0176",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "нет plugin/client/00-head.js",
+      "C2": "нет plugin/test/client.panel.test.mjs",
+      "C3": "нет plugin/client/00-head.js"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Структура раскладки: фрагменты на месте, lib/client.js равен склейке",
+      "command": "node spec/checks/panel-split.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "plugin/client/**",
+        "plugin/lib/client.js",
+        "plugin/tools/build-client.mjs",
+        "plugin/test/client*.test.mjs",
+        "plugin/test/client.harness.mjs"
+      ],
+      "timeoutMs": 240000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-SPLIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Инвентарь тестов: 23 имени сохранены",
+      "command": "node spec/checks/panel-split.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/client*.test.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-SPLIT OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Негативный случай: компараторы отвергают дрейф и потерю теста",
+      "command": "node spec/checks/panel-split.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "plugin/client/**",
+        "plugin/lib/client.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "PANEL-SPLIT OK c3"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Полный набор тестов панели зелёный",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    }
+  ]
+}
