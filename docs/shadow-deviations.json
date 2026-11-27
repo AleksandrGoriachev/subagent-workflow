@@ -22,6 +22,27 @@
           ]
         }
       ]
+    },
+    {
+      "task": "0181",
+      "facts": "docs/facts/0181.jsonl",
+      "reason": "первый verify 0181 упал на C4: после раскладки common.mjs TOOL стал subagent-workflow/0.0.0 (engine-version искал VERSION на уровень выше); дефект исправлен, повторный verify зелёный — журнал append-only, поэтому оба доказательства остались",
+      "by": "lead (координатор)",
+      "at": "2026-11-27T20:54:22.419Z",
+      "conflicts": [
+        {
+          "gate": "verify",
+          "exits": [
+            0,
+            1
+          ],
+          "evidence": [
+            "3781ed313ec0a0b91ae109e3a215fad583a8531bedcbbf17197dc18ab2a05f73",
+            "38b9851e64c9132e4078ed784943278e7021c4b02e314160790ace7ced79d90a",
+            "758c3a2edc69e8c0183f28310bb56b6eccec25162daf4181e956775ac66f95ce"
+          ]
+        }
+      ]
     }
   ]
 }

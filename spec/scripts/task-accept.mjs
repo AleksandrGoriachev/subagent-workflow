@@ -38,6 +38,11 @@ import { signRecord, loadAcceptors, publicKeyFingerprint } from './sign.mjs';
 import { pickAcceptorEntry } from './lib/accept-key.mjs';
 import { validateReview } from './lib/review.mjs';
 import { validateReviewReceipt } from './lib/review-receipt.mjs';
+import { setProgressContext, writeProgress, fail } from './lib/accept/progress.mjs';
+import { gateHasAccept, createCandidate } from './lib/accept/candidate.mjs';
+import { validateVerify, backupExecutorVerify } from './lib/accept/validate.mjs';
+import { engineShadow } from './lib/accept/shadow.mjs';
+import { printAcceptance } from './lib/accept/summary.mjs';
 
 const argv = parseArgv(process.argv.slice(2));
 if (argv.help) {
@@ -53,6 +58,7 @@ if (argv.help) {
 
 const taskDir = path.resolve(argv.task || argv._[0] || '.');
 const repo = path.resolve(argv.repo || repoRoot(taskDir));
+setProgressContext(repo, taskDir);
 const config = loadConfig(repo);
 /*
  * 2.6.82: закрытое без приёмки задание принять нельзя. closure.json — это
@@ -64,27 +70,7 @@ if (exists(path.join(taskDir, 'closure.json'))) {
 }
 writeProgress('start');
 
-/*
- * F-8 (2.6.4): verify.json исполнителя не теряется. Свежий прогон приёмщика
- * перезаписывает verify.json, поэтому прежний результат сохраняется рядом как
- * verify.executor.json — ДО preflight и до нового прогона. Отказ приёмки (нет
- * --note у обхода, нет ключа, чужой замок) не должен стирать доказательство
- * работы исполнителя: он единственный, кто видел зелёный прогон под своим
- * деревом. Нет verify.json — копию не создаём (пустой копии не существует).
- * Повторная приёмка копию обновляет: рядом всегда лежит то, что было до
- * текущего прогона.
- */
-{
-  const executorVerify = path.join(taskDir, 'verify.json');
-  const savedExecutorVerify = path.join(taskDir, 'verify.executor.json');
-  if (exists(executorVerify)) {
-    try {
-      fs.copyFileSync(executorVerify, savedExecutorVerify);
-    } catch (err) {
-      fail('не удалось сохранить verify.executor.json: ' + err.message);
-    }
-  }
-}
+backupExecutorVerify(taskDir);
 
 const logsCommitted = config.logs === 'commit';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -98,90 +84,6 @@ const VERIFY_SCRIPT = path.join(SCRIPT_DIR, 'task-verify.mjs');
  * вердикт — приёмка проверяет ровно тот прогон, который прошли ворота.
  */
 
-/**
- * 0152 (P2a): теневой прогон движка ограничений. Ничего не блокирует и не меняет
- * вердикт: конвертирует задачу в факты, оценивает C1–C10 и записывает сравнение
- * с фактической приёмкой. Цель — статистика расхождений до переключения.
- * По умолчанию выключена (чужой воркспейс не трогаем).
- */
-function engineShadow(repo, taskDir, meta, record) {
-  /*
-   * 0153: тень по умолчанию ВЫКЛЮЧЕНА. Приёмка живёт в чужих воркспейсах, и
-   * молча создавать там docs/facts/ и engine-shadow.json нельзя. Включается
-   * явно: WF_ENGINE_SHADOW=1 или "engineShadow": true в workflow.config.json.
-   */
-  const config = readJson(path.join(repo, 'docs', 'subagent-workflow', 'workflow.config.json')) || {};
-  const enabled = String(process.env.WF_ENGINE_SHADOW || '') === '1' || config.engineShadow === true;
-  if (!enabled) return;
-  try {
-    /*
-     * 0158: если факты уже есть и цепь цела — не пересобираем. Пересборка с --force
-     * стёрла бы подписанный sealed-факт (его не восстановить из источников), а для
-     * теневого прогона достаточно прочитать существующую цепь.
-     */
-    const factsFile = path.join(repo, 'docs', 'facts', String(meta.id) + '.jsonl');
-    const existing = fs.existsSync(factsFile) ? readFactFile(factsFile) : null;
-    const converted = existing && existing.ok
-      ? { ok: true, rows: existing.rows.length, signed: existing.rows.filter((row) => row.signature).length }
-      : convertToWorkspace(taskDir, repo, { repoRoot: repo, force: true });
-    if (!converted.ok) {
-      writeJson(path.join(taskDir, 'engine-shadow.json'), { at: new Date().toISOString(), task: meta.id, status: 'not-checked', problems: converted.problems });
-      console.log('engine (тень): не проверено — ' + (converted.problems || []).join('; '));
-      return;
-    }
-    const result = evaluateWorkspaceTask(repo, meta.id, { acceptors: loadEngineAcceptors(repo) });
-    const agree = String(record.status || 'accepted') === (result.verdict === 'accepted' ? 'accepted' : 'rejected');
-    writeJson(path.join(taskDir, 'engine-shadow.json'), {
-      at: new Date().toISOString(),
-      task: meta.id,
-      run: result.run,
-      engineVerdict: result.verdict,
-      acceptanceStatus: record.status || 'accepted',
-      agree,
-      report: result.report.map((item) => ({ id: item.id, status: item.status, detail: item.detail })),
-    });
-    console.log('engine (тень): ' + result.verdict + ' — ' + (agree ? 'совпадает с приёмкой' : 'РАСХОЖДЕНИЕ с приёмкой') + ' (' + result.passed + '/' + result.applicable + ')');
-  } catch (error) {
-    try { writeJson(path.join(taskDir, 'engine-shadow.json'), { at: new Date().toISOString(), task: meta.id, status: 'error', problem: String(error && error.message ? error.message : error) }); } catch { /* тень не ломает приёмку */ }
-    console.log('engine (тень): ошибка — ' + String(error && error.message ? error.message : error));
-  }
-}
-function fail(message) { writeProgress('failed', { message: String(message).slice(0, 500) }); console.error('task-accept: ' + message); process.exit(1); }
-
-/*
- * 2.6.82: маркер стадии ВНЕ репозитория. Убитый прогон перестаёт выглядеть как
- * «ничего не начиналось»: видно, до какой стадии дошли. Ошибка маркера приёмку
- * не ломает.
- */
-function progressFile() {
-  const dir = process.env.WF_PROGRESS_DIR || path.join(os.homedir(), '.dsh', 'workflow', 'progress');
-  const key = crypto.createHash('sha256').update(String(repo)).digest('hex').slice(0, 12);
-  return path.join(dir, key, path.basename(taskDir) + '.json');
-}
-function writeProgress(stage, extra = {}) {
-  try {
-    const file = progressFile();
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    const tmp = file + '.' + process.pid + '.tmp';
-    const body = { task: path.basename(taskDir), repo, stage, at: new Date().toISOString(), pid: process.pid, ...extra };
-    fs.writeFileSync(tmp, JSON.stringify(body, null, 2) + String.fromCharCode(10), 'utf8');
-    fs.renameSync(tmp, file);
-  } catch { /* маркер не имеет права ломать приёмку */ }
-}
-
-function validateVerify(verify, lockCheck, contractCommit, nonce) {
-  if (verify.version !== 4) fail('verify.json: версия ' + verify.version + ' устарела, нужна 4 — прогоните task-verify заново');
-  if (verify.kind !== 'verify') fail('verify.json: это не результат task-verify');
-  if (verify.task !== String(lockCheck.expected.task)) fail('verify.json относится к другой задаче: ' + verify.task);
-  if (!verify.allPassed) fail('verify.json не зелёный: allPassed=false');
-  if (Array.isArray(verify.violations) && verify.violations.length > 0) fail('в verify.json есть нарушения: ' + verify.violations.join('; '));
-  for (const key of ['criteriaSha256', 'criteriaJsonSha256', 'taskFileSha256', 'contractCommit']) {
-    if (verify[key] !== lockCheck.expected[key]) fail(key + ' в verify.json не совпадает с lock');
-  }
-  /* 0170: локальный прогон (vcs=none) не имеет HEAD — сравнение с контрактным коммитом не применимо. */
-  if (verify.vcs !== 'none' && verify.headSha !== contractCommit) fail('HEAD изменился после verify: ' + verify.headSha + ' -> ' + contractCommit);
-  if (nonce !== null && verify.acceptanceNonce !== nonce) fail('verify.json не содержит nonce приёмщика: результат не от свежего прогона');
-}
 
 /*
  * 0154: кандидат не должен терять ОТСЛЕЖИВАЕМЫЙ путь, попавший под правило
@@ -202,104 +104,6 @@ export function ignoredPaths(repoRoot, paths) {
   return new Set(r.stdout.split(/\r?\n/).filter(Boolean));
 }
 
-/*
- * Право исполнения — свойство поставки, а не настройка рабочей машины (2.5.2).
- *
- * `git add` берёт режим файла из рабочего дерева, а Windows его не хранит:
- * файл, помеченный 100755 в индексе, после `git add` снова становится 100644,
- * и принятое дерево расходится с проверенным. Поэтому режим читается из
- * РЕАЛЬНОГО индекса (`git ls-files -s` без GIT_INDEX_FILE) и переносится в
- * индекс кандидата тем же `--chmod=+x`. Содержимое кандидата не меняется —
- * только режим; путь, не помеченный в индексе исполняемым, остаётся 100644.
- */
-function restoreExecutableModes(repoRoot, candidateEnv) {
-  const real = runSync('git ls-files -s -z', { cwd: repoRoot, unsetEnv: ['GIT_INDEX_FILE'] });
-  if (real.exitCode !== 0) fail('git ls-files -s (индекс репозитория): ' + real.stderr.trim());
-  const executable = [];
-  for (const entry of real.stdout.split('\0')) {
-    const parsed = entry.match(/^(\d{6}) [0-9a-f]+ \d+\t(.+)$/s);
-    if (parsed && parsed[1] === '100755') executable.push(parsed[2]);
-  }
-  if (executable.length === 0) return;
-  const candidate = runSync('git ls-files -s -z', { cwd: repoRoot, env: candidateEnv });
-  if (candidate.exitCode !== 0) fail('git ls-files -s (кандидат): ' + candidate.stderr.trim());
-  const inCandidate = new Set();
-  for (const entry of candidate.stdout.split('\0')) {
-    const parsed = entry.match(/^\d{6} [0-9a-f]+ \d+\t(.+)$/s);
-    if (parsed) inCandidate.add(parsed[1]);
-  }
-  const targets = executable.filter((file) => inCandidate.has(file));
-  if (targets.length === 0) return;
-  /* Порциями: список аргументов не должен упираться в предел командной строки. */
-  for (let i = 0; i < targets.length; i += 50) {
-    const batch = targets.slice(i, i + 50);
-    const chmod = runSync('git update-index --chmod=+x -- ' + batch.map(quoteArg).join(' '), { cwd: repoRoot, env: candidateEnv });
-    if (chmod.exitCode !== 0) fail('git update-index --chmod=+x: ' + chmod.stderr.trim());
-  }
-}
-
-/** Есть ли в журнале строка accept по заданию (доказательство внутри кандидата). */
-function gateHasAccept(taskDir, taskId) {
-  try {
-    const file = gateJournalFile(taskDir);
-    if (!exists(file)) return false;
-    return fs.readFileSync(file, 'utf8').split('\n').some((line) => {
-      if (!line.trim()) return false;
-      try {
-        const row = JSON.parse(line);
-        return row && row.kind === 'accept' && String(row.task) === String(taskId) && String(row.verdict) !== 'void';
-      } catch {
-        return false;
-      }
-    });
-  } catch {
-    return false;
-  }
-}
-
-function createCandidate(repoRoot, filesToAdd, message, pathsToRemove = []) {
-  const indexPath = path.join(os.tmpdir(), 'task-accept-' + process.pid + '-' + Date.now() + '.index');
-  const env = {
-    ...process.env,
-    GIT_INDEX_FILE: indexPath,
-    GIT_AUTHOR_NAME: process.env.GIT_AUTHOR_NAME || 'task-accept',
-    GIT_AUTHOR_EMAIL: process.env.GIT_AUTHOR_EMAIL || 'task-accept@local',
-    GIT_COMMITTER_NAME: process.env.GIT_COMMITTER_NAME || 'task-accept',
-    GIT_COMMITTER_EMAIL: process.env.GIT_COMMITTER_EMAIL || 'task-accept@local',
-  };
-  delete env.TASK_ACCEPT_KEY;
-  delete env.TASK_SIGN_KEY;
-  try {
-    const read = runSync('git read-tree HEAD', { cwd: repoRoot, env });
-    if (read.exitCode !== 0) fail('git read-tree: ' + read.stderr.trim());
-    /*
-     * 0011 (F-1): кандидат не наследует ранее закоммиченную запись приёмки.
-     * read-tree берёт дерево HEAD целиком, поэтому metadata-коммит с
-     * acceptance.json попадал в кандидата и task-check-acceptance отказывал
-     * «acceptance.json входит в кандидатный коммит». Путь приходит снаружи:
-     * удаляется только запись текущего задания, записи других остаются частью
-     * дерева. Если записи в индексе нет, --ignore-unmatch делает команду
-     * успешной.
-     */
-    if (pathsToRemove.length > 0) {
-      const remove = runSync('git rm --cached --ignore-unmatch -q -- ' + pathsToRemove.map(quoteArg).join(' '), { cwd: repoRoot, env });
-      if (remove.exitCode !== 0) fail('git rm --cached: ' + remove.stderr.trim());
-    }
-    if (filesToAdd.length > 0) {
-      const add = runSync('git add -A -- ' + filesToAdd.map(quoteArg).join(' '), { cwd: repoRoot, env });
-      if (add.exitCode !== 0) fail('git add: ' + add.stderr.trim());
-    }
-    restoreExecutableModes(repoRoot, env);
-    const treeRes = runSync('git write-tree', { cwd: repoRoot, env });
-    if (treeRes.exitCode !== 0) fail('git write-tree: ' + treeRes.stderr.trim());
-    const tree = treeRes.stdout.trim();
-    const commitRes = runSync('git commit-tree ' + quoteArg(tree) + ' -p HEAD -m ' + quoteArg(message), { cwd: repoRoot, env });
-    if (commitRes.exitCode !== 0) fail('git commit-tree: ' + commitRes.stderr.trim());
-    return { commit: commitRes.stdout.trim(), tree };
-  } finally {
-    try { fs.rmSync(indexPath, { force: true }); } catch { /* ignore */ }
-  }
-}
 
 try {
   /* 0135 (2.6.109): HEAD на входе приёмки — часть снимка worktree в записи. */
@@ -1021,68 +825,13 @@ try {
     console.log('WARN журнал ворот: строка accept не записана до кандидата (' + journalPending.error + ')');
   }
 
-  if (argv.json) {
-    console.log(JSON.stringify(record, null, 2));
-  } else {
-    console.log('task-accept: ' + meta.id + ' принят');
-    console.log('  acceptor      ' + acceptor + ' (' + entry.kind + ')');
-    console.log('  node          ' + (actorNode || (deviation ? '— (deviation)' : '—')));
-    console.log('  actor         ' + actor.kind + ' / ' + (actor.session || '—') + ' [' + actor.attestedBy + ']'
-      + (actor.source ? ' ' + actor.source + ' (' + actor.sourceKind + ')' : ''));
-    console.log('  independence  ' + independence.level + ' (нужно ' + independence.required + ')');
-    console.log('  key           ' + keyId);
-    console.log('  fresh run     ' + (acceptorRun.fresh ? 'да (' + acceptorRun.nonce + ')' : 'нет (reused)'));
-    console.log('  decisions     ' + decisionSummary.count + ' (assumed: ' + (decisionSummary.assumed.join(', ') || 'нет') + ')');
-    console.log('  attack        ' + (attackCheck ? attackCheck.summary.total + ' находок, blocking ' + attackCheck.summary.blocking + ', без решения ' + attackCheck.summary.unresolved : 'нет'));
-    console.log('  actor model   ' + recordActorModel + ' (' + recordModelSource + ')');
-    console.log('  model level   ' + actorModelLevel
-      + (actorModelLevel === 'unknown'
-        ? ' (независимость: семейства моделей не объявлены в config.models; сверка приёмщика — строка acceptor)'
-        : ''));
-    console.log('  acceptor      ' + (acceptorInfo
-      ? 'узел ' + acceptorInfo.node + ', run ' + acceptorInfo.runId + ', модель ' + (acceptorInfo.model || '—')
-        + ' против ' + (acceptorInfo.declaredModel || '—') + ' → ' + acceptorInfo.verdict
-      : 'свидетельства запуска нет (TASK-META.acceptorNode не объявлен и --run не передан)'));
-    console.log('  releaseReady  ' + releaseReady + (decisionSummary.assumed.length ? ' — есть решения без подтверждения' : ''));
-    console.log('  contract      ' + contractCommit);
-    console.log('  candidate     ' + (candidate.commit || '— (vcs: none, коммита нет)'));
-    console.log('  tree          ' + (candidate.tree || '— (vcs: none)'));
-    if (localVcs) console.log('  vcs           none (база — хеши контракта, кандидат — digest дерева)');
-    console.log('  acceptance    ' + files.acceptance);
-    console.log('');
-    /* 0055: те же строки, что печатают ворота, — приёмщику не нужен повторный прогон. */
-    for (const row of verify.results || []) console.log(formatGateRow(row));
-    console.log(formatGateSummary(verify.results || []));
-    console.log('');
-    /*
-     * 0097 (WC-32): строка accept пишется в gates.jsonl уже после сборки
-     * кандидата, поэтому reset --hard её выбрасывает, если не добавить файл в
-     * индекс. Печатаем оба пути — иначе журнал молча теряет приёмку.
-     */
-    const gateRel = relPosix(repo, path.join(taskDir, 'gates.jsonl'));
-    /*
-     * 0011 (F-2): путь к проверке записи вычисляется от самого скрипта
-     * относительно корня репозитория. В пакете это spec/scripts/…, в
-     * развёрнутой копии — docs/subagent-workflow/scripts/…; прежнее
-     * «scripts/…» в развёрнутой копии не существовало.
-     */
-    const checkScriptRel = relPosix(repo, path.join(SCRIPT_DIR, 'task-check-acceptance.mjs'));
-    /*
-     * 0135 (2.6.109): подсказку собирает finalizationLines — первая строка
-     * называет роль (координатор, не приёмщик), рядом с reset --hard стоит
-     * предупреждение о незакоммиченных отслеживаемых правках вне кандидата.
-     */
-    if (localVcs) {
-      console.log('Финализация: git не используется (vcs: none) — запись и факты остаются в рабочем дереве.');
-      console.log('  проверка записи: node ' + checkScriptRel + ' --file ' + acceptanceRel + ' --repo . --task ' + taskRel);
-    } else for (const line of finalizationLines({
-      candidate: candidate.commit,
-      acceptanceRel,
-      gateRel,
-      checkScriptRel,
-      taskId: meta.id,
-    })) console.log(line);
-  }
+  printAcceptance({
+    json: argv.json,
+    record, meta, acceptor, entry, actorNode, deviation, actor, independence, keyId, acceptorRun,
+    decisionSummary, attackCheck, recordActorModel, recordModelSource, actorModelLevel, acceptorInfo,
+    releaseReady, contractCommit, candidate, localVcs, files, verify, repo, taskDir, SCRIPT_DIR,
+    acceptanceRel, taskRel,
+  });
 } catch (err) {
   if (argv.json) console.log(JSON.stringify({ ok: false, errors: [err.message] }, null, 2));
   else console.error('task-accept: ' + err.message);
