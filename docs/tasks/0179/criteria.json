@@ -1,0 +1,92 @@
+{
+  "task": "0179",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "нет plugin/lib/state/constants.js",
+      "C2": "state.js не баррель",
+      "C3": "state.js не баррель"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Модули на месте, баррель отдаёт 55 имён",
+      "command": "node spec/checks/state-split-0179.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/state/**",
+        "plugin/lib/state.js"
+      ],
+      "timeoutMs": 240000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "STATE-SPLIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Баррель тонкий: state.js только re-export",
+      "command": "node spec/checks/state-split-0179.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/state.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "STATE-SPLIT OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Негативный случай: баррель разложен, компараторы отвергают правку и потерю имени",
+      "command": "node spec/checks/state-split-0179.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/state.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "STATE-SPLIT OK c3"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Полный набор тестов плагина зелёный",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    }
+  ]
+}
