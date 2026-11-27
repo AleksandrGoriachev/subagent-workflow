@@ -1,0 +1,197 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "0118709e4783017441d021d603b720b2",
+  "runKind": "accept",
+  "task": "0180",
+  "createdAt": "2026-11-27T18:29:10.649Z",
+  "headSha": "6e82e01e479807daae24d5b6f25f19bfbbef5170",
+  "vcs": "git",
+  "contractCommit": "6e82e01e479807daae24d5b6f25f19bfbbef5170",
+  "criteriaSha256": "380fe03e6abc4dc7d26b031d979356ea981c13db234a5db261a7521aa1e00b3a",
+  "criteriaJsonSha256": "3ec260dee4d673dd4b01a1a6a188c8085f3c899f2234922b9d10cb4bd29ae9ee",
+  "taskFileSha256": "51ed2f6dd579c48d9b3e78c18defb03acf089aacb192ff1a28b09665f2eb49f3",
+  "changedPaths": [
+    "docs/tasks/0180/criteria.lock",
+    "docs/tasks/0180/gates.jsonl",
+    "docs/tasks/0180/gates.jsonl.tip",
+    "docs/tasks/0180/red.json",
+    "docs/tasks/0180/verify.executor.json",
+    "docs/tasks/0180/verify.json",
+    "plugin/lib/api.js",
+    "plugin/lib/api/constants.js",
+    "plugin/lib/api/http.js",
+    "plugin/lib/api/payloads.js",
+    "plugin/lib/api/roots.js",
+    "plugin/lib/api/router.js"
+  ],
+  "coverage": {
+    "declared": 4,
+    "covered": [
+      {
+        "path": "plugin/lib/api.js",
+        "criterion": "C2"
+      },
+      {
+        "path": "plugin/lib/api/constants.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/http.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/payloads.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/roots.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/api/router.js",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/api-split.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1191,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "282e82d861586c4372a6718320e6b9167078c7b43bd9b4b14f68f1a33f66f028",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "API-SPLIT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/api-split.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1219,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "afaeae41bbebc5124149d3c23c318158c6a2cc28cd6c79621bcd8f0da4ca04e9",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "API-SPLIT OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/api-split.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1137,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "878cae14ea76cd57d0d8361f88eb018bc92dc6b5c619b72a176d10698c4e01b3",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "API-SPLIT OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 184010,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "75812c4ac40d910ae379f7619ad2ff53dd88e676c2235957ec28d97f26a99f6e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 55 файл(ов)\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "6e82e01e479807daae24d5b6f25f19bfbbef5170",
+    "contractCommit": "6e82e01e479807daae24d5b6f25f19bfbbef5170",
+    "criteriaJsonSha256": "3ec260dee4d673dd4b01a1a6a188c8085f3c899f2234922b9d10cb4bd29ae9ee",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "6e82e01e479807daae24d5b6f25f19bfbbef5170",
+  "headDrift": null,
+  "worktreeDigest": "1525828b5cfa7881b6085808c6414fdec103e70cbfde74b28a93e75ca27e0cff",
+  "log": "verify.log"
+}
