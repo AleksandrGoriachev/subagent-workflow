@@ -1,0 +1,264 @@
+{
+  "version": 3,
+  "task": "0179",
+  "taskFileSha256": "1d18e70a663e5e5bda56f23ca580ec9616a3e57cf55509612fa0cfaeaa50a8d6",
+  "criteriaSha256": "6fa75f7326d192989b4a6c9b9acaff64c8ce20536d5773733f41dd9f1aec35cb",
+  "criteriaJsonSha256": "1eb4f8f084afba8644894625bb2b688d8231fe50f297b12eb90d3acb1d67167b",
+  "attackSha256": null,
+  "contractCommit": "a8e5467ec9cf346b567d182e89f5e5d5f6d33f68",
+  "protected": [
+    {
+      "path": "VERSION",
+      "sha256": "8b4798ab018ef2d00e412f29290de506fa26955e509c018a192949a72d73b648"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e01d9be6ca85bc1aa0a4ff61a04fa991bb9487c58eb37b080433813099998d79"
+    },
+    {
+      "path": "spec/checks/state-split-0179.mjs",
+      "sha256": "02de3f90a1d6c2b6b38928b3f3325b5955f8658f21f409ca22a175d07771c26f"
+    },
+    {
+      "path": "spec/scripts/actor.mjs",
+      "sha256": "49286d0c6b915062c261296aa8b8c2cc6ea3225d38f895776f7e3380eef1071d"
+    },
+    {
+      "path": "spec/scripts/check-review.mjs",
+      "sha256": "35ffe5b0f3fb577875074656741a68a288a7b7d33b145e1dd079f8704d722653"
+    },
+    {
+      "path": "spec/scripts/doctor.mjs",
+      "sha256": "b6d5e5bd7b217b96bedb9993905314cce4f2aa0aca7b673ec5da27d6b8855f0c"
+    },
+    {
+      "path": "spec/scripts/engine-shadow-run.mjs",
+      "sha256": "389ba4b667cce04630d1356cad586b1073ff2673ae7b6f23711f16928f311ccb"
+    },
+    {
+      "path": "spec/scripts/engine-shadow-summary.mjs",
+      "sha256": "364f43cf981a3bdd347974e3d5985bc974ab1c09addb27bf8dbb65384fe180de"
+    },
+    {
+      "path": "spec/scripts/facts-convert.mjs",
+      "sha256": "f0ecf7b2a0f537e1b22362fa866f4c38dbcd6956576007d05bc8846fb8aa4749"
+    },
+    {
+      "path": "spec/scripts/facts-repair.mjs",
+      "sha256": "f994b0d14c457dcfa9e101de5df715a2b4615b2600f65fe98e0a4824b612dfef"
+    },
+    {
+      "path": "spec/scripts/gate.mjs",
+      "sha256": "4c20acad1ec64c3e301caeeacd4ea39d2f1b6978ba2ae58ac81bc6dafb5e40c5"
+    },
+    {
+      "path": "spec/scripts/init.mjs",
+      "sha256": "3512e981a6d9f301e41504500c9d099276caac5a2f27b20d5b10fb0aa61e7c5c"
+    },
+    {
+      "path": "spec/scripts/job.mjs",
+      "sha256": "ff38cee860175a8d6769208289c66c064f6d616eeb266fe08d69377cb878005c"
+    },
+    {
+      "path": "spec/scripts/lib/accept-key.mjs",
+      "sha256": "511598b3ba848b29c690e77e49ba3be3a057d336a4f623787c2d1bee53c781d2"
+    },
+    {
+      "path": "spec/scripts/lib/acceptance-policy.mjs",
+      "sha256": "9e582792ade089fa9a0664660333b747ffb19fe2c813dd2ed76fa814053bd4fe"
+    },
+    {
+      "path": "spec/scripts/lib/attack.mjs",
+      "sha256": "95ed1737ede602fc03ac8577c98f566bbd6e24991e9eb977069ff7ac6ada6a6e"
+    },
+    {
+      "path": "spec/scripts/lib/batch-tasks.mjs",
+      "sha256": "f9eb7c7e8eacf4c439383df582fbf1f60230cd90d70dd7887cae5ad3f0ce91e0"
+    },
+    {
+      "path": "spec/scripts/lib/common.mjs",
+      "sha256": "188d5b9465f498dd38ce8d1afeb4c941886c6563a2ca56e3257215fa3f7a33b0"
+    },
+    {
+      "path": "spec/scripts/lib/launch-evidence.mjs",
+      "sha256": "86df10981cb9d52b877a4f5c75032650fb71a76e04fa415584848036b97a6435"
+    },
+    {
+      "path": "spec/scripts/lib/policy.mjs",
+      "sha256": "036701d685fca8da11caf935a87fb3b9e8ea59faf932b60bb9a65205b5aad918"
+    },
+    {
+      "path": "spec/scripts/lib/preflight.mjs",
+      "sha256": "9047af153852ed7082e0be7838acf9a98493e6cbbd66b26e80c81a4d76e5ed6c"
+    },
+    {
+      "path": "spec/scripts/lib/registry.mjs",
+      "sha256": "c88d48bc6dec498ccec69c70fd6e3dfb8a8ce78f983c3be72f5a39ab530e5766"
+    },
+    {
+      "path": "spec/scripts/lib/regress.mjs",
+      "sha256": "752313ec9abc6268105bfca1751f7680820bd180e51b525b5e8030df9f06c9fd"
+    },
+    {
+      "path": "spec/scripts/lib/review-receipt.mjs",
+      "sha256": "19bf26e6a3216b38b08bd5fbcd237755f11f8514c7a40ecbd1e9a7862a6927a1"
+    },
+    {
+      "path": "spec/scripts/lib/review.mjs",
+      "sha256": "d387db287df453f04eca92281b11087ead555d576568746d81637e25e28d97cc"
+    },
+    {
+      "path": "spec/scripts/lib/session-model.mjs",
+      "sha256": "d5c4e052652c6e8d05eaaf38c6ddb72bfa25d122fcfed01b6637d8dafca673af"
+    },
+    {
+      "path": "spec/scripts/new-task.mjs",
+      "sha256": "417c7cf9fb5eefd269ff644ffbc44df8f0dce05483c3c03c990440ffc4143ff6"
+    },
+    {
+      "path": "spec/scripts/sealed-run.mjs",
+      "sha256": "ceaedaa1fa0c4ebd598aa9ccb5a6789efbde336311658fa1f1af36ef158650ee"
+    },
+    {
+      "path": "spec/scripts/sign.mjs",
+      "sha256": "0226db034a2eb993c9e34fa7ec94e244e0935166f915ba1669562baa7e179a87"
+    },
+    {
+      "path": "spec/scripts/task-accept-batch.mjs",
+      "sha256": "b509cbd9fdb82645626e2708c80ccdfe6773cec23526e7649427d9b796b85999"
+    },
+    {
+      "path": "spec/scripts/task-accept.mjs",
+      "sha256": "41fb10632f498f1827d4ce0e8ad3a41e0ead371ec0c62ba501efcaf213d7bfd7"
+    },
+    {
+      "path": "spec/scripts/task-attack.mjs",
+      "sha256": "745bbb7a84fa6e8957399f3f4a5686f5d02653b4b531c5378df94a978f6127d2"
+    },
+    {
+      "path": "spec/scripts/task-check-acceptance.mjs",
+      "sha256": "749d030873162c6b97404a1ee6800f897f25d067101ae8584f9002bf17a32129"
+    },
+    {
+      "path": "spec/scripts/task-close.mjs",
+      "sha256": "70aa74b7cf38ccff1363b60caaab6a45107ffcd47f79f7d5100e40d2eeadebda"
+    },
+    {
+      "path": "spec/scripts/task-guard.mjs",
+      "sha256": "389998802eb18405e728a9a56dbd32f84d1d5f0c7a0a45a2430560649cd6f960"
+    },
+    {
+      "path": "spec/scripts/task-hash.mjs",
+      "sha256": "9c586d43ddf81d7090e8a22e700cf6a00b2ce8334a610d8622516b766b1c404f"
+    },
+    {
+      "path": "spec/scripts/task-lint.mjs",
+      "sha256": "560ce7694cc2d9b5e50a4b7888b8378ea6f6a8a4fd7dc4ac5a0eaa93d917ae5c"
+    },
+    {
+      "path": "spec/scripts/task-preflight.mjs",
+      "sha256": "e392c35cd3ed4f1a5d88ae45954757f2da3e6169e925f56f27f04ad31dd61d4a"
+    },
+    {
+      "path": "spec/scripts/task-red.mjs",
+      "sha256": "5061d15ad3f7d13fc25296a291f87493945bdeca5c953ff0d9025549e26ecdb9"
+    },
+    {
+      "path": "spec/scripts/task-regress.mjs",
+      "sha256": "d4fdad976313d0d80119e7bccbc4c33c10416c73b6e4af88b7e525e821e21755"
+    },
+    {
+      "path": "spec/scripts/task-verify.mjs",
+      "sha256": "553800e15c2c67b6db7e0c132eac2f3db5f7fcb4a53b9273cb48a568fa404fe4"
+    },
+    {
+      "path": "spec/scripts/tests-for.mjs",
+      "sha256": "8adb75a535e68495cecb3ebfb0db19f024c7d54b906337b3e87c4e6ea3891844"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "plugin/lib/state.js",
+      "plugin/lib/state/**",
+      "docs/tasks/0179/**"
+    ],
+    "protectedPaths": [
+      "spec/checks/state-split-0179.mjs",
+      "spec/scripts/**",
+      "VERSION",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0179/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/state-split-0179.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 240000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "STATE-SPLIT OK c1"
+        },
+        "covers": [
+          "plugin/lib/state.js",
+          "plugin/lib/state/**"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/state-split-0179.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "STATE-SPLIT OK c2"
+        },
+        "covers": [
+          "plugin/lib/state.js"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/checks/state-split-0179.mjs c3",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "STATE-SPLIT OK c3"
+        },
+        "covers": [
+          "plugin/lib/state.js"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "plugin/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-27T17:50:27.834Z",
+  "tool": "subagent-workflow/2.6.115"
+}

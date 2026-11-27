@@ -1,0 +1,227 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "8e76a84bc50075c235ac47dad8a2980c",
+  "runKind": "accept",
+  "task": "0179",
+  "createdAt": "2026-11-27T18:06:18.506Z",
+  "headSha": "a8e5467ec9cf346b567d182e89f5e5d5f6d33f68",
+  "vcs": "git",
+  "contractCommit": "a8e5467ec9cf346b567d182e89f5e5d5f6d33f68",
+  "criteriaSha256": "6fa75f7326d192989b4a6c9b9acaff64c8ce20536d5773733f41dd9f1aec35cb",
+  "criteriaJsonSha256": "1eb4f8f084afba8644894625bb2b688d8231fe50f297b12eb90d3acb1d67167b",
+  "taskFileSha256": "1d18e70a663e5e5bda56f23ca580ec9616a3e57cf55509612fa0cfaeaa50a8d6",
+  "changedPaths": [
+    "docs/tasks/0179/criteria.lock",
+    "docs/tasks/0179/gates.jsonl",
+    "docs/tasks/0179/gates.jsonl.tip",
+    "docs/tasks/0179/red.json",
+    "docs/tasks/0179/verify.executor.json",
+    "docs/tasks/0179/verify.json",
+    "plugin/lib/state.js",
+    "plugin/lib/state/acceptance.js",
+    "plugin/lib/state/attack.js",
+    "plugin/lib/state/constants.js",
+    "plugin/lib/state/contract.js",
+    "plugin/lib/state/decisions.js",
+    "plugin/lib/state/lock.js",
+    "plugin/lib/state/policy.js",
+    "plugin/lib/state/primitives.js",
+    "plugin/lib/state/repository.js",
+    "plugin/lib/state/task-state.js",
+    "plugin/lib/state/views.js"
+  ],
+  "coverage": {
+    "declared": 5,
+    "covered": [
+      {
+        "path": "plugin/lib/state.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/acceptance.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/attack.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/constants.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/contract.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/decisions.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/lock.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/policy.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/primitives.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/repository.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/task-state.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/state/views.js",
+        "criterion": "C1"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/state-split-0179.mjs c1",
+      "exitCode": 0,
+      "durationMs": 1516,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "26ca6bc667289335c97325df86b7c6e704903e499c3924e665acdc02d7879ec7",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "STATE-SPLIT OK c1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/state-split-0179.mjs c2",
+      "exitCode": 0,
+      "durationMs": 1422,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e8a5cde537825efa278379c579aabb9a3e877bfd149b4d83ad17190ffb92ed56",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "STATE-SPLIT OK c2\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node spec/checks/state-split-0179.mjs c3",
+      "exitCode": 0,
+      "durationMs": 1452,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "4e40fe4189f729594709c40d7a12620ab0db0de28ca49285a435de428f15c476",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "STATE-SPLIT OK c3\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 283306,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "75812c4ac40d910ae379f7619ad2ff53dd88e676c2235957ec28d97f26a99f6e",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 55 файл(ов)\n",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "a8e5467ec9cf346b567d182e89f5e5d5f6d33f68",
+    "contractCommit": "a8e5467ec9cf346b567d182e89f5e5d5f6d33f68",
+    "criteriaJsonSha256": "1eb4f8f084afba8644894625bb2b688d8231fe50f297b12eb90d3acb1d67167b",
+    "failed": 3,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "mustPass": [
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "a8e5467ec9cf346b567d182e89f5e5d5f6d33f68",
+  "headDrift": null,
+  "worktreeDigest": "4e5c6b9b3086ba8532ce9c285d7e11013764e2abcbab1ba893b52711969b83d1",
+  "log": "verify.log"
+}
