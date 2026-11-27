@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0187",
+  "status": "superseded",
+  "reason": "verify C4 упал: plugin/test/p2-shadow.test.mjs читает engineShadow из task-accept.mjs, а он вынесен в lib/accept/shadow.mjs; тест идёт за кодом в 0188",
+  "by": "координатор",
+  "at": "2026-11-27T22:03:48.353Z",
+  "successor": "0188",
+  "evidence": []
+}
