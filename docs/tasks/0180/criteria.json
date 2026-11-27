@@ -1,0 +1,91 @@
+{
+  "task": "0180",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "mustPass": [
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "нет plugin/lib/api/constants.js",
+      "C2": "api.js не баррель",
+      "C3": "api.js содержит тело модуля"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Модули на месте, размеры в пределах",
+      "command": "node spec/checks/api-split.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/api/**"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "API-SPLIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "api.js — тонкий вход с 6 именами",
+      "command": "node spec/checks/api-split.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/api.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "API-SPLIT OK c2"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Негативный случай: компараторы отвергают потерю имени и тело",
+      "command": "node spec/checks/api-split.mjs c3",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/api.js"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "API-SPLIT OK c3"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Полный набор тестов плагина зелёный",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    }
+  ]
+}
