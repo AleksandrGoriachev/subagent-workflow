@@ -1,0 +1,144 @@
+{
+  "version": 3,
+  "task": "0183",
+  "taskFileSha256": "d47106e9c970179fb3c7ab70ce1dcd79242fc9e86d30706ceb120c8eb702dec5",
+  "criteriaSha256": "200d398fb54a5e8fd7b37d2270adfa02dc04be6873b52c0fa68b784d148bf5bd",
+  "criteriaJsonSha256": "edd0b908029467afa68d7c03d51bf8d90549e0c7f94efde0259429dd7d3d5707",
+  "attackSha256": null,
+  "contractCommit": "79b44676ca7c0b7b315fa7a4bb67149a680f9e20",
+  "protected": [
+    {
+      "path": "VERSION",
+      "sha256": "8b4798ab018ef2d00e412f29290de506fa26955e509c018a192949a72d73b648"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e01d9be6ca85bc1aa0a4ff61a04fa991bb9487c58eb37b080433813099998d79"
+    },
+    {
+      "path": "spec/checks/accept-split.mjs",
+      "sha256": "168ea0b3d70b2021ca32b6af804484dcd5170ff2bcefabd247188eb7a9f4169b"
+    },
+    {
+      "path": "spec/scripts/task-hash.mjs",
+      "sha256": "9c586d43ddf81d7090e8a22e700cf6a00b2ce8334a610d8622516b766b1c404f"
+    },
+    {
+      "path": "spec/scripts/task-lint.mjs",
+      "sha256": "560ce7694cc2d9b5e50a4b7888b8378ea6f6a8a4fd7dc4ac5a0eaa93d917ae5c"
+    },
+    {
+      "path": "spec/scripts/task-red.mjs",
+      "sha256": "5061d15ad3f7d13fc25296a291f87493945bdeca5c953ff0d9025549e26ecdb9"
+    },
+    {
+      "path": "spec/scripts/task-verify.mjs",
+      "sha256": "553800e15c2c67b6db7e0c132eac2f3db5f7fcb4a53b9273cb48a568fa404fe4"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "spec/scripts/task-accept.mjs",
+      "spec/scripts/lib/accept/**",
+      "docs/shadow-deviations.json",
+      "docs/tasks/0183/**"
+    ],
+    "protectedPaths": [
+      "spec/checks/accept-split.mjs",
+      "spec/scripts/task-verify.mjs",
+      "spec/scripts/task-red.mjs",
+      "spec/scripts/task-hash.mjs",
+      "spec/scripts/task-lint.mjs",
+      "VERSION",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0183/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/accept-split.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "ACCEPT-SPLIT OK c1"
+        },
+        "covers": [
+          "spec/scripts/lib/accept/**"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/accept-split.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "ACCEPT-SPLIT OK c2"
+        },
+        "covers": [
+          "spec/scripts/task-accept.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/checks/accept-split.mjs c3",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "ACCEPT-SPLIT OK c3"
+        },
+        "covers": [
+          "spec/scripts/task-accept.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "docs/shadow-deviations.json",
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C5",
+        "command": "node spec/checks/candidate-ignored-delete.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "CANDIDATE-IGNORED OK c2"
+        },
+        "covers": [
+          "spec/scripts/task-accept.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-27T20:08:08.030Z",
+  "tool": "subagent-workflow/2.6.115"
+}

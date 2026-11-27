@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0183",
+  "status": "superseded",
+  "reason": "красный не доказан: маркер в проверке искал \"const candidate = createCandidate(\", а в CLI \"candidate = createCandidate(\"; проверка переиздана как accept-split-0184.mjs",
+  "by": "координатор",
+  "at": "2026-11-27T20:12:52.313Z",
+  "successor": "0184",
+  "evidence": []
+}
