@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0186",
+  "status": "superseded",
+  "reason": "mustPass C3 красный на базе: негативный компаратор router-split.mjs c2 менял только первое вхождение пути, второе оставляло путь на месте; проверка переиздана как router-split-0187.mjs с replaceAll",
+  "by": "координатор",
+  "at": "2026-11-27T21:45:34.504Z",
+  "successor": "0187",
+  "evidence": []
+}

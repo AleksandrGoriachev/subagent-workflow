@@ -1,0 +1,145 @@
+{
+  "version": 3,
+  "task": "0186",
+  "taskFileSha256": "befd6036c6dc04a60efc1192e3911d3bfeb14516de57bda1862b2d3fc3130655",
+  "criteriaSha256": "7c827a5270943e530a2a02cd70710b84399f0d2d9fe64b568eb84565b4d2e2ed",
+  "criteriaJsonSha256": "a6ba5561c775c5ee24b9a243d5f5a6ec9efc170d69c678ffd995abc2467f77e0",
+  "attackSha256": null,
+  "contractCommit": "763b3e648f40969a42a28d198fd9022e1f958b61",
+  "protected": [
+    {
+      "path": "VERSION",
+      "sha256": "8b4798ab018ef2d00e412f29290de506fa26955e509c018a192949a72d73b648"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e01d9be6ca85bc1aa0a4ff61a04fa991bb9487c58eb37b080433813099998d79"
+    },
+    {
+      "path": "spec/checks/code-size.mjs",
+      "sha256": "8cd8b0d77acd0867ca38d5306d6a1a3afa32c363a3934ac77aafd87c24c7295b"
+    },
+    {
+      "path": "spec/checks/router-split.mjs",
+      "sha256": "089cdda3724934cf86d4ca7d1bdbab3448e717237016ecfc1da957500e86ed6c"
+    },
+    {
+      "path": "spec/scripts/task-hash.mjs",
+      "sha256": "9c586d43ddf81d7090e8a22e700cf6a00b2ce8334a610d8622516b766b1c404f"
+    },
+    {
+      "path": "spec/scripts/task-red.mjs",
+      "sha256": "5061d15ad3f7d13fc25296a291f87493945bdeca5c953ff0d9025549e26ecdb9"
+    },
+    {
+      "path": "spec/scripts/task-verify.mjs",
+      "sha256": "553800e15c2c67b6db7e0c132eac2f3db5f7fcb4a53b9273cb48a568fa404fe4"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "plugin/lib/api/router.js",
+      "plugin/lib/api/routes/**",
+      "docs/CODE-SIZE.md",
+      "docs/tasks/0186/**"
+    ],
+    "protectedPaths": [
+      "spec/checks/code-size.mjs",
+      "spec/checks/router-split.mjs",
+      "spec/scripts/task-verify.mjs",
+      "spec/scripts/task-red.mjs",
+      "spec/scripts/task-hash.mjs",
+      "VERSION",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0186/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/router-split.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "ROUTER-SPLIT OK c1"
+        },
+        "covers": [
+          "plugin/lib/api/router.js",
+          "plugin/lib/api/routes/**"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/code-size.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "CODE-SIZE OK c1"
+        },
+        "covers": [
+          "docs/CODE-SIZE.md",
+          "plugin/lib/api/router.js"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node spec/checks/router-split.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "ROUTER-SPLIT OK c2"
+        },
+        "covers": [
+          "plugin/lib/api/router.js"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "plugin/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C5",
+        "command": "node spec/checks/code-size.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "CODE-SIZE OK c2"
+        },
+        "covers": [
+          "spec/checks/code-size.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-27T21:43:33.114Z",
+  "tool": "subagent-workflow/2.6.115"
+}
