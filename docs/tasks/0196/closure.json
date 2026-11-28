@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "0196",
+  "status": "superseded",
+  "reason": "критерий C6 в criteria.json ожидал release.config.json task docs/tasks/0195 после закрытия 0195; в task.md замена дала 0196 — контракт противоречил сам себе; переиздано как 0197 с ожиданием docs/tasks/0197",
+  "by": "координатор",
+  "at": "2026-11-28T15:10:37.880Z",
+  "successor": "0197",
+  "evidence": []
+}
