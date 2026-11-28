@@ -1,0 +1,91 @@
+{
+  "task": "0194",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2"
+    ],
+    "mustPass": [
+      "C3",
+      "C4"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "inject не запрошен",
+      "C2": "guardStatusOf не экспортирован"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "inject: guard регистрируется по ctx.inject(['tools'])",
+      "command": "node -e \"import('./plugin/lib/wait-guard.js').then(m=>{const os=require('node:os'),path=require('node:path');const ROOT=path.join(os.tmpdir(),'wf-inject-red');let got=null,handler=null;const ctx={on(){},get tools(){throw new Error('cannot get property tools without inject')},inject(deps,cb){got={deps,cb}}};const r=m.registerWaitGuard(ctx,{roots:[ROOT]});if(!got||!got.deps.includes('tools'))throw new Error('inject не запрошен');got.cb({tools:{guard(fn){handler=fn}}});if(r.registration.guard!==true)throw new Error('guard не зарегистрирован');if(typeof handler!=='function')throw new Error('guard-обработчик не получен');process.stdout.write('GUARD-INJECT OK')}).catch(e=>{console.error(e.message);process.exit(1)})\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/wait-guard.js"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GUARD-INJECT OK"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "guardStatusOf: inject vs policy-off vs registered",
+      "command": "node -e \"import('./plugin/lib/index.js').then(m=>{if(typeof m.guardStatusOf!=='function')throw new Error('guardStatusOf не экспортирован');const a=m.guardStatusOf({policy:'fail',registration:{guard:false,guardError:'cannot get property tools without inject',preExecute:true}});if(a.cause!=='inject-missing'||a.registered!==false)throw new Error('причина '+a.cause);const b=m.guardStatusOf({policy:'off',registration:{guard:false,guardError:null,preExecute:false}});if(b.cause!=='policy-off')throw new Error('off '+b.cause);const c=m.guardStatusOf({policy:'fail',registration:{guard:true,guardError:null,preExecute:true}});if(c.cause!=='registered'||c.registered!==true)throw new Error('registered '+c.cause);process.stdout.write('GUARD-STATUS OK')}).catch(e=>{console.error(e.message);process.exit(1)})\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/index.js"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GUARD-STATUS OK"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Полный набор плагина",
+      "command": "node plugin/tools/test.mjs",
+      "cwd": ".",
+      "covers": [
+        "plugin/test/guard-inject.test.mjs",
+        "plugin/test/guard-status.test.mjs"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Негатив: без inject guard остаётся false",
+      "command": "node -e \"import('./plugin/lib/wait-guard.js').then(m=>{const r=m.registerWaitGuard({on(){},get tools(){throw new Error('service tools is not available')}},{roots:[require('node:path').join(require('node:os').tmpdir(),'wf-inject-legacy')]});if(r.registration.guard!==false)throw new Error('guard без inject должен остаться false');if(!/tools is not available/.test(String(r.registration.guardError)))throw new Error('причина не сохранена');process.stdout.write('GUARD-LEGACY OK')}).catch(e=>{console.error(e.message);process.exit(1)})\"",
+      "cwd": ".",
+      "covers": [
+        "plugin/lib/wait-guard.js"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "GUARD-LEGACY OK"
+      }
+    }
+  ]
+}
