@@ -1,0 +1,106 @@
+{
+  "version": 3,
+  "task": "0192",
+  "taskFileSha256": "4ce02589619f433e001a3804d9d7b0702a7efc12a7b81ad6262a03748bf95dce",
+  "criteriaSha256": "368bd35cfba4e20003b97ea5c4f36850ae60f58fdf3ba9e1cbb69346d0f7a3cc",
+  "criteriaJsonSha256": "0391393787b49e32807b0a9abb9bc4388e529a16efc655c56280aff89a4ffcf7",
+  "attackSha256": null,
+  "contractCommit": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+  "protected": [
+    {
+      "path": "VERSION",
+      "sha256": "8b4798ab018ef2d00e412f29290de506fa26955e509c018a192949a72d73b648"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e01d9be6ca85bc1aa0a4ff61a04fa991bb9487c58eb37b080433813099998d79"
+    },
+    {
+      "path": "spec/checks/install-wait-0192.mjs",
+      "sha256": "c7c3f7eb51851942fdb2eaff6695cae353c5299e1e11876b099f62e8c9d6161b"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "INSTALL.md",
+      "spec/checks/install-wait.mjs",
+      "docs/tasks/0192/**"
+    ],
+    "protectedPaths": [
+      "spec/checks/install-wait-0192.mjs",
+      "VERSION",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0192/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/install-wait-0192.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "INSTALL-WAIT OK c1"
+        },
+        "covers": [
+          "INSTALL.md"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/install-wait-0192.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "INSTALL-WAIT OK c2"
+        },
+        "covers": [
+          "spec/checks/install-wait-0192.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      },
+      {
+        "id": "C4",
+        "command": "node -e \"const fs=require('fs');if(fs.existsSync('spec/checks/install-wait.mjs')){console.error('STALE-CHECK FAIL: проверка 0191 осталась');process.exit(1);}console.log('STALE-CHECK OK')\"",
+        "cwd": ".",
+        "timeoutMs": 60000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "STALE-CHECK OK"
+        },
+        "covers": [
+          "spec/checks/install-wait.mjs"
+        ],
+        "tags": [
+          "fast"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-28T01:23:31.443Z",
+  "tool": "subagent-workflow/2.6.115"
+}
