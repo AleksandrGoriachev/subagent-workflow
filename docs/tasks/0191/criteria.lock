@@ -1,0 +1,89 @@
+{
+  "version": 3,
+  "task": "0191",
+  "taskFileSha256": "ac0d009d4740384a813e9adc3ccae71320b8d67011d2285d361f796612c40544",
+  "criteriaSha256": "9fc4623398ba1bb90bf3905d42f6fbc3091b107c0d046561db70657f55046c0e",
+  "criteriaJsonSha256": "b199ba5ac430775464cfe0522f3f8f7d8f204b1b2c3e4bb3b55b85295db5630f",
+  "attackSha256": null,
+  "contractCommit": "7ddc57bd23ae6d46699dcae54ec3b0861fb0a12c",
+  "protected": [
+    {
+      "path": "VERSION",
+      "sha256": "8b4798ab018ef2d00e412f29290de506fa26955e509c018a192949a72d73b648"
+    },
+    {
+      "path": "package.json",
+      "sha256": "e01d9be6ca85bc1aa0a4ff61a04fa991bb9487c58eb37b080433813099998d79"
+    },
+    {
+      "path": "spec/checks/install-wait.mjs",
+      "sha256": "a41c5d58ae2c8b2de3705f5294aec0e872f87902d35e14db2179be46f3060a08"
+    }
+  ],
+  "contract": {
+    "allowedPaths": [
+      "INSTALL.md",
+      "docs/tasks/0191/**"
+    ],
+    "protectedPaths": [
+      "spec/checks/install-wait.mjs",
+      "VERSION",
+      "package.json"
+    ],
+    "redAllowDirty": [
+      "docs/tasks/0191/**"
+    ],
+    "criteria": [
+      {
+        "id": "C1",
+        "command": "node spec/checks/install-wait.mjs c1",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "INSTALL-WAIT OK c1"
+        },
+        "covers": [
+          "INSTALL.md"
+        ],
+        "tags": [
+          "fast"
+        ]
+      },
+      {
+        "id": "C2",
+        "command": "node spec/checks/install-wait.mjs c2",
+        "cwd": ".",
+        "timeoutMs": 120000,
+        "expect": {
+          "exitCode": 0,
+          "stdoutContains": "INSTALL-WAIT OK c2"
+        },
+        "covers": [
+          "spec/checks/install-wait.mjs"
+        ],
+        "tags": [
+          "fast",
+          "negative"
+        ]
+      },
+      {
+        "id": "C3",
+        "command": "node tools/check-tests.mjs",
+        "cwd": ".",
+        "timeoutMs": 900000,
+        "expect": {
+          "exitCode": 0
+        },
+        "covers": [
+          "spec/**"
+        ],
+        "tags": [
+          "slow"
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-11-28T01:21:41.384Z",
+  "tool": "subagent-workflow/2.6.115"
+}
