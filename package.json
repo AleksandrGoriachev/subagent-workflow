@@ -1,6 +1,6 @@
 {
   "name": "subagent-workflow",
-  "version": "2.6.115",
+  "version": "2.7.0",
   "dshPanelVersion": "0.9.40",
   "private": true,
   "license": "MIT",

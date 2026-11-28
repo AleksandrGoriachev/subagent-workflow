@@ -1,5 +1,30 @@
 # Изменения
 
+## 2.7.0 — 2026-11-28 (панель 0.9.40)
+
+- **api, state и common разложены по модулям (0179, 0180, 0181).** `plugin/lib/api.js` — 46 строк, код в
+  `api/**`; `plugin/lib/state.js` — 23 строки, состояние в `state/**` (11 модулей); `spec/scripts/lib/common.mjs` —
+  28 строк, 16 модулей в `common/**`, `TOOL` вычисляется из `VERSION`. Импорты снаружи не изменились.
+- **Роутер панели — по доменам (0190).** `api/router.js` — 97-строчный диспетчер, маршруты в `api/routes/**`
+  (status, engine, plugin, writes, run, anchors, release); 18 адресов и `POST_PATHS` прежние.
+- **`task-accept` — CLI над модулями (0185).** Запись, кандидат, проверка, тень и сводка — в
+  `spec/scripts/lib/accept/**`; `task-accept.mjs` остаётся входом для ворот и узлов.
+- **Панель собирается из фрагментов (0176).** 13 файлов `plugin/client/*.js` → `plugin/lib/client.js`
+  (3989 строк) сборщиком `plugin/tools/build-client.mjs`; `--check` сравнивает байт в байт; тесты панели —
+  6 наборов и общий `client.harness.mjs` (23 имени тестов заморожены).
+- **Правило порога (0190).** `docs/CODE-SIZE.md` и `spec/checks/code-size.mjs`: файл больше 600 строк — разбор,
+  больше 900 — отдельная задача; сгенерированный `client.js` и `plugin/test/**` не считаются. Превышений 900
+  нет, максимум — `wait-guard.js` 841 строка.
+- **doctor различает пакет и копию (0175).** `spec/scripts/doctor.mjs` ищет корень движка по факту (`spec/`,
+  иначе `docs/subagent-workflow/`) и больше не печатает четыре ложных FAIL в пакете.
+- **INSTALL про ожидание узла (0192).** Раздел «Ожидание узла графа» описывает `project_graph_wait` по факту
+  0385: формат `{ childId, state, waitedMs, exitCode?, tail? }`, ожидание по умолчанию 30 с, не больше 60 с,
+  `unknown` не равен `running`, после `running` — не больше двух повторов.
+- **Проверки.** `panel-split.mjs`, `state-split-0179.mjs`, `api-split.mjs`, `common-split.mjs`,
+  `accept-split-0185.mjs`, `router-split-0190.mjs`, `code-size.mjs`, `doctor-package.mjs`,
+  `install-wait-0192.mjs`.
+- **Тесты.** selftest 70/70; плагин — 55 файлов, exit 0; затронутые движковые тесты зелёные.
+
 ## 2.6.115 — 2026-11-26 (панель 0.9.40)
 
 - **Контракт проверяется до работы (0164).** `task-preflight --contract` называет причину отказа по файлу и полю:

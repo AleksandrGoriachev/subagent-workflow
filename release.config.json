@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.6.115",
+  "version": "2.7.0",
   "panelVersion": "0.9.40",
-  "releaseName": "2.6.115 — контракт проверяется до работы",
+  "releaseName": "2.7.0 — раскладка движка по модулям",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0174",
-  "releaseCommand": "node tools/release.mjs release 2.6.115",
-  "preflightCommand": "node tools/release.mjs preflight 2.6.115",
+  "task": "docs/tasks/0193",
+  "releaseCommand": "node tools/release.mjs release 2.7.0",
+  "preflightCommand": "node tools/release.mjs preflight 2.7.0",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
@@ -41,7 +41,7 @@
   ],
   "failurePolicy": "stop-and-rollback-draft",
   "acceptance": {
-    "task": "docs/tasks/0174",
+    "task": "docs/tasks/0193",
     "rule": "приёмка следует за candidate-коммитом выпуска: вердикт подписывает отдельная сессия приёмщика"
   }
 }
