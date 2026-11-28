@@ -1,0 +1,90 @@
+{
+  "task": "0192",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C4"
+    ],
+    "mustPass": [
+      "C2",
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "INSTALL-WAIT FAIL",
+      "C4": "STALE-CHECK FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "INSTALL.md описывает project_graph_wait по факту",
+      "command": "node spec/checks/install-wait-0192.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "INSTALL.md"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "INSTALL-WAIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Негативный случай: детектор отвергает потерю имени и старое отрицание",
+      "command": "node spec/checks/install-wait-0192.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/install-wait-0192.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "INSTALL-WAIT OK c2"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Selftest и затронутые тесты зелёные",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Старая проверка 0191 удалена",
+      "command": "node -e \"const fs=require('fs');if(fs.existsSync('spec/checks/install-wait.mjs')){console.error('STALE-CHECK FAIL: проверка 0191 осталась');process.exit(1);}console.log('STALE-CHECK OK')\"",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/install-wait.mjs"
+      ],
+      "timeoutMs": 60000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "STALE-CHECK OK"
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}
