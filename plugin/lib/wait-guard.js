@@ -807,10 +807,38 @@ export function registerWaitGuard(ctx, config = {}, options = {}) {
   }
 
   let toolsService = null;
+  let toolsError = null;
   try {
     toolsService = ctx.tools;
   } catch (error) {
-    registration.guardError = errorTextOf(error);
+    toolsError = errorTextOf(error);
+    registration.guardError = toolsError;
+  }
+  /*
+   * 0194: в контексте плагина сервис tools доступен только через inject —
+   * прямое чтение ctx.tools бросает «cannot get property tools without inject»,
+   * и guard молчал. Подписки above остаются на корневом ctx (их доставку
+   * проверяет wait-guard.test.mjs), а guard дотягивается в инжектированном
+   * контексте. Если inject недоступен (старый хост, юнит-контекст), поведение
+   * прежнее: guard:false и причина в guardError.
+   */
+  if (!toolsService && typeof ctx.inject === 'function') {
+    try {
+      ctx.inject(['tools'], (toolsCtx) => {
+        try {
+          attachGuard(toolsCtx && toolsCtx.tools);
+          if (registration.guard) {
+            /* Поздний успех снимает только ошибку чтения ctx.tools, не ошибки подписок. */
+            if (registration.guardError === toolsError) registration.guardError = null;
+            if (typeof options.onGuardAttached === 'function') options.onGuardAttached(result);
+          }
+        } catch (error) {
+          registration.guardError = errorTextOf(error);
+        }
+      });
+    } catch (error) {
+      registration.guardError = errorTextOf(error);
+    }
   }
 
   if (state.workspaceMode) {

@@ -1,0 +1,179 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": "6ab07bb06f39a5ac03442222e7c163bb",
+  "runKind": "accept",
+  "task": "0194",
+  "createdAt": "2026-11-28T15:01:54.504Z",
+  "headSha": "5d33d980ca4ecd6a1c8db1144aad36ee018deb83",
+  "vcs": "git",
+  "contractCommit": "5d33d980ca4ecd6a1c8db1144aad36ee018deb83",
+  "criteriaSha256": "be7afb24464cae27b61b321a9a6e8f8f7f699d9f38f9a62d02d77b133ebf0dee",
+  "criteriaJsonSha256": "da38e8aea3db4bb9d1ddba03734f29a2ed202643b1fdb4490d9cce9452aaf66d",
+  "taskFileSha256": "4f8afa868f9ac2116302c2bc5c8ae3a5f2cdcbef4aa49faf0311fe69266d5981",
+  "changedPaths": [
+    "docs/tasks/0194/criteria.lock",
+    "docs/tasks/0194/gates.jsonl",
+    "docs/tasks/0194/gates.jsonl.tip",
+    "docs/tasks/0194/red.json",
+    "docs/tasks/0194/verify.executor.json",
+    "docs/tasks/0194/verify.json",
+    "plugin/lib/index.js",
+    "plugin/lib/wait-guard.js",
+    "plugin/test/guard-inject.test.mjs",
+    "plugin/test/guard-status.test.mjs"
+  ],
+  "coverage": {
+    "declared": 5,
+    "covered": [
+      {
+        "path": "plugin/lib/index.js",
+        "criterion": "C2"
+      },
+      {
+        "path": "plugin/lib/wait-guard.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/test/guard-inject.test.mjs",
+        "criterion": "C3"
+      },
+      {
+        "path": "plugin/test/guard-status.test.mjs",
+        "criterion": "C3"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node -e \"import('./plugin/lib/wait-guard.js').then(m=>{const os=require('node:os'),path=require('node:path');const ROOT=path.join(os.tmpdir(),'wf-inject-red');let got=null,handler=null;const ctx={on(){},get tools(){throw new Error('cannot get property tools without inject')},inject(deps,cb){got={deps,cb}}};const r=m.registerWaitGuard(ctx,{roots:[ROOT]});if(!got||!got.deps.includes('tools'))throw new Error('inject не запрошен');got.cb({tools:{guard(fn){handler=fn}}});if(r.registration.guard!==true)throw new Error('guard не зарегистрирован');if(typeof handler!=='function')throw new Error('guard-обработчик не получен');process.stdout.write('GUARD-INJECT OK')}).catch(e=>{console.error(e.message);process.exit(1)})\"",
+      "exitCode": 0,
+      "durationMs": 1462,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "e958c9f6dc6e2cd0729cce303869a545d260761d586eb1de17cd1c88c4690779",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GUARD-INJECT OK",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node -e \"import('./plugin/lib/index.js').then(m=>{if(typeof m.guardStatusOf!=='function')throw new Error('guardStatusOf не экспортирован');const a=m.guardStatusOf({policy:'fail',registration:{guard:false,guardError:'cannot get property tools without inject',preExecute:true}});if(a.cause!=='inject-missing'||a.registered!==false)throw new Error('причина '+a.cause);const b=m.guardStatusOf({policy:'off',registration:{guard:false,guardError:null,preExecute:false}});if(b.cause!=='policy-off')throw new Error('off '+b.cause);const c=m.guardStatusOf({policy:'fail',registration:{guard:true,guardError:null,preExecute:true}});if(c.cause!=='registered'||c.registered!==true)throw new Error('registered '+c.cause);process.stdout.write('GUARD-STATUS OK')}).catch(e=>{console.error(e.message);process.exit(1)})\"",
+      "exitCode": 0,
+      "durationMs": 1692,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "d0145190bb1f346c6b97cc8d788614a5c2fcc0f357fd3e29628e4f7bd1202c21",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GUARD-STATUS OK",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node plugin/tools/test.mjs",
+      "exitCode": 0,
+      "durationMs": 335185,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c952cbebb86d1a39c0a1b01a52224e0e5acbd7f2136e70a3c31968cfff33f3d0",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 57 файл(ов)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"import('./plugin/lib/wait-guard.js').then(m=>{const r=m.registerWaitGuard({on(){},get tools(){throw new Error('service tools is not available')}},{roots:[require('node:path').join(require('node:os').tmpdir(),'wf-inject-legacy')]});if(r.registration.guard!==false)throw new Error('guard без inject должен остаться false');if(!/tools is not available/.test(String(r.registration.guardError)))throw new Error('причина не сохранена');process.stdout.write('GUARD-LEGACY OK')}).catch(e=>{console.error(e.message);process.exit(1)})\"",
+      "exitCode": 0,
+      "durationMs": 1426,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "d9d8e8b22d32411b6848c65d4751070fec768d6c16b52bac6423c9eab3a5dc70",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "GUARD-LEGACY OK",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 4,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "5d33d980ca4ecd6a1c8db1144aad36ee018deb83",
+    "contractCommit": "5d33d980ca4ecd6a1c8db1144aad36ee018deb83",
+    "criteriaJsonSha256": "da38e8aea3db4bb9d1ddba03734f29a2ed202643b1fdb4490d9cce9452aaf66d",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C2"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2"
+      ],
+      "mustPass": [
+        "C3",
+        "C4"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "5d33d980ca4ecd6a1c8db1144aad36ee018deb83",
+  "headDrift": null,
+  "worktreeDigest": "2ef773c02c904e5036b39e3d021ba230f954a6e1337abe01e41ddd59beb3dc50",
+  "log": "verify.log"
+}

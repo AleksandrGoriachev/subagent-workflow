@@ -11,6 +11,7 @@ import * as fsSync from 'node:fs';
 import { createWorkflowRuntime, registerWorkflowWeb } from './api.js';
 import { registerWaitGuard } from './wait-guard.js';
 import { registerLoopGuard } from './loop-guard.js';
+import { PLUGIN_VERSION } from './compat.js';
 
 export const name = 'dsh-workflow-console';
 
@@ -38,6 +39,33 @@ function resolveWorkspaceRegistry(ctx) {
  * файл не появлялся, хотя apply() продолжался. Поэтому сервис читается здесь,
  * в try/catch, а не в объектном литерале.
  */
+/**
+ * 0194: причина, по которой второй слой (tools.guard) не стоит.
+ * Раньше панель видела только via: 'tools/pre-execute' и не отличала
+ * «guard недоступен, потому что нет inject» от «guard выключен политикой» —
+ * это разные действия пользователя. Функция чистая, чтобы её проверял тест.
+ */
+export function guardStatusOf(state) {
+  const source = state && typeof state === 'object' ? state : {};
+  const registration = source.registration && typeof source.registration === 'object'
+    ? source.registration
+    : {};
+  const error = typeof registration.guardError === 'string' && registration.guardError !== ''
+    ? registration.guardError
+    : null;
+  if (registration.guard === true) {
+    return { registered: true, cause: 'registered', error: null };
+  }
+  if (error) {
+    const inject = /inject|not available/iu.test(error);
+    return { registered: false, cause: inject ? 'inject-missing' : 'error', error };
+  }
+  if (source.policy === 'off') {
+    return { registered: false, cause: 'policy-off', error: null };
+  }
+  return { registered: false, cause: 'not-registered', error: null };
+}
+
 function toolsProbe(ctx) {
   try {
     const service = ctx ? ctx.tools : undefined;
@@ -63,12 +91,14 @@ function probeApply(ctx, config, extra) {
     fsSync.mkdirSync(dir, { recursive: true });
     fsSync.writeFileSync(path.join(dir, 'plugin-apply.json'), JSON.stringify({
       at: new Date().toISOString(),
+      pluginVersion: PLUGIN_VERSION,
       ...toolsProbe(ctx),
       getTools: Boolean(ctx && typeof ctx.get === 'function' && ctx.get('tools')),
       injectType: typeof (ctx && ctx.inject),
       onType: typeof (ctx && ctx.on),
       configKeys: config && typeof config === 'object' ? Object.keys(config) : null,
       ...(extra || {}),
+      ...(extra && extra.guardState ? { guardStatus: guardStatusOf(extra.guardState) } : {}),
     }, null, 2) + String.fromCharCode(10), 'utf8');
   } catch { /* диагностика не имеет права ломать плагин */ }
 }
@@ -80,8 +110,10 @@ export function apply(ctx, config = {}) {
    * или из блока enforcement воркспейса; ошибка сторожа не отменяет панель.
    */
   let guardState = null;
+  /* 0194: guard может подключиться позже (ctx.inject) — диагностику перезаписываем. */
+  const reProbeGuard = (state) => probeApply(ctx, config, { guardState: state });
   try {
-    guardState = registerWaitGuard(ctx, config);
+    guardState = registerWaitGuard(ctx, config, { onGuardAttached: reProbeGuard });
   } catch (error) {
     guardState = { error: String(error && error.message ? error.message : error) };
   }
@@ -117,6 +149,7 @@ export function apply(ctx, config = {}) {
         roots: state.roots,
         loop: loopState && typeof loopState === 'object' ? { policy: loopState.policy, limit: loopState.limit, preExecute: loopState.preExecute === true } : null,
         via: registration.preExecute === true ? 'tools/pre-execute' : 'none',
+        guardStatus: guardStatusOf(state),
         registration: {
           preExecute: registration.preExecute === true,
           postExecute: registration.postExecute === true,
