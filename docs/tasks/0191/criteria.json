@@ -1,0 +1,71 @@
+{
+  "task": "0191",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1"
+    ],
+    "mustPass": [
+      "C2",
+      "C3"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "INSTALL-WAIT FAIL"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "INSTALL.md описывает project_graph_wait по факту",
+      "command": "node spec/checks/install-wait.mjs c1",
+      "cwd": ".",
+      "covers": [
+        "INSTALL.md"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "INSTALL-WAIT OK c1"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Негативный случай: детектор отвергает старый текст",
+      "command": "node spec/checks/install-wait.mjs c2",
+      "cwd": ".",
+      "covers": [
+        "spec/checks/install-wait.mjs"
+      ],
+      "timeoutMs": 120000,
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "INSTALL-WAIT OK c2"
+      },
+      "tags": [
+        "fast",
+        "negative"
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Selftest и затронутые тесты зелёные",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/**"
+      ],
+      "timeoutMs": 900000,
+      "expect": {
+        "exitCode": 0
+      },
+      "tags": [
+        "slow"
+      ]
+    }
+  ]
+}
