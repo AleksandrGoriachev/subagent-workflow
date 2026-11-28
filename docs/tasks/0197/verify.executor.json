@@ -1,0 +1,231 @@
+{
+  "version": 4,
+  "kind": "verify",
+  "acceptanceNonce": null,
+  "runKind": "self",
+  "task": "0197",
+  "createdAt": "2026-11-28T15:20:20.054Z",
+  "headSha": "123a4b641272c1d7c7a132030caf3c1a0db997e0",
+  "vcs": "git",
+  "contractCommit": "123a4b641272c1d7c7a132030caf3c1a0db997e0",
+  "criteriaSha256": "a5c3e9efd3a78169efde6c9d88e9c823a22aaab98935fab2c7d591c4b9c7f981",
+  "criteriaJsonSha256": "64f5cc50c86f1c2c3c6f56c4206381b610540c587b023d6769ac2696bd923794",
+  "taskFileSha256": "df6329af798615d4a9052a458bf119d16e21264fb263c2d4b1c4b12b8178b92d",
+  "changedPaths": [
+    "CHANGELOG.md",
+    "README.md",
+    "VERSION",
+    "docs/tasks/0197/criteria.lock",
+    "docs/tasks/0197/gates.jsonl",
+    "docs/tasks/0197/gates.jsonl.tip",
+    "docs/tasks/0197/red.json",
+    "package.json",
+    "plugin/lib/compat.js",
+    "plugin/package.json",
+    "release.config.json",
+    "spec/SPEC.md"
+  ],
+  "coverage": {
+    "declared": 13,
+    "covered": [
+      {
+        "path": "VERSION",
+        "criterion": "C1"
+      },
+      {
+        "path": "package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/lib/compat.js",
+        "criterion": "C1"
+      },
+      {
+        "path": "plugin/package.json",
+        "criterion": "C1"
+      },
+      {
+        "path": "release.config.json",
+        "criterion": "C3"
+      }
+    ],
+    "uncovered": [],
+    "mode": "fail",
+    "warnings": []
+  },
+  "effects": {
+    "required": false,
+    "checked": false,
+    "mode": "fail",
+    "declared": [],
+    "links": [],
+    "ok": true
+  },
+  "results": [
+    {
+      "id": "C1",
+      "command": "node -e \"const fs=require('fs');const v=fs.readFileSync('VERSION','utf8').trim();const p=require('./package.json');const pl=require('./plugin/package.json');import('./plugin/lib/compat.js').then(m=>{process.stdout.write([v,p.version,pl.version,p.dshPanelVersion,m.PLUGIN_VERSION].join('|'))})\"",
+      "exitCode": 0,
+      "durationMs": 1256,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "15e8166b0c1fcbf2fd795576cce51278fe808cd08fc835df152c25bae6cf852c",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "2.7.1|2.7.1|0.9.41|0.9.41|0.9.41",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C2",
+      "command": "node tools/check-version.mjs",
+      "exitCode": 0,
+      "durationMs": 1470,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "2a05ad7c0beec25f6b3b1c40dfc6a070e7b1b2f4144f7391878a6b78e4ceb1fe",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "PASS  VERSION                       — 2.7.1\nPASS  package.json                  — 2.7.1\nPASS  README.md                     — # subagent-workflow 2.7.1 — полный пакет делегирования и приёмки\nPASS  spec/SPEC.md                  — Версия: 2.7.1. Дата: 2026-11-28.\nPASS  spec/scripts/lib/common.mjs   — subagent-workflow/2.7.1\nPASS  CHANGELOG.md                  — ## 2.7.1 — 2026-11-28 (панель 0.9.41)\nPASS  spec/SPEC.md (раздел)         — есть абзац «Версия 2.7.1:»\nPASS  plugin/package.json           — 0.9.41\nплагин — 0.9.41\n\nVERSION OK: 2.7.1\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C3",
+      "command": "node tools/release.mjs preflight 2.7.1",
+      "exitCode": 0,
+      "durationMs": 5719,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "fc957da667d0326068d77418b85e8a0f7616b99b74c43d24312a1baab9cf6257",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "preflight: OK\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C4",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 310645,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "c952cbebb86d1a39c0a1b01a52224e0e5acbd7f2136e70a3c31968cfff33f3d0",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "plugin test: 57 файл(ов)\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C5",
+      "command": "node tools/release.mjs preflight 2.7.999",
+      "exitCode": 1,
+      "durationMs": 5200,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "287b73f5797cdaa0c3e7c2ca362a7e8a1e183f152b68e2e66704f1268acdc23a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "RELEASE ERROR VERSION не равен 2.7.999 (в файле 2.7.1)\nRELEASE ERROR package.json: 2.7.1 != 2.7.999\nRELEASE ERROR нет ассета subagent-workflow-2.7.999.tar.gz\nRELEASE ERROR нет ассета subagent-workflow-2.7.999.tar.gz.sha256\nRELEASE ERROR нет ассета subagent-workflow-2.7.999.zip\nRELEASE ERROR нет ассета subagent-workflow-2.7.999.zip.sha256\npreflight: не пройден\n",
+      "stderrPreview": ""
+    },
+    {
+      "id": "C6",
+      "command": "node -e \"const c=require('./release.config.json');process.stdout.write([c.version,c.task].join('|'))\"",
+      "exitCode": 0,
+      "durationMs": 865,
+      "passed": true,
+      "timedOut": false,
+      "checkDefect": null,
+      "reasons": [],
+      "stdoutSha256": "fa4e43078a938b5348655637de836223f3035cc56a9497dafea72a078dcca887",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutPreview": "2.7.1|docs/tasks/0197",
+      "stderrPreview": ""
+    }
+  ],
+  "executed": 6,
+  "failed": 0,
+  "manualSkipped": 0,
+  "allPassed": true,
+  "violations": [],
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "123a4b641272c1d7c7a132030caf3c1a0db997e0",
+    "contractCommit": "123a4b641272c1d7c7a132030caf3c1a0db997e0",
+    "criteriaJsonSha256": "64f5cc50c86f1c2c3c6f56c4206381b610540c587b023d6769ac2696bd923794",
+    "failed": 4,
+    "failedIds": [
+      "C1",
+      "C2",
+      "C3",
+      "C6"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C2",
+        "C3",
+        "C6"
+      ],
+      "mustPass": [
+        "C4",
+        "C5"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C2",
+          "ok": true,
+          "distance": 0,
+          "total": 10,
+          "window": 25
+        },
+        {
+          "id": "C3",
+          "ok": true,
+          "distance": 0,
+          "total": 7,
+          "window": 25
+        },
+        {
+          "id": "C6",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    },
+    "bypasses": {
+      "allowDirty": false,
+      "allowBaseMismatch": false
+    },
+    "log": "red.log"
+  },
+  "changes": "own-uncommitted",
+  "headAtVerify": "123a4b641272c1d7c7a132030caf3c1a0db997e0",
+  "headDrift": null,
+  "worktreeDigest": "11fdd382fe8b4f95c8aae142f6af05b38e622d32298fdcadbac07ac1062657af",
+  "log": "verify.log"
+}

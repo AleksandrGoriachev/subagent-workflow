@@ -1,12 +1,12 @@
 {
   "project": "subagent-workflow",
-  "version": "2.7.0",
-  "panelVersion": "0.9.40",
-  "releaseName": "2.7.0 — раскладка движка по модулям",
+  "version": "2.7.1",
+  "panelVersion": "0.9.41",
+  "releaseName": "2.7.1 — сторож держится inject, панель 0.9.41",
   "packageRoot": "subagent-workflow-v2",
-  "task": "docs/tasks/0193",
-  "releaseCommand": "node tools/release.mjs release 2.7.0",
-  "preflightCommand": "node tools/release.mjs preflight 2.7.0",
+  "task": "docs/tasks/0197",
+  "releaseCommand": "node tools/release.mjs release 2.7.1",
+  "preflightCommand": "node tools/release.mjs preflight 2.7.1",
   "versionCheckCommand": "node tools/check-version.mjs",
   "versionFiles": [
     "VERSION",
@@ -41,7 +41,7 @@
   ],
   "failurePolicy": "stop-and-rollback-draft",
   "acceptance": {
-    "task": "docs/tasks/0193",
+    "task": "docs/tasks/0197",
     "rule": "приёмка следует за candidate-коммитом выпуска: вердикт подписывает отдельная сессия приёмщика"
   }
 }

@@ -1,5 +1,20 @@
 # Изменения
 
+## 2.7.1 — 2026-11-28 (панель 0.9.41)
+
+- **Сторож держится inject (0194).** В контексте плагина `ctx.tools` бросал «cannot get property tools without
+  inject», поэтому `tools.guard` не регистрировался и политика «долгие ожидания — fail» держалась только
+  отменяемым `tools/pre-execute`. Теперь `guard` подключается через `ctx.inject(['tools'], …)`; подписки
+  `pre-execute`/`post-execute` остаются на корневом `ctx`, а без `inject` поведение прежнее (`guard: false`).
+- **Причина названа (0194).** `/api/status` отдаёт `guardStatus`: `registered`, `inject-missing`, `error`,
+  `policy-off`, `not-registered` — «guard выключен политикой» больше не выглядит как «guard недоступен».
+  В `plugin-apply.json` добавлен `pluginVersion`, запись привязана к сборке.
+- **Панель 0.9.41.** Изменён host-код панели; `plugin/package.json`, `PLUGIN_VERSION` и версия в релизе
+  совпадают, клиент и маршруты не менялись.
+- **Проверки.** `guard-inject.test.mjs` (guard появляется после `inject`, без `inject` — прежний отказ),
+  `guard-status.test.mjs` (`inject-missing` не равен `policy-off`); `wait-guard.test.mjs` остаётся зелёным.
+- **Тесты.** selftest 70/70; плагин — 57 файлов, exit 0; затронутые движковые тесты зелёные.
+
 ## 2.7.0 — 2026-11-28 (панель 0.9.40)
 
 - **api, state и common разложены по модулям (0179, 0180, 0181).** `plugin/lib/api.js` — 46 строк, код в
