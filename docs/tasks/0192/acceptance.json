@@ -1,0 +1,179 @@
+{
+  "version": 6,
+  "status": "accepted",
+  "task": "0192",
+  "title": "INSTALL.md описывает принятый project_graph_wait (0385; переиздание 0191), а не отрицает ожидание узла",
+  "risk": "low",
+  "taskFileSha256": "4ce02589619f433e001a3804d9d7b0702a7efc12a7b81ad6262a03748bf95dce",
+  "criteriaSha256": "368bd35cfba4e20003b97ea5c4f36850ae60f58fdf3ba9e1cbb69346d0f7a3cc",
+  "criteriaJsonSha256": "0391393787b49e32807b0a9abb9bc4388e529a16efc655c56280aff89a4ffcf7",
+  "contractCommit": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+  "baseCommit": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+  "candidateCommit": "16cd0de109a4e15fc4b2cf5ad7b060caedd586ad",
+  "tree": "ca5a8fe9512b4e8d0bef01e62c5ff88dda78b495",
+  "worktreeDigest": "5dba9125ecf7cf194ca95fbc4cb70c944440212e55f79b4626939f9a79e713da",
+  "issuedBy": {
+    "kind": "agent",
+    "session": "session-eceafc45-4b60-4614-abe3-c21aa1a76432",
+    "model": "deepseek-flash"
+  },
+  "actor": {
+    "kind": "agent",
+    "session": "da82a9de-6bfe-417f-b650-6161fb44f988",
+    "model": "glm-5.3-flash",
+    "modelSource": "session-projcache",
+    "family": null,
+    "host": "PC3348",
+    "keyId": "agent-judge",
+    "attestedBy": "env",
+    "source": "DSH_SESSION_ID",
+    "sourceKind": "harness"
+  },
+  "independence": {
+    "level": "separate-session",
+    "basis": "harness",
+    "separateSession": true,
+    "reportWithheld": true,
+    "reportRead": "not-declared",
+    "reportReadVerified": false,
+    "reportReadReason": "",
+    "keyCustody": "agent-key",
+    "modelLevel": "unknown"
+  },
+  "acceptor": "subagent:judge",
+  "acceptorRun": {
+    "fresh": true,
+    "nonce": "6e7afb9c30b80b782b6d69487086bc37",
+    "runKind": "accept",
+    "startedAt": "2026-11-28T01:28:30.350Z",
+    "finishedAt": "2026-11-28T01:29:48.348Z",
+    "durationMs": 77999,
+    "host": "PC3348",
+    "node": "v25.4.0",
+    "verifySha256": "daee8a1f3ae2f1a9eda686826070a714413dc890da8adddd838f6be3645b4196",
+    "verifyLogSha256": null
+  },
+  "effects": [],
+  "effectsRequired": false,
+  "effectConsistency": {
+    "checked": false,
+    "ok": true,
+    "mode": "fail",
+    "links": []
+  },
+  "bypasses": {
+    "allowMissingRed": false,
+    "allowManual": false,
+    "allowDirty": false,
+    "allowBaseMismatch": false
+  },
+  "red": {
+    "kind": "proven",
+    "noRed": null,
+    "baseSha": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+    "contractCommit": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+    "criteriaJsonSha256": "0391393787b49e32807b0a9abb9bc4388e529a16efc655c56280aff89a4ffcf7",
+    "failed": 2,
+    "failedIds": [
+      "C1",
+      "C4"
+    ],
+    "redExpectation": {
+      "configured": true,
+      "ok": true,
+      "errors": [],
+      "mustFail": [
+        "C1",
+        "C4"
+      ],
+      "mustPass": [
+        "C2",
+        "C3"
+      ],
+      "noRed": null,
+      "checkDefects": [],
+      "reasonChecks": [
+        {
+          "id": "C1",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        },
+        {
+          "id": "C4",
+          "ok": true,
+          "distance": 0,
+          "total": 1,
+          "window": 25
+        }
+      ],
+      "reasonWindow": 25
+    }
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "command": "node spec/checks/install-wait-0192.mjs c1",
+      "exitCode": 0,
+      "durationMs": 927,
+      "passed": true
+    },
+    {
+      "id": "C2",
+      "command": "node spec/checks/install-wait-0192.mjs c2",
+      "exitCode": 0,
+      "durationMs": 995,
+      "passed": true
+    },
+    {
+      "id": "C3",
+      "command": "node tools/check-tests.mjs",
+      "exitCode": 0,
+      "durationMs": 64326,
+      "passed": true
+    },
+    {
+      "id": "C4",
+      "command": "node -e \"const fs=require('fs');if(fs.existsSync('spec/checks/install-wait.mjs')){console.error('STALE-CHECK FAIL: проверка 0191 осталась');process.exit(1);}console.log('STALE-CHECK OK')\"",
+      "exitCode": 0,
+      "durationMs": 899,
+      "passed": true
+    }
+  ],
+  "acceptedAt": "2026-11-28T01:29:50.596Z",
+  "humanSignoff": false,
+  "signedBy": null,
+  "securityReview": false,
+  "review": null,
+  "reviewReceipt": null,
+  "reviewBinding": {
+    "contractCommit": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+    "taskFileSha256": "4ce02589619f433e001a3804d9d7b0702a7efc12a7b81ad6262a03748bf95dce",
+    "bound": false,
+    "allowedBy": null,
+    "note": null
+  },
+  "headDrift": null,
+  "decisions": {
+    "count": 1,
+    "digest": "46ca3f765a0f067cf01140a97b66880cb3246b9fbd2dbc929c4d382f971b6a5d",
+    "assumed": [],
+    "confirmed": 1
+  },
+  "attack": null,
+  "releaseReady": true,
+  "notes": "",
+  "deviation": "корень пакета вне разрешённых корней спавна узла judge (root-not-allowed); приёмку выполняет отдельная сессия узла judge",
+  "worktree": {
+    "headBefore": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+    "head": "891de9fd384699ee4b6a9eab40983d5a20a24060",
+    "trackedChanges": 2,
+    "extras": [],
+    "stashes": []
+  },
+  "signatureAlgorithm": "ed25519",
+  "keyId": "agent-judge",
+  "publicKeyFingerprint": "90abeb0b5a9124b5",
+  "signature": "cK7kpYIpj+KOuZfKCdLW3cpWrmmOZjDXr+kelVqMcRPxJE79tfkdtIoE5M9bEpgObzcHP9NvoeEUK2SxNlXrDw=="
+}
