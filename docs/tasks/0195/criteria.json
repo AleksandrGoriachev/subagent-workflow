@@ -1,0 +1,134 @@
+{
+  "task": "0195",
+  "setup": [],
+  "teardown": [],
+  "redExpect": {
+    "mustFail": [
+      "C1",
+      "C2",
+      "C3",
+      "C6"
+    ],
+    "mustPass": [
+      "C4",
+      "C5"
+    ],
+    "reasonWindow": 25,
+    "reasons": {
+      "C1": "2.7.0|2.7.0",
+      "C2": "VERSION OK: 2.7.0",
+      "C3": "preflight: не пройден",
+      "C6": "2.7.0|docs/tasks/0194"
+    }
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "title": "Версии выпуска и панели",
+      "command": "node -e \"const fs=require('fs');const v=fs.readFileSync('VERSION','utf8').trim();const p=require('./package.json');const pl=require('./plugin/package.json');import('./plugin/lib/compat.js').then(m=>{process.stdout.write([v,p.version,pl.version,p.dshPanelVersion,m.PLUGIN_VERSION].join('|'))})\"",
+      "cwd": ".",
+      "covers": [
+        "VERSION",
+        "package.json",
+        "plugin/package.json",
+        "plugin/lib/compat.js"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "2.7.1|2.7.1|0.9.41|0.9.41|0.9.41"
+      }
+    },
+    {
+      "id": "C2",
+      "title": "Согласованность файлов версии",
+      "command": "node tools/check-version.mjs",
+      "cwd": ".",
+      "covers": [
+        "VERSION",
+        "README.md",
+        "spec/SPEC.md",
+        "CHANGELOG.md"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "VERSION OK: 2.7.1"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "Предполётная проверка выпуска",
+      "command": "node tools/release.mjs preflight 2.7.1",
+      "cwd": ".",
+      "covers": [
+        "release.config.json"
+      ],
+      "timeoutMs": 180000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "preflight: OK"
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Полный регресс пакета",
+      "command": "node tools/check-tests.mjs",
+      "cwd": ".",
+      "covers": [
+        "spec/SPEC.md",
+        "CHANGELOG.md"
+      ],
+      "timeoutMs": 900000,
+      "tags": [
+        "slow"
+      ],
+      "expect": {
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "C5",
+      "title": "Негатив: чужой версии нет",
+      "command": "node tools/release.mjs preflight 2.7.999",
+      "cwd": ".",
+      "covers": [
+        "release.config.json"
+      ],
+      "timeoutMs": 120000,
+      "tags": [
+        "fast",
+        "negative"
+      ],
+      "expect": {
+        "exitCode": 1
+      }
+    },
+    {
+      "id": "C6",
+      "title": "release.config.json описывает этот выпуск",
+      "command": "node -e \"const c=require('./release.config.json');process.stdout.write([c.version,c.task].join('|'))\"",
+      "cwd": ".",
+      "covers": [
+        "release.config.json"
+      ],
+      "timeoutMs": 60000,
+      "tags": [
+        "fast"
+      ],
+      "expect": {
+        "exitCode": 0,
+        "stdoutContains": "2.7.1|docs/tasks/0195"
+      }
+    }
+  ]
+}
